@@ -79,10 +79,39 @@ export async function POST(request: NextRequest) {
     // ── Criar campanha no banco (se tem loja) ──
     let campaignRecord = null;
     if (store) {
+      const ext = imageFile.type.split("/")[1] || "jpg";
+      const storagePath = `campaigns/${store.id}/${Date.now()}.${ext}`;
+
+      // Upload real para Supabase Storage
+      let productPhotoUrl = "";
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/admin");
+        const supabase = createAdminClient();
+        const { error: uploadError } = await supabase.storage
+          .from("product-photos")
+          .upload(storagePath, Buffer.from(arrayBuffer), {
+            contentType: imageFile.type,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.warn("[API:campaign/generate] Storage upload failed:", uploadError.message);
+          productPhotoUrl = `upload-failed://${storagePath}`;
+        } else {
+          const { data: urlData } = supabase.storage
+            .from("product-photos")
+            .getPublicUrl(storagePath);
+          productPhotoUrl = urlData.publicUrl;
+        }
+      } catch {
+        console.warn("[API:campaign/generate] Storage unavailable, saving path reference");
+        productPhotoUrl = `pending-upload://${storagePath}`;
+      }
+
       campaignRecord = await createCampaign({
         storeId: store.id,
-        productPhotoUrl: `data:${mediaType};base64,${imageBase64.substring(0, 50)}...`,
-        productPhotoStoragePath: `campaigns/${store.id}/${Date.now()}.${imageFile.type.split("/")[1]}`,
+        productPhotoUrl,
+        productPhotoStoragePath: storagePath,
         price: parseFloat(price.replace(",", ".")),
         objective,
         targetAudience: targetAudience || undefined,

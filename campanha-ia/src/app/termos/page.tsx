@@ -9,7 +9,7 @@ export default function Termos() {
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--gradient-brand)", color: "white" }}>✨</div>
-            <span className="text-lg font-bold">Campanha <span className="gradient-text">IA</span></span>
+            <span className="text-lg font-bold">Cria<span className="gradient-text">Look</span></span>
           </Link>
         </div>
       </header>
@@ -30,7 +30,7 @@ export default function Termos() {
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>5. Propriedade Intelectual</h2>
             <p>O conteúdo gerado pela IA é de uso exclusivo do cliente. O CriaLook não reivindica propriedade sobre os criativos gerados.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>6. Pagamentos e Reembolsos</h2>
-            <p>Os planos são cobrados mensalmente via Stripe. Cancelamentos são efetivos no próximo ciclo de faturamento. Créditos extras não são reembolsáveis.</p>
+            <p>Os planos são cobrados mensalmente via Mercado Pago (PIX, cartão ou boleto). Cancelamentos são efetivos no próximo ciclo de faturamento. Créditos extras não são reembolsáveis.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>7. Limitação de Responsabilidade</h2>
             <p>O CriaLook não garante resultados específicos de vendas. O conteúdo gerado por IA deve ser revisado pelo usuário antes de publicação.</p>
           </div>

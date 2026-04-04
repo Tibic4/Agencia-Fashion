@@ -1,3 +1,4 @@
+// TODO: Next.js 16 deprecou "middleware" em favor de "proxy". Migrar quando API estabilizar.
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
