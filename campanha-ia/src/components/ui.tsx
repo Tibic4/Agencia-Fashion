@@ -50,7 +50,7 @@ export function PublicFooter() {
             <Link href="/privacidade" className="hover:text-[var(--foreground)] transition">Privacidade</Link>
           </nav>
           <p className="text-xs" style={{ color: "var(--muted)" }}>
-            © {new Date().getFullYear()} Campanha IA
+            © {new Date().getFullYear()} CriaLook
           </p>
         </div>
       </div>
