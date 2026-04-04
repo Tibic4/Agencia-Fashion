@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const IconSparkles = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
@@ -52,6 +53,7 @@ const bodyTypes = [
 ];
 
 export default function Onboarding() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [storeName, setStoreName] = useState("");
   const [segment, setSegment] = useState("");
@@ -62,8 +64,40 @@ export default function Onboarding() {
   const [hair, setHair] = useState("ondulado");
   const [body, setBody] = useState("media");
   const [skipModel, setSkipModel] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const totalSteps = 3;
+
+  const saveOnboarding = useCallback(async (skippedModel: boolean) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/store/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName,
+          segment,
+          city: city || undefined,
+          state: state || undefined,
+          instagram: instagram || undefined,
+          model: skippedModel ? { skip: true } : { skin, hair, body },
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Erro ${res.status}`);
+      }
+
+      setStep(3);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      setError(message);
+      setSaving(false);
+    }
+  }, [storeName, segment, city, state, instagram, skin, hair, body]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--gradient-hero)" }}>
@@ -95,6 +129,15 @@ export default function Onboarding() {
       {/* Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-xl">
+          {/* Error banner */}
+          {error && (
+            <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+              <span>⚠️</span>
+              <p className="text-sm font-medium" style={{ color: "#DC2626" }}>{error}</p>
+              <button onClick={() => setError(null)} className="ml-auto text-sm" style={{ color: "#DC2626" }}>✕</button>
+            </div>
+          )}
+
           {/* Step 1: Store info */}
           {step === 1 && (
             <div className="animate-fade-in-up">
@@ -221,18 +264,19 @@ export default function Onboarding() {
                   </div>
 
                   <div className="flex gap-3">
-                    <button onClick={() => setStep(1)} className="btn-secondary flex-1 !py-3">
+                    <button onClick={() => setStep(1)} className="btn-secondary flex-1 !py-3" disabled={saving}>
                       <IconArrowLeft /> Voltar
                     </button>
-                    <button onClick={() => setStep(3)} className="btn-primary flex-1 !py-3">
-                      Criar modelo <IconArrowRight />
+                    <button onClick={() => saveOnboarding(false)} className="btn-primary flex-1 !py-3" disabled={saving}>
+                      {saving ? "Salvando..." : "Criar modelo"} {!saving && <IconArrowRight />}
                     </button>
                   </div>
 
-                  <button onClick={() => { setSkipModel(true); setStep(3); }}
+                  <button onClick={() => { setSkipModel(true); saveOnboarding(true); }}
                     className="w-full text-center text-xs py-2 transition"
-                    style={{ color: "var(--muted)" }}>
-                    Pular — usar modelos stock
+                    style={{ color: "var(--muted)" }}
+                    disabled={saving}>
+                    {saving ? "Salvando..." : "Pular — usar modelos stock"}
                   </button>
                 </div>
               ) : null}
