@@ -32,6 +32,7 @@ const adminNav = [
   { href: "/admin/campanhas", label: "Campanhas", icon: <IconCampaign /> },
   { href: "/admin/custos", label: "Custos API", icon: <IconCosts /> },
   { href: "/admin/logs", label: "Logs", icon: <IconLogs /> },
+  { href: "/admin/vitrine", label: "Vitrine", icon: <span className="text-base">🖼️</span> },
   { href: "/admin/configuracoes", label: "Configurações", icon: <IconSettings /> },
 ];
 
