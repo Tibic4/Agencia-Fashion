@@ -19,8 +19,8 @@ async function getMetrics() {
     supabase.from("campaigns").select("*", { count: "exact", head: true }).eq("status", "completed").gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     supabase.from("campaigns").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
     supabase.from("api_cost_logs").select("cost_brl").gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-    supabase.from("campaigns").select("id, status, created_at, price, store_id, stores(name)").order("created_at", { ascending: false }).limit(10),
-    supabase.from("stores").select("id, name, segment_primary, onboarding_completed, created_at, plans(display_name)").order("created_at", { ascending: false }).limit(5),
+    supabase.from("campaigns").select("id, status, created_at, price, store_id, stores!campaigns_store_id_fkey(name)").order("created_at", { ascending: false }).limit(10),
+    supabase.from("stores").select("id, name, segment_primary, onboarding_completed, created_at, plans!stores_plan_id_fkey(display_name)").order("created_at", { ascending: false }).limit(5),
   ]);
 
   const apiCostBrl = costData?.reduce((sum, row) => sum + (row.cost_brl || 0), 0) ?? 0;

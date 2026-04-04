@@ -5,7 +5,7 @@ async function getStores() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("stores")
-    .select("id, clerk_user_id, name, segment_primary, onboarding_completed, created_at, plans(display_name), store_usage(campaigns_used, campaigns_limit, period_start, period_end)")
+    .select("id, clerk_user_id, name, segment_primary, onboarding_completed, created_at, plans!stores_plan_id_fkey(display_name), store_usage!store_usage_store_id_fkey(campaigns_generated, campaigns_limit, period_start, period_end)")
     .order("created_at", { ascending: false });
 
   if (error) console.error("Error fetching stores:", error);
@@ -70,7 +70,7 @@ export default async function AdminClientes() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-gray-300">
-                        {usage ? `${(usage as Record<string, number>).campaigns_used}/${(usage as Record<string, number>).campaigns_limit}` : "0/0"}
+                        {usage ? `${(usage as Record<string, number>).campaigns_generated}/${(usage as Record<string, number>).campaigns_limit}` : "0/0"}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1 text-xs ${store.onboarding_completed ? "text-emerald-400" : "text-yellow-400"}`}>
