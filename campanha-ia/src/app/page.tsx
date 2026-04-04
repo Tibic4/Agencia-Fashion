@@ -190,7 +190,7 @@ export default function Home() {
               <IconSparkles />
             </div>
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
-              Campanha <span className="gradient-text">IA</span>
+              Cria<span className="gradient-text">Look</span>
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
@@ -199,10 +199,10 @@ export default function Home() {
             <a href="#precos" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Preços</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="hidden sm:inline-flex text-sm font-medium px-4 py-2 rounded-full transition" style={{ color: 'var(--muted)' }}>
+            <Link href="/sign-in" className="hidden sm:inline-flex text-sm font-medium px-4 py-2 rounded-full transition" style={{ color: 'var(--muted)' }}>
               Entrar
             </Link>
-            <Link href="/cadastro" className="btn-primary text-sm !py-2.5 !px-5">
+            <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-5">
               Começar grátis
             </Link>
           </div>
@@ -238,7 +238,7 @@ export default function Home() {
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/cadastro" className="btn-primary text-base !py-3.5 !px-8 animate-pulse-glow">
+                <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 animate-pulse-glow">
                   <IconZap />
                   Começar grátis — 3 campanhas
                 </Link>
@@ -475,7 +475,7 @@ export default function Home() {
                   </p>
 
                   <Link
-                    href="/cadastro"
+                    href="/sign-up"
                     className="w-full text-center text-sm font-semibold py-2.5 rounded-full transition-all mb-5"
                     style={{
                       background: plan.popular ? 'white' : 'var(--gradient-brand)',
@@ -521,7 +521,7 @@ export default function Home() {
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
               Comece agora com 3 campanhas grátis. Sem cartão, sem compromisso, sem complicação.
             </p>
-            <Link href="/cadastro" className="btn-primary text-base !py-4 !px-10 animate-pulse-glow">
+            <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 animate-pulse-glow">
               <IconZap />
               Criar minha primeira campanha
               <IconArrowRight />
