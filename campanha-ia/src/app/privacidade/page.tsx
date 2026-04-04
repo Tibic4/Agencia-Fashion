@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Política de Privacidade — Campanha IA" };
+export const metadata = { title: "Política de Privacidade — CriaLook" };
 
 export default function Privacidade() {
   return (
@@ -30,7 +30,7 @@ export default function Privacidade() {
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>5. Compartilhamento</h2>
             <p>Não vendemos nem compartilhamos seus dados pessoais. Compartilhamos apenas com provedores essenciais ao serviço (Stripe, Clerk, provedores de IA).</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>6. Seus Direitos (LGPD)</h2>
-            <p>Você tem direito a: acessar, corrigir, deletar seus dados, portabilidade, revogar consentimento e solicitar informações sobre compartilhamento. Contate-nos em contato@campanha.ia.</p>
+            <p>Você tem direito a: acessar, corrigir, deletar seus dados, portabilidade, revogar consentimento e solicitar informações sobre compartilhamento. Contate-nos em contato@crialook.com.br.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>7. Cookies</h2>
             <p>Usamos cookies essenciais para funcionamento do serviço e cookies de analytics (PostHog) para melhorar a experiência. Você pode desabilitá-los nas configurações do navegador.</p>
           </div>
@@ -38,7 +38,7 @@ export default function Privacidade() {
       </main>
 
       <footer className="py-8 text-center text-xs" style={{ borderTop: "1px solid var(--border)", color: "var(--muted)" }}>
-        <div className="container">© {new Date().getFullYear()} Campanha IA.</div>
+        <div className="container">© {new Date().getFullYear()} CriaLook.</div>
       </footer>
     </div>
   );

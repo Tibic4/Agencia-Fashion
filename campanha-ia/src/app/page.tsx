@@ -281,7 +281,7 @@ export default function Home() {
                   </div>
                   <div className="flex-1 mx-4">
                     <div className="h-6 rounded-md px-3 flex items-center text-xs" style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
-                      campanha.ia/gerar
+                      crialook.com.br/gerar
                     </div>
                   </div>
                 </div>
@@ -539,7 +539,7 @@ export default function Home() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-brand)' }}>
                   <IconSparkles />
                 </div>
-                <span className="text-lg font-bold text-white">Campanha IA</span>
+                <span className="text-lg font-bold text-white">CriaLook</span>
               </div>
               <p className="text-sm leading-relaxed">
                 Transforme fotos de roupa em campanhas de marketing completas com inteligência artificial.
@@ -563,13 +563,13 @@ export default function Home() {
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Contato</h4>
               <div className="space-y-2 text-sm">
-                <a href="mailto:contato@campanha.ia" className="block hover:text-white transition">contato@campanha.ia</a>
+                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition">contato@crialook.com.br</a>
                 <Link href="/sobre" className="block hover:text-white transition">Sobre nós</Link>
               </div>
             </div>
           </div>
           <div className="pt-8 text-center text-xs" style={{ borderTop: '1px solid var(--gray-800)' }}>
-            © {new Date().getFullYear()} Campanha IA. Todos os direitos reservados.
+            © {new Date().getFullYear()} CriaLook. Todos os direitos reservados.
           </div>
         </div>
       </footer>

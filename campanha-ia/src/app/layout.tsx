@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     "Tire uma foto da sua peça, informe o preço e receba textos, criativos e estratégias de marketing prontas em 60 segundos. Feito para lojistas de moda brasileiros.",
   keywords: [
     "crialook",
-    "campanha ia",
+    "campanha moda ia",
     "marketing moda",
     "ia para lojistas",
     "criativo instagram",

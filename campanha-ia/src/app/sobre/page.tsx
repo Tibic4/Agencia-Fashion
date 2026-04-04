@@ -22,7 +22,7 @@ export default function Sobre() {
           </h1>
           <div className="space-y-6 text-base leading-relaxed" style={{ color: "var(--muted)" }}>
             <p>
-              <strong style={{ color: "var(--foreground)" }}>Campanha IA</strong> nasceu de uma dor real: lojistas de moda 
+              <strong style={{ color: "var(--foreground)" }}>CriaLook</strong> nasceu de uma dor real: lojistas de moda 
               brasileiros que precisam postar todo dia mas não têm tempo, dinheiro nem conhecimento para criar 
               campanhas profissionais.
             </p>
@@ -48,7 +48,7 @@ export default function Sobre() {
             </p>
             <h2 className="text-2xl font-bold mt-10 mb-4" style={{ color: "var(--foreground)" }}>Contato</h2>
             <p>
-              📧 <a href="mailto:contato@campanha.ia" className="gradient-text font-semibold">contato@campanha.ia</a><br/>
+              📧 <a href="mailto:contato@crialook.com.br" className="gradient-text font-semibold">contato@crialook.com.br</a><br/>
               📱 WhatsApp: (11) 99999-9999
             </p>
           </div>
@@ -56,7 +56,7 @@ export default function Sobre() {
       </main>
 
       <footer className="py-8 text-center text-xs" style={{ borderTop: "1px solid var(--border)", color: "var(--muted)" }}>
-        <div className="container">© {new Date().getFullYear()} Campanha IA. Todos os direitos reservados.</div>
+        <div className="container">© {new Date().getFullYear()} CriaLook. Todos os direitos reservados.</div>
       </footer>
     </div>
   );

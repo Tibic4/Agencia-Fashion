@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Campanha IA — Marketing de Moda com IA",
-    short_name: "Campanha IA",
+    name: "CriaLook — Marketing de Moda com IA",
+    short_name: "CriaLook",
     description: "Transforme fotos de roupa em campanhas de marketing prontas em 60 segundos",
     start_url: "/",
     display: "standalone",
