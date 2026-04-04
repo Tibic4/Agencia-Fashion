@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const IconCopy = () => (
@@ -23,7 +23,8 @@ const channels = [
   { id: "meta_ads", label: "Meta Ads", icon: "📢" },
 ];
 
-const mockTexts: Record<string, { title: string; text: string; extra?: string }> = {
+// Fallback mock data (used when no sessionStorage data)
+const fallbackTexts: Record<string, { title: string; text: string; extra?: string }> = {
   instagram_feed: {
     title: "Legenda Instagram Feed",
     text: "✨ Ela chegou pra roubar a cena!\n\nVestido floral perfeito pro verão — confortável, estiloso e com aquele caimento que valoriza qualquer corpo.\n\n💕 De R$ 129,90 por apenas R$ 89,90\n\n📲 Chama no direct ou no WhatsApp que a gente te atende!\n\n#modafeminina #vestidofloral #looknovo #fashionstyle #tendencia2026 #lookdodia #modabrasileira #estiloconfortavel",
@@ -43,14 +44,9 @@ const mockTexts: Record<string, { title: string; text: string; extra?: string }>
   },
 };
 
-const scoreData = {
-  nota_geral: 87,
-  conversao: 85,
-  clareza: 92,
-  urgencia: 78,
-  naturalidade: 90,
-  aprovacao_meta: 95,
-  nivel_risco: "baixo" as const,
+const fallbackScore = {
+  nota_geral: 87, conversao: 85, clareza: 92, urgencia: 78,
+  naturalidade: 90, aprovacao_meta: 95, nivel_risco: "baixo" as const,
   pontos_fortes: [
     "Linguagem natural e próxima do público",
     "Preço com desconto gera urgência",
@@ -66,7 +62,20 @@ const scoreData = {
 export default function ResultadoCampanha() {
   const [activeChannel, setActiveChannel] = useState("instagram_feed");
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [showScore, setShowScore] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+  const [campaignData, setCampaignData] = useState<any>(null);
+
+  // Load data from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("campaignResult");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setCampaignData(parsed.data);
+        setIsDemo(parsed.demo === true);
+      }
+    } catch {}
+  }, []);
 
   const copyText = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -74,7 +83,44 @@ export default function ResultadoCampanha() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const content = mockTexts[activeChannel];
+  // Build texts from API data or fallback
+  const getChannelContent = (channelId: string): { title: string; text: string; extra?: string } => {
+    if (campaignData?.output) {
+      const o = campaignData.output;
+      switch (channelId) {
+        case "instagram_feed":
+          return {
+            title: "Legenda Instagram Feed",
+            text: o.instagram_feed || fallbackTexts.instagram_feed.text,
+            extra: o.hashtags?.map((h: string) => `#${h}`).join(" "),
+          };
+        case "instagram_stories": {
+          const s = o.instagram_stories;
+          return {
+            title: "Roteiro Stories (3 slides)",
+            text: s ? `🎬 Slide 1: "${s.slide_1}"\n\n🎬 Slide 2: "${s.slide_2}"\n\n🎬 Slide 3: "${s.slide_3}"\n\n📲 CTA: "${s.cta_final}"` : fallbackTexts.instagram_stories.text,
+          };
+        }
+        case "whatsapp":
+          return { title: "Mensagem WhatsApp", text: o.whatsapp || fallbackTexts.whatsapp.text };
+        case "meta_ads": {
+          const m = o.meta_ads;
+          return {
+            title: "Anúncio Meta Ads",
+            text: m ? `Título: ${m.titulo}\n\nTexto principal: ${m.texto_principal}\n\nDescrição: ${m.descricao}\n\nCTA: ${m.cta_button}` : fallbackTexts.meta_ads.text,
+          };
+        }
+        default:
+          return fallbackTexts[channelId];
+      }
+    }
+    return fallbackTexts[channelId];
+  };
+
+  const scoreData = campaignData?.score || fallbackScore;
+  const content = getChannelContent(activeChannel);
+  const productName = campaignData?.vision?.produto?.nome_generico || "Vestido Floral";
+  const durationSec = campaignData?.durationMs ? Math.round(campaignData.durationMs / 1000) : 47;
 
   return (
     <div className="animate-fade-in-up">
@@ -83,10 +129,10 @@ export default function ResultadoCampanha() {
         <div>
           <div className="badge badge-brand mb-2 inline-flex text-xs">✅ Campanha gerada</div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Vestido Floral — <span className="gradient-text">R$ 89,90</span>
+            {productName} — <span className="gradient-text">Campanha</span>
           </h1>
           <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-            Gerada em 47s · Score 87/100 · 4 canais
+            Gerada em {durationSec}s · Score {scoreData.nota_geral}/100 · 4 canais{isDemo && " · 🎭 Demo"}
           </p>
         </div>
         <Link href="/gerar" className="btn-secondary text-sm !py-2">
@@ -245,7 +291,7 @@ export default function ResultadoCampanha() {
           <div className="rounded-2xl p-5" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
             <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--success)" }}>✅ Pontos fortes</h3>
             <div className="space-y-2">
-              {scoreData.pontos_fortes.map((p, i) => (
+              {scoreData.pontos_fortes.map((p: string, i: number) => (
                 <p key={i} className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>• {p}</p>
               ))}
             </div>
@@ -255,7 +301,7 @@ export default function ResultadoCampanha() {
           <div className="rounded-2xl p-5" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
             <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--warning)" }}>💡 Melhorias sugeridas</h3>
             <div className="space-y-3">
-              {scoreData.melhorias.map((m, i) => (
+              {scoreData.melhorias.map((m: { campo: string; sugestao: string }, i: number) => (
                 <div key={i}>
                   <p className="text-xs font-semibold">{m.campo}</p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{m.sugestao}</p>
