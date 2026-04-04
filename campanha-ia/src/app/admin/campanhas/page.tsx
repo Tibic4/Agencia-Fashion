@@ -4,7 +4,7 @@ async function getCampaigns() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("campaigns")
-    .select("id, status, price, category, style, created_at, processing_time_ms, store_id, stores(name)")
+    .select("id, status, price, objective, target_audience, created_at, pipeline_duration_ms, store_id, stores!campaigns_store_id_fkey(name)")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -33,7 +33,7 @@ export default async function AdminCampanhas() {
     total: campaigns.length,
     completed: campaigns.filter(c => c.status === "completed").length,
     failed: campaigns.filter(c => c.status === "failed").length,
-    avgTime: campaigns.filter(c => c.processing_time_ms).reduce((sum, c) => sum + (c.processing_time_ms || 0), 0) / (campaigns.filter(c => c.processing_time_ms).length || 1),
+    avgTime: campaigns.filter(c => c.pipeline_duration_ms).reduce((sum, c) => sum + (c.pipeline_duration_ms || 0), 0) / (campaigns.filter(c => c.pipeline_duration_ms).length || 1),
   };
 
   return (
@@ -70,8 +70,8 @@ export default async function AdminCampanhas() {
             <thead>
               <tr className="border-b border-gray-800">
                 <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Loja</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Categoria</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Estilo</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Objetivo</th>
+                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Público</th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Preço</th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tempo</th>
                 <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
@@ -89,10 +89,10 @@ export default async function AdminCampanhas() {
                 campaigns.map((c: Record<string, unknown>) => (
                   <tr key={c.id as string} className="hover:bg-gray-800/30 transition">
                     <td className="px-6 py-3 text-white font-medium">{(c.stores as Record<string, string>)?.name || "—"}</td>
-                    <td className="px-6 py-3 text-gray-400">{c.category as string || "—"}</td>
-                    <td className="px-6 py-3 text-gray-400">{c.style as string || "—"}</td>
+                    <td className="px-6 py-3 text-gray-400">{c.objective as string || "—"}</td>
+                    <td className="px-6 py-3 text-gray-400">{c.target_audience as string || "—"}</td>
                     <td className="px-6 py-3 text-gray-300">R$ {Number(c.price).toFixed(2)}</td>
-                    <td className="px-6 py-3 text-gray-400">{c.processing_time_ms ? `${(Number(c.processing_time_ms) / 1000).toFixed(1)}s` : "—"}</td>
+                    <td className="px-6 py-3 text-gray-400">{c.pipeline_duration_ms ? `${(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s` : "—"}</td>
                     <td className="px-6 py-3"><StatusBadge status={c.status as string} /></td>
                     <td className="px-6 py-3 text-gray-500 text-xs">{new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                   </tr>
