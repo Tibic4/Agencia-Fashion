@@ -31,6 +31,8 @@ export interface PipelineInput {
   storeName: string;
   targetAudience?: string;
   toneOverride?: string;
+  storeSegment?: string;
+  bodyType?: string;
 }
 
 export interface PipelineResult {
@@ -79,6 +81,8 @@ export async function runCampaignPipeline(
           mood: vision.mood,
           publicoAlvo: input.targetAudience,
           tomOverride: input.toneOverride,
+          storeSegment: input.storeSegment,
+          bodyType: input.bodyType,
         }),
       },
     ],
@@ -100,6 +104,8 @@ export async function runCampaignPipeline(
           estrategia: JSON.stringify(strategy),
           segmento: vision.segmento,
           atributos: JSON.stringify(vision.atributos_visuais),
+          storeSegment: input.storeSegment,
+          bodyType: input.bodyType,
         }),
       },
     ],

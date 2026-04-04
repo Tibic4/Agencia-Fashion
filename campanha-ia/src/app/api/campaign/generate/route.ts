@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
 import { runMockPipeline } from "@/lib/ai/mock-data";
-import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign } from "@/lib/db";
+import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel } from "@/lib/db";
 import type { PipelineStep } from "@/types";
 
 export const maxDuration = 60;
@@ -68,6 +68,15 @@ export async function POST(request: NextRequest) {
           error: `Limite de campanhas atingido (${quota.used}/${quota.limit}). Faça upgrade do plano.`,
           code: "QUOTA_EXCEEDED",
         }, { status: 429 });
+      }
+    }
+
+    // ── Buscar modelo ativo (para contexto plus size) ──
+    let activeModelBodyType: string | undefined;
+    if (store) {
+      const model = await getActiveModel(store.id);
+      if (model?.body_type) {
+        activeModelBodyType = model.body_type;
       }
     }
 
@@ -163,6 +172,8 @@ export async function POST(request: NextRequest) {
           storeName: store?.name || storeName,
           targetAudience: targetAudience || undefined,
           toneOverride: toneOverride || undefined,
+          storeSegment: store?.segment_primary || undefined,
+          bodyType: activeModelBodyType,
         },
         (step, label, progress) => {
           console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);

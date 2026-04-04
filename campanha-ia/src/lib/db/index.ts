@@ -120,6 +120,27 @@ export async function createStoreModel(input: CreateModelInput) {
   return data;
 }
 
+/**
+ * Busca o modelo ativo da loja (último criado e ativo)
+ */
+export async function getActiveModel(storeId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("store_models")
+    .select("*")
+    .eq("store_id", storeId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn(`[DB] Erro ao buscar modelo ativo: ${error.message}`);
+    return null;
+  }
+  return data;
+}
+
 // ═══════════════════════════════════════════════════════════
 // CAMPAIGNS
 // ═══════════════════════════════════════════════════════════
