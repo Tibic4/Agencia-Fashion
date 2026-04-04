@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
 import { PostHogProvider } from "@/lib/analytics/posthog";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import "./globals.css";
 
 const inter = Inter({
@@ -42,7 +43,10 @@ export default function RootLayout({
     <ClerkProvider localization={ptBR}>
       <html lang="pt-BR" className={`${inter.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
-          <PostHogProvider>{children}</PostHogProvider>
+          <PostHogProvider>
+            {children}
+            <FloatingWhatsApp />
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>
