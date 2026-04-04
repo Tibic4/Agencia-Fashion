@@ -19,9 +19,10 @@ const currentPlan = {
 };
 
 const plans = [
-  { id: "starter", name: "Starter", badge: "⭐", price: 49.9, campaigns: 15, models: 1, regen: 2, highlight: false },
-  { id: "pro", name: "Pro", badge: "🚀", price: 97, campaigns: 50, models: 2, regen: 3, highlight: true },
-  { id: "scale", name: "Scale", badge: "🏢", price: 197, campaigns: 200, models: 3, regen: 5, highlight: false },
+  { id: "starter", name: "Starter", badge: "⭐", price: 59, campaigns: 15, models: 1, regen: 2, highlight: false },
+  { id: "pro", name: "Pro", badge: "🚀", price: 129, campaigns: 40, models: 2, regen: 3, highlight: true },
+  { id: "business", name: "Business", badge: "🏢", price: 249, campaigns: 100, models: 3, regen: 5, highlight: false },
+  { id: "agencia", name: "Agência", badge: "🏆", price: 499, campaigns: 200, models: 5, regen: 10, highlight: false },
 ];
 
 const extras = [

@@ -11,38 +11,51 @@ export const preferenceClient = new Preference(client);
 export const paymentClient = new Payment(client);
 
 /**
- * Planos do CriaLook
+ * Planos do CriaLook — alinhados com tabela `plans` do Supabase
  */
 export const PLANS = {
   starter: {
     id: "starter",
     name: "Starter",
-    price: 49.9,
+    price: 59.0,
     campaigns_per_month: 15,
     features: ["15 campanhas/mês", "4 canais", "Score de qualidade"],
   },
   pro: {
     id: "pro",
     name: "Pro",
-    price: 97.0,
-    campaigns_per_month: 50,
+    price: 129.0,
+    campaigns_per_month: 40,
     features: [
-      "50 campanhas/mês",
+      "40 campanhas/mês",
       "4 canais",
       "Modelo virtual IA",
       "Score + sugestões",
       "Suporte prioritário",
     ],
   },
-  scale: {
-    id: "scale",
-    name: "Scale",
-    price: 197.0,
+  business: {
+    id: "business",
+    name: "Business",
+    price: 249.0,
+    campaigns_per_month: 100,
+    features: [
+      "100 campanhas/mês",
+      "4 canais",
+      "Modelo virtual IA",
+      "Remove background",
+      "Suporte prioritário",
+    ],
+  },
+  agencia: {
+    id: "agencia",
+    name: "Agência",
+    price: 499.0,
     campaigns_per_month: 200,
     features: [
       "200 campanhas/mês",
       "4 canais",
-      "Modelo virtual IA",
+      "Modelos virtuais ilimitados",
       "Remove background",
       "API access",
       "Suporte VIP",
