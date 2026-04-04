@@ -44,19 +44,24 @@
 
 ## 3. PAGAMENTOS
 
-### Stripe (Recorrência + Créditos)
-- **O que faz:** Assinaturas mensais, pagamentos avulsos (créditos), PIX, Customer Portal
-- **URL:** https://stripe.com
-- **Variáveis:** `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
-- **Plano:** Pay-as-you-go (2.99% + R$ 0,39 por transação)
+### Mercado Pago (Recorrência + Créditos)
+- **O que faz:** Assinaturas mensais, pagamentos avulsos (créditos), PIX nativo, Boleto, Cartão parcelado, Checkout Pro
+- **URL:** https://www.mercadopago.com.br/developers
+- **Variáveis:** `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_WEBHOOK_SECRET`
+- **Plano:** Pay-as-you-go
+  - PIX: 0,99% por transação
+  - Cartão de crédito: 4,98% por transação
+  - Boleto: R$ 3,49 por boleto pago
+- **MCP Server:** `https://mcp.mercadopago.com/mcp` (remoto, sem instalação local)
 - **Configurar:**
-  - [ ] Criar conta Stripe BR
-  - [ ] Ativar PIX nas configurações
-  - [ ] Criar 5 produtos (Grátis, Starter, Pro, Business, Agência)
-  - [ ] Criar price IDs para cada plano
-  - [ ] Criar prices avulsos (créditos extras)
-  - [ ] Configurar Customer Portal
-  - [ ] Registrar webhook endpoint
+  - [ ] Criar conta Mercado Pago Developer
+  - [ ] Criar aplicação no painel de desenvolvedores
+  - [ ] Gerar Access Token (produção)
+  - [ ] Gerar Public Key
+  - [ ] Criar 5 planos de assinatura (Grátis, Starter, Pro, Business, Agência)
+  - [ ] Configurar pagamentos avulsos (créditos extras)
+  - [ ] Configurar webhook endpoint (IPN)
+  - [ ] Configurar MCP Server no IDE
 - **Status:** ⬜ Pendente
 
 ---
@@ -161,7 +166,7 @@
 | Supabase | R$ 0 (Free) → R$ 130 (Pro) | Storage: R$ 0,13/GB |
 | Vercel | R$ 0 (Hobby) → R$ 100 (Pro) | Bandwidth: R$ 0,20/GB |
 | Clerk | R$ 0 (Free) | R$ 0,02/MAU acima de 10K |
-| Stripe | R$ 0 | 2,99% + R$ 0,39/transação |
+| Mercado Pago | R$ 0 | PIX 0,99% / Cartão 4,98% / Boleto R$ 3,49 |
 | Anthropic | R$ 0 | ~R$ 0,29/campanha |
 | OpenAI | R$ 0 | ~R$ 0,23/imagem lifestyle |
 | Fashn.ai | R$ 0 | ~R$ 0,43/try-on |
