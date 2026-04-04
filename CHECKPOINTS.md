@@ -1,7 +1,7 @@
 # 📋 CAMPANHA IA — Checkpoints do Projeto
 
 > Marcar com `[x]` conforme cada item for concluído.
-> Última atualização: 2026-04-04
+> Última atualização: 2026-04-04 (DB completo + Mercado Pago)
 
 ---
 
@@ -14,21 +14,27 @@
 - [ ] Criar estrutura de pastas (src/app, lib, components)
 - [ ] Configurar ESLint + Prettier
 
-## FASE 1 — Banco de Dados (Supabase)
-- [ ] Migration: tabela `plans`
-- [ ] Migration: tabela `stores`
-- [ ] Migration: tabela `store_models`
-- [ ] Migration: tabela `campaigns`
-- [ ] Migration: tabela `campaign_outputs`
-- [ ] Migration: tabela `campaign_scores`
-- [ ] Migration: tabela `store_usage`
-- [ ] Migration: tabela `api_cost_logs`
-- [ ] Migration: tabela `admin_settings`
-- [ ] Migration: tabela `credit_purchases`
-- [ ] Configurar RLS em todas as tabelas
-- [ ] Criar Storage Buckets (product-photos, generated-images, store-logos, model-previews)
-- [ ] Seed: dados iniciais dos planos
-- [ ] Seed: admin_settings padrão
+## FASE 1 — Banco de Dados (Supabase) ✅
+- [x] Migration: tabela `plans`
+- [x] Migration: tabela `stores`
+- [x] Migration: tabela `store_models`
+- [x] Migration: tabela `campaigns`
+- [x] Migration: tabela `campaign_outputs`
+- [x] Migration: tabela `campaign_scores`
+- [x] Migration: tabela `store_usage`
+- [x] Migration: tabela `api_cost_logs`
+- [x] Migration: tabela `admin_settings`
+- [x] Migration: tabela `credit_purchases`
+- [x] Configurar RLS em todas as tabelas (0 alertas segurança)
+- [x] Criar Storage Buckets (product-photos, generated-images, store-logos, model-previews)
+- [x] Seed: dados iniciais dos planos (5 planos)
+- [x] Seed: admin_settings padrão (9 configs)
+- [x] Renomear colunas Stripe → Mercado Pago
+- [x] Triggers `updated_at` (stores, campaigns)
+- [x] Funções helper (`can_generate_campaign`, `increment_campaign_usage`)
+- [x] Views (`v_store_dashboard`, `v_admin_metrics`)
+- [x] Storage Policies (upload, view, delete por bucket)
+- [x] TypeScript types gerados (`database.types.ts`)
 
 ## FASE 2 — Auth (Clerk)
 - [ ] Instalar @clerk/nextjs
@@ -83,10 +89,9 @@
 - [ ] Sistema de alertas Meta Ads
 - [ ] Regeneração parcial (copy ou imagem)
 
-## FASE 7 — Processamento de Imagem
-- [ ] Integração Fashn.ai (try-on)
+## FASE 7 — Processamento de Imagem (Moda)
+- [ ] Integração Fashn.ai (try-on) ⭐ CORE
 - [ ] Integração Stability AI (remoção de fundo)
-- [ ] Integração DALL-E 3 (lifestyle)
 - [ ] Composição de criativo Feed 1:1 (Konva.js)
 - [ ] Composição de criativo Stories 9:16 (Konva.js)
 - [ ] Overlay de texto + preço + logo nos criativos
@@ -98,14 +103,15 @@
 - [ ] Gestão de múltiplos modelos (planos Pro+)
 - [ ] Preview do modelo na tela de geração
 
-## FASE 9 — Pagamentos (Stripe)
-- [ ] Criar produtos e preços no Stripe
-- [ ] Checkout para upgrade de plano
-- [ ] Checkout para créditos extras
-- [ ] Webhook Stripe → atualizar plano/créditos
-- [ ] Customer Portal embed (`/plano`)
-- [ ] Verificação de limites em cada geração
+## FASE 9 — Pagamentos (Mercado Pago)
+- [ ] Criar planos de assinatura no Mercado Pago
+- [ ] Checkout Pro para upgrade de plano
+- [ ] Pagamento avulso para créditos extras (PIX/Cartão)
+- [ ] Webhook IPN Mercado Pago → atualizar plano/créditos
+- [ ] Tela de gestão de plano (`/plano`)
+- [x] Verificação de limites em cada geração (função `can_generate_campaign`)
 - [ ] Tela de bloqueio suave (cota esgotada)
+- [ ] Configurar MCP Server Mercado Pago no IDE
 
 ## FASE 10 — Painel do Lojista
 - [ ] Histórico de campanhas com filtros

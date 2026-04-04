@@ -1,5 +1,6 @@
 # 🔑 CAMPANHA IA — APIs e Plataformas Necessárias
 
+> **Foco: MODA** (feminina, masculina, infantil, calçados, acessórios)
 > Lista de TODAS as APIs, serviços e plataformas que o projeto utiliza.
 > Para cada uma: o que faz, onde criar conta, e o que configurar.
 
@@ -29,7 +30,7 @@
 
 ### Clerk (Auth)
 - **O que faz:** Login (Google, Email, WhatsApp), gestão de sessões, roles (admin), webhooks
-- **URL:** https://clerk.com
+- **URL:** httpsclerk.com://
 - **Variáveis:** `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`
 - **Plano:** Free (10.000 MAU) → Pro quando necessário
 - **Configurar:**
@@ -69,11 +70,11 @@
 ## 4. INTELIGÊNCIA ARTIFICIAL (LLM)
 
 ### Anthropic API (Pipeline de texto)
-- **O que faz:** Vision Analyzer, Estrategista, Copywriter, Refinador, Scorer
+- **O que faz:** Vision Analyzer, Estrategista, Copywriter, Refinador, Scorer — especializado em moda
 - **URL:** https://console.anthropic.com
 - **Variáveis:** `ANTHROPIC_API_KEY`
 - **Modelos usados:**
-  - `claude-sonnet-4-20250514` → Vision, Estrategista, Copywriter
+  - `claude-sonnet-4-20250514` → Vision (análise de peça de roupa), Estrategista, Copywriter
   - `claude-haiku-4-20250414` → Refinador, Scorer
 - **Custo:** ~R$ 0,29/campanha (apenas LLM)
 - **Rate limits:** 1000 req/min (Tier 1)
@@ -83,34 +84,23 @@
   - [ ] Verificar tier e rate limits
 - **Status:** ⬜ Pendente
 
-### OpenAI API (Geração de imagem)
-- **O que faz:** Gerar imagens lifestyle (DALL-E 3) para nichos não-moda
-- **URL:** https://platform.openai.com
-- **Variáveis:** `OPENAI_API_KEY`
-- **Modelo usado:** `dall-e-3`
-- **Custo:** ~R$ 0,23/imagem (1024×1024)
-- **Configurar:**
-  - [ ] Criar conta com billing ativo
-  - [ ] Gerar API key
-- **Status:** ⬜ Pendente
-
 ---
 
-## 5. PROCESSAMENTO DE IMAGEM
+## 5. PROCESSAMENTO DE IMAGEM (MODA)
 
-### Fashn.ai (Virtual Try-On)
-- **O que faz:** Vestir roupas em modelos virtuais (moda)
+### Fashn.ai (Virtual Try-On) ⭐ CORE
+- **O que faz:** Vestir roupas/acessórios em modelos virtuais — funcionalidade central do produto
 - **URL:** https://fashn.ai
 - **Variáveis:** `FASHN_API_KEY`, `FASHN_API_URL`
 - **Endpoints usados:**
-  - `Model Create` → criar modelo virtual (4 samples)
-  - `Product to Model` → vestir roupa na modelo
+  - `Model Create` → criar modelo virtual personalizada (4 samples)
+  - `Product to Model` → vestir peça na modelo
 - **Custo:** ~R$ 0,43/try-on, ~R$ 1,72/model create
 - **Configurar:**
   - [ ] Criar conta
   - [ ] Ativar billing
   - [ ] Gerar API key
-  - [ ] Testar endpoint com foto de produto
+  - [ ] Testar endpoint com foto de produto de moda
 - **Status:** ⬜ Pendente
 - **Fallback:** Kolors Virtual Try-On ou IDM-VTON (self-hosted)
 
@@ -168,10 +158,9 @@
 | Clerk | R$ 0 (Free) | R$ 0,02/MAU acima de 10K |
 | Mercado Pago | R$ 0 | PIX 0,99% / Cartão 4,98% / Boleto R$ 3,49 |
 | Anthropic | R$ 0 | ~R$ 0,29/campanha |
-| OpenAI | R$ 0 | ~R$ 0,23/imagem lifestyle |
-| Fashn.ai | R$ 0 | ~R$ 0,43/try-on |
+| Fashn.ai | R$ 0 | ~R$ 0,43/try-on + R$ 1,72/model |
 | Stability AI | R$ 0 | ~R$ 0,05/remoção fundo |
 | Sentry | R$ 0 (Dev) | — |
 | PostHog | R$ 0 (Free) | — |
 | Inngest | R$ 0 (Free) | — |
-| **TOTAL fixo MVP** | **R$ 0/mês** | **~R$ 0,69/campanha** |
+| **TOTAL fixo MVP** | **R$ 0/mês** | **~R$ 0,77/campanha (com try-on)** |

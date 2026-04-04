@@ -130,7 +130,6 @@ export type Database = {
           id: string
           instagram_feed: string | null
           instagram_stories: Json | null
-          lifestyle_image_url: string | null
           meta_ads: Json | null
           model_image_url: string | null
           product_image_clean_url: string | null
@@ -152,7 +151,6 @@ export type Database = {
           id?: string
           instagram_feed?: string | null
           instagram_stories?: Json | null
-          lifestyle_image_url?: string | null
           meta_ads?: Json | null
           model_image_url?: string | null
           product_image_clean_url?: string | null
@@ -174,7 +172,6 @@ export type Database = {
           id?: string
           instagram_feed?: string | null
           instagram_stories?: Json | null
-          lifestyle_image_url?: string | null
           meta_ads?: Json | null
           model_image_url?: string | null
           product_image_clean_url?: string | null
