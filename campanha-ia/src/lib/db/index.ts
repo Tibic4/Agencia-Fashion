@@ -344,7 +344,7 @@ export async function logApiCost(input: LogApiCostInput) {
     output_tokens: input.outputTokens || null,
     cost_usd: input.costUsd,
     cost_brl: input.costBrl,
-    exchange_rate: 5.5,
+    exchange_rate: parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.5"),
     response_time_ms: input.responseTimeMs || null,
     status_code: input.statusCode || null,
     is_error: input.isError || false,

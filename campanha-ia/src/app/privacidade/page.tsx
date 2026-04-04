@@ -9,7 +9,7 @@ export default function Privacidade() {
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--gradient-brand)", color: "white" }}>✨</div>
-            <span className="text-lg font-bold">Campanha <span className="gradient-text">IA</span></span>
+            <span className="text-lg font-bold">Cria<span className="gradient-text">Look</span></span>
           </Link>
         </div>
       </header>
@@ -20,7 +20,7 @@ export default function Privacidade() {
           <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>Última atualização: Abril 2026 · Conforme LGPD (Lei 13.709/2018)</p>
           <div className="prose space-y-4 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>1. Dados Coletados</h2>
-            <p>Coletamos: nome, email, dados da loja, fotos de produtos enviadas, e dados de uso do serviço. Dados de pagamento são processados diretamente pelo Stripe e não armazenados por nós.</p>
+            <p>Coletamos: nome, email, dados da loja, fotos de produtos enviadas, e dados de uso do serviço. Dados de pagamento são processados diretamente pelo Mercado Pago e não armazenados por nós.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>2. Finalidade</h2>
             <p>Seus dados são usados exclusivamente para: prestar o serviço de geração de campanhas, personalizar resultados, processar pagamentos e melhorar o produto.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>3. Processamento de Imagens</h2>
@@ -28,7 +28,7 @@ export default function Privacidade() {
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>4. Armazenamento</h2>
             <p>Seus dados são armazenados em servidores seguros (Supabase/AWS). Imagens são retidas conforme o período do seu plano e deletadas após o cancelamento.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>5. Compartilhamento</h2>
-            <p>Não vendemos nem compartilhamos seus dados pessoais. Compartilhamos apenas com provedores essenciais ao serviço (Stripe, Clerk, provedores de IA).</p>
+            <p>Não vendemos nem compartilhamos seus dados pessoais. Compartilhamos apenas com provedores essenciais ao serviço (Mercado Pago, Clerk, provedores de IA).</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>6. Seus Direitos (LGPD)</h2>
             <p>Você tem direito a: acessar, corrigir, deletar seus dados, portabilidade, revogar consentimento e solicitar informações sobre compartilhamento. Contate-nos em contato@crialook.com.br.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>7. Cookies</h2>

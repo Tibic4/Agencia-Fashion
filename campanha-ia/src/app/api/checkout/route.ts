@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/checkout
  * 
- * Body: { planId: "starter" | "pro" | "scale" }
+ * Body: { planId: "starter" | "pro" | "business" | "agencia" }
  * 
  * Cria uma preferência de checkout no Mercado Pago e retorna a URL de pagamento.
  * Usa Clerk para obter userId e email reais da sessão.

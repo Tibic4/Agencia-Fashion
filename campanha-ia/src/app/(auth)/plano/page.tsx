@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 
-const currentPlan = {
-  name: "Grátis",
-  badge: "🆓",
-  campaigns_used: 2,
-  campaigns_limit: 3,
-  models_used: 0,
-  models_limit: 0,
-  regen_used: 0,
-  regen_limit: 0,
-  next_renewal: "02/05/2026",
-};
+interface StoreUsage {
+  campaigns_generated: number;
+  campaigns_limit: number;
+}
+
+interface StoreData {
+  id: string;
+  name: string;
+  plan_id: string | null;
+}
 
 const plans = [
   { id: "starter", name: "Starter", badge: "⭐", price: 59, campaigns: 15, models: 1, regen: 2, highlight: false },
@@ -35,19 +34,49 @@ const extras = [
 export default function Plano() {
   const [loading, setLoading] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [store, setStore] = useState<StoreData | null>(null);
+  const [usage, setUsage] = useState<StoreUsage | null>(null);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  // Ler status da URL (callback do Mercado Pago)
-  if (typeof window !== "undefined") {
+  // Fix #2: Read URL params inside useEffect (not during render)
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
-    if (status === "approved" && !statusMsg) {
+    if (status === "approved") {
       setStatusMsg("✅ Pagamento aprovado! Seu plano será atualizado em instantes.");
-    } else if (status === "rejected" && !statusMsg) {
+    } else if (status === "rejected") {
       setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
-    } else if (status === "pending" && !statusMsg) {
+    } else if (status === "pending") {
       setStatusMsg("⏳ Pagamento pendente (PIX/Boleto). Atualizaremos assim que confirmar.");
     }
-  }
+  }, []);
+
+  // Fix #3: Fetch real store + usage data from API
+  useEffect(() => {
+    async function loadStoreData() {
+      try {
+        const [storeRes, usageRes] = await Promise.all([
+          fetch("/api/store"),
+          fetch("/api/store/usage"),
+        ]);
+
+        if (storeRes.ok) {
+          const storeData = await storeRes.json();
+          setStore(storeData.data);
+        }
+
+        if (usageRes.ok) {
+          const usageData = await usageRes.json();
+          setUsage(usageData.data);
+        }
+      } catch {
+        console.error("[Plano] Erro ao carregar dados da loja");
+      } finally {
+        setDataLoading(false);
+      }
+    }
+    loadStoreData();
+  }, []);
 
   const handleCheckout = async (planId: string) => {
     setLoading(planId);
@@ -74,7 +103,18 @@ export default function Plano() {
     }
   };
 
-  const usagePercent = (currentPlan.campaigns_used / currentPlan.campaigns_limit) * 100;
+  const campaignsUsed = usage?.campaigns_generated ?? 0;
+  const campaignsLimit = usage?.campaigns_limit ?? 3;
+  const usagePercent = campaignsLimit > 0 ? (campaignsUsed / campaignsLimit) * 100 : 0;
+
+  // Detect current plan name from store data
+  const currentPlanName = store?.plan_id
+    ? plans.find((p) => store.plan_id?.includes(p.id))?.name || "Grátis"
+    : "Grátis";
+
+  const nextRenewal = new Date();
+  nextRenewal.setMonth(nextRenewal.getMonth() + 1, 1);
+  const renewalStr = nextRenewal.toLocaleDateString("pt-BR");
 
   return (
     <div className="animate-fade-in-up">
@@ -99,10 +139,10 @@ export default function Plano() {
       <div className="rounded-2xl p-6 mb-8" style={{ background: "var(--gradient-card)", border: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{currentPlan.badge}</span>
+            <span className="text-3xl">{currentPlanName === "Grátis" ? "🆓" : plans.find((p) => p.name === currentPlanName)?.badge || "⭐"}</span>
             <div>
-              <h2 className="text-xl font-bold">Plano {currentPlan.name}</h2>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>Renova em {currentPlan.next_renewal}</p>
+              <h2 className="text-xl font-bold">Plano {currentPlanName}</h2>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>Renova em {renewalStr}</p>
             </div>
           </div>
         </div>
@@ -112,16 +152,18 @@ export default function Plano() {
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
               <span style={{ color: "var(--muted)" }}>Campanhas</span>
-              <span className="font-bold">{currentPlan.campaigns_used}/{currentPlan.campaigns_limit}</span>
+              <span className="font-bold">
+                {dataLoading ? "..." : `${campaignsUsed}/${campaignsLimit}`}
+              </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full" style={{ width: `${usagePercent}%`, background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${usagePercent}%`, background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)" }} />
             </div>
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
               <span style={{ color: "var(--muted)" }}>Modelos</span>
-              <span className="font-bold">{currentPlan.models_used}/{currentPlan.models_limit || "—"}</span>
+              <span className="font-bold">—</span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
               <div className="h-full rounded-full" style={{ width: "0%", background: "var(--gradient-brand)" }} />
@@ -130,7 +172,7 @@ export default function Plano() {
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
               <span style={{ color: "var(--muted)" }}>Regenerações</span>
-              <span className="font-bold">{currentPlan.regen_used}/{currentPlan.regen_limit || "—"}</span>
+              <span className="font-bold">—</span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
               <div className="h-full rounded-full" style={{ width: "0%", background: "var(--gradient-brand)" }} />
@@ -141,7 +183,7 @@ export default function Plano() {
 
       {/* Upgrade options */}
       <h3 className="text-lg font-bold mb-4">Fazer upgrade</h3>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {plans.map((plan) => (
           <div key={plan.name} className="rounded-2xl p-5 transition-all hover:-translate-y-1 flex flex-col"
             style={{
@@ -178,15 +220,18 @@ export default function Plano() {
         ))}
       </div>
 
-      {/* Credits */}
+      {/* Credits - Fix #15: disabled with "Em breve" tooltip */}
       <h3 className="text-lg font-bold mb-4">Créditos avulsos</h3>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {extras.map((extra) => (
-          <button key={extra.label} className="p-4 rounded-xl text-left transition-all hover:-translate-y-0.5"
+          <button key={extra.label}
+            disabled
+            title="Em breve"
+            className="p-4 rounded-xl text-left transition-all opacity-60 cursor-not-allowed relative"
             style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
             <p className="text-sm font-semibold">{extra.label}</p>
             <p className="text-lg font-black gradient-text mt-1">{extra.price}</p>
-            <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>Pagamento único</p>
+            <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>Em breve</p>
           </button>
         ))}
       </div>
