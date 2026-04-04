@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { createCheckoutPreference, type PlanId } from "@/lib/payments/mercadopago";
+import { getStoreByClerkId } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +11,16 @@ export const dynamic = "force-dynamic";
  * Body: { planId: "starter" | "pro" | "scale" }
  * 
  * Cria uma preferência de checkout no Mercado Pago e retorna a URL de pagamento.
+ * Usa Clerk para obter userId e email reais da sessão.
  */
 export async function POST(request: NextRequest) {
   try {
+    // Autenticação via Clerk
+    const session = await auth();
+    if (!session.userId) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { planId } = body;
 
@@ -22,9 +31,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: quando Clerk estiver configurado, pegar userId e email reais
-    const userId = body.userId || "demo-user";
-    const userEmail = body.userEmail || "demo@crialook.com.br";
+    // Buscar loja do usuário
+    const store = await getStoreByClerkId(session.userId);
+    if (!store) {
+      return NextResponse.json(
+        { error: "Complete o onboarding antes de assinar um plano", code: "NO_STORE" },
+        { status: 400 }
+      );
+    }
+
+    // Buscar email do Clerk (via sessionClaims)
+    const userEmail = (session.sessionClaims as Record<string, unknown>)?.email as string || `${session.userId}@crialook.app`;
 
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
       // Demo mode — retorna URL fake
@@ -40,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const result = await createCheckoutPreference({
       planId: planId as PlanId,
-      userId,
+      userId: store.id, // Usar store.id como referência no external_reference
       userEmail,
     });
 
@@ -53,13 +70,14 @@ export async function POST(request: NextRequest) {
         sandboxUrl: result.sandboxInitPoint,
       },
     });
-  } catch (error: any) {
-    console.error("[API:checkout] Error:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("[API:checkout] Error:", message);
     return NextResponse.json(
       {
         error: "Erro ao criar checkout",
         code: "CHECKOUT_ERROR",
-        details: process.env.NODE_ENV === "development" ? error.message : undefined,
+        details: process.env.NODE_ENV === "development" ? message : undefined,
       },
       { status: 500 }
     );
