@@ -41,7 +41,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
   const { data: freePlan } = await supabase
     .from("plans")
     .select("id, campaigns_per_month")
-    .eq("name", "free")
+    .eq("name", "gratis")
     .single();
 
   const { data: store, error } = await supabase
