@@ -5,14 +5,14 @@
 
 ---
 
-## FASE 0 — Setup Inicial
-- [ ] Criar projeto Next.js 14 (App Router)
-- [ ] Configurar Tailwind CSS v4
+## FASE 0 — Setup Inicial ✅
+- [x] Criar projeto Next.js 16 (App Router)
+- [x] Configurar Tailwind CSS v4
 - [ ] Instalar shadcn/ui
-- [ ] Configurar Supabase SDK
-- [ ] Configurar variáveis de ambiente (.env.local)
-- [ ] Criar estrutura de pastas (src/app, lib, components)
-- [ ] Configurar ESLint + Prettier
+- [x] Configurar Supabase SDK (client, server, admin)
+- [x] Configurar variáveis de ambiente (.env.local)
+- [x] Criar estrutura de pastas (src/app, lib, components)
+- [x] Configurar ESLint
 
 ## FASE 1 — Banco de Dados (Supabase) ✅
 - [x] Migration: tabela `plans`
@@ -36,12 +36,12 @@
 - [x] Storage Policies (upload, view, delete por bucket)
 - [x] TypeScript types gerados (`database.types.ts`)
 
-## FASE 2 — Auth (Clerk)
-- [ ] Instalar @clerk/nextjs
-- [ ] Configurar middleware de auth
-- [ ] Criar pages de sign-in e sign-up
+## FASE 2 — Auth (Clerk) 🔄
+- [x] Instalar @clerk/nextjs + @clerk/localizations
+- [x] Configurar middleware de auth (rotas protegidas)
+- [x] Criar pages de sign-in e sign-up (dark theme)
 - [ ] Configurar webhook Clerk → Supabase (criar store)
-- [ ] Proteger rotas autenticadas
+- [x] Proteger rotas autenticadas
 - [ ] Configurar role admin
 
 ## FASE 3 — Landing Page
