@@ -178,7 +178,9 @@ export default function ResultadoCampanha() {
                   {copiedField === activeChannel ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
                 </button>
                 <button
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                  disabled
+                  title="Em breve"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed"
                   style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}
                 >
                   <IconRefresh /> Regerar
@@ -207,17 +209,19 @@ export default function ResultadoCampanha() {
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <h3 className="text-sm font-semibold">Criativo gerado</h3>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
-                <IconDownload /> Baixar PNG
+              <button disabled title="Em breve" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
+                <IconDownload /> Em breve
               </button>
             </div>
             <div className="aspect-square max-h-96 flex items-center justify-center" style={{ background: "var(--gradient-brand-soft)" }}>
               <div className="text-center p-8">
                 <div className="text-6xl mb-4">👗</div>
-                <p className="text-lg font-bold gradient-text">Vestido Floral</p>
-                <p className="text-2xl font-black mt-2">R$ 89,90</p>
+                <p className="text-lg font-bold gradient-text">{productName}</p>
+                <p className="text-2xl font-black mt-2">
+                  {campaignData?.vision?.produto ? `R$ ${campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0]?.replace('R$ ', '') || '—'}` : 'R$ —'}
+                </p>
                 <p className="text-xs mt-4" style={{ color: "var(--muted)" }}>
-                  Preview do criativo com modelo virtual
+                  Criativo visual com modelo virtual — em breve
                 </p>
               </div>
             </div>
