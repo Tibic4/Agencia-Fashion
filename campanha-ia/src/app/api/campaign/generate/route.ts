@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
 import { runMockPipeline } from "@/lib/ai/mock-data";
 import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { PipelineStep } from "@/types";
 
 export const maxDuration = 60;
@@ -27,6 +28,19 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     const clerkUserId = session.userId;
+
+    // ── Rate limit por IP (anti-abuso) ──
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || request.headers.get("x-real-ip")
+      || "unknown";
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      const retryMin = Math.ceil((rateCheck.retryAfterMs || 60000) / 60000);
+      return NextResponse.json({
+        error: `Muitas gerações recentes. Tente novamente em ${retryMin} minuto${retryMin > 1 ? "s" : ""}.`,
+        code: "RATE_LIMITED",
+      }, { status: 429 });
+    }
 
     // Parse FormData
     const formData = await request.formData();
