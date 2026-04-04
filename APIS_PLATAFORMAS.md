@@ -122,6 +122,17 @@
 - **Status:** 🚫 Cancelado/Não será usado
 - **Fallback:** fal.ai ou remove.bg
 
+### fal.ai (Virtual Try-On fallback)
+- **O que faz:** Try-on virtual usando IDM-VTON (open source). Fallback do Fashn.ai.
+- **URL:** https://fal.ai
+- **Variáveis:** `FAL_KEY`
+- **Endpoint usado:** `fal-ai/idm-vton`
+- **Custo:** ~R$ 0,15-0,25/imagem (mais barato que Fashn.ai)
+- **Configurar:**
+  - [x] Criar conta
+  - [x] Gerar API key
+- **Status:** ✅ Configurado
+
 ---
 
 ## 6. MONITORAMENTO

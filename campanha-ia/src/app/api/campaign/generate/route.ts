@@ -143,48 +143,97 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ── VIRTUAL TRY-ON (Fashn.ai) ──
+    // ── VIRTUAL TRY-ON (Fashn.ai → fal.ai → foto original) ──
     let tryOnImageUrl: string | null = null;
-    if (useModel && store && process.env.FASHN_API_KEY) {
+    let tryOnProvider: string | null = null;
+    if (useModel && store) {
       try {
         const model = await getActiveModel(store.id);
-        // Precisa de preview_url (foto do modelo) e da foto do produto já uploaded
         const modelImageUrl = model?.preview_url || null;
-        const productUrl = campaignRecord ? (
-          // Usa a URL do produto que acabou de subir
-          (() => {
-            try {
-              const { createAdminClient } = require("@/lib/supabase/admin");
-              const supabase = createAdminClient();
-              const { data } = supabase.storage.from("product-photos").getPublicUrl(
-                `campaigns/${store.id}/${campaignRecord.id}.jpg`
-              );
-              return data?.publicUrl;
-            } catch { return null; }
-          })()
-        ) : null;
+
+        // Obter URL pública do produto
+        let productUrl: string | null = null;
+        if (campaignRecord) {
+          try {
+            const { createAdminClient } = await import("@/lib/supabase/admin");
+            const supabase = createAdminClient();
+            const { data } = supabase.storage.from("product-photos").getPublicUrl(
+              campaignRecord.product_photo_storage_path || `campaigns/${store.id}/${campaignRecord.id}.jpg`
+            );
+            productUrl = data?.publicUrl || null;
+          } catch { /* ignore */ }
+        }
 
         if (modelImageUrl && productUrl) {
-          const { tryOnProduct } = await import("@/lib/fashn/client");
-          console.log("[API:campaign] 👗 Iniciando Virtual Try-On...");
-          const tryOnResult = await tryOnProduct({
-            garmentImageUrl: productUrl,
-            modelImageUrl: modelImageUrl,
-            category: "tops", // TODO: detect from vision analysis
-          });
+          // 1️⃣ Tentar Fashn.ai primeiro (melhor qualidade)
+          if (process.env.FASHN_API_KEY) {
+            try {
+              const { tryOnProduct } = await import("@/lib/fashn/client");
+              console.log("[TryOn] 👗 Tentando Fashn.ai...");
+              const result = await tryOnProduct({
+                garmentImageUrl: productUrl,
+                modelImageUrl,
+                category: "tops",
+              });
+              if (result.status === "completed" && result.outputUrl) {
+                tryOnImageUrl = result.outputUrl;
+                tryOnProvider = "fashn.ai";
+                console.log("[TryOn] ✅ Fashn.ai sucesso");
+              }
+            } catch (e) {
+              console.warn("[TryOn] Fashn.ai falhou:", e);
+            }
+          }
 
-          if (tryOnResult.status === "completed" && tryOnResult.outputUrl) {
-            tryOnImageUrl = tryOnResult.outputUrl;
-            console.log("[API:campaign] ✅ Try-On concluído:", tryOnImageUrl);
-          } else {
-            console.warn("[API:campaign] Try-On falhou ou timeout, usando foto original");
+          // 2️⃣ Fallback: fal.ai IDM-VTON (mais barato)
+          if (!tryOnImageUrl && process.env.FAL_KEY) {
+            try {
+              const { falTryOn } = await import("@/lib/fal/client");
+              console.log("[TryOn] 🔄 Fallback fal.ai IDM-VTON...");
+              const result = await falTryOn({
+                garmentImageUrl: productUrl,
+                modelImageUrl,
+                description: "Fashion garment for virtual try-on",
+              });
+              if (result.status === "completed" && result.outputUrl) {
+                tryOnImageUrl = result.outputUrl;
+                tryOnProvider = "fal.ai";
+                console.log("[TryOn] ✅ fal.ai sucesso");
+              }
+            } catch (e) {
+              console.warn("[TryOn] fal.ai falhou:", e);
+            }
+          }
+
+          // 📊 Registrar custo do try-on (se usou algum provider)
+          if (tryOnProvider && store) {
+            try {
+              const { createAdminClient } = await import("@/lib/supabase/admin");
+              const supabase = createAdminClient();
+              const costUsd = tryOnProvider === "fashn.ai" ? 0.075 : 0.035;
+              const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+              await supabase.from("api_cost_logs").insert({
+                store_id: store.id,
+                campaign_id: campaignRecord?.id || null,
+                provider: tryOnProvider,
+                model_used: tryOnProvider === "fashn.ai" ? "fashn-tryon" : "idm-vton",
+                action: "virtual_try_on",
+                cost_usd: costUsd,
+                cost_brl: costUsd * exchangeRate,
+              });
+            } catch (costErr) {
+              console.warn("[TryOn] Falha ao registrar custo:", costErr);
+            }
+          }
+
+          if (!tryOnImageUrl) {
+            console.log("[TryOn] Nenhum provider disponível, usando foto original");
           }
         } else {
-          console.log("[API:campaign] Modelo sem preview_url, pulando try-on");
+          console.log("[TryOn] Modelo sem preview_url ou sem URL do produto");
         }
       } catch (tryOnErr) {
-        console.warn("[API:campaign] Try-On error (não fatal):", tryOnErr);
-        // Não é erro fatal - segue com foto original
+        console.warn("[TryOn] Erro geral (não fatal):", tryOnErr);
       }
     }
 
