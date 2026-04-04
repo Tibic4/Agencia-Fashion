@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const skinTones = [
   { value: "branca", label: "Clara", color: "#F5D0B5" },
@@ -43,7 +43,78 @@ export default function ModeloVirtual() {
   const [style, setStyle] = useState("casual_natural");
   const [age, setAge] = useState("adulta_26_35");
   const [name, setName] = useState("");
-  const [hasModel, setHasModel] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreview, setPhotoPreview] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []).slice(0, 4);
+    setPhotos(files);
+    setPhotoPreview(files.map((f) => URL.createObjectURL(f)));
+  }
+
+  function removePhoto(i: number) {
+    setPhotos((prev) => prev.filter((_, idx) => idx !== i));
+    setPhotoPreview((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  async function handleCreate() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("skinTone", skin);
+      formData.append("hairStyle", hair);
+      formData.append("bodyType", body);
+      formData.append("style", style);
+      formData.append("ageRange", age);
+      formData.append("name", name || "Modelo");
+
+      photos.forEach((photo, i) => {
+        formData.append(`photo_${i}`, photo);
+      });
+
+      const res = await fetch("/api/model/create", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Erro ao criar modelo");
+      }
+
+      setSuccess(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="animate-fade-in-up flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <div className="text-7xl mb-6">✅</div>
+          <h2 className="text-2xl font-bold mb-2">Modelo criada!</h2>
+          <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
+            {name || "Sua modelo"} está pronta. Agora quando gerar uma campanha com &quot;Usar Modelo Virtual&quot;
+            ativado, a roupa será vestida nela automaticamente.
+          </p>
+          <button className="btn-primary" onClick={() => setSuccess(false)}>
+            Criar outra modelo
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in-up">
@@ -178,9 +249,75 @@ export default function ModeloVirtual() {
             />
           </div>
 
+          {/* Photo upload */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Fotos de referência <span style={{ color: "var(--muted)" }}>(opcional, até 4)</span>
+            </label>
+            <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
+              Suba fotos de corpo inteiro da pessoa que será a modelo. Isso melhora muito o resultado do try-on.
+            </p>
+
+            {photoPreview.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {photoPreview.map((url, i) => (
+                  <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                    <img src={url} alt={`Ref ${i + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => removePhoto(i)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                      style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotos}
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="w-full p-3 rounded-xl text-sm font-medium transition-all"
+              style={{
+                background: "var(--surface)",
+                border: "1px dashed var(--border)",
+                color: "var(--muted)",
+              }}
+            >
+              📸 {photos.length > 0 ? `${photos.length} foto${photos.length > 1 ? "s" : ""} selecionada${photos.length > 1 ? "s" : ""}` : "Clique para adicionar fotos"}
+            </button>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
+              ❌ {error}
+            </div>
+          )}
+
           {/* Generate */}
-          <button className="btn-primary w-full !py-3.5">
-            ✨ Criar modelo virtual
+          <button
+            className="btn-primary w-full !py-3.5"
+            onClick={handleCreate}
+            disabled={loading}
+            style={{ opacity: loading ? 0.7 : 1 }}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                Criando modelo...
+              </span>
+            ) : (
+              "✨ Criar modelo virtual"
+            )}
           </button>
           <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
             Consome 1 criação de modelo do seu plano · Leva ~30 segundos
@@ -205,6 +342,11 @@ export default function ModeloVirtual() {
                   <span className="badge badge-brand text-xs">{styles.find(s => s.value === style)?.label}</span>
                   <span className="badge badge-brand text-xs">{ages.find(a => a.value === age)?.label}</span>
                 </div>
+                {photos.length > 0 && (
+                  <p className="text-xs mt-4" style={{ color: "var(--brand-500)" }}>
+                    📸 {photos.length} foto{photos.length > 1 ? "s" : ""} de referência
+                  </p>
+                )}
                 <p className="text-xs mt-6" style={{ color: "var(--muted)" }}>
                   A modelo será gerada pela IA após clicar em &quot;Criar&quot;
                 </p>

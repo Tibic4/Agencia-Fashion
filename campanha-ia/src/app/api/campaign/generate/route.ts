@@ -143,6 +143,51 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ── VIRTUAL TRY-ON (Fashn.ai) ──
+    let tryOnImageUrl: string | null = null;
+    if (useModel && store && process.env.FASHN_API_KEY) {
+      try {
+        const model = await getActiveModel(store.id);
+        // Precisa de preview_url (foto do modelo) e da foto do produto já uploaded
+        const modelImageUrl = model?.preview_url || null;
+        const productUrl = campaignRecord ? (
+          // Usa a URL do produto que acabou de subir
+          (() => {
+            try {
+              const { createAdminClient } = require("@/lib/supabase/admin");
+              const supabase = createAdminClient();
+              const { data } = supabase.storage.from("product-photos").getPublicUrl(
+                `campaigns/${store.id}/${campaignRecord.id}.jpg`
+              );
+              return data?.publicUrl;
+            } catch { return null; }
+          })()
+        ) : null;
+
+        if (modelImageUrl && productUrl) {
+          const { tryOnProduct } = await import("@/lib/fashn/client");
+          console.log("[API:campaign] 👗 Iniciando Virtual Try-On...");
+          const tryOnResult = await tryOnProduct({
+            garmentImageUrl: productUrl,
+            modelImageUrl: modelImageUrl,
+            category: "tops", // TODO: detect from vision analysis
+          });
+
+          if (tryOnResult.status === "completed" && tryOnResult.outputUrl) {
+            tryOnImageUrl = tryOnResult.outputUrl;
+            console.log("[API:campaign] ✅ Try-On concluído:", tryOnImageUrl);
+          } else {
+            console.warn("[API:campaign] Try-On falhou ou timeout, usando foto original");
+          }
+        } else {
+          console.log("[API:campaign] Modelo sem preview_url, pulando try-on");
+        }
+      } catch (tryOnErr) {
+        console.warn("[API:campaign] Try-On error (não fatal):", tryOnErr);
+        // Não é erro fatal - segue com foto original
+      }
+    }
+
     // ── DEMO MODE ──
     if (IS_DEMO_MODE) {
       console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock");
