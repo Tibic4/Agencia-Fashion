@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ShowcaseSection from "@/components/ShowcaseSection";
 
 /* ═══════════════════════════════════════
    Icons (inline SVGs to avoid deps)
@@ -421,6 +422,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
+        <ShowcaseSection />
 
         {/* ═══ PRICING ═══ */}
         <section id="precos" className="section" style={{ background: 'var(--background)' }}>
