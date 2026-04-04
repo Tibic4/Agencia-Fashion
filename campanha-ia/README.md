@@ -1,4 +1,4 @@
-# 🎯 Campanha IA — Marketing de Moda com IA
+# 🎯 CriaLook — Marketing de Moda com IA
 
 > Transforme fotos de roupa em campanhas de marketing prontas em 60 segundos.
 
@@ -23,7 +23,7 @@ SaaS para lojistas de moda brasileiros que automatiza a criação de campanhas p
 | IA | Anthropic Claude (Vision + Text) |
 | Auth | Clerk (a configurar) |
 | Database | Supabase (a configurar) |
-| Pagamentos | Stripe (a configurar) |
+| Pagamentos | Mercado Pago |
 | Deploy | Vercel |
 
 ## 📁 Estrutura
@@ -54,8 +54,12 @@ src/
 │   │   ├── configuracoes/page.tsx  # Configurações
 │   │   └── plano/page.tsx          # Plano & billing
 │   └── api/
-│       └── campaign/generate/route.ts  # API de geração
+│       ├── campaign/generate/route.ts  # API de geração
+│       ├── checkout/route.ts           # Mercado Pago checkout
+│       └── webhooks/mercadopago/route.ts # Webhook MP
 ├── lib/
+│   ├── payments/
+│   │   └── mercadopago.ts          # Client Mercado Pago + Planos
 │   ├── ai/
 │   │   ├── anthropic.ts            # Client Anthropic
 │   │   ├── prompts.ts              # 5 prompts do pipeline
@@ -109,6 +113,7 @@ npm run build
 
 ## 📋 TODO
 
+- [x] Integrar Mercado Pago (checkout + webhook)
 - [ ] Configurar Clerk (auth)
 - [ ] Configurar Supabase (banco)
 - [ ] Integrar Stripe (pagamentos)
