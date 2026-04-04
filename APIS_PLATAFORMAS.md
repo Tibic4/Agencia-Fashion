@@ -16,12 +16,17 @@
 - **Plano:** Free (500MB DB, 1GB storage) → Pro quando escalar
 - **Status:** ✅ Ativo
 
-### Vercel (Deploy + Edge Functions)
-- **O que faz:** Hosting, CI/CD, Edge Functions, Analytics
-- **URL:** https://vercel.com
-- **Variáveis:** Todas as env vars do projeto
-- **Plano:** Hobby (grátis) → Pro quando escalar
-- **Configurar:** Conectar repo GitHub/GitLab, domínio customizado
+### VPS (Deploy + Hosting)
+- **O que faz:** Hosting do Next.js em produção
+- **Domínio:** `crialook.com.br`
+- **Stack de deploy:** Node.js + PM2 + Nginx + Let's Encrypt (SSL grátis)
+- **Configurar:**
+  - [ ] Instalar Node.js 20+ na VPS
+  - [ ] Instalar PM2 (`npm i -g pm2`)
+  - [ ] Configurar Nginx como reverse proxy (porta 3000 → 80/443)
+  - [ ] Configurar SSL com Certbot (Let's Encrypt)
+  - [ ] Apontar DNS do `crialook.com.br` para o IP da VPS
+  - [ ] Configurar CI/CD (GitHub Actions → SSH deploy)
 - **Status:** ⬜ Pendente
 
 ---
@@ -154,7 +159,7 @@
 | Plataforma | Custo fixo/mês | Custo variável |
 |-----------|---------------|----------------|
 | Supabase | R$ 0 (Free) → R$ 130 (Pro) | Storage: R$ 0,13/GB |
-| Vercel | R$ 0 (Hobby) → R$ 100 (Pro) | Bandwidth: R$ 0,20/GB |
+| VPS | Já pago pelo usuário | — |
 | Clerk | R$ 0 (Free) | R$ 0,02/MAU acima de 10K |
 | Mercado Pago | R$ 0 | PIX 0,99% / Cartão 4,98% / Boleto R$ 3,49 |
 | Anthropic | R$ 0 | ~R$ 0,29/campanha |

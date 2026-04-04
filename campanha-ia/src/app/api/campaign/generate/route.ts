@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
+import { runMockPipeline } from "@/lib/ai/mock-data";
 import type { PipelineStep } from "@/types";
 
 export const maxDuration = 60; // Vercel Pro: 60s timeout
 export const dynamic = "force-dynamic";
+
+const IS_DEMO_MODE = !process.env.ANTHROPIC_API_KEY;
 
 /**
  * POST /api/campaign/generate
@@ -63,15 +66,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert image to base64
+    // ── DEMO MODE: retorna dados mock sem chamar IA ──
+    if (IS_DEMO_MODE) {
+      console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock");
+      const mockResult = await runMockPipeline(3000); // Simula 3s de processamento
+      return NextResponse.json({
+        success: true,
+        demo: true,
+        data: {
+          vision: mockResult.vision,
+          strategy: mockResult.strategy,
+          output: mockResult.output,
+          score: mockResult.score,
+          durationMs: mockResult.durationMs,
+        },
+      });
+    }
+
+    // ── PRODUCTION: pipeline real com Anthropic ──
     const arrayBuffer = await imageFile.arrayBuffer();
     const imageBase64 = Buffer.from(arrayBuffer).toString("base64");
     const mediaType = imageFile.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
-    // Track progress steps (for logging)
     const steps: { step: PipelineStep; startedAt: number }[] = [];
 
-    // Run pipeline
     const result = await runCampaignPipeline(
       {
         imageBase64,
@@ -93,6 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      demo: false,
       data: {
         vision: result.vision,
         strategy: result.strategy,

@@ -59,6 +59,8 @@ export default function GerarCampanha() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const generationSteps = [
     { label: "Analisando produto...", progress: 15 },
@@ -70,29 +72,75 @@ export default function GerarCampanha() {
     { label: "Pronto!", progress: 100 },
   ];
 
+
   const handleFile = (file: File) => {
     if (file && file.type.startsWith("image/")) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (e) => setPreview(e.target?.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleGenerate = () => {
-    if (!preview || !price) return;
+  const handleGenerate = async () => {
+    if (!preview || !price || !selectedFile) return;
     setIsGenerating(true);
     setGenerationStep(0);
+    setError(null);
 
-    // Simulate generation pipeline
+    // Animate progress steps while API processes
     const interval = setInterval(() => {
       setGenerationStep((prev) => {
-        if (prev >= generationSteps.length - 1) {
-          clearInterval(interval);
+        if (prev >= generationSteps.length - 2) {
+          // Pause at second-to-last step until API responds
           return prev;
         }
         return prev + 1;
       });
     }, 2000);
+
+    try {
+      // Build FormData
+      const formData = new FormData();
+      formData.append("image", selectedFile);
+      formData.append("price", price);
+      formData.append("objective", objective);
+      formData.append("storeName", "Minha Loja");
+      if (audience) formData.append("targetAudience", audience);
+      if (tone) formData.append("toneOverride", tone);
+      formData.append("useModel", String(useModel));
+      formData.append("backgroundType", background);
+
+      // Call API
+      const response = await fetch("/api/campaign/generate", {
+        method: "POST",
+        body: formData,
+      });
+
+      clearInterval(interval);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Erro desconhecido");
+      }
+
+      // Store result for the demo page
+      sessionStorage.setItem("campaignResult", JSON.stringify(data));
+
+      // Show completion
+      setGenerationStep(generationSteps.length - 1);
+
+    } catch (err: any) {
+      clearInterval(interval);
+      setIsGenerating(false);
+      setError(err.message || "Erro ao gerar campanha");
+    }
   };
 
   if (isGenerating) {
@@ -149,6 +197,15 @@ export default function GerarCampanha() {
 
   return (
     <div className="animate-fade-in-up">
+      {/* Error banner */}
+      {error && (
+        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+          <span>⚠️</span>
+          <p className="text-sm font-medium" style={{ color: "#DC2626" }}>{error}</p>
+          <button onClick={() => setError(null)} className="ml-auto text-sm" style={{ color: "#DC2626" }}>✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
