@@ -53,7 +53,19 @@ export function buildStrategyPrompt(params: {
   mood: string[];
   publicoAlvo?: string;
   tomOverride?: string;
+  storeSegment?: string;
+  bodyType?: string;
 }): string {
+  const plusSizeContext = params.bodyType === "plus_size" || params.storeSegment === "plus_size"
+    ? `\nCONTEXTO PLUS SIZE: Esta é uma loja de moda plus size / inclusiva. A estratégia DEVE:
+- Valorizar corpos reais e diversos
+- Usar linguagem body-positive e empoderadora
+- Mencionar grade estendida (ex: "do P ao 54", "do 44 ao 60")
+- Evitar termos como "disfarçar", "esconder", "emagrecer"
+- Focar em conforto, estilo e autoconfiança
+- Contra-objeção: mostrar que a peça tem modelagem pensada para corpo plus`
+    : "";
+
   return `Com base nesta análise de produto, crie uma estratégia de campanha:
 
 PRODUTO: ${params.produto}
@@ -63,7 +75,7 @@ ATRIBUTOS: ${params.atributos}
 MOOD/VIBE: ${params.mood.join(", ")}
 OBJETIVO: ${params.objetivo}
 ${params.publicoAlvo ? `PÚBLICO-ALVO: ${params.publicoAlvo}` : "PÚBLICO-ALVO: detectar automaticamente"}
-${params.tomOverride ? `TOM DE VOZ: ${params.tomOverride}` : ""}
+${params.tomOverride ? `TOM DE VOZ: ${params.tomOverride}` : ""}${plusSizeContext}
 
 Retorne um JSON com esta estrutura EXATA:
 
@@ -95,13 +107,29 @@ export function buildCopywriterPrompt(params: {
   estrategia: string;
   segmento: string;
   atributos: string;
+  storeSegment?: string;
+  bodyType?: string;
 }): string {
+  const isPlusSize = params.bodyType === "plus_size" || params.storeSegment === "plus_size";
+  const plusSizeRules = isPlusSize
+    ? `\n- PLUS SIZE: Use linguagem body-positive e empoderadora
+- Mencione grade estendida ("do 44 ao 60", "do P ao GG")
+- Destaque conforto, caimento e modelagem pensada para corpos reais
+- NUNCA use termos como "disfarçar", "esconder", "emagrecer", "afinar"
+- Use expressões como "valoriza suas curvas", "caimento perfeito", "feita pra você brilhar"
+- Hashtags incluir: #modaplussize #plussize #bodypositive #modainclusiva`
+    : "";
+
+  const plusSizeHashtags = isPlusSize
+    ? ', "modaplussize", "plussize", "bodypositive", "modainclusiva", "curvyStyle"'
+    : '';
+
   return `Crie textos de campanha completos para este produto de moda:
 
 PRODUTO: ${params.produto}
 PREÇO: R$ ${params.preco}
 LOJA: ${params.loja}
-SEGMENTO: ${params.segmento}
+SEGMENTO: ${params.segmento}${isPlusSize ? " (PLUS SIZE)" : ""}
 ATRIBUTOS: ${params.atributos}
 
 ESTRATÉGIA DEFINIDA:
@@ -127,7 +155,7 @@ Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
     "descricao": "Descrição curta (máx 30 chars)",
     "cta_button": "shop_now|learn_more|sign_up|contact_us"
   },
-  "hashtags": ["lista", "de", "hashtags", "relevantes", "10_a_15"]
+  "hashtags": ["lista", "de", "hashtags", "relevantes", "10_a_15"${plusSizeHashtags}]
 }
 
 REGRAS:
@@ -137,7 +165,7 @@ REGRAS:
 - Instagram: hashtags populares + nicho
 - WhatsApp: tom pessoal, como se fosse a dona da loja falando
 - Meta Ads: textos curtos, direto ao ponto, SEM emojis excessivos
-- NÃO inventar promoções ou descontos que não foram informados
+- NÃO inventar promoções ou descontos que não foram informados${plusSizeRules}
 
 Responda APENAS com o JSON.`;
 }
