@@ -44,7 +44,7 @@
   - [ ] Ativar Email/Password
   - [ ] Configurar webhook endpoint
   - [ ] Criar custom claim `role: admin`
-- **Status:** ⬜ Pendente
+- **Status:** ✅ Configurado
 
 ---
 
@@ -53,17 +53,17 @@
 ### Mercado Pago (Recorrência + Créditos)
 - **O que faz:** Assinaturas mensais, pagamentos avulsos (créditos), PIX nativo, Boleto, Cartão parcelado, Checkout Pro
 - **URL:** https://www.mercadopago.com.br/developers
-- **Variáveis:** `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_WEBHOOK_SECRET`
+- **Variáveis:** `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY`, `MERCADOPAGO_WEBHOOK_SECRET`, `MERCADOPAGO_CLIENT_ID`, `MERCADOPAGO_CLIENT_SECRET`
 - **Plano:** Pay-as-you-go
   - PIX: 0,99% por transação
   - Cartão de crédito: 4,98% por transação
   - Boleto: R$ 3,49 por boleto pago
 - **MCP Server:** `https://mcp.mercadopago.com/mcp` (remoto, sem instalação local)
 - **Configurar:**
-  - [ ] Criar conta Mercado Pago Developer
-  - [ ] Criar aplicação no painel de desenvolvedores
-  - [ ] Gerar Access Token (produção)
-  - [ ] Gerar Public Key
+  - [x] Criar conta Mercado Pago Developer
+  - [x] Criar aplicação no painel de desenvolvedores
+  - [x] Gerar Access Token (produção)
+  - [x] Gerar Public Key
   - [ ] Criar 5 planos de assinatura (Grátis, Starter, Pro, Business, Agência)
   - [ ] Configurar pagamentos avulsos (créditos extras)
   - [ ] Configurar webhook endpoint (IPN)
@@ -87,7 +87,7 @@
   - [ ] Criar conta com billing ativo
   - [ ] Gerar API key
   - [ ] Verificar tier e rate limits
-- **Status:** ⬜ Pendente
+- **Status:** ✅ Configurado
 
 ---
 
@@ -106,7 +106,7 @@
   - [ ] Ativar billing
   - [ ] Gerar API key
   - [ ] Testar endpoint com foto de produto de moda
-- **Status:** ⬜ Pendente
+- **Status:** ✅ Configurado
 - **Fallback:** Kolors Virtual Try-On ou IDM-VTON (self-hosted)
 
 ### Stability AI (Remoção de fundo)
@@ -119,7 +119,7 @@
   - [ ] Criar conta
   - [ ] Adicionar créditos
   - [ ] Gerar API key
-- **Status:** ⬜ Pendente
+- **Status:** 🚫 Cancelado/Não será usado
 - **Fallback:** fal.ai ou remove.bg
 
 ---
@@ -131,14 +131,14 @@
 - **URL:** https://sentry.io
 - **Variáveis:** `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`
 - **Plano:** Developer (grátis, 5K eventos/mês)
-- **Status:** ⬜ Pendente
+- **Status:** ✅ Configurado
 
 ### PostHog (Analytics + Funil)
 - **O que faz:** Eventos de funil, feature flags, session replay
 - **URL:** https://posthog.com
 - **Variáveis:** `POSTHOG_KEY`, `POSTHOG_HOST`
 - **Plano:** Free (1M eventos/mês)
-- **Status:** ⬜ Pendente
+- **Status:** ✅ Configurado
 
 ---
 
@@ -147,10 +147,13 @@
 ### Inngest (Fila de Jobs)
 - **O que faz:** Executar pipeline de IA de forma assíncrona com retry
 - **URL:** https://inngest.com
+- **Chaves configuradas:**
+  - `INNGEST_EVENT_KEY` configurado
+  - `INNGEST_SIGNING_KEY` configurado
 - **Variáveis:** `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`
 - **Plano:** Free (25K runs/mês)
 - **Alternativa:** Vercel Cron + Background Functions
-- **Status:** ⬜ Pendente
+- **Status:** ✅ Configurado
 
 ---
 

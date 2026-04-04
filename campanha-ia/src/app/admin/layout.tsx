@@ -89,7 +89,7 @@ export default function AdminLayout({
             Voltar ao app
           </Link>
           <div className="flex items-center gap-3 px-3">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">Administrador</p>
               <p className="text-xs text-gray-500 truncate">Super Admin</p>
