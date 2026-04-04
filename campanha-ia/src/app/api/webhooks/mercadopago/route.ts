@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPaymentStatus } from "@/lib/payments/mercadopago";
+import { updateStorePlan } from "@/lib/db";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -28,40 +30,39 @@ export async function POST(request: NextRequest) {
         ref: payment.externalReference,
       });
 
-      // Extrair userId e planId do external_reference
-      const [userId, planId] = (payment.externalReference || "").split("|");
+      // Extrair storeId e planId do external_reference (formato: "storeId|planId")
+      const [storeId, planId] = (payment.externalReference || "").split("|");
 
-      if (payment.status === "approved") {
-        console.log(`[Webhook:MercadoPago] ✅ Pagamento aprovado! User: ${userId}, Plano: ${planId}`);
+      if (payment.status === "approved" && storeId && planId) {
+        console.log(`[Webhook:MercadoPago] ✅ Pagamento aprovado! Store: ${storeId}, Plano: ${planId}`);
 
-        // TODO: Quando Supabase estiver configurado:
-        // 1. Atualizar plano do usuário no banco
-        // 2. Resetar contador de campanhas do mês
-        // 3. Enviar email de confirmação
-        //
-        // await supabase.from("subscriptions").upsert({
-        //   user_id: userId,
-        //   plan_id: planId,
-        //   status: "active",
-        //   mp_payment_id: paymentId,
-        //   current_period_start: new Date().toISOString(),
-        //   current_period_end: addMonths(new Date(), 1).toISOString(),
-        // });
+        // 1. Atualizar plano da loja + resetar store_usage
+        await updateStorePlan(storeId, planId, paymentId);
+
+        // 2. Registrar pagamento no Mercado Pago
+        const supabase = createAdminClient();
+        await supabase.from("stores").update({
+          mercadopago_customer_id: (payment.payer as Record<string, unknown>)?.id?.toString() || null,
+          updated_at: new Date().toISOString(),
+        }).eq("id", storeId);
+
+        console.log(`[Webhook:MercadoPago] ✅ Plano atualizado para "${planId}"`);
       }
 
       if (payment.status === "rejected") {
-        console.log(`[Webhook:MercadoPago] ❌ Pagamento rejeitado. User: ${userId}`);
+        console.log(`[Webhook:MercadoPago] ❌ Pagamento rejeitado. Store: ${storeId}`);
       }
 
       if (payment.status === "pending") {
-        console.log(`[Webhook:MercadoPago] ⏳ Pagamento pendente (PIX/boleto). User: ${userId}`);
+        console.log(`[Webhook:MercadoPago] ⏳ Pagamento pendente (PIX/boleto). Store: ${storeId}`);
       }
     }
 
     // Mercado Pago espera 200 OK
     return NextResponse.json({ received: true }, { status: 200 });
-  } catch (error: any) {
-    console.error("[Webhook:MercadoPago] Erro:", error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("[Webhook:MercadoPago] Erro:", message);
     // Retorna 200 mesmo em erro para evitar retries infinitos
     return NextResponse.json({ received: true, error: true }, { status: 200 });
   }
