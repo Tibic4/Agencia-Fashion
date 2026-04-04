@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { planId } = body;
 
-    if (!planId || !["starter", "pro", "scale"].includes(planId)) {
+    if (!planId || !["starter", "pro", "business", "agencia"].includes(planId)) {
       return NextResponse.json(
         { error: "Plano inválido", code: "INVALID_PLAN" },
         { status: 400 }
