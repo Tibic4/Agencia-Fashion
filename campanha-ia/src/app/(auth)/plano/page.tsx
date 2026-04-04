@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 
 const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -19,10 +19,9 @@ const currentPlan = {
 };
 
 const plans = [
-  { name: "Starter", badge: "⭐", price: 59, campaigns: 15, models: 1, regen: 2, highlight: false },
-  { name: "Pro", badge: "🚀", price: 129, campaigns: 40, models: 2, regen: 3, highlight: true },
-  { name: "Business", badge: "🏢", price: 249, campaigns: 100, models: 3, regen: 5, highlight: false },
-  { name: "Agência", badge: "🏆", price: 499, campaigns: 200, models: 5, regen: 5, highlight: false },
+  { id: "starter", name: "Starter", badge: "⭐", price: 49.9, campaigns: 15, models: 1, regen: 2, highlight: false },
+  { id: "pro", name: "Pro", badge: "🚀", price: 97, campaigns: 50, models: 2, regen: 3, highlight: true },
+  { id: "scale", name: "Scale", badge: "🏢", price: 197, campaigns: 200, models: 3, regen: 5, highlight: false },
 ];
 
 const extras = [
@@ -33,6 +32,47 @@ const extras = [
 ];
 
 export default function Plano() {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  // Ler status da URL (callback do Mercado Pago)
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    if (status === "approved" && !statusMsg) {
+      setStatusMsg("✅ Pagamento aprovado! Seu plano será atualizado em instantes.");
+    } else if (status === "rejected" && !statusMsg) {
+      setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
+    } else if (status === "pending" && !statusMsg) {
+      setStatusMsg("⏳ Pagamento pendente (PIX/Boleto). Atualizaremos assim que confirmar.");
+    }
+  }
+
+  const handleCheckout = async (planId: string) => {
+    setLoading(planId);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await response.json();
+
+      if (data.success && data.data?.checkoutUrl) {
+        window.location.href = data.data.checkoutUrl;
+      } else if (data.demo) {
+        setStatusMsg("🎭 Modo demo — checkout simulado. Configure MERCADOPAGO_ACCESS_TOKEN no .env.local");
+        setLoading(null);
+      } else {
+        setStatusMsg("Erro ao criar checkout. Tente novamente.");
+        setLoading(null);
+      }
+    } catch {
+      setStatusMsg("Erro de conexão. Tente novamente.");
+      setLoading(null);
+    }
+  };
+
   const usagePercent = (currentPlan.campaigns_used / currentPlan.campaigns_limit) * 100;
 
   return (
@@ -45,6 +85,14 @@ export default function Plano() {
           Gerencie seu plano, créditos e faturamento
         </p>
       </div>
+
+      {/* Status message */}
+      {statusMsg && (
+        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <p className="text-sm">{statusMsg}</p>
+          <button onClick={() => setStatusMsg(null)} className="ml-auto text-sm" style={{ color: "var(--muted)" }}>✕</button>
+        </div>
+      )}
 
       {/* Current plan */}
       <div className="rounded-2xl p-6 mb-8" style={{ background: "var(--gradient-card)", border: "1px solid var(--border)" }}>
@@ -92,7 +140,7 @@ export default function Plano() {
 
       {/* Upgrade options */}
       <h3 className="text-lg font-bold mb-4">Fazer upgrade</h3>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {plans.map((plan) => (
           <div key={plan.name} className="rounded-2xl p-5 transition-all hover:-translate-y-1 flex flex-col"
             style={{
@@ -115,12 +163,15 @@ export default function Plano() {
               <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.models} modelos virtuais</div>
               <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.regen} regen/campanha</div>
             </div>
-            <button className="w-full mt-4 py-2.5 rounded-full text-sm font-semibold transition-all"
+            <button
+              onClick={() => handleCheckout(plan.id)}
+              disabled={loading === plan.id}
+              className="w-full mt-4 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60"
               style={{
                 background: plan.highlight ? "white" : "var(--gradient-brand)",
                 color: plan.highlight ? "var(--brand-600)" : "white",
               }}>
-              Assinar {plan.name}
+              {loading === plan.id ? "Abrindo checkout..." : `Assinar ${plan.name}`}
             </button>
           </div>
         ))}
