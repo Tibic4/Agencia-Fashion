@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CreativePreview from "@/components/CreativePreview";
+import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
 
 const IconCopy = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -350,6 +351,17 @@ export default function ResultadoCampanha() {
             price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
             headline={campaignData?.output?.meta_ads?.titulo || ""}
             cta={campaignData?.output?.meta_ads?.cta_button || "Comprar agora"}
+            productImageUrl={productImageUrl}
+            storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
+          />
+
+          {/* Stories 1080×1920 — 3 slides */}
+          <CreativeStoriesPreview
+            productName={productName}
+            price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
+            slideGancho={campaignData?.output?.instagram_stories?.slide_1 || "Olha o que acabou de chegar! 😍"}
+            slideProduto={campaignData?.output?.instagram_stories?.slide_2 || ""}
+            slideCTA={campaignData?.output?.instagram_stories?.slide_3 || "Chama no direct! 💬"}
             productImageUrl={productImageUrl}
             storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
           />
