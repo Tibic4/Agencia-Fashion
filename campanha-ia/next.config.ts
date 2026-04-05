@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  /* Disable turbopack for production builds (VPS has limited RAM) */
 };
 
 export default nextConfig;
