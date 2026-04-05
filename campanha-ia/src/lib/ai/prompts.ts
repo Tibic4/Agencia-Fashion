@@ -13,9 +13,21 @@ Conhece tendências atuais, tecidos, modelagens e como descrever peças para ven
 Seu vocabulário é preciso: sabe diferenciar crepe de viscose, babados de franzidos, decote V de decote princesa.
 SEMPRE responda em JSON válido, sem markdown ou explicações.`;
 
-export function buildVisionPrompt(): string {
+export function buildVisionPrompt(productType?: string): string {
+  const productHint = productType
+    ? `\nIMPORTANTE: O usuário informou que este produto é do tipo "${productType}". Use essa informação para confirmar ou corrigir sua análise.`
+    : "";
+
   return `Analise esta foto de produto de moda em detalhes e retorne um JSON com esta estrutura EXATA.
 ANO ATUAL: ${CURRENT_YEAR} (use este ano em referências de tendência).
+${productHint}
+
+REGRAS CRÍTICAS DE ANÁLISE VISUAL:
+1. FOQUE EXCLUSIVAMENTE na peça de roupa principal (ignore manequim, suportes, fundo da loja)
+2. A cor que você deve reportar é a COR REAL DO TECIDO da peça, NÃO a cor do manequim ou do fundo
+3. Se a foto mostra um manequim preto/escuro, IGNORE a cor do manequim — analise SOMENTE o tecido
+4. Se há outras peças visíveis ao redor (numa loja), foque apenas na peça central/principal
+5. Descreva a peça EXATAMENTE como ela é — cor, formato, detalhes visíveis no tecido
 
 {
   "produto": {
@@ -25,7 +37,7 @@ ANO ATUAL: ${CURRENT_YEAR} (use este ano em referências de tendência).
   },
   "segmento": "feminino|masculino|infantil|unissex",
   "atributos_visuais": {
-    "cor_principal": "ex: Rosa blush",
+    "cor_principal": "ex: Rosa blush (descreva a cor REAL do tecido da peça, não do manequim)",
     "cor_secundaria": "ex: Verde folha" ou null,
     "cores_complementares": ["lista de cores se houver mais"],
     "material_aparente": "ex: Viscose | Crepe | Algodão | Linho | Jeans | Tricô | Malha | Couro sintético",
@@ -50,6 +62,7 @@ DICAS:
 - Para "palavras_chave_venda", pense no que a cliente buscaria no Google/Instagram
 - O "mood" deve refletir a vibração que a peça transmite
 - Seja ESPECÍFICO nos detalhes (ex: "manga 3/4 com franzido" em vez de apenas "manga")
+- NUNCA confunda a cor do manequim/suporte com a cor da peça
 
 Responda APENAS com o JSON, sem explicações.`;
 }
