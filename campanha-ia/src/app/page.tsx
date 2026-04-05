@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import ShowcaseSection from "@/components/ShowcaseSection";
 
 /* ═══════════════════════════════════════
@@ -187,9 +188,7 @@ export default function Home() {
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-brand)' }}>
-              <IconSparkles />
-            </div>
+            <Image src="/logo.png" alt="CriaLook" width={36} height={36} className="rounded-lg" />
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
               Cria<span className="gradient-text">Look</span>
             </span>
@@ -540,9 +539,7 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-brand)' }}>
-                  <IconSparkles />
-                </div>
+                <Image src="/logo.png" alt="CriaLook" width={32} height={32} className="rounded-lg" />
                 <span className="text-lg font-bold text-white">CriaLook</span>
               </div>
               <p className="text-sm leading-relaxed">

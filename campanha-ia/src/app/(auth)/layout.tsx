@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const IconSparkles = () => (
@@ -52,14 +53,9 @@ export default function AuthLayout({
       >
         {/* Logo */}
         <div className="h-16 flex items-center gap-2 px-6" style={{ borderBottom: "1px solid var(--border)" }}>
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--gradient-brand)", color: "white" }}
-          >
-            <IconSparkles />
-          </div>
+          <Image src="/logo.png" alt="CriaLook" width={32} height={32} className="rounded-lg" />
           <span className="text-lg font-bold tracking-tight">
-            Campanha <span className="gradient-text">IA</span>
+            Cria<span className="gradient-text">Look</span>
           </span>
         </div>
 
@@ -134,14 +130,9 @@ export default function AuthLayout({
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: "var(--gradient-brand)", color: "white" }}
-          >
-            <IconSparkles />
-          </div>
+          <Image src="/logo.png" alt="CriaLook" width={28} height={28} className="rounded-lg" />
           <span className="text-base font-bold">
-            Campanha <span className="gradient-text">IA</span>
+            Cria<span className="gradient-text">Look</span>
           </span>
         </div>
         <div className="flex items-center gap-2">
