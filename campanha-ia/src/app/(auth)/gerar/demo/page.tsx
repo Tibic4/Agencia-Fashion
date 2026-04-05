@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import CreativePreview from "@/components/CreativePreview";
 
 const IconCopy = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -66,6 +67,7 @@ export default function ResultadoCampanha() {
   const [campaignData, setCampaignData] = useState<any>(null);
   const [regenerating, setRegenerating] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [productImageUrl, setProductImageUrl] = useState<string | null>(null);
 
   // Load data from sessionStorage on mount
   useEffect(() => {
@@ -75,6 +77,14 @@ export default function ResultadoCampanha() {
         const parsed = JSON.parse(stored);
         setCampaignData(parsed.data);
         setIsDemo(parsed.demo === true);
+      }
+      // Load product image from form data
+      const formStored = sessionStorage.getItem("campaignFormData");
+      if (formStored) {
+        const formData = JSON.parse(formStored);
+        if (formData.imageBase64) {
+          setProductImageUrl(`data:image/jpeg;base64,${formData.imageBase64}`);
+        }
       }
     } catch {}
   }, []);
@@ -334,40 +344,24 @@ export default function ResultadoCampanha() {
             )}
           </div>
 
-          {/* Creative preview + actions */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
-              <h3 className="text-sm font-semibold">Criativo gerado</h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleDownloadPNG}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                  style={{ background: "var(--gradient-brand)", color: "white" }}
-                >
-                  <IconDownload /> Baixar PNG
-                </button>
-                <button
-                  onClick={handleDownloadTexts}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                  style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}
-                >
-                  <IconDownload /> Textos .txt
-                </button>
-              </div>
-            </div>
-            <div className="aspect-square max-h-96 flex items-center justify-center" style={{ background: "var(--gradient-brand-soft)" }}>
-              <div className="text-center p-8">
-                <div className="text-6xl mb-4">👗</div>
-                <p className="text-lg font-bold gradient-text">{productName}</p>
-                <p className="text-2xl font-black mt-2">
-                  {campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ''}
-                </p>
-                <p className="text-xs mt-4" style={{ color: "var(--brand-500)" }}>
-                  ⬇️ Clique em &quot;Baixar PNG&quot; para salvar o criativo 1080x1080
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Creative preview with templates */}
+          <CreativePreview
+            productName={productName}
+            price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
+            headline={campaignData?.output?.meta_ads?.titulo || ""}
+            cta={campaignData?.output?.meta_ads?.cta_button || "Comprar agora"}
+            productImageUrl={productImageUrl}
+            storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
+          />
+
+          {/* Download all texts */}
+          <button
+            onClick={handleDownloadTexts}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80"
+            style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--border)" }}
+          >
+            <IconDownload /> Baixar todos os textos (.txt)
+          </button>
         </div>
 
         {/* Right — Score */}
