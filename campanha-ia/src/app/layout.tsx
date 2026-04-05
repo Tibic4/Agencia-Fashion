@@ -44,7 +44,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider localization={ptBR}>
+    <ClerkProvider
+      localization={ptBR}
+      appearance={{
+        layout: {
+          logoImageUrl: "/clerk-logo.png",
+          logoPlacement: "inside",
+        },
+        elements: {
+          logoBox: {
+            height: "80px",
+          },
+          logoImage: {
+            maxHeight: "80px",
+            maxWidth: "200px",
+          },
+        },
+      }}
+    >
       <html lang="pt-BR" className={`${inter.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
           <PostHogProvider>
