@@ -147,15 +147,16 @@
 | **Regeneração completa** | Pipeline inteiro | **R$ 0,69** |
 | **Criação de modelo** | Fashn.ai Model Create (4 samples) | **R$ 1,72** |
 
-### 5.2 Planos Revisados (Margem Mínima 40% Garantida)
+### 5.2 Planos Revisados (Margem Mínima 40% Garantida — modo A+ com modelo+fundo)
 
 | Recurso | 🆓 Grátis | ⭐ Starter (R$ 59/mês) | 🚀 Pro (R$ 129/mês) | 🏢 Business (R$ 249/mês) | 🏆 Agência (R$ 499/mês) |
 |---------|-----------|----------------------|--------------------|-----------------------|------------------------|
-| Campanhas/mês | 3 | 15 | 40 | 100 | 200 |
+| Campanhas/mês | 3 | 15 | 40 | 85 | 170 |
 | Canais por campanha | Feed + WhatsApp | Todos (4) | Todos (4) | Todos (4) | Todos (4) |
 | Modelos virtuais | 0 (usa stock) | 1 | 2 | 3 | 5 |
 | Criações de modelo/mês | 0 | 1 | 2 | 3 | 5 |
-| Regenerações/campanha | 0 | 2 | 3 | 5 | 5 |
+| Regenerações/campanha | 0 | 2 | 3 | 3 | 3 |
+| Modelo + fundo profissional | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Histórico | 7 dias | 90 dias | 1 ano | Ilimitado | Ilimitado |
 | Score + alertas Meta | Nota geral só | Completo | Completo | Completo | Completo |
 | Link de prévia | ❌ | ❌ | ✅ | ✅ | ✅ |
