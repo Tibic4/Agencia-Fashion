@@ -1,26 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-const LogoIcon = ({ size = 32 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="sidebarLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#e879a8" />
-        <stop offset="50%" stopColor="#a855f7" />
-        <stop offset="100%" stopColor="#7c3aed" />
-      </linearGradient>
-    </defs>
-    <circle cx="50" cy="50" r="48" fill="url(#sidebarLogoGrad)" />
-    <circle cx="50" cy="50" r="45" fill="none" stroke="white" strokeWidth="1.5" opacity="0.3" />
-    <path d="M50 22c-3.5 0-6 2.5-6 6 0 2 1 3.5 2.5 4.5L30 52c-2 1.5-1 4.5 1.5 4.5h37c2.5 0 3.5-3 1.5-4.5L53.5 32.5C55 31.5 56 30 56 28c0-3.5-2.5-6-6-6z" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    <circle cx="50" cy="28" r="2.5" fill="white" />
-    <path d="M72 30l-1.2 3.6a1 1 0 01-.7.7L66.5 35.5l3.6 1.2a1 1 0 01.7.7L72 41l1.2-3.6a1 1 0 01.7-.7l3.6-1.2-3.6-1.2a1 1 0 01-.7-.7L72 30z" fill="white" />
-    <path d="M65 64l-.8 2.4a.7.7 0 01-.5.5L61.3 67.7l2.4.8a.7.7 0 01.5.5L65 71.4l.8-2.4a.7.7 0 01.5-.5l2.4-.8-2.4-.8a.7.7 0 01-.5-.5L65 64z" fill="white" opacity="0.8" />
-    <path d="M78 48l-.6 1.8a.5.5 0 01-.35.35L75.25 50.8l1.8.6a.5.5 0 01.35.35L78 53.5l.6-1.8a.5.5 0 01.35-.35l1.8-.6-1.8-.6a.5.5 0 01-.35-.35L78 48z" fill="white" opacity="0.6" />
-  </svg>
-);
 const IconSparkles = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
 );
@@ -70,7 +53,7 @@ export default function AuthLayout({
       >
         {/* Logo */}
         <div className="h-16 flex items-center gap-2.5 px-6" style={{ borderBottom: "1px solid var(--border)" }}>
-          <LogoIcon size={36} />
+          <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
           <span className="text-lg font-bold tracking-tight">
             Cria<span className="gradient-text">Look</span>
           </span>
@@ -147,7 +130,7 @@ export default function AuthLayout({
         style={{ borderBottom: "1px solid var(--border)" }}
       >
         <div className="flex items-center gap-2">
-          <LogoIcon size={30} />
+          <Image src="/logo.png" alt="CriaLook" width={34} height={34} className="rounded-full" />
           <span className="text-base font-bold">
             Cria<span className="gradient-text">Look</span>
           </span>
