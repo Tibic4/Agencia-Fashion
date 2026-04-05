@@ -38,6 +38,8 @@ export interface PipelineInput {
   campaignId?: string;
   /** Tipo de produto (blusa, saia, vestido, etc.) */
   productType?: string;
+  /** Material/tecido informado pelo usuário (opcional) */
+  material?: string;
 }
 
 export interface PipelineResult {
@@ -99,7 +101,7 @@ export async function runCampaignPipeline(
   const { result: visionRaw } = await withRetry(
     () => callClaudeVision({
       system: VISION_SYSTEM,
-      prompt: buildVisionPrompt(input.productType),
+      prompt: buildVisionPrompt(input.productType, input.material),
       imageBase64: input.imageBase64,
       mediaType: input.mediaType,
     }),

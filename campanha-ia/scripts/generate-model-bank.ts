@@ -195,9 +195,9 @@ const MODELS: ModelSpec[] = [
 // ═══════════════════════════════════════
 
 async function submitProductToModel(prompt: string): Promise<string> {
-  // Para gerar modelos "base", usamos uma foto simples de camiseta branca
-  // O prompt controla o corpo/pele/pose da modelo gerada
-  const productImageUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Plain_white_t-shirt.jpg/800px-Plain_white_t-shirt.jpg";
+  // Gerar uma imagem branca simples como base64 (1x1 pixel PNG branco)
+  // O prompt controla tudo — corpo/pele/pose da modelo
+  const whitePixelPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAIAAAAP3aGbAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6AQFDgAsL8VfKAAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAIElEQVR42u3BAQEAAAACIP+vbkhAAQAAAAAAAAAAAADeBk1AAAGrG0jEAAAAAElFTkSuQmCC";
 
   const res = await fetch(`${FASHN_API_URL}/run`, {
     method: "POST",
@@ -208,7 +208,7 @@ async function submitProductToModel(prompt: string): Promise<string> {
     body: JSON.stringify({
       model_name: "product-to-model",
       inputs: {
-        product_image: productImageUrl,
+        product_image: whitePixelPng,
         prompt,
         aspect_ratio: "9:16",
       },

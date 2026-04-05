@@ -13,14 +13,21 @@ Conhece tendências atuais, tecidos, modelagens e como descrever peças para ven
 Seu vocabulário é preciso: sabe diferenciar crepe de viscose, babados de franzidos, decote V de decote princesa.
 SEMPRE responda em JSON válido, sem markdown ou explicações.`;
 
-export function buildVisionPrompt(productType?: string): string {
-  const productHint = productType
-    ? `\nIMPORTANTE: O usuário informou que este produto é do tipo "${productType}". Use essa informação para confirmar ou corrigir sua análise.`
-    : "";
+export function buildVisionPrompt(productType?: string, material?: string): string {
+  let userHints = "";
+  if (productType) {
+    userHints += `\nIMPORTANTE: O usuário informou que este produto é do tipo "${productType}".`;
+  }
+  if (material) {
+    userHints += `\nIMPORTANTE: O usuário informou que o material/tecido é "${material}". Use EXATAMENTE este material na análise, NÃO tente adivinhar outro.`;
+  }
+  if (userHints) {
+    userHints = userHints + "\nUse essas informações do usuário como verdade absoluta para confirmar ou corrigir sua análise visual.";
+  }
 
   return `Analise esta foto de produto de moda em detalhes e retorne um JSON com esta estrutura EXATA.
 ANO ATUAL: ${CURRENT_YEAR} (use este ano em referências de tendência).
-${productHint}
+${userHints}
 
 REGRAS CRÍTICAS DE ANÁLISE VISUAL:
 1. FOQUE EXCLUSIVAMENTE na peça de roupa principal (ignore manequim, suportes, fundo da loja)
@@ -214,10 +221,10 @@ ${params.estrategia}
 Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
 
 {
-  "headline_principal": "Headline curta e magnética (máx 10 palavras) — deve parar o scroll",
-  "headline_variacao_1": "Variação com ângulo diferente",
-  "headline_variacao_2": "Variação com gatilho emocional",
-  "instagram_feed": "Legenda COMPLETA para post no feed. Estrutura obrigatória:\\n1. Abertura que prende (1 frase que para o scroll)\\n2. Benefício emocional (como a cliente vai se SENTIR)\\n3. Detalhes que vendem (tecido, caimento, versatilidade)\\n4. Preço destacado\\n5. CTA forte com urgência natural\\n6. Hashtags no final (separadas por espaço)\\nUse 3-4 emojis bem posicionados, parágrafos curtos.",
+  "headline_principal": "Headline curta e magnética (máx 10 palavras) — FOQUE NO BENEFÍCIO ESPECÍFICO da peça, não genérico. Ex: 'O macacão que alonga +10cm sua silhueta' > 'O macacão que toda curvy precisa'",
+  "headline_variacao_1": "Variação focada em versatilidade/substituição: 'A peça que substitui 5 looks diferentes'",
+  "headline_variacao_2": "Variação com gatilho emocional forte, sensação: 'Vista e sinta a diferença no espelho'",
+  "instagram_feed": "Legenda COMPLETA para post no feed. Estrutura obrigatória:\\n1. Abertura que prende (1 frase que para o scroll)\\n2. Benefício emocional (como a cliente vai se SENTIR vestindo)\\n3. Detalhes sensoriais que vendem (textura do tecido, como cai no corpo)\\n4. Preço destacado\\n5. CTA forte com urgência REAL E QUANTIFICADA (ex: 'Últimas 5 peças do 48')\\n6. Hashtags no final (separadas por espaço)\\nUse 3-4 emojis bem posicionados, parágrafos curtos.",
   "instagram_stories": {
     "slide_1": "Gancho que gera curiosidade (tipo: Gente, olha o que CHEGOU 🔥)",
     "slide_2": "Detalhe irresistível do produto + benefício",
@@ -226,8 +233,8 @@ Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
   },
   "whatsapp": "Mensagem para disparar no WhatsApp em tom PESSOAL, como a dona da loja mandando pra clientela VIP. Use *negrito* no preço e em palavras-chave. Exemplo de tom: 'Ei, tudo bem? Chegou aquela peça que você vai AMAR...'",
   "meta_ads": {
-    "titulo": "Título do anúncio (máx 40 chars, direto, sem emoji)",
-    "texto_principal": "Texto principal do anúncio (máx 125 chars, benefício claro, SEM claims não comprováveis como percentuais)",
+    "titulo": "Título do anúncio (máx 40 chars, direto, sem emoji) — INCLUIR BENEFÍCIO EMOCIONAL. Ex: 'Sinta-se poderosa com este macacão' > 'Macacão Lilás com Botões'",
+    "texto_principal": "Texto principal do anúncio (máx 125 chars, combinar benefício emocional + funcional, SEM claims não comprováveis)",
     "descricao": "Descrição curta (máx 30 chars)",
     "cta_button": "shop_now|learn_more|sign_up|contact_us"
   },

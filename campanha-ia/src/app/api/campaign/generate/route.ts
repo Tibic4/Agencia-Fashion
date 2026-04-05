@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     const targetAudience = formData.get("targetAudience") as string | null;
     const toneOverride = formData.get("toneOverride") as string | null;
     const productType = formData.get("productType") as string | null;
+    const material = formData.get("material") as string | null;
     const modelBankId = formData.get("modelBankId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
     const useModel = formData.get("useModel") !== "false";
@@ -350,6 +351,7 @@ export async function POST(request: NextRequest) {
           storeSegment: store?.segment_primary || undefined,
           bodyType: activeModelBodyType,
           productType: productType || undefined,
+          material: material || undefined,
         },
         (step, label, progress) => {
           console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);

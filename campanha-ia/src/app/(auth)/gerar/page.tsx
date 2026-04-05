@@ -53,9 +53,25 @@ const productTypes = [
   { value: "saia",      label: "👗 Saia" },
   { value: "calca",     label: "👖 Calça / Shorts" },
   { value: "vestido",   label: "👗 Vestido" },
+  { value: "macacao",   label: "🩱 Macacão / Culotte" },
   { value: "conjunto",  label: "🎀 Conjunto" },
   { value: "jaqueta",   label: "🧥 Jaqueta / Casaco" },
   { value: "acessorio", label: "💎 Acessório" },
+];
+
+const materials = [
+  { value: "",          label: "Não sei / Deixar IA detectar" },
+  { value: "viscose",   label: "Viscose" },
+  { value: "algodao",   label: "Algodão" },
+  { value: "linho",     label: "Linho" },
+  { value: "crepe",     label: "Crepe" },
+  { value: "malha",     label: "Malha" },
+  { value: "jeans",     label: "Jeans / Denim" },
+  { value: "trico",     label: "Tricô" },
+  { value: "seda",      label: "Seda / Cetim" },
+  { value: "couro",     label: "Couro / Couro Sintético" },
+  { value: "moletom",   label: "Moletom" },
+  { value: "chiffon",   label: "Chiffon / Musseline" },
 ];
 
 interface ModelBankItem {
@@ -85,6 +101,7 @@ export default function GerarCampanha() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [productType, setProductType] = useState("");
+  const [material, setMaterial] = useState("");
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
   const [modelFilter, setModelFilter] = useState<string>("all");
@@ -147,6 +164,7 @@ export default function GerarCampanha() {
       if (audience) formData.append("targetAudience", audience);
       if (tone) formData.append("toneOverride", tone);
       if (productType) formData.append("productType", productType);
+      if (material) formData.append("material", material);
       formData.append("useModel", String(useModel));
       formData.append("backgroundType", background);
       // Modelo do banco (aleatória ou selecionada)
@@ -393,6 +411,32 @@ export default function GerarCampanha() {
                   {pt.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Material / Tecido (opcional) */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Material / Tecido <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional — melhora a precisão)</span>
+            </label>
+            <div className="relative">
+              <select
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                className="w-full h-11 px-4 pr-10 rounded-xl text-sm outline-none transition-all appearance-none cursor-pointer"
+                style={{
+                  background: "var(--surface)",
+                  border: material ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                  color: "var(--foreground)",
+                }}
+              >
+                {materials.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--muted)" }}>
+                <IconChevronDown />
+              </div>
             </div>
           </div>
 
