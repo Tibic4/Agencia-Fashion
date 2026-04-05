@@ -1,0 +1,151 @@
+﻿
+­ƒÜÇ CriaLook Pipeline Completo ÔÇö 2026-04-05T14:36:28.615Z
+­ƒô© Imagem: test-images/foto5.jpg
+
+­ƒöì Etapa 1/5: Vision Analyzer (an├ílise da foto)...
+  ÔÅ▒´©Å  6918ms | tokens: 910/271
+  Ô£à Vision: {
+  "tipo_peca": "conjunto_coordenado_blusa_saia",
+  "cor_principal": "verde_esmeralda",
+  "cores_secundarias": ["bege", "caramelo"],
+  "tecido_provavel": "viscose_ou_algodao_misto",
+  "ocasiao": ["ca ...
+
+­ƒÄ» Etapa 2/5: Estrategista (plano de campanha)...
+  ÔÅ▒´©Å  6613ms | tokens: 464/273
+  Ô£à Estrat├®gia: ```json
+{
+  "angulo_principal": "Conjunto vers├ítil que resolve o guarda-roupa com eleg├óncia - uma pe├ºa, m├║ltiplos looks para diferentes momentos do seu dia",
+  "gatilhos_mentais": [
+    "versatilidade ...
+
+Ô£ì´©Å  Etapa 3/5: Copywriter (textos para 4 canais)...
+  ÔÅ▒´©Å  23335ms | tokens: 780/1194
+  Ô£à Copy: ```json
+{
+  "headline_principal": "O conjunto que toda mulher moderna precisa ter: do trabalho ao happy hour sem trocar de roupa! Ô£¿",
+  
+  "headline_variacao_1": "Verde esmeralda que conquista: o conjunto vers├ítil que resolve qualquer ocasi├úo com eleg├óncia! ­ƒÆÜ",
+  
+  "headline_variacao_2": "Uma pe├ºa ...
+
+­ƒÆÄ Etapa 4/5: Refinador (polimento)...
+node.exe : NotFoundError: 
+404 {"type":"error","error"
+:{"type":"not_found_error",
+"message":"model: claude-ha
+iku-3-20240307"},"request_i
+d":"req_011CZknyXv7kEDE463F
+e2W3W"}
+No linha:1 caractere:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified    : 
+(NotFoundError: .    
+..kEDE463Fe2W3W"}:S    
+tring) [], RemoteEx    
+ception
+    + FullyQualifiedErr    
+orId : NativeComman    
+dError
+ 
+    at APIError.generate 
+(D:\Nova pasta\Agencia-Fash
+ion\campanha-ia\node_module
+s\@anthropic-ai\sdk\src\cor
+e\error.ts:87:14)
+    at 
+Anthropic.makeStatusError 
+(D:\Nova pasta\Agencia-Fash
+ion\campanha-ia\node_module
+s\@anthropic-ai\sdk\src\cli
+ent.ts:516:28)
+    at 
+Anthropic.makeRequest 
+(D:\Nova pasta\Agencia-Fash
+ion\campanha-ia\node_module
+s\@anthropic-ai\sdk\src\cli
+ent.ts:752:24)
+    at process.processTicks
+AndRejections (node:interna
+l/process/task_queues:104:5
+)
+    at async callClaude 
+(D:\Nova pasta\Agencia-Fash
+ion\campanha-ia\scripts\tes
+t-pipeline-full.ts:46:15)
+    at async main (D:\Nova 
+pasta\Agencia-Fashion\campa
+nha-ia\scripts\test-pipelin
+e-full.ts:174:24) {
+  status: 404,
+  headers: Headers {
+    date: 'Sun, 05 Apr 
+2026 14:37:06 GMT',
+    'content-type': 
+'application/json',
+    'transfer-encoding': 
+'chunked',
+    connection: 
+'keep-alive',
+    'x-should-retry': 
+'false',
+    'request-id': 'req_011C
+ZknyXv7kEDE463Fe2W3W',
+    'strict-transport-secur
+ity': 'max-age=31536000; 
+includeSubDomains; 
+preload',
+    'anthropic-organization
+-id': '7ce0255c-0c2b-409d-8
+dad-31470604a08c',
+    server: 'cloudflare',
+    'x-envoy-upstream-servi
+ce-time': '19',
+    'content-encoding': 
+'gzip',
+    vary: 
+'Accept-Encoding',
+    'server-timing': 
+'x-originResponse;dur=21',
+    'cf-cache-status': 
+'DYNAMIC',
+    'set-cookie': '_cfuvid=
+3lCwOYCM9_z4ywfRQNXukDUVVih
+48C7vSiJpQ8tSlrc-1775399826
+.278672-1.0.1.1-JQ4_YHNDqm3
+h_U4D45B818vkaun9M_BSIxVkny
+XOo6A; HttpOnly; 
+SameSite=None; Secure; 
+Path=/; 
+Domain=api.anthropic.com',
+    
+'content-security-policy': 
+"default-src 'none'; 
+frame-ancestors 'none'",
+    'x-robots-tag': 'none',
+    'cf-ray': 
+'9e7949f23f41ff2c-GIG'
+  },
+  requestID: 'req_011CZknyX
+v7kEDE463Fe2W3W',
+  error: {
+    type: 'error',
+    error: {
+      type: 
+'not_found_error',
+      message: 'model: 
+claude-haiku-3-20240307'
+    },
+    request_id: 'req_011CZk
+nyXv7kEDE463Fe2W3W'
+  },
+  type: 'not_found_error'
+}
+

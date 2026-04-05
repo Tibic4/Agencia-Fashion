@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QuotaExceededModal from "@/components/QuotaExceededModal";
@@ -48,6 +48,26 @@ const backgrounds = [
   { value: "lifestyle", label: "Lifestyle IA", gradient: "linear-gradient(135deg, #E0EAF0, #E0F0E8)", ai: true },
 ];
 
+const productTypes = [
+  { value: "blusa",     label: "👚 Blusa / Regata / Top" },
+  { value: "saia",      label: "👗 Saia" },
+  { value: "calca",     label: "👖 Calça / Shorts" },
+  { value: "vestido",   label: "👗 Vestido" },
+  { value: "conjunto",  label: "🎀 Conjunto" },
+  { value: "jaqueta",   label: "🧥 Jaqueta / Casaco" },
+  { value: "acessorio", label: "💎 Acessório" },
+];
+
+interface ModelBankItem {
+  id: string;
+  name: string;
+  body_type: string;
+  skin_tone: string;
+  pose: string;
+  image_url: string;
+  thumbnail_url: string | null;
+}
+
 export default function GerarCampanha() {
   const router = useRouter();
   const [dragOver, setDragOver] = useState(false);
@@ -64,9 +84,21 @@ export default function GerarCampanha() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [productType, setProductType] = useState("");
+  const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string>("random");
+  const [modelFilter, setModelFilter] = useState<string>("all");
   const [quotaExceeded, setQuotaExceeded] = useState<{
     used: number; limit: number; credits: number;
   } | null>(null);
+
+  // Carregar banco de modelos
+  useEffect(() => {
+    fetch("/api/models/bank")
+      .then(res => res.json())
+      .then(data => setModelBank(data.models || []))
+      .catch(() => {});
+  }, []);
 
   const generationSteps = [
     { label: "Analisando produto...", progress: 15 },
@@ -114,8 +146,16 @@ export default function GerarCampanha() {
       formData.append("storeName", "Minha Loja");
       if (audience) formData.append("targetAudience", audience);
       if (tone) formData.append("toneOverride", tone);
+      if (productType) formData.append("productType", productType);
       formData.append("useModel", String(useModel));
       formData.append("backgroundType", background);
+      // Modelo do banco (aleatória ou selecionada)
+      if (useModel && selectedModelId !== "random") {
+        formData.append("modelBankId", selectedModelId);
+      } else if (useModel && modelBank.length > 0) {
+        const randomModel = modelBank[Math.floor(Math.random() * modelBank.length)];
+        formData.append("modelBankId", randomModel.id);
+      }
 
       // Call API
       const response = await fetch("/api/campaign/generate", {
@@ -333,6 +373,29 @@ export default function GerarCampanha() {
             )}
           </div>
 
+          {/* Product Type */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">Tipo de produto *</label>
+            <div className="grid grid-cols-2 gap-2">
+              {productTypes.map((pt) => (
+                <button
+                  key={pt.value}
+                  onClick={() => setProductType(pt.value)}
+                  className="p-2.5 rounded-xl text-left text-sm transition-all"
+                  style={{
+                    background: productType === pt.value ? "var(--gradient-card)" : "var(--surface)",
+                    border: productType === pt.value
+                      ? "1px solid var(--brand-300)"
+                      : "1px solid var(--border)",
+                    fontWeight: productType === pt.value ? 600 : 400,
+                  }}
+                >
+                  {pt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Price */}
           <div>
             <label className="block text-sm font-semibold mb-2">Preço de venda *</label>
@@ -403,6 +466,73 @@ export default function GerarCampanha() {
               />
             </button>
           </div>
+
+          {/* Model Bank Selector */}
+          {useModel && modelBank.length > 0 && (
+            <div className="animate-fade-in">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-semibold">Escolha a modelo</label>
+                <div className="flex gap-1">
+                  {["all", "normal", "plus_size"].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setModelFilter(f)}
+                      className="px-2 py-1 rounded-md text-[10px] font-medium transition-all"
+                      style={{
+                        background: modelFilter === f ? "var(--brand-100)" : "transparent",
+                        color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
+                      }}
+                    >
+                      {f === "all" ? "Todas" : f === "normal" ? "Normal" : "Plus"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {/* Opção aleatória */}
+                <button
+                  onClick={() => setSelectedModelId("random")}
+                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all"
+                  style={{
+                    border: selectedModelId === "random"
+                      ? "2px solid var(--brand-500)"
+                      : "1px solid var(--border)",
+                    background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
+                  }}
+                >
+                  <span className="text-lg">🎲</span>
+                  <span className="text-[9px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
+                </button>
+                {/* Modelos do banco */}
+                {modelBank
+                  .filter(m => modelFilter === "all" || m.body_type === modelFilter)
+                  .map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => setSelectedModelId(model.id)}
+                    className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                    style={{
+                      border: selectedModelId === model.id
+                        ? "2px solid var(--brand-500)"
+                        : "1px solid var(--border)",
+                    }}
+                    title={model.name}
+                  >
+                    <img
+                      src={model.thumbnail_url || model.image_url}
+                      alt={model.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {selectedModelId === model.id && (
+                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Background */}
           <div>
@@ -489,7 +619,7 @@ export default function GerarCampanha() {
           {/* Generate button */}
           <button
             onClick={handleGenerate}
-            disabled={!preview || !price}
+            disabled={!preview || !price || !productType}
             className="btn-primary w-full !py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
             style={{
               boxShadow: preview && price ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
@@ -499,9 +629,9 @@ export default function GerarCampanha() {
             Gerar Campanha
           </button>
 
-          {(!preview || !price) && (
+          {(!preview || !price || !productType) && (
             <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
-              {!preview ? "Faça upload da foto para continuar" : "Informe o preço para continuar"}
+              {!preview ? "Faça upload da foto para continuar" : !productType ? "Selecione o tipo de produto" : "Informe o preço para continuar"}
             </p>
           )}
         </div>

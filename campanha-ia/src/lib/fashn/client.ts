@@ -162,8 +162,17 @@ export async function editImage(params: FashnEditParams): Promise<FashnJobResult
   return pollResult(jobId);
 }
 
+/** Prompts de fundo otimizados (anti-manequim) */
+const BACKGROUND_PROMPTS: Record<string, string> = {
+  branco: "Professional fashion photo in white studio. Smooth fabric, no wrinkles. Remove any mannequin parts, stands, poles, or dark artifacts. Clean natural skin on legs and arms. Soft studio lighting. Full body visible.",
+  estudio: "Professional fashion photo in elegant studio. Smooth fabric. Remove any mannequin artifacts, stands or poles. Natural skin tones throughout body. Soft gradient backdrop. Professional lighting.",
+  lifestyle: "Professional fashion photo in urban outdoor setting. Smooth fabric. Remove any artificial elements, mannequin parts. Natural skin tones. Natural lighting.",
+  personalizado: "Professional fashion photo, smooth fabric without wrinkles. Remove any mannequin artifacts.",
+};
+
 /**
- * Pipeline completo A+: product-to-model + edit (alisar + fundo).
+ * Pipeline A+: product-to-model + edit (alisar + fundo).
+ * Usado quando NÃO há modelo do banco selecionada.
  * Custo total: ~R$ 0,25
  */
 export async function generateModelImage(
@@ -171,60 +180,55 @@ export async function generateModelImage(
   backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
   backgroundValue?: string,
 ): Promise<FashnJobResult> {
-  // Passo 1: Gerar modelo vestindo a peça
-  const modelResult = await productToModel({ productImage });
+  // Passo 1: Gerar modelo vestindo a peça (com prompt melhor)
+  const jobId = await submitJob("product-to-model", {
+    product_image: productImage,
+    prompt: "Full body fashion model, standing pose, natural skin tone on legs and arms, no mannequin, no black legs, no stand or pole, professional fashion photo, white studio background",
+    aspect_ratio: "9:16",
+  });
+  const modelResult = await pollResult(jobId);
 
   if (modelResult.status !== "completed" || !modelResult.outputUrl) {
     return modelResult;
   }
 
   // Passo 2: Refinar (alisar roupa + aplicar fundo)
-  const backgroundPrompts: Record<string, string> = {
-    branco: "Professional fashion photo, smooth fabric without wrinkles, clean white studio background, soft studio lighting",
-    estudio: "Professional fashion photo, smooth fabric without wrinkles, elegant studio with soft gradient backdrop, professional lighting",
-    lifestyle: "Professional fashion photo, smooth fabric without wrinkles, casual urban outdoor setting, natural lighting",
-    personalizado: backgroundValue || "Professional fashion photo, smooth fabric without wrinkles",
-  };
+  const prompt = backgroundType === "personalizado" && backgroundValue
+    ? backgroundValue
+    : BACKGROUND_PROMPTS[backgroundType];
 
-  const editResult = await editImage({
-    image: modelResult.outputUrl,
-    prompt: backgroundPrompts[backgroundType],
-  });
-
-  return editResult;
+  return editImage({ image: modelResult.outputUrl, prompt });
 }
 
 /**
- * Criar um modelo virtual personalizado (model training).
- * Custo: ~R$ 1,72
+ * Pipeline com Banco de Modelos: try-on + edit.
+ * Usa uma modelo pré-gerada do banco para vestir a peça.
+ * Custo total: ~R$ 0,53
  */
-export async function createModel(params: FashnModelCreateParams): Promise<{ id: string; status: string }> {
-  if (!FASHN_API_KEY) {
-    throw new Error("FASHN_API_KEY não configurada");
-  }
-
-  const res = await fetch(`${FASHN_API_URL}/run`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${FASHN_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model_name: "model-create",
-      inputs: {
-        name: params.name,
-        samples: params.sampleImages,
-      },
-    }),
+export async function generateWithModelBank(
+  garmentImage: string,
+  modelImageUrl: string,
+  category: "tops" | "bottoms" | "one-pieces" | "auto" = "auto",
+  backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
+  backgroundValue?: string,
+): Promise<FashnJobResult> {
+  // Passo 1: Try-On — vestir a peça na modelo do banco
+  const tryonResult = await tryOnProduct({
+    garmentImage,
+    modelImage: modelImageUrl,
+    category,
   });
 
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(`Fashn.ai model create error (${res.status}): ${error}`);
+  if (tryonResult.status !== "completed" || !tryonResult.outputUrl) {
+    return tryonResult;
   }
 
-  const result = await res.json();
-  return { id: result.id, status: result.status };
+  // Passo 2: Edit — alisar roupa + fundo profissional
+  const prompt = backgroundType === "personalizado" && backgroundValue
+    ? backgroundValue
+    : BACKGROUND_PROMPTS[backgroundType];
+
+  return editImage({ image: tryonResult.outputUrl, prompt });
 }
 
 /**
