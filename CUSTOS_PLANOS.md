@@ -95,17 +95,15 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
 | Campanhas | 100 | R$ 0,77 | R$ 77,00 |
-| Regenerações | 100 × 5 = 500 | R$ 0,15 | R$ 75,00 |
+| Regenerações | 100 × 3 = 300 | R$ 0,15 | R$ 45,00 |
 | Criação de modelo | 3 | R$ 1,72 | R$ 5,16 |
-| **Custo Total** | | | **R$ 157,16** |
+| **Custo Total** | | | **R$ 127,16** |
 | **Receita** | | | **R$ 249,00** |
-| **Margem** | | | **R$ 91,84** |
-| **Margem %** | | | **36,9%** ⚠️ |
+| **Margem** | | | **R$ 121,84** |
+| **Margem %** | | | **48,9%** ✅ |
 
-**Custo por campanha efetivo:** R$ 157,16 ÷ 100 = **R$ 1,57/campanha**
+**Custo por campanha efetivo:** R$ 127,16 ÷ 100 = **R$ 1,27/campanha**
 **Preço por campanha que o cliente paga:** R$ 249 ÷ 100 = **R$ 2,49/campanha**
-
-> ⚠️ No pior caso absoluto (todas as 500 regenerações usadas), a margem cai abaixo de 40%.
 
 ---
 
@@ -114,14 +112,14 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
 | Campanhas | 200 | R$ 0,77 | R$ 154,00 |
-| Regenerações | 200 × 5 = 1000 | R$ 0,15 | R$ 150,00 |
+| Regenerações | 200 × 3 = 600 | R$ 0,15 | R$ 90,00 |
 | Criação de modelo | 5 | R$ 1,72 | R$ 8,60 |
-| **Custo Total** | | | **R$ 312,60** |
+| **Custo Total** | | | **R$ 252,60** |
 | **Receita** | | | **R$ 499,00** |
-| **Margem** | | | **R$ 186,40** |
-| **Margem %** | | | **37,4%** ⚠️ |
+| **Margem** | | | **R$ 246,40** |
+| **Margem %** | | | **49,4%** ✅ |
 
-**Custo por campanha efetivo:** R$ 312,60 ÷ 200 = **R$ 1,56/campanha**
+**Custo por campanha efetivo:** R$ 252,60 ÷ 200 = **R$ 1,26/campanha**
 **Preço por campanha que o cliente paga:** R$ 499 ÷ 200 = **R$ 2,50/campanha**
 
 ---
@@ -133,8 +131,8 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 | 🆓 Grátis | R$ 0 | R$ 2,31 | -R$ 2,31 | — | 🔴 Loss leader |
 | ⭐ Starter | R$ 59 | R$ 17,77 | R$ 41,23 | 69,9% | 🟢 Saudável |
 | 🚀 Pro | R$ 129 | R$ 52,24 | R$ 76,76 | 59,5% | 🟢 Saudável |
-| 🏢 Business | R$ 249 | R$ 157,16 | R$ 91,84 | 36,9% | 🟡 Apertado |
-| 🏆 Agência | R$ 499 | R$ 312,60 | R$ 186,40 | 37,4% | 🟡 Apertado |
+| 🏢 Business | R$ 249 | R$ 127,16 | R$ 121,84 | 48,9% | 🟢 Saudável |
+| 🏆 Agência | R$ 499 | R$ 252,60 | R$ 246,40 | 49,4% | 🟢 Saudável |
 
 ---
 
@@ -186,5 +184,5 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 |-------|-------------|-----------|-----------------|-------------|
 | ⭐ Starter | R$ 56,06 | R$ 17,77 | **R$ 38,29** | **68,3%** ✅ |
 | 🚀 Pro | R$ 122,58 | R$ 52,24 | **R$ 70,34** | **57,4%** ✅ |
-| 🏢 Business | R$ 236,60 | R$ 157,16 | **R$ 79,44** | **33,6%** ⚠️ |
-| 🏆 Agência | R$ 474,15 | R$ 312,60 | **R$ 161,55** | **34,1%** ⚠️ |
+| 🏢 Business | R$ 236,60 | R$ 127,16 | **R$ 109,44** | **46,3%** ✅ |
+| 🏆 Agência | R$ 474,15 | R$ 252,60 | **R$ 221,55** | **46,7%** ✅ |

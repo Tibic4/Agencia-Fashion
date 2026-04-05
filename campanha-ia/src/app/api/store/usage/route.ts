@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, getCurrentUsage } from "@/lib/db";
+import { getStoreByClerkId, getCurrentUsage, getStorePlanName, getModelLimitForPlan, getRegenLimitForPlan, getHistoryDaysForPlan, hasFullScore, hasAllChannels, hasPreviewLink, hasWhiteLabel, hasPublicApi } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/store/usage
  * 
- * Retorna o uso atual (campanhas geradas vs limite) da loja do usuário logado.
+ * Retorna o uso atual e limites baseados no plano real da loja.
+ * Usa helpers centralizados do db/index.ts como fonte de verdade.
  */
 export async function GET() {
   try {
@@ -22,6 +23,7 @@ export async function GET() {
     }
 
     const usage = await getCurrentUsage(store.id);
+    const planName = await getStorePlanName(store.id);
 
     // Contar modelos criados
     let modelsUsed = 0;
@@ -35,24 +37,21 @@ export async function GET() {
       modelsUsed = count || 0;
     } catch {}
 
-    // Limites por plano
-    const planLimits: Record<string, { models: number; regen: number }> = {
-      starter: { models: 1, regen: 2 },
-      pro: { models: 2, regen: 3 },
-      business: { models: 3, regen: 5 },
-      agencia: { models: 5, regen: 10 },
-    };
-    const planKey = store.plan_id?.replace("plan_", "") || "";
-    const limits = planLimits[planKey] || { models: 0, regen: 0 };
-
     return NextResponse.json({
       success: true,
       data: {
+        plan_name: planName,
         campaigns_generated: usage?.campaigns_generated ?? 0,
         campaigns_limit: usage?.campaigns_limit ?? 3,
         models_used: modelsUsed,
-        models_limit: limits.models,
-        regen_limit: limits.regen,
+        models_limit: getModelLimitForPlan(planName),
+        regen_limit: getRegenLimitForPlan(planName),
+        history_days: getHistoryDaysForPlan(planName),
+        full_score: hasFullScore(planName),
+        all_channels: hasAllChannels(planName),
+        preview_link: hasPreviewLink(planName),
+        white_label: hasWhiteLabel(planName),
+        public_api: hasPublicApi(planName),
         period_start: usage?.period_start ?? null,
         period_end: usage?.period_end ?? null,
       },

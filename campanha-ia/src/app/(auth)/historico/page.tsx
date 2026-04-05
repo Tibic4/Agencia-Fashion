@@ -11,8 +11,19 @@ interface Campaign {
   status: string;
   created_at: string;
   pipeline_duration_ms: number | null;
+  regen_count: number | null;
+  preview_token: string | null;
   campaign_scores: { nota_geral: number }[] | null;
   campaign_outputs: { headline_principal: string }[] | null;
+}
+
+interface PlanInfo {
+  name: string;
+  historyDays: number;
+  regenLimit: number;
+  fullScore: boolean;
+  allChannels: boolean;
+  previewLink: boolean;
 }
 
 const objectiveLabels: Record<string, string> = {
@@ -35,6 +46,7 @@ function formatDate(d: string) {
 
 export default function Historico() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +56,6 @@ export default function Historico() {
         const res = await fetch("/api/campaigns");
         if (!res.ok) {
           if (res.status === 404) {
-            // Sem loja ainda
             setCampaigns([]);
             return;
           }
@@ -52,6 +63,7 @@ export default function Historico() {
         }
         const data = await res.json();
         setCampaigns(data.data || []);
+        if (data.plan) setPlanInfo(data.plan);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Erro ao carregar";
         setError(message);
@@ -75,9 +87,11 @@ export default function Historico() {
     );
   }
 
+  const historyLabel = planInfo?.historyDays === 0 ? "ilimitado" : `${planInfo?.historyDays || 7} dias`;
+
   return (
     <div className="animate-fade-in-up">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             <span className="gradient-text">Histórico</span>
@@ -90,6 +104,20 @@ export default function Historico() {
           + Nova campanha
         </Link>
       </div>
+
+      {/* Aviso de expiração de histórico */}
+      {planInfo && planInfo.historyDays > 0 && (
+        <div className="mb-6 p-3 rounded-xl flex items-center gap-3 text-xs" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-200)" }}>
+          <span>📅</span>
+          <p>
+            Seu plano mostra campanhas dos últimos <strong>{historyLabel}</strong>.{" "}
+            <Link href="/plano" className="font-semibold underline" style={{ color: "var(--brand-600)" }}>
+              Faça upgrade
+            </Link>{" "}
+            para histórico mais longo.
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>

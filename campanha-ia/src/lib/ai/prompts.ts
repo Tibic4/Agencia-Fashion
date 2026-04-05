@@ -1,7 +1,9 @@
 // ═══════════════════════════════════════════════════
 // Prompts do Pipeline de IA — Nicho: MODA brasileira
-// v2.0 — Melhorados com contexto real de mercado BR
+// v2.1 — Corrigidos após teste real (pipeline_test_1)
 // ═══════════════════════════════════════════════════
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 /**
  * STEP 1 — Vision: Analisa a foto do produto
@@ -12,7 +14,8 @@ Seu vocabulário é preciso: sabe diferenciar crepe de viscose, babados de franz
 SEMPRE responda em JSON válido, sem markdown ou explicações.`;
 
 export function buildVisionPrompt(): string {
-  return `Analise esta foto de produto de moda em detalhes e retorne um JSON com esta estrutura EXATA:
+  return `Analise esta foto de produto de moda em detalhes e retorne um JSON com esta estrutura EXATA.
+ANO ATUAL: ${CURRENT_YEAR} (use este ano em referências de tendência).
 
 {
   "produto": {
@@ -40,7 +43,7 @@ export function buildVisionPrompt(): string {
   },
   "nicho_sensivel": false,
   "mood": ["feminino", "romântico", "verão"],
-  "palavras_chave_venda": ["confortável", "versátil", "tendência 2026", "peça-chave"]
+  "palavras_chave_venda": ["confortável", "versátil", "tendência ${CURRENT_YEAR}", "peça-chave"]
 }
 
 DICAS:
@@ -195,22 +198,23 @@ Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
   "whatsapp": "Mensagem para disparar no WhatsApp em tom PESSOAL, como a dona da loja mandando pra clientela VIP. Use *negrito* no preço e em palavras-chave. Exemplo de tom: 'Ei, tudo bem? Chegou aquela peça que você vai AMAR...'",
   "meta_ads": {
     "titulo": "Título do anúncio (máx 40 chars, direto, sem emoji)",
-    "texto_principal": "Texto principal do anúncio (máx 125 chars, benefício claro)",
+    "texto_principal": "Texto principal do anúncio (máx 125 chars, benefício claro, SEM claims não comprováveis como percentuais)",
     "descricao": "Descrição curta (máx 30 chars)",
     "cta_button": "shop_now|learn_more|sign_up|contact_us"
   },
-  "hashtags": ["10 a 15 hashtags relevantes", "mix de populares e nicho", "modafeminina", "lookdodia"${plusSizeHashtags}]
+  "hashtags": ["10 a 15 hashtags SEM o prefixo #", "ex: modafeminina (sem #)", "mix de populares e nicho", "lookdodia"${plusSizeHashtags}]
 }
 
 REGRAS DE OURO:
+- ANO ATUAL: ${CURRENT_YEAR} — use este ano para referências de tendência (NUNCA use anos anteriores)
 - Preço EXATO de R$ ${params.preco} — destaque com emoji ou negrito
 - Linguagem 100% brasileira natural — como conversa real, não propaganda
-- Instagram Feed: storytelling curto que conecta emocionalmente
+- Instagram Feed: storytelling curto + emojis estratégicos (mínimo 3, máximo 5)
 - Stories: cada slide com NO MÁXIMO 2 linhas — lembra que é tela pequena!
 - WhatsApp: TOM DE AMIGA. Como se a lojista estivesse mandando áudio (mas em texto)
-- Meta Ads: SEM emojis, SEM letras maiúsculas excessivas, SEM promessas exageradas
+- Meta Ads: SEM emojis, SEM letras maiúsculas excessivas, SEM claims não comprováveis ("resolve X%", "favorece todos")
 - JAMAIS invente promoções, descontos ou preços que não foram informados
-- Hashtags: mix de alto volume (#moda #lookdodia) com nicho (#[categoria] #[estação])${plusSizeRules}
+- Hashtags: SEM prefixo # (apenas a palavra). Mix de alto volume (modafeminina, lookdodia) com nicho (categoria, estação). Sem erros de digitação!${plusSizeRules}
 
 Responda APENAS com o JSON.`;
 }
@@ -242,15 +246,17 @@ ${params.estrategia}
 
 CHECKLIST DE REFINAMENTO (revise cada ponto):
 1. ✅ NATURALIDADE: Parece algo que uma lojista brasileira REAL postaria? Não pode soar como IA.
-2. ✅ EMOJIS: Máximo 3-4 por texto. Cada emoji deve ter propósito (destaque, emoção, ação).
+2. ✅ EMOJIS: Instagram Feed DEVE ter entre 3-5 emojis bem posicionados. NÃO remova emojis em excesso — isso é Instagram de moda, emojis são essenciais! WhatsApp pode ter 1-2. Stories 1 por slide.
 3. ✅ CTA: Está claro, direto e com urgência natural? (DM, WhatsApp, link bio)
 4. ✅ URGÊNCIA: Motiva a compra sem parecer spam ou clickbait.
 5. ✅ PREÇO: Está no momento certo do texto? (depois dos benefícios, antes do CTA)
 6. ✅ STORIES: Cada slide tem no máximo 2 linhas? (tela pequena!)
 7. ✅ WHATSAPP: Tom pessoal? Parece mensagem de amiga?
-8. ✅ META ADS: Cumpre políticas? (sem promessas absurdas, sem ALL CAPS, sem emojis)
+8. ✅ META ADS: Cumpre políticas? (sem promessas absurdas, sem ALL CAPS, sem emojis, sem claims não comprováveis como percentuais ou "todos")
 9. ✅ CLICHÊS: Removeu "imperdível", "sensacional", "compre já", "peça única"?
 10. ✅ FLUIDEZ: O texto flui bem quando lido em voz alta?
+11. ✅ ANO: Qualquer referência de tendência usa o ano CORRETO (${CURRENT_YEAR})? NUNCA anos anteriores.
+12. ✅ HASHTAGS: Estão SEM prefixo #? Sem erros de digitação? (ex: looktrabalho, NÃO looktrabaho)
 
 Retorne JSON com:
 {
