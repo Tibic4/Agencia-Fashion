@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
 import { runMockPipeline } from "@/lib/ai/mock-data";
-import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel } from "@/lib/db";
+import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel, consumeCredit, getStoreCredits } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { PipelineStep } from "@/types";
 
@@ -74,14 +74,28 @@ export async function POST(request: NextRequest) {
       store = await getStoreByClerkId(clerkUserId);
     }
 
-    // ── Verificar quota ──
+    // ── Verificar quota (seção 5.5 da arquitetura) ──
+    let usedAvulsoCredit = false;
     if (store) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
-        return NextResponse.json({
-          error: `Limite de campanhas atingido (${quota.used}/${quota.limit}). Faça upgrade do plano.`,
-          code: "QUOTA_EXCEEDED",
-        }, { status: 429 });
+        // Plano esgotou — tentar crédito avulso
+        const creditUsed = await consumeCredit(store.id, "campaigns");
+        if (creditUsed) {
+          usedAvulsoCredit = true;
+          console.log(`[Generate] 💳 Crédito avulso consumido (plano esgotado: ${quota.used}/${quota.limit})`);
+        } else {
+          // Sem créditos — retorna com info de créditos disponíveis
+          const credits = await getStoreCredits(store.id);
+          return NextResponse.json({
+            error: `Suas ${quota.limit} campanhas do mês acabaram!`,
+            code: "QUOTA_EXCEEDED",
+            used: quota.used,
+            limit: quota.limit,
+            credits: credits.campaigns,
+            upgradeHint: true,
+          }, { status: 429 });
+        }
       }
     }
 
