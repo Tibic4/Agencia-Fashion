@@ -24,6 +24,10 @@ export const metadata: Metadata = {
     "criativo instagram",
     "marketing roupa",
   ],
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
   openGraph: {
     title: "CriaLook — Marketing de moda com inteligência artificial",
     description:

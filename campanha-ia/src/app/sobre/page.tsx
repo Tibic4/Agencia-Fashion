@@ -50,7 +50,7 @@ export default function Sobre() {
             <h2 className="text-2xl font-bold mt-10 mb-4" style={{ color: "var(--foreground)" }}>Contato</h2>
             <p>
               📧 <a href="mailto:contato@crialook.com.br" className="gradient-text font-semibold">contato@crialook.com.br</a><br/>
-              📱 WhatsApp: <a href="https://wa.me/5534998223001" className="gradient-text font-semibold">(34) 99822-3001</a>
+              📱 WhatsApp: <a href="https://wa.me/553498223001" className="gradient-text font-semibold">(34) 9822-3001</a>
             </p>
           </div>
         </div>

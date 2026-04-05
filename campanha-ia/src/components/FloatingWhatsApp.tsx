@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const WHATSAPP_URL =
-  "https://wa.me/5534999877979?text=Oi!%20Vi%20o%20CriaLook%20e%20queria%20bater%20um%20papo%20para%20entender%20melhor.";
+  "https://wa.me/553498223001?text=Oi!%20Vi%20o%20CriaLook%20e%20queria%20bater%20um%20papo%20para%20entender%20melhor.";
 
 export default function FloatingWhatsApp() {
   const [pulse, setPulse] = useState(false);
