@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const IconCopy = () => (
@@ -64,6 +64,8 @@ export default function ResultadoCampanha() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [campaignData, setCampaignData] = useState<any>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Load data from sessionStorage on mount
   useEffect(() => {
@@ -76,6 +78,124 @@ export default function ResultadoCampanha() {
       }
     } catch {}
   }, []);
+
+  // ── Regerar canal ──
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const stored = sessionStorage.getItem("campaignFormData");
+      if (!stored) {
+        alert("Dados da campanha original não encontrados. Gere uma nova campanha.");
+        return;
+      }
+      const formData = new FormData();
+      const original = JSON.parse(stored);
+      // Re-send with same parameters
+      if (original.imageBase64) {
+        const blob = await fetch(`data:image/jpeg;base64,${original.imageBase64}`).then(r => r.blob());
+        formData.append("image", blob, "product.jpg");
+      }
+      formData.append("price", original.price || "99,90");
+      formData.append("objective", original.objective || "vender");
+      formData.append("targetAudience", original.targetAudience || "");
+      formData.append("toneOverride", original.toneOverride || "");
+      formData.append("useModel", original.useModel || "false");
+
+      const res = await fetch("/api/campaign/generate", { method: "POST", body: formData });
+      const json = await res.json();
+
+      if (json.success) {
+        setCampaignData(json.data);
+        sessionStorage.setItem("campaignResult", JSON.stringify(json));
+      } else {
+        alert(json.error || "Erro ao regerar. Tente novamente.");
+      }
+    } catch (err) {
+      console.error("Regen error:", err);
+      alert("Erro de conexão ao regerar.");
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  // ── Baixar PNG do criativo ──
+  const handleDownloadPNG = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
+    gradient.addColorStop(0, "#fdf2f8");
+    gradient.addColorStop(0.5, "#fce7f3");
+    gradient.addColorStop(1, "#f5f3ff");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Brand badge
+    ctx.fillStyle = "#ec4899";
+    ctx.font = "bold 24px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("✨ CriaLook", 540, 80);
+
+    // Product name
+    ctx.fillStyle = "#1a1a2e";
+    ctx.font = "bold 64px Inter, system-ui, sans-serif";
+    ctx.fillText(productName, 540, 480);
+
+    // Price
+    const priceText = campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || "";
+    if (priceText) {
+      ctx.fillStyle = "#ec4899";
+      ctx.font = "bold 72px Inter, system-ui, sans-serif";
+      ctx.fillText(priceText, 540, 580);
+    }
+
+    // CTA
+    ctx.fillStyle = "#ec4899";
+    ctx.beginPath();
+    ctx.roundRect(290, 700, 500, 70, 35);
+    ctx.fill();
+    ctx.fillStyle = "white";
+    ctx.font = "bold 28px Inter, system-ui, sans-serif";
+    ctx.fillText("Compre agora 💕", 540, 745);
+
+    // Score badge
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    ctx.beginPath();
+    ctx.roundRect(410, 900, 260, 50, 25);
+    ctx.fill();
+    ctx.fillStyle = "#666";
+    ctx.font = "18px Inter, system-ui, sans-serif";
+    ctx.fillText(`Score: ${scoreData.nota_geral}/100 ⭐`, 540, 932);
+
+    // Download
+    const link = document.createElement("a");
+    link.download = `crialook-${productName.toLowerCase().replace(/\s+/g, "-")}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  // ── Baixar todos os textos ──
+  const handleDownloadTexts = () => {
+    let allTexts = `CriaLook — Campanha: ${productName}\n`;
+    allTexts += `Score: ${scoreData.nota_geral}/100\n`;
+    allTexts += `═══════════════════════════════════════\n\n`;
+
+    channels.forEach(ch => {
+      const c = getChannelContent(ch.id);
+      allTexts += `${ch.icon} ${c.title}\n${"-".repeat(40)}\n${c.text}\n\n`;
+      if (c.extra) allTexts += `Hashtags: ${c.extra}\n\n`;
+    });
+
+    const blob = new Blob([allTexts], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.download = `crialook-${productName.toLowerCase().replace(/\s+/g, "-")}-textos.txt`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+  };
 
   const copyText = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -178,12 +298,21 @@ export default function ResultadoCampanha() {
                   {copiedField === activeChannel ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
                 </button>
                 <button
-                  disabled
-                  title="Em breve"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed"
-                  style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: regenerating ? "var(--surface)" : "var(--brand-100)",
+                    color: regenerating ? "var(--muted)" : "var(--brand-700)",
+                    border: "1px solid var(--border)",
+                    opacity: regenerating ? 0.6 : 1,
+                  }}
                 >
-                  <IconRefresh /> Regerar
+                  {regenerating ? (
+                    <><span className="animate-spin inline-block w-3 h-3 border-2 border-brand-300 border-t-brand-600 rounded-full" /> Regerando...</>
+                  ) : (
+                    <><IconRefresh /> Regerar</>
+                  )}
                 </button>
               </div>
             </div>
@@ -205,23 +334,36 @@ export default function ResultadoCampanha() {
             )}
           </div>
 
-          {/* Creative preview placeholder */}
+          {/* Creative preview + actions */}
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <h3 className="text-sm font-semibold">Criativo gerado</h3>
-              <button disabled title="Em breve" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium opacity-50 cursor-not-allowed" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
-                <IconDownload /> Em breve
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownloadPNG}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                  style={{ background: "var(--gradient-brand)", color: "white" }}
+                >
+                  <IconDownload /> Baixar PNG
+                </button>
+                <button
+                  onClick={handleDownloadTexts}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                  style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}
+                >
+                  <IconDownload /> Textos .txt
+                </button>
+              </div>
             </div>
             <div className="aspect-square max-h-96 flex items-center justify-center" style={{ background: "var(--gradient-brand-soft)" }}>
               <div className="text-center p-8">
                 <div className="text-6xl mb-4">👗</div>
                 <p className="text-lg font-bold gradient-text">{productName}</p>
                 <p className="text-2xl font-black mt-2">
-                  {campaignData?.vision?.produto ? `R$ ${campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0]?.replace('R$ ', '') || '—'}` : 'R$ —'}
+                  {campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ''}
                 </p>
-                <p className="text-xs mt-4" style={{ color: "var(--muted)" }}>
-                  Criativo visual com modelo virtual — em breve
+                <p className="text-xs mt-4" style={{ color: "var(--brand-500)" }}>
+                  ⬇️ Clique em &quot;Baixar PNG&quot; para salvar o criativo 1080x1080
                 </p>
               </div>
             </div>

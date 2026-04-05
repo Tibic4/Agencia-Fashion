@@ -23,11 +23,36 @@ export async function GET() {
 
     const usage = await getCurrentUsage(store.id);
 
+    // Contar modelos criados
+    let modelsUsed = 0;
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      const { count } = await supabase
+        .from("store_models")
+        .select("*", { count: "exact", head: true })
+        .eq("store_id", store.id);
+      modelsUsed = count || 0;
+    } catch {}
+
+    // Limites por plano
+    const planLimits: Record<string, { models: number; regen: number }> = {
+      starter: { models: 1, regen: 2 },
+      pro: { models: 2, regen: 3 },
+      business: { models: 3, regen: 5 },
+      agencia: { models: 5, regen: 10 },
+    };
+    const planKey = store.plan_id?.replace("plan_", "") || "";
+    const limits = planLimits[planKey] || { models: 0, regen: 0 };
+
     return NextResponse.json({
       success: true,
       data: {
         campaigns_generated: usage?.campaigns_generated ?? 0,
         campaigns_limit: usage?.campaigns_limit ?? 3,
+        models_used: modelsUsed,
+        models_limit: limits.models,
+        regen_limit: limits.regen,
         period_start: usage?.period_start ?? null,
         period_end: usage?.period_end ?? null,
       },

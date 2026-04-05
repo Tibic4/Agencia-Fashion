@@ -135,6 +135,21 @@ export default function GerarCampanha() {
       // Store result for the demo page
       sessionStorage.setItem("campaignResult", JSON.stringify(data));
 
+      // Store form data for regeneration
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1];
+        sessionStorage.setItem("campaignFormData", JSON.stringify({
+          imageBase64: base64,
+          price,
+          objective,
+          targetAudience: audience,
+          toneOverride: tone,
+          useModel: String(useModel),
+        }));
+      };
+      reader.readAsDataURL(selectedFile);
+
       // Show completion then redirect
       setGenerationStep(generationSteps.length - 1);
       setTimeout(() => {
