@@ -212,6 +212,115 @@ export function getModelLimitForPlan(planName: string): number {
   return limits[planName] ?? 0;
 }
 
+/** Limites de regenerações por campanha (sincronizado com plano/page.tsx) */
+export function getRegenLimitForPlan(planName: string): number {
+  const limits: Record<string, number> = {
+    gratis: 0,
+    free: 0,
+    starter: 2,
+    pro: 3,
+    business: 3,
+    agencia: 3,
+  };
+  return limits[planName] ?? 0;
+}
+
+/** Dias de histórico por plano (0 = ilimitado) */
+export function getHistoryDaysForPlan(planName: string): number {
+  const limits: Record<string, number> = {
+    gratis: 7,
+    free: 7,
+    starter: 90,
+    pro: 365,
+    business: 0,
+    agencia: 0,
+  };
+  return limits[planName] ?? 7;
+}
+
+/** Verifica se o plano tem acesso ao score completo */
+export function hasFullScore(planName: string): boolean {
+  return !["gratis", "free"].includes(planName);
+}
+
+/** Verifica se o plano tem acesso a todos os canais */
+export function hasAllChannels(planName: string): boolean {
+  return !["gratis", "free"].includes(planName);
+}
+
+/** Verifica se o plano tem acesso ao link de prévia */
+export function hasPreviewLink(planName: string): boolean {
+  return ["pro", "business", "agencia"].includes(planName);
+}
+
+/** Verifica se o plano tem marca branca */
+export function hasWhiteLabel(planName: string): boolean {
+  return planName === "agencia";
+}
+
+/** Verifica se o plano tem API pública */
+export function hasPublicApi(planName: string): boolean {
+  return planName === "agencia";
+}
+
+/** Incrementa o contador de regenerações de uma campanha */
+export async function incrementRegenCount(campaignId: string): Promise<number> {
+  const supabase = createAdminClient();
+  
+  // Buscar contagem atual
+  const { data } = await supabase
+    .from("campaigns")
+    .select("regen_count")
+    .eq("id", campaignId)
+    .single();
+  
+  const newCount = (data?.regen_count || 0) + 1;
+  
+  await supabase
+    .from("campaigns")
+    .update({ regen_count: newCount })
+    .eq("id", campaignId);
+  
+  return newCount;
+}
+
+/** Verifica se a campanha pode regenerar */
+export async function canRegenerate(campaignId: string, storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+  const supabase = createAdminClient();
+  
+  // Buscar regen_count da campanha
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("regen_count")
+    .eq("id", campaignId)
+    .single();
+  
+  const used = campaign?.regen_count || 0;
+  
+  // Buscar plano da loja
+  const planName = await getStorePlanName(storeId);
+  const limit = getRegenLimitForPlan(planName);
+  
+  return {
+    allowed: used < limit,
+    used,
+    limit,
+  };
+}
+
+/** Gera um token de prévia para uma campanha */
+export async function generatePreviewToken(campaignId: string): Promise<string> {
+  const supabase = createAdminClient();
+  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  
+  await supabase
+    .from("campaigns")
+    .update({ preview_token: token })
+    .eq("id", campaignId);
+  
+  return token;
+}
+
 // ═══════════════════════════════════════════════════════════
 // CAMPAIGNS
 // ═══════════════════════════════════════════════════════════
@@ -374,16 +483,26 @@ export async function canGenerateCampaign(storeId: string): Promise<{ allowed: b
 // CAMPAIGNS (Leitura para o histórico)
 // ═══════════════════════════════════════════════════════════
 
-/** Lista campanhas da loja com scores (para o histórico) */
-export async function listCampaigns(storeId: string, limit = 20) {
+/** Lista campanhas da loja com scores (para o histórico) - respeita limite de histórico do plano */
+export async function listCampaigns(storeId: string, limit = 20, historyDays = 0) {
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  
+  let query = supabase
     .from("campaigns")
-    .select("id, price, objective, target_audience, status, created_at, pipeline_duration_ms, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
+    .select("id, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
     .eq("store_id", storeId)
     .eq("is_archived", false)
     .order("created_at", { ascending: false })
     .limit(limit);
+  
+  // Filtrar por dias de histórico se o plano limita
+  if (historyDays > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - historyDays);
+    query = query.gte("created_at", cutoff.toISOString());
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`Erro ao listar campanhas: ${error.message}`);
   return data || [];
