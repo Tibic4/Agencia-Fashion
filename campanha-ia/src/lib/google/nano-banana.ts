@@ -46,8 +46,12 @@ export interface NanoBananaTryOnParams {
   modelMimeType?: string;
   /** Descrição da peça (do vision analysis) */
   productDescription?: string;
+  /** Tipo de corpo da modelo */
+  bodyType?: "normal" | "plus";
   /** Estilo de cenário/fundo */
   background?: BackgroundStyle;
+  /** Tipo de campanha (define aspect ratio) */
+  campaignType?: "instagram_feed" | "instagram_story" | "ecommerce" | "banner";
   /** Base64 da foto de cenário personalizado (quando background = "personalizado") */
   customBackgroundBase64?: string;
   /** MIME type da foto de cenário personalizado */
@@ -73,11 +77,13 @@ const BACKGROUND_PROMPTS: Record<BackgroundStyle, string> = {
 function buildTryOnPrompt(params: {
   description?: string;
   background?: BackgroundStyle;
+  bodyType?: "normal" | "plus";
   hasCloseUp?: boolean;
   hasCustomBackground?: boolean;
 }): string {
   const bg = params.background || "estudio";
   const bgPrompt = BACKGROUND_PROMPTS[bg];
+  const isPlus = params.bodyType === "plus";
 
   const closeUpInstruction = params.hasCloseUp
     ? "\n- The SECOND image is a CLOSE-UP of the fabric texture. Use it to reproduce the EXACT same texture (ribbed, knit, woven, smooth, etc.) on the generated garment."
@@ -87,37 +93,49 @@ function buildTryOnPrompt(params: {
     ? "\n- One of the images is the CLIENT'S STORE/LOCATION. Use it as the background environment, matching perspective and lighting."
     : "";
 
+  const bodyTypeInstruction = isPlus
+    ? "The model should have a plus-size/curvy body type (Brazilian GG/XGG sizing, approximately US size 14-22). Voluptuous, confident, beautiful curves."
+    : "The model should have a standard/slim body type (Brazilian P/M sizing, approximately US size 4-8). Slim, athletic build.";
+
   const basePrompt = `You are a world-class fashion photography editor specializing in Brazilian e-commerce.
 
 TASK: Generate a SINGLE photorealistic image of a real-looking Brazilian woman model wearing the EXACT garment shown in the product photos.
 
 IMAGE INPUTS:
 - The FIRST image is the FULL product on a mannequin — this is the garment to recreate EXACTLY.${closeUpInstruction}${customBgInstruction}
-- The LAST image (before this text) is the REFERENCE MODEL — match her body type, skin tone, hair, and face.
+- The LAST image (before this text) is the REFERENCE MODEL — match her skin tone, hair style, and face.
+
+MODEL BODY TYPE (CRITICAL):
+1. ${bodyTypeInstruction}
+2. The garment must FIT this body type naturally — adjust how the fabric drapes, stretches, and falls on this specific body shape.
+3. DO NOT change the body type from the reference — if the instruction says standard, generate a standard body; if plus, generate plus.
 
 GARMENT RULES (CRITICAL):
-1. PRESERVE the garment EXACTLY: same color, fabric texture, pattern, neckline, sleeves, length, and ALL details (buttons, rings, zippers, embroidery, seams)
-2. The fabric texture must be IDENTICAL to the original product photo
-3. DO NOT add, remove, or modify ANY garment detail
-4. If the garment is a TOP (blouse, shirt, crop top), pair it with stylish high-waisted jeans or the bottom shown in the product photo
+4. PRESERVE the garment EXACTLY: same color, fabric texture, pattern, neckline, sleeves, length, and ALL details (buttons, rings, zippers, embroidery, seams)
+5. The fabric texture must be IDENTICAL to the original product photo
+6. PAY SPECIAL ATTENTION to elastic bands, ribbed edges, and cuffs — reproduce them tightly and precisely as shown on the mannequin
+7. DO NOT add, remove, or modify ANY garment detail
+8. EMBROIDERY/PRINTS COUNT: If the garment has embroidered elements (stars, flowers, etc.), reproduce the EXACT SAME NUMBER and SPACING as shown in the product photo. Do NOT add extra elements or make the pattern denser than the original.
+9. Match the EXACT proportions of the garment relative to the body — if the top is cropped, it should end at exactly the same point
+10. If the garment is a TOP (blouse, shirt, crop top), pair it with stylish high-waisted jeans or the bottom shown in the product photo
 
 FOOTWEAR (MANDATORY):
-5. The model must ALWAYS wear appropriate footwear — NEVER barefoot
-6. Choose footwear that complements the outfit:
+10. The model must ALWAYS wear appropriate footwear — NEVER barefoot
+11. Choose footwear that complements the outfit:
    - For casual looks: clean white sneakers or stylish sandals
    - For elegant/formal looks: nude heels or strappy sandals
    - For bohemian/relaxed looks: espadrilles or flat sandals
    - For sporty looks: fashionable sneakers
 
 BACKGROUND:
-7. ${bgPrompt}
+12. ${bgPrompt}
 
 PHOTOGRAPHY:
-8. Full body photo from head to feet including shoes, 9:16 vertical portrait orientation
-9. Natural confident pose, one hand slightly on hip or relaxed, looking at camera with a natural smile
-10. Professional fashion photography lighting
-11. The model should look like a REAL person, not AI-generated
-12. Output ONLY the image, absolutely no text or watermarks`;
+13. Full body photo from head to feet including shoes, vertical portrait orientation
+14. Natural confident pose, one hand slightly on hip or relaxed, looking at camera with a natural smile
+15. Professional fashion photography lighting with subtle shadows
+16. The model should look like a REAL person, not AI-generated
+17. Output ONLY the image, absolutely no text or watermarks`;
 
   if (params.description) {
     return `${basePrompt}\n\nProduct details for reference: ${params.description}`;
@@ -186,10 +204,20 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       text: buildTryOnPrompt({
         description: params.productDescription,
         background: params.background,
+        bodyType: params.bodyType,
         hasCloseUp: !!params.closeUpBase64,
         hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
       }),
     });
+
+    // Mapear aspect ratio por tipo de campanha
+    const aspectRatios: Record<string, string> = {
+      instagram_feed: "4:5",
+      instagram_story: "9:16",
+      ecommerce: "3:4",
+      banner: "16:9",
+    };
+    const aspectRatio = aspectRatios[params.campaignType || "instagram_feed"] || "4:5";
 
     const response = await ai.models.generateContent({
       model: MODEL,
@@ -197,6 +225,13 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
         role: "user",
         parts,
       }],
+      config: {
+        responseModalities: ["TEXT", "IMAGE"],
+        imageConfig: {
+          aspectRatio,
+          imageSize: "2K",
+        },
+      } as any,
     });
 
     // Extrair imagem do response
