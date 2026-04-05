@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CreativePreview from "@/components/CreativePreview";
 import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
+import HeadlineABTest from "@/components/HeadlineABTest";
+import MobilePreview from "@/components/MobilePreview";
 
 const IconCopy = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -365,6 +367,68 @@ export default function ResultadoCampanha() {
             productImageUrl={productImageUrl}
             storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
           />
+
+          {/* A/B Testing — Headlines */}
+          <HeadlineABTest
+            principal={campaignData?.output?.headline_principal || "O vestido que vai ser seu favorito nesse verão 🌺"}
+            variacao1={campaignData?.output?.headline_variacao_1}
+            variacao2={campaignData?.output?.headline_variacao_2}
+          />
+
+          {/* Mobile Preview */}
+          <MobilePreview format="feed">
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                background: "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 40%, #f5f3ff 100%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "'Inter', system-ui, sans-serif",
+                padding: 12,
+                textAlign: "center",
+              }}
+            >
+              {productImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={productImageUrl}
+                  alt={productName}
+                  style={{
+                    width: 120,
+                    height: 120,
+                    objectFit: "cover",
+                    borderRadius: 12,
+                    marginBottom: 10,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+                  }}
+                />
+              ) : (
+                <div style={{ fontSize: 48, marginBottom: 8 }}>👗</div>
+              )}
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1a2e" }}>
+                {productName}
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#ec4899", marginTop: 4 }}>
+                {campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || "R$ 89,90"}
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  background: "linear-gradient(135deg, #ec4899, #a855f7)",
+                  color: "white",
+                  fontSize: 9,
+                  fontWeight: 700,
+                  padding: "6px 20px",
+                  borderRadius: 16,
+                }}
+              >
+                Comprar agora 💕
+              </div>
+            </div>
+          </MobilePreview>
 
           {/* Download all texts */}
           <button

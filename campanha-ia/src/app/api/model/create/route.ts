@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, createStoreModel } from "@/lib/db";
+import { getStoreByClerkId, createStoreModel, listStoreModels, getStorePlanName, getModelLimitForPlan } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 120;
@@ -30,6 +30,26 @@ export async function POST(request: NextRequest) {
     const store = await getStoreByClerkId(session.userId);
     if (!store) {
       return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
+    }
+
+    // ── Verificar limite de modelos do plano ──
+    const [existingModels, planName] = await Promise.all([
+      listStoreModels(store.id),
+      getStorePlanName(store.id),
+    ]);
+    const modelLimit = getModelLimitForPlan(planName);
+
+    if (existingModels.length >= modelLimit) {
+      return NextResponse.json(
+        {
+          error: `Limite de modelos atingido (${existingModels.length}/${modelLimit}). Faça upgrade do plano para criar mais modelos.`,
+          code: "QUOTA_EXCEEDED",
+          current: existingModels.length,
+          limit: modelLimit,
+          plan: planName,
+        },
+        { status: 403 }
+      );
     }
 
     const formData = await request.formData();
@@ -74,6 +94,7 @@ export async function POST(request: NextRequest) {
       bodyType,
       style,
       ageRange,
+      name,
     });
 
     // Se tem fotos, tentar criar modelo no Fashn.ai
