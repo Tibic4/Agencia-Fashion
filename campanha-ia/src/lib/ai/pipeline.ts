@@ -99,7 +99,7 @@ export async function runCampaignPipeline(
   const { result: visionRaw } = await withRetry(
     () => callClaudeVision({
       system: VISION_SYSTEM,
-      prompt: buildVisionPrompt(),
+      prompt: buildVisionPrompt(input.productType),
       imageBase64: input.imageBase64,
       mediaType: input.mediaType,
     }),
