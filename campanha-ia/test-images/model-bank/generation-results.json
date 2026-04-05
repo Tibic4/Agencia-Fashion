@@ -1,82 +1,102 @@
 [
   {
     "name": "Plus Clara 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f1f-4fd0-7920-8d83-beeb1b27646d/product_to_model_0.png"
   },
   {
     "name": "Plus Clara 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f1f-ab78-75d0-adcd-907b7ab357d4/product_to_model_0.png"
   },
   {
     "name": "Plus Morena 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f1f-fefd-7a42-9a7d-47f73ac215aa/product_to_model_0.png"
   },
   {
     "name": "Plus Morena 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f20-58be-72b2-8cd2-6beed89e8561/product_to_model_0.png"
   },
   {
     "name": "Plus Negra 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f20-af3c-7991-98bf-3901e0a5de71/product_to_model_0.png"
   },
   {
     "name": "Plus Negra 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f21-03b7-7a53-bf2d-a74804d01594/product_to_model_0.png"
   },
   {
     "name": "Plus Oriental 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f21-63a1-7c21-81bd-bbbc17ceadb0/product_to_model_0.png"
   },
   {
     "name": "Plus Mista 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f21-bba5-7e41-a693-9bc57971400a/product_to_model_0.png"
   },
   {
     "name": "Plus Mista 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f22-1f3f-70c2-b791-64dc97bf396b/product_to_model_0.png"
   },
   {
     "name": "Plus Mista 03",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f22-7a94-70a3-af9d-2675db466916/product_to_model_0.png"
   },
   {
     "name": "Normal Clara 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f22-d080-7e32-a0d0-3951ebdc42fb/product_to_model_0.png"
   },
   {
     "name": "Normal Clara 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f23-1fa5-7f11-8651-39b2807e78c1/product_to_model_0.png"
   },
   {
     "name": "Normal Morena 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f23-75af-7172-943b-2762a2883b54/product_to_model_0.png"
   },
   {
     "name": "Normal Morena 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f23-beb3-7902-859e-93c5d3a2116a/product_to_model_0.png"
   },
   {
     "name": "Normal Negra 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f24-1d1e-7e81-bccc-9cffaaa7966c/product_to_model_0.png"
   },
   {
     "name": "Normal Negra 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f24-7520-7aa0-bfd2-1870cef844f6/product_to_model_0.png"
   },
   {
     "name": "Normal Oriental 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f24-d7ea-7ca3-8851-ba20154f0201/product_to_model_0.png"
   },
   {
     "name": "Normal Mista 01",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f25-2ebc-7602-aac0-0e9d0fbbfc3d/product_to_model_0.png"
   },
   {
     "name": "Normal Mista 02",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f25-860e-7181-9068-064065b189a3/product_to_model_0.png"
   },
   {
     "name": "Normal Mista 03",
-    "status": "❌"
+    "status": "✅",
+    "url": "https://cdn.fashn.ai/019d5f25-d233-7522-885f-c29ec4ee39e7/product_to_model_0.png"
   }
 ]

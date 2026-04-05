@@ -1,0 +1,286 @@
+{
+  "vision": {
+    "produto": {
+      "nome_generico": "Conjunto moletinho cropped com bermuda clochard",
+      "categoria": "Conjuntos",
+      "subcategoria": "Cropped"
+    },
+    "segmento": "feminino",
+    "atributos_visuais": {
+      "cor_principal": "Marrom rosado",
+      "cor_secundaria": null,
+      "cores_complementares": [],
+      "material_aparente": "Moletinho",
+      "estampa": "Liso",
+      "detalhes": [
+        "Blusa cropped manga curta",
+        "Bermuda clochard com amarração na cintura",
+        "Cordão de ajuste"
+      ]
+    },
+    "caimento": "solto",
+    "ocasiao_uso": [
+      "casual",
+      "dia_a_dia"
+    ],
+    "estacao": "meia_estação",
+    "qualidade_foto": {
+      "resolucao": "boa",
+      "fundo": "ambiente",
+      "iluminacao": "media",
+      "necessita_tratamento": false
+    },
+    "nicho_sensivel": false,
+    "mood": [
+      "casual",
+      "confortável",
+      "moderno"
+    ],
+    "palavras_chave_venda": [
+      "conjunto moletinho",
+      "look completo",
+      "conforto",
+      "tendência 2026",
+      "cropped",
+      "bermuda clochard"
+    ]
+  },
+  "strategy": {
+    "angulo": "O conjunto que toda mulher plus precisa ter no guarda-roupa: moletinho cropped + bermuda clochard que valoriza TODAS as curvas com muito estilo e conforto!",
+    "angulo_secundario": "Finalmente um conjunto que une conforto de casa com look de rua - perfeito para quem ama praticidade sem abrir mão do charme!",
+    "gatilho": "desejo",
+    "tom": "empoderador",
+    "publico_ideal": "Mulheres plus size 25-45 anos, classe B/C, que seguem perfis de moda inclusiva no Instagram, valorizam conforto e versatilidade, compram por impulso nos Stories quando veem peças que as representam, buscam looks casuais mas estilosos para o dia a dia",
+    "contra_objecao": "Principal objeção: 'Será que fica bom em mim?' - Contornar mostrando: 'Modelagem especialmente pensada para realçar suas curvas! Cropped na medida certa e bermuda clochard que alonga as pernas. Grade do P ao GG3!'",
+    "cta_sugerido": "Chama no Direct que eu mando as fotos reais!",
+    "ganchos_stories": [
+      "Gente, olha que AMOR esse conjunto que chegou 😍",
+      "Quem mais é viciada em moletinho mas quer ficar estilosa? 🙋‍♀️",
+      "Esse tom marrom rosado tá sendo A cor do momento!"
+    ],
+    "emocao_alvo": "autoestima"
+  },
+  "output": {
+    "vision_analysis": {
+      "produto": {
+        "nome_generico": "Conjunto moletinho cropped com bermuda clochard",
+        "categoria": "Conjuntos",
+        "subcategoria": "Cropped"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Marrom rosado",
+        "cor_secundaria": null,
+        "cores_complementares": [],
+        "material_aparente": "Moletinho",
+        "estampa": "Liso",
+        "detalhes": [
+          "Blusa cropped manga curta",
+          "Bermuda clochard com amarração na cintura",
+          "Cordão de ajuste"
+        ]
+      },
+      "caimento": "solto",
+      "ocasiao_uso": [
+        "casual",
+        "dia_a_dia"
+      ],
+      "estacao": "meia_estação",
+      "qualidade_foto": {
+        "resolucao": "boa",
+        "fundo": "ambiente",
+        "iluminacao": "media",
+        "necessita_tratamento": false
+      },
+      "nicho_sensivel": false,
+      "mood": [
+        "casual",
+        "confortável",
+        "moderno"
+      ],
+      "palavras_chave_venda": [
+        "conjunto moletinho",
+        "look completo",
+        "conforto",
+        "tendência 2026",
+        "cropped",
+        "bermuda clochard"
+      ]
+    },
+    "strategy": {
+      "angulo": "O conjunto que toda mulher plus precisa ter no guarda-roupa: moletinho cropped + bermuda clochard que valoriza TODAS as curvas com muito estilo e conforto!",
+      "angulo_secundario": "Finalmente um conjunto que une conforto de casa com look de rua - perfeito para quem ama praticidade sem abrir mão do charme!",
+      "gatilho": "desejo",
+      "tom": "empoderador",
+      "publico_ideal": "Mulheres plus size 25-45 anos, classe B/C, que seguem perfis de moda inclusiva no Instagram, valorizam conforto e versatilidade, compram por impulso nos Stories quando veem peças que as representam, buscam looks casuais mas estilosos para o dia a dia",
+      "contra_objecao": "Principal objeção: 'Será que fica bom em mim?' - Contornar mostrando: 'Modelagem especialmente pensada para realçar suas curvas! Cropped na medida certa e bermuda clochard que alonga as pernas. Grade do P ao GG3!'",
+      "cta_sugerido": "Chama no Direct que eu mando as fotos reais!",
+      "ganchos_stories": [
+        "Gente, olha que AMOR esse conjunto que chegou 😍",
+        "Quem mais é viciada em moletinho mas quer ficar estilosa? 🙋‍♀️",
+        "Esse tom marrom rosado tá sendo A cor do momento!"
+      ],
+      "emocao_alvo": "autoestima"
+    },
+    "headline_principal": "O conjunto que abraça suas curvas com estilo",
+    "headline_variacao_1": "Uma peça, mil possibilidades: casa e rua",
+    "headline_variacao_2": "Vista e sinta o poder das suas curvas",
+    "instagram_feed": "Gente, esse conjunto chegou e já virou o xodó das meninas aqui! 💕\n\nSabe aquele feeling de estar linda e confortável ao mesmo tempo? É EXATAMENTE isso que esse moletinho cropped com bermuda clochard entrega! O marrom rosado é puro charme e a modelagem foi pensada especialmente pra valorizar cada curva nossa.\n\nO cropped fica na medida certinha, nada muito colado, nada muito solto. A bermuda clochard com amarração? Amiga, é puro conforto que alonga as pernas e dá aquela cinturinha marcada deliciosa! 🔥\n\nE o melhor: serve pra tudo! Academia, mercado, encontro com as amigas, home office... É praticidade que não abre mão do estilo.\n\nPor apenas R$ 119,90 você leva o conjunto completo! ✨\n\nTá voando aqui na loja, então corre no Direct que eu separo o seu tamanho! Do 44 ao 60, tem pra todas nós 💪",
+    "instagram_stories": {
+      "slide_1": "Gente, olha que AMOR esse conjunto que chegou 😍",
+      "slide_2": "Moletinho cropped + bermuda clochard = combo perfeito pra valorizar suas curvas! 🔥",
+      "slide_3": "Só R$ 119,90 e tá saindo rapidinho daqui ⚡",
+      "cta_final": "Chama no Direct que eu mando as fotos reais! 💕"
+    },
+    "whatsapp": "Oi linda, tudo bem? 💕\n\nChegou aquele conjunto que você vai se APAIXONAR! É um moletinho cropped com bermuda clochard no tom marrom rosado mais lindo que existe.\n\nAmiga, a modelagem é PERFEITA pra nós! O cropped valoriza o busto sem ficar vulgar e a bermuda clochard com amarração marca a cintura de um jeito delicioso. É conforto total mas com aquele toque especial que faz a diferença.\n\nE olha só: serve pra TUDO! Academia, supermercado, encontro com as amigas... É praticidade pura!\n\nR$ 119,90 pelo conjunto completo, do 44 ao 60.\n\nTá saindo rapidinho aqui, então se interessou, me chama que eu separo o seu! 🥰",
+    "meta_ads": {
+      "titulo": "Conjunto moletinho cropped com bermuda clochard",
+      "texto_principal": "Conjunto moletinho cropped com bermuda clochard em marrom rosado. Modelagem desenvolvida para realçar silhueta feminina. Disponível do 44 ao 60.",
+      "descricao": "Conjunto Plus Size R$ 119,90",
+      "cta_button": "shop_now"
+    },
+    "hashtags": [
+      "modafeminina",
+      "modaplussize",
+      "plussize",
+      "bodypositive",
+      "modainclusiva",
+      "curvystyle",
+      "conjuntofeminino",
+      "moletinho",
+      "lookdodia",
+      "tendencia2026",
+      "moda2026",
+      "modabrasil",
+      "confortoestilo",
+      "marromrosado",
+      "bermudaclochard"
+    ],
+    "product_image_clean_url": null,
+    "model_image_url": null,
+    "lifestyle_image_url": null,
+    "creative_feed_url": null,
+    "creative_stories_url": null,
+    "refinements": [
+      {
+        "campo": "instagram_feed",
+        "antes": "*R$ 119,90*",
+        "depois": "R$ 119,90",
+        "motivo": "Removido markdown desnecessário que pode não renderizar no Instagram"
+      },
+      {
+        "campo": "instagram_stories slide_3",
+        "antes": "*R$ 119,90*",
+        "depois": "R$ 119,90",
+        "motivo": "Removido markdown desnecessário para melhor legibilidade no Stories"
+      },
+      {
+        "campo": "whatsapp",
+        "antes": "*R$ 119,90*",
+        "depois": "R$ 119,90",
+        "motivo": "Removido markdown que pode não funcionar no WhatsApp"
+      },
+      {
+        "campo": "meta_ads titulo",
+        "antes": "Sinta-se poderosa neste conjunto moletinho",
+        "depois": "Conjunto moletinho cropped com bermuda clochard",
+        "motivo": "Removido claim subjetivo 'sinta-se poderosa' para compliance com Meta Ads, focando em descrição objetiva do produto"
+      },
+      {
+        "campo": "meta_ads texto_principal",
+        "antes": "Modelagem pensada para valorizar curvas",
+        "depois": "Modelagem desenvolvida para realçar silhueta feminina",
+        "motivo": "Linguagem mais neutra e objetiva para compliance com políticas do Meta Ads"
+      }
+    ]
+  },
+  "score": {
+    "nota_geral": 78,
+    "conversao": 82,
+    "clareza": 85,
+    "urgencia": 65,
+    "naturalidade": 88,
+    "aprovacao_meta": 75,
+    "criatividade": 70,
+    "nivel_risco": "medio",
+    "resumo": "Campanha sólida com linguagem autêntica e foco certeiro no público plus size. Boa estrutura de benefícios e preço atrativo, mas peca na urgência real e tem alguns riscos de compliance no Meta.",
+    "pontos_fortes": [
+      "Linguagem extremamente natural e empática com o público plus size",
+      "Estratégia de contra-objeção bem estruturada abordando inseguranças reais",
+      "Preço competitivo bem posicionado (R$ 119,90 para conjunto completo)"
+    ],
+    "melhorias": [
+      {
+        "campo": "urgencia",
+        "problema": "Urgência genérica baseada apenas em 'tá voando/saindo rapidinho'",
+        "sugestao": "Criar urgência real: 'Últimas 15 peças' ou 'Promoção válida só até domingo' com deadline específico",
+        "impacto": "alto"
+      },
+      {
+        "campo": "meta_ads",
+        "problema": "Texto muito promocional e com linguagem subjetiva para Meta Ads",
+        "sugestao": "Focar em características objetivas: 'Conjunto moletinho cropped feminino. Tecido premium, modelagem plus size 44-60. Entrega expressa.'",
+        "impacto": "alto"
+      },
+      {
+        "campo": "headlines",
+        "problema": "Headlines genéricas que não destacam diferenciais únicos",
+        "sugestao": "Testar: 'Conjunto plus que alonga pernas e marca cintura' ou 'Moletinho cropped: conforto de casa, estilo de rua'",
+        "impacto": "medio"
+      }
+    ],
+    "alertas_meta": [
+      {
+        "trecho": "você vai se APAIXONAR",
+        "politica": "Linguagem exagerada/superlativa",
+        "nivel": "aviso",
+        "correcao": "Substituir por 'você vai gostar' ou remover"
+      },
+      {
+        "trecho": "modelagem PERFEITA",
+        "politica": "Claims absolutos não comprovados",
+        "nivel": "aviso",
+        "correcao": "Usar 'modelagem desenvolvida especialmente' ou 'modelagem otimizada'"
+      }
+    ],
+    "previsao_engajamento": "alto"
+  },
+  "durationMs": 62195,
+  "costBreakdown": [
+    {
+      "step": "vision",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 6343,
+      "estimatedCostBrl": 0.08
+    },
+    {
+      "step": "strategy",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 10301,
+      "estimatedCostBrl": 0.06
+    },
+    {
+      "step": "copywriter",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 18967,
+      "estimatedCostBrl": 0.1
+    },
+    {
+      "step": "refiner",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 13713,
+      "estimatedCostBrl": 0.05
+    },
+    {
+      "step": "scorer",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 12867,
+      "estimatedCostBrl": 0.04
+    }
+  ]
+}
