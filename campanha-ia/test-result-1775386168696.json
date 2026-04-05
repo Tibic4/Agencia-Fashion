@@ -1,0 +1,296 @@
+{
+  "vision": {
+    "produto": {
+      "nome_generico": "Conjunto moletom bege com short jeans bordado",
+      "categoria": "Conjuntos",
+      "subcategoria": "Casual"
+    },
+    "segmento": "feminino",
+    "atributos_visuais": {
+      "cor_principal": "Bege",
+      "cor_secundaria": "Azul jeans",
+      "cores_complementares": [
+        "Branco"
+      ],
+      "material_aparente": "Moletom e Jeans",
+      "estampa": "Liso no moletom e bordado de estrelas no short",
+      "detalhes": [
+        "Gola redonda",
+        "Punhos canelados",
+        "Barra canelada",
+        "Short com bordado de estrelas brancas",
+        "Cintura alta no short",
+        "Barra desfiada no short"
+      ]
+    },
+    "caimento": "solto",
+    "ocasiao_uso": [
+      "casual",
+      "dia_a_dia"
+    ],
+    "estacao": "meia_estação",
+    "qualidade_foto": {
+      "resolucao": "boa",
+      "fundo": "ambiente",
+      "iluminacao": "boa",
+      "necessita_tratamento": false
+    },
+    "nicho_sensivel": false,
+    "mood": [
+      "casual",
+      "jovem",
+      "descontraído"
+    ],
+    "palavras_chave_venda": [
+      "conjunto moletom",
+      "short bordado",
+      "look casual",
+      "tendência 2026",
+      "confortável",
+      "estilo jovem"
+    ]
+  },
+  "strategy": {
+    "angulo": "O conjunto que toda mulher elegante está usando para se sentir jovem e confortável sem perder o charme. Moletom + short bordado = combinação perfeita para quem não abre mão do estilo.",
+    "angulo_secundario": "Finalmente um conjunto que você usa para trabalhar de casa, buscar as crianças na escola E ainda recebe elogios na rua. Versatilidade que toda mãe moderna precisa.",
+    "gatilho": "desejo",
+    "tom": "acolhedor",
+    "publico_ideal": "Mulheres 35-55, classe B, mães que trabalham, seguem perfis de lifestyle no Instagram, compram por impulso quando veem algo que combina praticidade + elegância, valorizam peças versáteis que servem para múltiplas ocasiões, gastam entre R$ 150-300 em looks completos",
+    "contra_objecao": "Sobre o preço: 'São duas peças por R$ 179,90, sai R$ 89,95 cada uma. Menos que uma calça jeans boa, e você tem um look completo que vai usar toda semana'",
+    "cta_sugerido": "Chama no Direct que eu separo o seu tamanho",
+    "ganchos_stories": [
+      "POV: você quer estar arrumada mas confortável o dia todo 👆🏻",
+      "Gente, olha que combinação PERFEITA para o dia a dia 😍",
+      "Quem mais é do time 'quero estar bonita MAS confortável'? 🙋🏻‍♀️"
+    ],
+    "emocao_alvo": "pertencimento"
+  },
+  "output": {
+    "vision_analysis": {
+      "produto": {
+        "nome_generico": "Conjunto moletom bege com short jeans bordado",
+        "categoria": "Conjuntos",
+        "subcategoria": "Casual"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Bege",
+        "cor_secundaria": "Azul jeans",
+        "cores_complementares": [
+          "Branco"
+        ],
+        "material_aparente": "Moletom e Jeans",
+        "estampa": "Liso no moletom e bordado de estrelas no short",
+        "detalhes": [
+          "Gola redonda",
+          "Punhos canelados",
+          "Barra canelada",
+          "Short com bordado de estrelas brancas",
+          "Cintura alta no short",
+          "Barra desfiada no short"
+        ]
+      },
+      "caimento": "solto",
+      "ocasiao_uso": [
+        "casual",
+        "dia_a_dia"
+      ],
+      "estacao": "meia_estação",
+      "qualidade_foto": {
+        "resolucao": "boa",
+        "fundo": "ambiente",
+        "iluminacao": "boa",
+        "necessita_tratamento": false
+      },
+      "nicho_sensivel": false,
+      "mood": [
+        "casual",
+        "jovem",
+        "descontraído"
+      ],
+      "palavras_chave_venda": [
+        "conjunto moletom",
+        "short bordado",
+        "look casual",
+        "tendência 2026",
+        "confortável",
+        "estilo jovem"
+      ]
+    },
+    "strategy": {
+      "angulo": "O conjunto que toda mulher elegante está usando para se sentir jovem e confortável sem perder o charme. Moletom + short bordado = combinação perfeita para quem não abre mão do estilo.",
+      "angulo_secundario": "Finalmente um conjunto que você usa para trabalhar de casa, buscar as crianças na escola E ainda recebe elogios na rua. Versatilidade que toda mãe moderna precisa.",
+      "gatilho": "desejo",
+      "tom": "acolhedor",
+      "publico_ideal": "Mulheres 35-55, classe B, mães que trabalham, seguem perfis de lifestyle no Instagram, compram por impulso quando veem algo que combina praticidade + elegância, valorizam peças versáteis que servem para múltiplas ocasiões, gastam entre R$ 150-300 em looks completos",
+      "contra_objecao": "Sobre o preço: 'São duas peças por R$ 179,90, sai R$ 89,95 cada uma. Menos que uma calça jeans boa, e você tem um look completo que vai usar toda semana'",
+      "cta_sugerido": "Chama no Direct que eu separo o seu tamanho",
+      "ganchos_stories": [
+        "POV: você quer estar arrumada mas confortável o dia todo 👆🏻",
+        "Gente, olha que combinação PERFEITA para o dia a dia 😍",
+        "Quem mais é do time 'quero estar bonita MAS confortável'? 🙋🏻‍♀️"
+      ],
+      "emocao_alvo": "pertencimento"
+    },
+    "headline_principal": "O conjunto que toda elegante está usando 🔥",
+    "headline_variacao_1": "Moletom + short bordado = combinação perfeita",
+    "headline_variacao_2": "Finalmente conforto SEM perder o charme ✨",
+    "instagram_feed": "Gente, esse conjunto chegou e já virou queridinho aqui no Closet 🔥\n\nSabe aquela sensação de estar arrumada mas super confortável o dia todo? É EXATAMENTE isso que esse conjunto bege com short bordado entrega! Você vai se sentir jovem, elegante e pronta pra qualquer compromisso.\n\nO moletom é aquele caimento perfeito - nem muito justo, nem muito largo. E o short jeans com bordado de estrelas brancas? Puro charme! Cintura alta que valoriza, barra desfiada que dá aquele ar despojado... É versatilidade pura: home office, buscar as crianças, encontro com as amigas.\n\nDuas peças incríveis por apenas R$ 179,90 - sai menos de R$ 90 cada uma! ✨\n\nEssa combinação está voando aqui, meninas. Quem ama praticidade sem abrir mão do estilo vai se apaixonar 💕\n\nChama no Direct que eu separo o seu tamanho!",
+    "instagram_stories": {
+      "slide_1": "Gente, olha que combinação PERFEITA chegou no Closet 😍",
+      "slide_2": "Moletom bege + short bordado de estrelas = puro charme e conforto juntos ✨",
+      "slide_3": "Só R$ 179,90 as duas peças! Menos de R$ 90 cada uma e voando aqui ⚡",
+      "cta_final": "Corre pro Direct que eu separo a sua 💕"
+    },
+    "whatsapp": "Ei, tudo bem? 😊\n\nChegou aquela peça que você vai AMAR... É um conjunto bege com short bordado que está sendo o sucesso absoluto aqui no Closet!\n\nMoletom super gostoso + short jeans com bordadinhos de estrelas brancas. Sabe aquele look que você usa pra trabalhar de casa MAS se alguém te encontra na rua você está linda? É esse!\n\nEstá saindo por R$ 179,90 as duas peças (menos de R$ 90 cada uma) e posso te garantir: é o tipo de conjunto que você vai usar TODA semana.\n\nTem o seu tamanho ainda! Me manda um oi que eu separo antes que acabe 💕\n\nBeijos da Lu",
+    "meta_ads": {
+      "titulo": "Conjunto Moletom + Short Bordado",
+      "texto_principal": "Moletom bege e short jeans bordado. Conforto e elegancia para o dia a dia. Duas pecas que combinam praticidade e estilo.",
+      "descricao": "Closet da Lu - Moda Feminina",
+      "cta_button": "shop_now"
+    },
+    "hashtags": [
+      "modafeminina",
+      "lookdodia",
+      "conjuntofeminino",
+      "moletomfeminino",
+      "shortjeans",
+      "moda2025",
+      "lookconfortavel",
+      "estilofeminino",
+      "modacasual",
+      "closetdalu",
+      "outfitoftheday",
+      "conjuntoestiloso",
+      "bordado",
+      "lookversatil",
+      "modabrasileira"
+    ],
+    "product_image_clean_url": null,
+    "model_image_url": null,
+    "lifestyle_image_url": null,
+    "creative_feed_url": null,
+    "creative_stories_url": null,
+    "refinements": [
+      {
+        "campo": "instagram_feed",
+        "antes": "*R$ 179,90*",
+        "depois": "R$ 179,90",
+        "motivo": "Removido markdown desnecessário para melhor legibilidade no Instagram"
+      },
+      {
+        "campo": "instagram_stories",
+        "antes": "*R$ 179,90*",
+        "depois": "R$ 179,90",
+        "motivo": "Removido markdown desnecessário para melhor legibilidade no Stories"
+      },
+      {
+        "campo": "whatsapp",
+        "antes": "*sucesso absoluto*",
+        "depois": "sucesso absoluto",
+        "motivo": "Removido markdown desnecessário para melhor legibilidade no WhatsApp"
+      },
+      {
+        "campo": "whatsapp",
+        "antes": "*R$ 179,90*",
+        "depois": "R$ 179,90",
+        "motivo": "Removido markdown desnecessário para melhor legibilidade no WhatsApp"
+      },
+      {
+        "campo": "hashtags",
+        "antes": "moda2026",
+        "depois": "moda2025",
+        "motivo": "Corrigido ano para 2025, que é o ano atual correto"
+      }
+    ]
+  },
+  "score": {
+    "nota_geral": 78,
+    "conversao": 85,
+    "clareza": 82,
+    "urgencia": 65,
+    "naturalidade": 88,
+    "aprovacao_meta": 75,
+    "criatividade": 70,
+    "nivel_risco": "medio",
+    "resumo": "Campanha sólida com tom autêntico e posicionamento de preço inteligente. Textos naturais que conectam bem com o público-alvo, mas precisam de mais urgência e alguns ajustes para Meta Ads.",
+    "pontos_fortes": [
+      "Quebra de objeção de preço muito eficaz (R$ 89,95 por peça)",
+      "Tom de voz autêntico da lojista, especialmente no WhatsApp",
+      "Posicionamento claro de versatilidade para mães trabalhadoras"
+    ],
+    "melhorias": [
+      {
+        "campo": "urgencia",
+        "problema": "Falta gatilho temporal ou de escassez convincente",
+        "sugestao": "Adicionar 'Últimas 5 peças do P e M' ou 'Promoção válida só até domingo'",
+        "impacto": "alto"
+      },
+      {
+        "campo": "meta_ads",
+        "problema": "Texto muito genérico e sem diferenciação",
+        "sugestao": "Focar no benefício único: 'Conjunto que funciona do home office ao encontro das amigas'",
+        "impacto": "medio"
+      },
+      {
+        "campo": "headlines",
+        "problema": "Headlines fracas, especialmente a principal",
+        "sugestao": "Testar 'Conjunto que toda mãe moderna precisa ter' ou 'De casa pro encontro: mesmo look, mil elogios'",
+        "impacto": "medio"
+      }
+    ],
+    "alertas_meta": [
+      {
+        "trecho": "está voando aqui",
+        "politica": "Claims de escassez sem comprovação",
+        "nivel": "aviso",
+        "correcao": "Substituir por 'tem sido muito procurado' ou remover"
+      },
+      {
+        "trecho": "você vai AMAR",
+        "politica": "Promessas absolutas sobre experiência",
+        "nivel": "aviso",
+        "correcao": "Usar 'você pode se apaixonar' ou 'muitas clientes adoraram'"
+      }
+    ],
+    "previsao_engajamento": "medio"
+  },
+  "durationMs": 62982,
+  "costBreakdown": [
+    {
+      "step": "vision",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 8627,
+      "estimatedCostBrl": 0.08
+    },
+    {
+      "step": "strategy",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 11046,
+      "estimatedCostBrl": 0.06
+    },
+    {
+      "step": "copywriter",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 19866,
+      "estimatedCostBrl": 0.1
+    },
+    {
+      "step": "refiner",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 11844,
+      "estimatedCostBrl": 0.05
+    },
+    {
+      "step": "scorer",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 11597,
+      "estimatedCostBrl": 0.04
+    }
+  ]
+}

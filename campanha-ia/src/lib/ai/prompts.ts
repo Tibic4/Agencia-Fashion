@@ -78,6 +78,7 @@ export function buildStrategyPrompt(params: {
   tomOverride?: string;
   storeSegment?: string;
   bodyType?: string;
+  urgencia?: { estoque?: string; prazo?: string; promo?: string };
 }): string {
   const plusSizeContext = params.bodyType === "plus_size" || params.storeSegment === "plus_size"
     ? `\nCONTEXTO PLUS SIZE: Esta é uma loja de moda plus size / inclusiva. A estratégia DEVE:
@@ -105,7 +106,10 @@ ATRIBUTOS: ${params.atributos}
 MOOD/VIBE: ${params.mood.join(", ")}
 OBJETIVO: ${params.objetivo}
 ${params.publicoAlvo ? `PÚBLICO-ALVO: ${params.publicoAlvo}` : "PÚBLICO-ALVO: detectar automaticamente com base no produto e preço"}
-${params.tomOverride ? `TOM DE VOZ: ${params.tomOverride}` : ""}${plusSizeContext}
+${params.tomOverride ? `TOM DE VOZ: ${params.tomOverride}` : ""}
+${params.urgencia?.estoque ? `ESTOQUE: ${params.urgencia.estoque} unidades restantes` : ""}
+${params.urgencia?.prazo ? `PRAZO: Promoção/oferta válida até ${params.urgencia.prazo}` : ""}
+${params.urgencia?.promo ? `PROMOÇÃO: ${params.urgencia.promo}` : ""}${plusSizeContext}
 
 Retorne um JSON com esta estrutura EXATA:
 
@@ -155,8 +159,20 @@ export function buildCopywriterPrompt(params: {
   atributos: string;
   storeSegment?: string;
   bodyType?: string;
+  urgencia?: { estoque?: string; prazo?: string; promo?: string };
 }): string {
   const isPlusSize = params.bodyType === "plus_size" || params.storeSegment === "plus_size";
+
+  // Pre-compute urgency lines to avoid nested template literal escaping issues
+  const urgEstoque = params.urgencia?.estoque
+    ? `- ESTOQUE REAL: apenas ${params.urgencia.estoque} unidades. USE ESSE NÚMERO EXATO nos textos! (ex: Últimas ${params.urgencia.estoque} peças)`
+    : '- Sem info de estoque — NÃO invente números. Use apenas alta procura ou sucesso de vendas';
+  const urgPrazo = params.urgencia?.prazo
+    ? `- PRAZO REAL: válido até ${params.urgencia.prazo}. USE ESSA DATA nos textos! (ex: Só até ${params.urgencia.prazo})`
+    : '- Sem prazo definido — NÃO invente prazos ou deadlines';
+  const urgPromo = params.urgencia?.promo
+    ? `- PROMOÇÃO: ${params.urgencia.promo}. Mencione naturalmente nos textos.`
+    : '';
   const plusSizeRules = isPlusSize
     ? `\nREGRAS PLUS SIZE (OBRIGATÓRIAS):
 - Use linguagem body-positive e empoderadora
@@ -205,17 +221,22 @@ Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
   "hashtags": ["10 a 15 hashtags SEM o prefixo #", "ex: modafeminina (sem #)", "mix de populares e nicho", "lookdodia"${plusSizeHashtags}]
 }
 
+CONTEXTO DE URGÊNCIA:
+${urgEstoque}
+${urgPrazo}
+${urgPromo}
+
 REGRAS DE OURO:
-- ANO ATUAL: ${CURRENT_YEAR} — use para Instagram e WhatsApp (ex: "tendência ${CURRENT_YEAR}"). Para META ADS use "tendência do momento" ou "em alta" (sem mencionar ano).
+- ANO ATUAL: ${CURRENT_YEAR} — OBRIGATÓRIO em hashtags de tendência (ex: tendencia${CURRENT_YEAR}, moda${CURRENT_YEAR}). NUNCA use anos anteriores como 2024 ou 2025. Para META ADS use 'tendência do momento' ou 'em alta' (sem mencionar ano).
 - Preço EXATO de R$ ${params.preco} — destaque com emoji ou negrito
 - Linguagem 100% brasileira natural — como conversa real, não propaganda
 - Instagram Feed: storytelling curto + emojis estratégicos (mínimo 3, máximo 5)
 - Stories: cada slide com NO MÁXIMO 2 linhas — lembra que é tela pequena!
 - WhatsApp: TOM DE AMIGA. Como se a lojista estivesse mandando áudio (mas em texto)
-- Meta Ads: SEM emojis, SEM letras maiúsculas, SEM claims não comprováveis (nada de "a cor de 2026", "resolve X%", "favorece todos", "já voou várias"). Use fatos objetivos.
+- Meta Ads: SEM emojis, SEM letras maiúsculas, SEM claims não comprováveis. PROIBIDO: 'qualquer tom de pele', 'valoriza todos', 'já voou', 'virou obsessão', 'resolve X%', 'a cor de ${CURRENT_YEAR}'. USE APENAS fatos objetivos do produto.
 - JAMAIS invente promoções, descontos ou preços que não foram informados
 - JAMAIS compare com marcas específicas (Zara, Shein, etc.) — risco de compliance
-- Hashtags: SEM prefixo # (apenas a palavra). Mix de alto volume (modafeminina, lookdodia) com nicho (categoria, estação). Sem erros de digitação!${plusSizeRules}
+- Hashtags: SEM prefixo # (apenas a palavra). Mix de alto volume (modafeminina, lookdodia) com nicho (categoria, estação). Sem erros de digitação! Se usar ano, SOMENTE ${CURRENT_YEAR}.${plusSizeRules}
 
 Responda APENAS com o JSON.`;
 }
@@ -253,10 +274,13 @@ CHECKLIST DE REFINAMENTO (revise cada ponto):
 5. ✅ PREÇO: Está no momento certo do texto? (depois dos benefícios, antes do CTA)
 6. ✅ STORIES: Cada slide tem no máximo 2 linhas? (tela pequena!)
 7. ✅ WHATSAPP: Tom pessoal? Parece mensagem de amiga?
-8. ✅ META ADS: Cumpre políticas? (sem promessas absurdas, sem ALL CAPS, sem emojis, sem claims não comprováveis como percentuais ou "todos")
-9. ✅ CLICHÊS: Removeu "imperdível", "sensacional", "compre já", "peça única"?
+8. ✅ META ADS COMPLIANCE (CRÍTICO — corrigir AUTOMATICAMENTE):
+   - REMOVER qualquer claim não comprovável: 'qualquer tom de pele', 'valoriza todos os corpos', 'já voou', 'virou obsessão/febre'
+   - SUBSTITUIR por fatos objetivos: 'cor versátil', 'muito procurado pelas clientes', 'disponível em diversas cores'
+   - SEM emojis, SEM ALL CAPS, SEM percentuais inventados
+9. ✅ CLICHÊS: Removeu 'imperdível', 'sensacional', 'compre já', 'peça única'?
 10. ✅ FLUIDEZ: O texto flui bem quando lido em voz alta?
-11. ✅ ANO: Qualquer referência de tendência usa o ano CORRETO (${CURRENT_YEAR})? NUNCA anos anteriores.
+11. ✅ ANO OBRIGATÓRIO: TODAS as hashtags de tendência DEVEM usar ${CURRENT_YEAR}. Se encontrar 2024, 2025 ou outro ano errado, CORRIGIR para ${CURRENT_YEAR}. Ex: moda2025 → moda${CURRENT_YEAR}, tendencia2024 → tendencia${CURRENT_YEAR}.
 12. ✅ HASHTAGS: Estão SEM prefixo #? Sem erros de digitação? (ex: looktrabalho, NÃO looktrabaho)
 
 Retorne JSON com:

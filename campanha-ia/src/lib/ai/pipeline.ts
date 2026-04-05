@@ -168,7 +168,7 @@ export async function runCampaignPipeline(
           }),
         },
       ],
-      maxTokens: 3000,
+      maxTokens: 4096,
       temperature: 0.85,
     }),
     "Copywriter",

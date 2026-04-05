@@ -1,0 +1,292 @@
+{
+  "vision": {
+    "produto": {
+      "nome_generico": "Conjunto moletom cropped com bermuda clochard",
+      "categoria": "Conjuntos",
+      "subcategoria": "Cropped"
+    },
+    "segmento": "feminino",
+    "atributos_visuais": {
+      "cor_principal": "Marrom rosado",
+      "cor_secundaria": null,
+      "cores_complementares": [],
+      "material_aparente": "Moletom",
+      "estampa": "Liso",
+      "detalhes": [
+        "Cordão de amarração na bermuda",
+        "Barra desfiada na bermuda",
+        "Modelagem cropped na blusa",
+        "Punhos ajustados"
+      ]
+    },
+    "caimento": "semi-ajustado",
+    "ocasiao_uso": [
+      "casual",
+      "dia_a_dia"
+    ],
+    "estacao": "meia_estação",
+    "qualidade_foto": {
+      "resolucao": "media",
+      "fundo": "ambiente",
+      "iluminacao": "media",
+      "necessita_tratamento": true
+    },
+    "nicho_sensivel": false,
+    "mood": [
+      "casual",
+      "confortável",
+      "urbano"
+    ],
+    "palavras_chave_venda": [
+      "conjunto moletom",
+      "look completo",
+      "conforto",
+      "tendência 2026",
+      "athleisure"
+    ]
+  },
+  "strategy": {
+    "angulo": "O conjunto que toda mulher elegante precisa ter no guarda-roupa - conforto de casa com sofisticação para sair. Marrom rosado: a cor que valoriza QUALQUER tom de pele!",
+    "angulo_secundario": "Últimas peças do conjunto que virou sensação entre as clientes VIP - quem usa, não quer tirar!",
+    "gatilho": "escassez",
+    "tom": "acolhedor",
+    "publico_ideal": "Mulheres 35-55 anos, classe B, trabalham fora ou são donas de casa ativas, valorizam praticidade sem perder elegância, compram pelo Instagram quando veem nos Stories, seguem blogueiras de moda madura, preferem peças versáteis que servem para várias ocasiões",
+    "contra_objecao": "Sobre o preço: 'Meninas, dividimos em até 3x sem juros no cartão ou PIX à vista com 5% de desconto - é menos que o preço de uma blusa básica boa!'",
+    "cta_sugerido": "Chama no Direct que eu separo a sua",
+    "ganchos_stories": [
+      "POV: você encontrou O conjunto perfeito para todas as ocasiões 👆",
+      "Marrom rosado: a cor que TODA mulher fica linda (e eu posso provar)",
+      "Cliente perguntou: 'tem mais dessa cor?' Resposta: 'só essas 3 peças' 😱"
+    ],
+    "emocao_alvo": "desejo"
+  },
+  "output": {
+    "vision_analysis": {
+      "produto": {
+        "nome_generico": "Conjunto moletom cropped com bermuda clochard",
+        "categoria": "Conjuntos",
+        "subcategoria": "Cropped"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Marrom rosado",
+        "cor_secundaria": null,
+        "cores_complementares": [],
+        "material_aparente": "Moletom",
+        "estampa": "Liso",
+        "detalhes": [
+          "Cordão de amarração na bermuda",
+          "Barra desfiada na bermuda",
+          "Modelagem cropped na blusa",
+          "Punhos ajustados"
+        ]
+      },
+      "caimento": "semi-ajustado",
+      "ocasiao_uso": [
+        "casual",
+        "dia_a_dia"
+      ],
+      "estacao": "meia_estação",
+      "qualidade_foto": {
+        "resolucao": "media",
+        "fundo": "ambiente",
+        "iluminacao": "media",
+        "necessita_tratamento": true
+      },
+      "nicho_sensivel": false,
+      "mood": [
+        "casual",
+        "confortável",
+        "urbano"
+      ],
+      "palavras_chave_venda": [
+        "conjunto moletom",
+        "look completo",
+        "conforto",
+        "tendência 2026",
+        "athleisure"
+      ]
+    },
+    "strategy": {
+      "angulo": "O conjunto que toda mulher elegante precisa ter no guarda-roupa - conforto de casa com sofisticação para sair. Marrom rosado: a cor que valoriza QUALQUER tom de pele!",
+      "angulo_secundario": "Últimas peças do conjunto que virou sensação entre as clientes VIP - quem usa, não quer tirar!",
+      "gatilho": "escassez",
+      "tom": "acolhedor",
+      "publico_ideal": "Mulheres 35-55 anos, classe B, trabalham fora ou são donas de casa ativas, valorizam praticidade sem perder elegância, compram pelo Instagram quando veem nos Stories, seguem blogueiras de moda madura, preferem peças versáteis que servem para várias ocasiões",
+      "contra_objecao": "Sobre o preço: 'Meninas, dividimos em até 3x sem juros no cartão ou PIX à vista com 5% de desconto - é menos que o preço de uma blusa básica boa!'",
+      "cta_sugerido": "Chama no Direct que eu separo a sua",
+      "ganchos_stories": [
+        "POV: você encontrou O conjunto perfeito para todas as ocasiões 👆",
+        "Marrom rosado: a cor que TODA mulher fica linda (e eu posso provar)",
+        "Cliente perguntou: 'tem mais dessa cor?' Resposta: 'só essas 3 peças' 😱"
+      ],
+      "emocao_alvo": "desejo"
+    },
+    "headline_principal": "O conjunto que toda mulher elegante precisa ter",
+    "headline_variacao_1": "Marrom rosado: a cor que valoriza qualquer tom",
+    "headline_variacao_2": "Conforto de casa com sofisticação pra sair",
+    "instagram_feed": "Gente, esse conjunto virou obsessão das minhas clientes! 🔥\n\nSabe aquela peça que você veste e automaticamente se sente mais elegante? Esse é ELE. O marrom rosado valoriza qualquer tom de pele e combina com tudo que você já tem no guarda-roupa.\n\nO cropped tem modelagem perfeita, os punhos ajustados dão aquele charme, e a bermuda clochard com cordão de amarração? Pura sofisticação! A barra desfiada é o detalhe que faz toda diferença.\n\nFunciona pra tudo: reunião no home office, almoço com as amigas, buscar os filhos na escola... Você sempre vai estar arrumada sem esforço.\n\nPor apenas R$ 149,90 você leva as duas peças ✨\n\nChama no Direct que eu separo a sua — só restam 3 unidades! 💕\n\nmodafeminina lookdodia conjuntofeminino moletomfeminino tendencia2026 marromrosado outfitdodia modabrasileira espacofashion roupasconfortaveis estilofeminino lookelegante conjuntomoletom bermudaclochard cropped",
+    "instagram_stories": {
+      "slide_1": "O conjunto que virou OBSESSÃO chegou! 🔥",
+      "slide_2": "Marrom rosado + modelagem cropped = perfeição ✨",
+      "slide_3": "R$ 149,90 pelas duas peças e voando ⚡",
+      "cta_final": "Corre pro Direct que eu separo a sua 💕"
+    },
+    "whatsapp": "Oi linda, tudo bem? 💕\n\nChegou o conjunto que você vai se apaixonar! É aquele marrom rosado lindo que fica perfeito em qualquer tom de pele.\n\nCropped + bermuda clochard com cordão de amarração... menina, a modelagem é um sonho! Super confortável mas com aquele toque elegante que a gente ama.\n\nPor apenas R$ 149,90 você leva as duas peças e resolve o visual pra semana inteira! Serve pra trabalhar em casa, sair com as amigas, ir no mercado... sempre linda e confortável.\n\nInteressada? Me manda um oi que eu te mostro mais fotos! 📱",
+    "meta_ads": {
+      "titulo": "Conjunto Moletom Cropped + Bermuda Clochard",
+      "texto_principal": "Marrom rosado que valoriza qualquer tom de pele. Cropped com punhos ajustados + bermuda clochard com cordao. Conforto e elegancia para todas as ocasioes.",
+      "descricao": "Duas pecas por R$ 149,90",
+      "cta_button": "shop_now"
+    },
+    "hashtags": [
+      "modafeminina",
+      "lookdodia",
+      "conjuntofeminino",
+      "moletomfeminino",
+      "tendencia2026",
+      "marromrosado",
+      "outfitdodia",
+      "modabrasileira",
+      "espacofashion",
+      "roupasconfortaveis",
+      "estilofeminino",
+      "lookelegante",
+      "conjuntomoletom",
+      "bermudaclochard",
+      "cropped"
+    ],
+    "product_image_clean_url": null,
+    "model_image_url": null,
+    "lifestyle_image_url": null,
+    "creative_feed_url": null,
+    "creative_stories_url": null,
+    "refinements": [
+      {
+        "campo": "instagram_feed",
+        "antes": "É aquele conjunto que funciona pra tudo",
+        "depois": "Funciona pra tudo",
+        "motivo": "Removeu redundância para fluidez mais natural"
+      },
+      {
+        "campo": "instagram_feed",
+        "antes": "tá saindo rápido!",
+        "depois": "só restam 3 unidades!",
+        "motivo": "Urgência mais específica e crível"
+      },
+      {
+        "campo": "instagram_stories",
+        "antes": "Gente, o conjunto que virou OBSESSÃO chegou!",
+        "depois": "O conjunto que virou OBSESSÃO chegou!",
+        "motivo": "Removeu palavra desnecessária para caber melhor na tela"
+      },
+      {
+        "campo": "instagram_stories",
+        "antes": "Só R$ 149,90 pelas duas peças e tá voando",
+        "depois": "R$ 149,90 pelas duas peças e voando",
+        "motivo": "Mais conciso para stories, removeu 'Só' desnecessário"
+      },
+      {
+        "campo": "whatsapp",
+        "antes": "Tá interessada?",
+        "depois": "Interessada?",
+        "motivo": "Mais direto e natural no WhatsApp"
+      },
+      {
+        "campo": "meta_ads",
+        "antes": "Conforto e elegância",
+        "depois": "Conforto e elegancia para todas as ocasioes",
+        "motivo": "Removeu acentos para conformidade Meta Ads e expandiu benefício"
+      }
+    ]
+  },
+  "score": {
+    "nota_geral": 78,
+    "conversao": 82,
+    "clareza": 85,
+    "urgencia": 75,
+    "naturalidade": 88,
+    "aprovacao_meta": 70,
+    "criatividade": 65,
+    "nivel_risco": "medio",
+    "resumo": "Campanha sólida com tom autêntico de lojista e boa estrutura de conversão. O preço está bem posicionado e os benefícios são claros, mas precisa de ajustes para compliance com Meta e maior senso de urgência.",
+    "pontos_fortes": [
+      "Tom natural e acolhedor que gera confiança, como uma lojista real falaria",
+      "Preço bem posicionado com parcelamento e desconto no PIX criando acessibilidade",
+      "Benefícios tangíveis bem explicados (versatilidade, modelagem, cor universal)"
+    ],
+    "melhorias": [
+      {
+        "campo": "urgencia",
+        "problema": "Escassez genérica sem prova social forte",
+        "sugestao": "Adicionar elementos como 'vendemos 47 peças ontem' ou 'lista de espera com 23 pessoas'",
+        "impacto": "alto"
+      },
+      {
+        "campo": "meta_ads",
+        "problema": "Texto muito promocional e claims absolutos",
+        "sugestao": "Remover 'qualquer tom de pele' e focar em características objetivas do produto",
+        "impacto": "alto"
+      },
+      {
+        "campo": "criatividade",
+        "problema": "Abordagem comum no mercado de moda",
+        "sugestao": "Explorar mais o conceito 'elegante em casa' ou criar comparações específicas",
+        "impacto": "medio"
+      }
+    ],
+    "alertas_meta": [
+      {
+        "trecho": "valoriza qualquer tom de pele",
+        "politica": "Claims absolutos sobre benefícios",
+        "nivel": "aviso",
+        "correcao": "Mudar para 'valoriza diversos tons de pele' ou 'cor versátil'"
+      },
+      {
+        "trecho": "virou obsessão",
+        "politica": "Linguagem exagerada",
+        "nivel": "aviso",
+        "correcao": "Usar 'muito procurado' ou 'favorito das clientes'"
+      }
+    ],
+    "previsao_engajamento": "alto"
+  },
+  "durationMs": 61198,
+  "costBreakdown": [
+    {
+      "step": "vision",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 6596,
+      "estimatedCostBrl": 0.08
+    },
+    {
+      "step": "strategy",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 10620,
+      "estimatedCostBrl": 0.06
+    },
+    {
+      "step": "copywriter",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 18447,
+      "estimatedCostBrl": 0.1
+    },
+    {
+      "step": "refiner",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 14835,
+      "estimatedCostBrl": 0.05
+    },
+    {
+      "step": "scorer",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 10699,
+      "estimatedCostBrl": 0.04
+    }
+  ]
+}

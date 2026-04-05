@@ -21,8 +21,8 @@ const CREDIT_PACKAGES = [
 const PLAN_UPGRADE = [
   { name: "Starter", price: 59, campaigns: 15 },
   { name: "Pro", price: 129, campaigns: 40 },
-  { name: "Business", price: 249, campaigns: 100 },
-  { name: "Agência", price: 499, campaigns: 200 },
+  { name: "Business", price: 249, campaigns: 85 },
+  { name: "Agência", price: 499, campaigns: 170 },
 ];
 
 export default function QuotaExceededModal({
