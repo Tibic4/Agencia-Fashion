@@ -232,6 +232,18 @@ export async function generateWithModelBank(
 }
 
 /**
+ * Criar modelo virtual personalizada a partir de fotos de referência.
+ * Custo: variável (~R$ 0,50+)
+ */
+export async function createModel(params: FashnModelCreateParams): Promise<{ id: string }> {
+  const jobId = await submitJob("model-create", {
+    name: params.name,
+    sample_images: params.sampleImages,
+  });
+  return { id: jobId };
+}
+
+/**
  * Verificar se a API está acessível.
  */
 export async function checkFashnHealth(): Promise<boolean> {
