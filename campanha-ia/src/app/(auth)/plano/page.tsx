@@ -9,6 +9,9 @@ const IconCheck = () => (
 interface StoreUsage {
   campaigns_generated: number;
   campaigns_limit: number;
+  models_used: number;
+  models_limit: number;
+  regen_limit: number;
 }
 
 interface StoreData {
@@ -163,19 +166,23 @@ export default function Plano() {
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
               <span style={{ color: "var(--muted)" }}>Modelos</span>
-              <span className="font-bold">—</span>
+              <span className="font-bold">
+                {dataLoading ? "..." : `${usage?.models_used ?? 0}/${usage?.models_limit ?? 0}`}
+              </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full" style={{ width: "0%", background: "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full" style={{ width: `${usage?.models_limit ? ((usage?.models_used ?? 0) / usage.models_limit) * 100 : 0}%`, background: "var(--gradient-brand)" }} />
             </div>
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
-              <span style={{ color: "var(--muted)" }}>Regenerações</span>
-              <span className="font-bold">—</span>
+              <span style={{ color: "var(--muted)" }}>Regenerações/camp</span>
+              <span className="font-bold">
+                {dataLoading ? "..." : `${usage?.regen_limit ?? 0} por campanha`}
+              </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full" style={{ width: "0%", background: "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full" style={{ width: "100%", background: "var(--gradient-brand)" }} />
             </div>
           </div>
         </div>
