@@ -41,6 +41,10 @@ function random<T>(arr: T[]): T {
 }
 
 async function main() {
+  // Carrega .env.local ANTES de qualquer check
+  const dotenv = await import("dotenv");
+  dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+
   const imagePath = process.argv[2];
   
   if (!imagePath) {
@@ -93,9 +97,7 @@ async function main() {
   console.log(`📦 Segmento: ${input.storeSegment || "auto-detectar"}`);
   console.log("\n─────────────────────────────────────────\n");
 
-  // Importa pipeline (precisa de dotenv para pegar ANTHROPIC_API_KEY)
-  const dotenv = await import("dotenv");
-  dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+  // Importa pipeline
 
   const { runCampaignPipeline } = await import("../src/lib/ai/pipeline");
 

@@ -1,0 +1,544 @@
+{
+  "foto3": {
+    "visionResult": {
+      "produto": {
+        "nome_generico": "Look regata verde esmeralda + saia midi bege com cinto de fivela redonda",
+        "categoria": "Looks Montados",
+        "subcategoria": "Midi"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Verde esmeralda",
+        "cor_secundaria": "Bege areia",
+        "cores_complementares": [
+          "Madeira (fivela do cinto)"
+        ],
+        "material_aparente": "Malha (regata) / Linho ou viscose (saia)",
+        "estampa": "Liso",
+        "detalhes": [
+          "Regata sem manga cavada",
+          "Saia midi evasê",
+          "Cinto com fivela redonda de madeira/bambu",
+          "Caimento fluido da saia"
+        ]
+      },
+      "caimento": "solto",
+      "ocasiao_uso": [
+        "casual",
+        "passeio",
+        "trabalho_criativo"
+      ],
+      "estacao": "primavera_verao",
+      "mood": [
+        "feminino",
+        "natural",
+        "tropical",
+        "elegante"
+      ],
+      "palavras_chave_venda": [
+        "look montado",
+        "saia midi",
+        "verde esmeralda",
+        "regata",
+        "cinto fivela",
+        "tendência 2026"
+      ]
+    },
+    "strategy": {
+      "angulo": "O look que faz você parecer bronzeada sem nem tomar sol! Verde esmeralda + bege = combinação que valoriza QUALQUER tom de pele e deixa o visual sofisticado na medida certa.",
+      "angulo_secundario": "Aquele look completo que resolve seu guarda-roupa de verão: chique pro trabalho, perfeito pro final de semana, versátil pra qualquer ocasião por menos de R$ 100!",
+      "gatilho": "desejo",
+      "tom": "empoderador",
+      "publico_ideal": "Mulheres 28-45 anos, classe B/C+, trabalham fora, seguem perfis de moda e lifestyle no Instagram, compram looks completos porque valorizam praticidade, buscam peças versáteis que sirvam para trabalho e lazer, preocupadas em estar sempre arrumadas sem gastar muito",
+      "contra_objecao": "Objeção: 'Será que fica bom em mim?' / Resposta: 'Gente, essa combinação é UNIVERSAL! O verde esmeralda favorece desde a pele mais clara até a mais morena, e o corte da saia disfarça qualquer imperfeição do quadril'",
+      "cta_sugerido": "Chama no direct que eu mando todas as informações!",
+      "ganchos_stories": [
+        "A cor que deixa QUALQUER mulher mais bonita (desliza pra ver)",
+        "Look completo por menos de R$ 100? Só aqui mesmo!",
+        "POV: você encontrou O look do verão e não vai precisar pensar no que vestir"
+      ],
+      "emocao_alvo": "autoestima"
+    },
+    "copyTexts": {
+      "headline_principal": "Look completo que deixa você bronzeada naturalmente",
+      "headline_variacao_1": "Verde esmeralda + bege: a dupla que favorece todas",
+      "headline_variacao_2": "O look de R$ 99 que parece custar muito mais",
+      "instagram_feed": "Gente, esse look chegou e eu já sei que vai ser o queridinho do verão! 🔥\n\nSabe aquela sensação de estar sempre arrumada sem esforço? É exatamente isso que esse conjunto verde esmeralda + bege faz por você ✨ A regata tem um caimento perfeito, a saia midi evasê disfarça qualquer imperfeição e o cinto com fivela redonda dá aquele toque especial que faz toda diferença.\n\nO mais incrível? Essa combinação de cores deixa qualquer tom de pele mais bonito — é como se você tivesse voltado da praia! E pode usar no trabalho, no final de semana, num almoço especial... É aquele investimento certeiro no seu guarda-roupa.\n\nLook completo por apenas R$ 99,90 💕\n\nChama no Direct que eu mando todas as informações! Tá voando aqui no Closet da Lu ⚡\n\nmodafeminina lookdodia lookverão conjuntofeminino verdeesmeralda saiasmidi closetdalu tendencia2026 lookbarato modaacessivel outfitdodia looktrabalho lookfimdesemana versatil estilofeminino",
+      "instagram_stories": {
+        "slide_1": "Meninas, olha o que CHEGOU aqui no Closet 🔥\nO look que vocês vão se apaixonar!",
+        "slide_2": "Verde esmeralda + bege areia ✨\nA dupla que deixa QUALQUER mulher mais bonita",
+        "slide_3": "Look completo por *R$ 99,90* ⚡\nPouquíssimas unidades restando!",
+        "cta_final": "Corre pro Direct que eu separo a sua 💕\nNão deixa essa passar!"
+      },
+      "whatsapp": "Oi linda, tudo bem? 😊\n\nChegou aquele look que você vai *AMAR*! É um conjunto verde esmeralda + bege que fica um arraso em qualquer mulher — juro que é aquela cor que deixa a gente com cara de quem acabou de voltar da praia!\n\nÉ regata + saia midi com cinto, super versátil pra você usar no trabalho e depois sair direto pro happy hour. O caimento é perfeito, a saia disfarça tudo e o cinto dá aquele charme especial.\n\nO melhor de tudo: look completo por *R$ 99,90* só! \n\nTá interessada? Me manda um oi que eu separo uma pra você antes que acabe 💕\n\nBeijos!\nLu - Closet da Lu",
+      "meta_ads": {
+        "titulo": "Look Verde Esmeralda + Bege por R$ 99,90",
+        "texto_principal": "Conjunto regata + saia midi com cinto. Cores que valorizam qualquer tom de pele. Versátil para trabalho e lazer.",
+        "descricao": "Look completo Closet da Lu",
+        "cta_button": "shop_now"
+      },
+      "hashtags": [
+        "modafeminina",
+        "lookdodia",
+        "lookverão",
+        "conjuntofeminino",
+        "verdeesmeralda",
+        "saiasmidi",
+        "closetdalu",
+        "tendencia2026",
+        "lookbarato",
+        "modaacessivel",
+        "outfitdodia",
+        "looktrabalho",
+        "lookfimdesemana",
+        "versatil",
+        "estilofeminino"
+      ]
+    },
+    "refined": {
+      "headline_principal": "O look que deixa você bronzeada sem nem tomar sol",
+      "headline_variacao_1": "Verde esmeralda + bege: a dupla que favorece todas",
+      "headline_variacao_2": "Look completo de R$ 99 que parece custar o triplo",
+      "instagram_feed": "Meninas, esse look chegou e já sei que vai ser o queridinho do verão! 🔥\n\nSabe quando você quer estar sempre arrumada sem esforço? É exatamente isso que esse conjunto verde esmeralda + bege faz por você. A regata tem caimento perfeito, a saia midi evasê disfarça qualquer imperfeição e o cinto com fivela redonda dá aquele toque que faz toda diferença ✨\n\nO mais legal? Essa combinação de cores deixa qualquer tom de pele mais bonito — é como se você tivesse acabado de voltar da praia! Usa no trabalho, no final de semana, num almoço especial... É aquele investimento certeiro no seu guarda-roupa.\n\nLook completo por apenas R$ 99,90 💕\n\nChama no Direct que eu mando todas as informações! Voando aqui no Closet da Lu ⚡\n\nmodafeminina lookdodia lookverao conjuntofeminino verdeesmeralda saiasmidi closetdalu tendencia2026 lookbarato modaacessivel outfitdodia looktrabalho lookfimdesemana versatil estilofeminino",
+      "instagram_stories": {
+        "slide_1": "Meninas, olha o que chegou aqui no Closet 🔥\nO look que vocês vão se apaixonar!",
+        "slide_2": "Verde esmeralda + bege areia ✨\nA dupla que favorece qualquer mulher",
+        "slide_3": "Look completo por R$ 99,90 ⚡\nPouquíssimas unidades restando!",
+        "cta_final": "Corre pro Direct que eu separo a sua 💕\nNão deixa essa passar!"
+      },
+      "whatsapp": "Oi linda, tudo bem? 😊\n\nChegou aquele look que você vai amar! É um conjunto verde esmeralda + bege que fica lindo em qualquer mulher — juro que é aquela cor que deixa a gente com cara de quem acabou de voltar da praia!\n\nÉ regata + saia midi com cinto, super versátil pra você usar no trabalho e depois sair direto pro happy hour. O caimento é perfeito, a saia disfarça tudo e o cinto dá aquele charme especial.\n\nO melhor de tudo: look completo por R$ 99,90 só!\n\nTá interessada? Me manda um oi que eu separo uma pra você antes que acabe 💕\n\nBeijos!\nLu - Closet da Lu",
+      "meta_ads": {
+        "titulo": "Look Verde Esmeralda + Bege por R$ 99,90",
+        "texto_principal": "Conjunto regata + saia midi com cinto. Cores que valorizam qualquer tom de pele. Versátil para trabalho e lazer.",
+        "descricao": "Look completo Closet da Lu",
+        "cta_button": "shop_now"
+      },
+      "hashtags": [
+        "modafeminina",
+        "lookdodia",
+        "lookverao",
+        "conjuntofeminino",
+        "verdeesmeralda",
+        "saiasmidi",
+        "closetdalu",
+        "tendencia2026",
+        "lookbarato",
+        "modaacessivel",
+        "outfitdodia",
+        "looktrabalho",
+        "lookfimdesemana",
+        "versatil",
+        "estilofeminino"
+      ]
+    },
+    "score": {
+      "nota_geral": 78,
+      "conversao": 82,
+      "clareza": 85,
+      "urgencia": 65,
+      "naturalidade": 88,
+      "aprovacao_meta": 90,
+      "criatividade": 70,
+      "nivel_risco": "baixo",
+      "resumo": "Campanha sólida com linguagem autêntica e posicionamento de preço atrativo. O conceito 'bronzeada sem sol' é criativo e os textos soam naturais. Principais fraquezas: urgência insuficiente e falta de prova social.",
+      "pontos_fortes": [
+        "Linguagem natural e autêntica que conecta com o público-alvo",
+        "Conceito criativo 'bronzeada sem sol' diferencia o produto",
+        "Preço bem posicionado com boa relação custo-benefício"
+      ],
+      "melhorias": [
+        {
+          "campo": "urgencia",
+          "problema": "Apenas 'pouquíssimas unidades' não gera urgência real",
+          "sugestao": "Adicionar deadline específico: 'Últimas 5 peças - promoção acaba hoje às 23h59'",
+          "impacto": "alto"
+        },
+        {
+          "campo": "prova_social",
+          "problema": "Nenhuma menção a clientes satisfeitas ou vendas anteriores",
+          "sugestao": "Incluir '+ de 200 clientes já compraram' ou depoimento rápido",
+          "impacto": "medio"
+        },
+        {
+          "campo": "meta_ads",
+          "problema": "Texto muito genérico e sem diferenciação",
+          "sugestao": "Usar o conceito principal: 'O look que deixa você bronzeada sem sol'",
+          "impacto": "medio"
+        }
+      ],
+      "alertas_meta": [],
+      "previsao_engajamento": "alto"
+    },
+    "totalTimeMs": 59314
+  },
+  "foto4": {
+    "visionResult": {
+      "produto": {
+        "nome_generico": "Macacão feminino lilás/lavanda pantacourt com botões de madeira e amarração na cintura",
+        "categoria": "Macacões",
+        "subcategoria": "Pantacourt"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Lilás lavanda",
+        "cor_secundaria": null,
+        "cores_complementares": [
+          "Madeira (botões)"
+        ],
+        "material_aparente": "Linho ou viscolinho",
+        "estampa": "Liso",
+        "detalhes": [
+          "Botões frontais de madeira",
+          "Gola com colarinho",
+          "Bolsos frontais funcionais",
+          "Amarração na cintura com faixa",
+          "Calça pantacourt (panturrilha)",
+          "Sem manga"
+        ]
+      },
+      "caimento": "semi-ajustado",
+      "ocasiao_uso": [
+        "passeio",
+        "trabalho",
+        "evento_casual",
+        "brunch"
+      ],
+      "estacao": "primavera_verao",
+      "mood": [
+        "sofisticado",
+        "feminino",
+        "romântico",
+        "tendência"
+      ],
+      "palavras_chave_venda": [
+        "macacão feminino",
+        "lilás lavanda",
+        "botões madeira",
+        "pantacourt",
+        "peça única",
+        "tendência 2026"
+      ]
+    },
+    "strategy": {
+      "angulo": "A peça que vai te fazer receber elogios onde você chegar! Macacão lilás que é pura elegância e conforto - perfeito para arrasar sem esforço.",
+      "angulo_secundario": "Finalmente uma peça que resolve TUDO: trabalho, encontro, evento... O macacão que toda mulher precisa ter no guarda-roupa!",
+      "gatilho": "desejo",
+      "tom": "empoderador",
+      "publico_ideal": "Mulheres 28-45 anos, classe B/B+, profissionais liberais ou empresárias, seguem influencers de moda minimalista, compram pelo Instagram quando veem looks completos nos Stories, valorizam peças versáteis e atemporais que transmitem sofisticação sem ser formal demais",
+      "contra_objecao": "Sobre o preço: 'É um investimento! Uma peça dessas você usa 20x diferentes - trabalho, jantar, evento, viagem. Sai menos que R$ 6,50 por uso'",
+      "cta_sugerido": "Chama no Direct que eu mando mais fotos!",
+      "ganchos_stories": [
+        "Gente, essa cor tá MUITO em alta nas passarelas...",
+        "Quem mais odeia não saber o que vestir?",
+        "Essa peça que chegou ontem já tem gente perguntando..."
+      ],
+      "emocao_alvo": "autoestima"
+    },
+    "copyTexts": {
+      "headline_principal": "Macacão que resolve TUDO na sua vida 🔥",
+      "headline_variacao_1": "A peça que faltava no seu guarda-roupa ✨",
+      "headline_variacao_2": "Lilás que deixa qualquer look elegante 💕",
+      "instagram_feed": "Gente, esse macacão lilás chegou pra RESOLVER a vida de toda mulher que não sabe o que vestir! 🔥\n\nVocê vai se sentir poderosa e elegante desde o café da manhã até o happy hour. É aquela sensação de estar sempre no look certo, sabe?\n\nOs detalhes são apaixonantes: botões de madeira que dão um charme natural, amarração que marca a cintura do jeitinho certo, e o tecido fresquinho que não amassa. Pantacourt fica lindo em qualquer altura! ✨\n\nE a cor? Lilás lavanda tá sendo A COR mais pedida de 2026 - você vai receber elogios onde chegar 💕\n\nPor apenas *R$ 129,90* você tem uma peça que resolve trabalho, encontro, evento... Tudo!\n\nChama no Direct que eu mando mais fotos e separo a sua antes que voe! ⚡\n\nmacacaofeminino modafeminina lookdodia roupafeminina lilas macacao closetdalu tendencia2026 lookelegante modaminimalista vestidonovo macacaopantacourt",
+      "instagram_stories": {
+        "slide_1": "Gente, olha o que CHEGOU no Closet da Lu 🔥",
+        "slide_2": "Macacão lilás que resolve TUDO\nTrabalho, encontro, evento... ✨",
+        "slide_3": "Por apenas R$ 129,90\nPouquíssimas unidades! ⚡",
+        "cta_final": "Corre pro Direct que eu separo a sua 💕"
+      },
+      "whatsapp": "Ei, tudo bem? 😊\n\nChegou aquela peça que você vai *AMAR* - um macacão lilás lavanda que tá sendo a sensação aqui na loja!\n\nÉ daquelas peças que resolve a sua vida: botões de madeira lindos, amarração na cintura, tecido fresquinho e a cor mais linda que existe. Pantacourt fica perfeito em qualquer altura!\n\nPor apenas *R$ 129,90* você tem uma peça que usa 20x diferentes. É investimento que vale cada centavo!\n\nQuer que eu mande umas fotos no seu WhatsApp? Tenho certeza que você vai se apaixonar! 💕",
+      "meta_ads": {
+        "titulo": "Macacão Lilás Elegante",
+        "texto_principal": "Macacão feminino lilás com botões de madeira e amarração na cintura. Pantacourt versátil para trabalho e eventos.",
+        "descricao": "Closet da Lu - Moda Feminina",
+        "cta_button": "shop_now"
+      },
+      "hashtags": [
+        "macacaofeminino",
+        "modafeminina",
+        "lookdodia",
+        "roupafeminina",
+        "lilas",
+        "macacao",
+        "closetdalu",
+        "tendencia2026",
+        "lookelegante",
+        "modaminimalista",
+        "vestidonovo",
+        "macacaopantacourt",
+        "botaodemadeira",
+        "amarracao",
+        "lilaslavanda"
+      ]
+    },
+    "refined": {
+      "headline_principal": "O macacão que resolve sua vida toda 🔥",
+      "headline_variacao_1": "A peça que faltava no seu guarda-roupa ✨",
+      "headline_variacao_2": "Lilás que deixa qualquer look elegante 💕",
+      "instagram_feed": "Gente, esse macacão lilás chegou pra resolver a vida de toda mulher que não sabe o que vestir! 🔥\n\nVocê vai se sentir poderosa e elegante desde o café da manhã até o happy hour. É aquela sensação de estar sempre no look certo, sabe?\n\nOs detalhes são apaixonantes: botões de madeira que dão um charme natural, amarração que marca a cintura do jeitinho certo, e o tecido fresquinho que não amassa. Pantacourt fica lindo em qualquer altura! ✨\n\nE a cor? Lilás lavanda é A COR mais pedida de 2026 - você vai receber elogios onde chegar 💕\n\nPor apenas R$ 129,90 você tem uma peça que resolve trabalho, encontro, evento... Tudo!\n\nChama no Direct que eu mando mais fotos e separo a sua antes que acabe! ⚡",
+      "instagram_stories": {
+        "slide_1": "Gente, olha o que chegou 🔥",
+        "slide_2": "Macacão lilás que resolve TUDO\nTrabalho, encontro, evento... ✨",
+        "slide_3": "Por apenas R$ 129,90\nPouquíssimas unidades! ⚡",
+        "cta_final": "Corre pro Direct que eu separo 💕"
+      },
+      "whatsapp": "Ei, tudo bem? 😊\n\nChegou aquela peça que você vai amar - um macacão lilás lavanda que virou febre aqui na loja!\n\nÉ daquelas peças que resolve a sua vida: botões de madeira lindos, amarração na cintura, tecido fresquinho e a cor mais linda que existe. Pantacourt fica perfeito em qualquer altura!\n\nPor apenas R$ 129,90 você tem uma peça que usa de 20 formas diferentes. É investimento que vale cada centavo!\n\nQuer que eu mande umas fotos no seu WhatsApp? Tenho certeza que você vai se apaixonar! 💕",
+      "meta_ads": {
+        "titulo": "Macacão Lilás Elegante",
+        "texto_principal": "Macacão feminino lilás com botões de madeira e amarração na cintura. Pantacourt versátil para trabalho e eventos sociais.",
+        "descricao": "Closet da Lu - Moda Feminina",
+        "cta_button": "shop_now"
+      },
+      "hashtags": [
+        "macacaofeminino",
+        "modafeminina",
+        "lookdodia",
+        "roupafeminina",
+        "lilas",
+        "macacao",
+        "closetdalu",
+        "tendencia2026",
+        "lookelegante",
+        "modaminimalista",
+        "vestidonovo",
+        "macacaopantacourt",
+        "botaodemadeira",
+        "amarracao",
+        "lilaslavanda"
+      ]
+    },
+    "score": {
+      "nota_geral": 72,
+      "conversao": 75,
+      "clareza": 80,
+      "urgencia": 65,
+      "naturalidade": 85,
+      "aprovacao_meta": 90,
+      "criatividade": 60,
+      "nivel_risco": "baixo",
+      "resumo": "Campanha sólida com linguagem natural e boa estrutura de benefícios. O preço está bem posicionado e os textos são claros, mas falta urgência real e diferenciação criativa para maximizar conversões.",
+      "pontos_fortes": [
+        "Linguagem muito natural e autêntica, como uma lojista real falaria",
+        "Benefícios tangíveis bem estruturados (versatilidade, detalhes, cor tendência)",
+        "Preço bem justificado com argumento de custo-benefício por uso"
+      ],
+      "melhorias": [
+        {
+          "campo": "urgencia",
+          "problema": "Falta motivo real para comprar agora - 'pouquíssimas unidades' é genérico",
+          "sugestao": "Adicionar urgência específica: 'Só 3 peças no P e M' ou 'Promoção até domingo'",
+          "impacto": "alto"
+        },
+        {
+          "campo": "headlines",
+          "problema": "Headlines muito genéricas, não se destacam no feed",
+          "sugestao": "Testar 'Macacão que virou febre no escritório' ou 'A peça que 5 clientes pediram hoje'",
+          "impacto": "medio"
+        },
+        {
+          "campo": "meta_ads",
+          "problema": "Texto do Meta Ads muito formal e sem personalidade",
+          "sugestao": "Usar tom mais próximo: 'O macacão que toda mulher quer ter - lilás tendência com detalhes únicos'",
+          "impacto": "medio"
+        },
+        {
+          "campo": "cta",
+          "problema": "CTA no Instagram poderia ser mais específico",
+          "sugestao": "Trocar por 'Chama no Direct com sua altura que eu confirmo o caimento'",
+          "impacto": "baixo"
+        }
+      ],
+      "alertas_meta": [],
+      "previsao_engajamento": "medio"
+    },
+    "totalTimeMs": 55095
+  },
+  "foto5": {
+    "visionResult": {
+      "produto": {
+        "nome_generico": "Look cropped moletom caramelo com pregas nas mangas + short jeans bordado de estrelas/flores",
+        "categoria": "Looks Montados",
+        "subcategoria": "Short"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Caramelo/Marrom claro",
+        "cor_secundaria": "Azul jeans",
+        "cores_complementares": [
+          "Branco (bordados)"
+        ],
+        "material_aparente": "Moletom (cropped) / Jeans (short)",
+        "estampa": "Liso (cropped) / Bordado estrelas (short)",
+        "detalhes": [
+          "Cropped com gola alta/mock neck",
+          "Mangas com pregas/franzidos",
+          "Elástico na barra do cropped",
+          "Short jeans com barra dobrada",
+          "Bordados de estrelas/flores no short",
+          "Botão e zíper frontal"
+        ]
+      },
+      "caimento": "ajustado_cropped",
+      "ocasiao_uso": [
+        "casual",
+        "balada",
+        "passeio",
+        "encontro"
+      ],
+      "estacao": "meia_estacao",
+      "mood": [
+        "jovem",
+        "descolado",
+        "urbano",
+        "instagramável"
+      ],
+      "palavras_chave_venda": [
+        "look montado",
+        "cropped moletom",
+        "short jeans bordado",
+        "estrelas",
+        "look instagram",
+        "tendência 2026"
+      ]
+    },
+    "strategy": {
+      "angulo": "O look que vai bombar no seu Instagram! Cropped caramelo + short bordado de estrelas — a combinação perfeita de conforto e estilo que as influencers estão usando.",
+      "angulo_secundario": "Conjunto completo por menos de R$ 120! Look pronto para sair de casa sem erro — cropped + short que combina com tudo.",
+      "gatilho": "desejo",
+      "tom": "casual_energetico",
+      "publico_ideal": "Mulheres 18-28 anos, classe B/C+, estudantes universitárias ou recém-formadas, ativas no Instagram e TikTok, seguem influencers de moda, valorizam looks instagramáveis e custo-benefício, compram por impulso quando veem algo que 'combina com elas' nos Stories",
+      "contra_objecao": "Preço: 'Meninas, é conjunto COMPLETO por R$ 119! Dividimos em até 3x no cartão, sai por menos de R$ 40 por mês — menos que uma ida no shopping!'",
+      "cta_sugerido": "Chama no direct que eu mando mais fotos!",
+      "ganchos_stories": [
+        "POV: você quer um look que funciona pra faculdade E pra sair com as amigas 👀",
+        "Esse conjunto tá viralizando no meu direct... vocês querem saber por quê? 🔥",
+        "Quem aqui ama um look que já sai pronto e ainda fica instagramável? 🙋‍♀️"
+      ],
+      "emocao_alvo": "pertencimento"
+    },
+    "copyTexts": {
+      "headline_principal": "Look que bomba no Insta por R$ 119 🔥",
+      "headline_variacao_1": "Cropped + short bordado = combinação perfeita ✨",
+      "headline_variacao_2": "Esse conjunto tá viralizando no meu Direct 👀",
+      "instagram_feed": "Gente, que coisa mais linda chegou aqui! 😍\n\nEsse look cropped caramelo + short jeans bordado de estrelas é tudo o que você precisa pra se sentir confiante e super estilosa. Imagina você chegando na faculdade ou saindo com as amigas nesse conjunto... todo mundo vai perguntar onde você comprou! 💕\n\nO cropped tem aquelas pregas lindas nas mangas que dão um charme especial, e o short jeans com bordados de estrelas é pura delicadeza. O caramelo é a cor do momento e combina com TUDO do seu guarda-roupa!\n\n✨ Look completo e pronto\n✨ Tecido macio e confortável\n✨ Bordados que fazem toda diferença\n\nPor apenas *R$ 119,90* — dividimos em até 3x no cartão! 🔥\n\nChama no Direct que eu mando mais fotos e separo a sua antes que esgote! ⚡\n\nmodafeminina lookdodia conjuntofeminino croppedcaramelo shortjeans bordadoestrelas tendencia2026 roupasfemininas modajovem outfitdodia lookinstagram closetdalu modabrasileira conjuntoestiloso lookconfortavel modacasual",
+      "instagram_stories": {
+        "slide_1": "Meninas, olha que amor chegou aqui no Closet! 🔥",
+        "slide_2": "Cropped caramelo + short bordado de estrelas = dupla perfeita pra qualquer ocasião ✨",
+        "slide_3": "Look COMPLETO por só R$ 119,90! Poucas unidades restando ⚡",
+        "cta_final": "Corre pro Direct que eu separo a sua! 💕"
+      },
+      "whatsapp": "Oi lindeza, tudo bem? 💕\n\nChegou aqui uma peça que é a SUA CARA! Um look completo que vai fazer você arrasar: cropped moletom caramelo com pregas nas mangas + short jeans com bordados de estrelas.\n\nÉ aquele tipo de conjunto que você põe e já sai pronta, sabe? Confortável, estiloso e super instagramável! O caramelo tá super em alta e combina com tudo.\n\n*Por apenas R$ 119,90* o look completo! Dividimos em até 3x no cartão pra ficar mais suave 😉\n\nSe interessou? Me manda um oi que eu te mostro mais fotos! Tenho poucas unidades e sei que vai voar rápido.\n\nBeijos! Lu 💋",
+      "meta_ads": {
+        "titulo": "Conjunto Cropped + Short Bordado R$ 119",
+        "texto_principal": "Look completo cropped caramelo + short jeans bordado de estrelas. Confortável e estiloso para o dia a dia. R$ 119,90",
+        "descricao": "Conjunto feminino completo",
+        "cta_button": "shop_now"
+      },
+      "hashtags": [
+        "modafeminina",
+        "lookdodia",
+        "conjuntofeminino",
+        "croppedcaramelo",
+        "shortjeans",
+        "bordadoestrelas",
+        "tendencia2026",
+        "roupasfemininas",
+        "modajovem",
+        "outfitdodia",
+        "lookinstagram",
+        "closetdalu",
+        "modabrasileira",
+        "conjuntoestiloso",
+        "lookconfortavel"
+      ]
+    },
+    "refined": {
+      "headline_principal": "Look que bomba no Insta por R$ 119 🔥",
+      "headline_variacao_1": "Cropped + short bordado = combinação perfeita ✨",
+      "headline_variacao_2": "Esse conjunto tá viralizando no meu Direct 👀",
+      "instagram_feed": "Gente, que coisa mais linda chegou aqui! 😍\n\nEsse look cropped caramelo + short jeans bordado de estrelas é tudo o que você precisa pra se sentir confiante e super estilosa. Imagina você chegando na faculdade ou saindo com as amigas nesse conjunto... todo mundo vai perguntar onde você comprou!\n\nO cropped tem aquelas pregas lindas nas mangas que dão um charme especial, e o short jeans com bordados de estrelas é pura delicadeza. O caramelo é a cor do momento e combina com TUDO do seu guarda-roupa! 💕\n\n✨ Look completo e pronto\n✨ Tecido macio e confortável\n✨ Bordados que fazem toda diferença\n\nPor apenas R$ 119,90 — dividimos em até 3x no cartão! 🔥\n\nChama no Direct que eu mando mais fotos e separo a sua antes que esgote! ⚡",
+      "instagram_stories": {
+        "slide_1": "Meninas, olha que amor chegou aqui no Closet! 🔥",
+        "slide_2": "Cropped caramelo + short bordado de estrelas = dupla perfeita pra qualquer ocasião ✨",
+        "slide_3": "Look COMPLETO por só R$ 119,90! Poucas unidades restando ⚡",
+        "cta_final": "Corre pro Direct que eu separo a sua! 💕"
+      },
+      "whatsapp": "Oi lindeza, tudo bem? 💕\n\nChegou aqui uma peça que é a SUA CARA! Um look completo que vai fazer você arrasar: cropped moletom caramelo com pregas nas mangas + short jeans com bordados de estrelas.\n\nÉ aquele tipo de conjunto que você põe e já sai pronta, sabe? Confortável, estiloso e super instagramável! O caramelo tá super em alta e combina com tudo.\n\nPor apenas R$ 119,90 o look completo! Dividimos em até 3x no cartão pra ficar mais suave 😉\n\nSe interessou? Me manda um oi que eu te mostro mais fotos! Tenho poucas unidades e sei que vai voar rápido.\n\nBeijos! Lu 💋",
+      "meta_ads": {
+        "titulo": "Conjunto Cropped + Short Bordado R$ 119",
+        "texto_principal": "Look completo cropped caramelo + short jeans bordado de estrelas. Confortável e estiloso para o dia a dia. R$ 119,90",
+        "descricao": "Conjunto feminino completo",
+        "cta_button": "shop_now"
+      },
+      "hashtags": [
+        "modafeminina",
+        "lookdodia",
+        "conjuntofeminino",
+        "croppedcaramelo",
+        "shortjeans",
+        "bordadoestrelas",
+        "tendencia2026",
+        "roupasfemininas",
+        "modajovem",
+        "outfitdodia",
+        "lookinstagram",
+        "closetdalu",
+        "modabrasileira",
+        "conjuntoestiloso",
+        "lookconfortavel",
+        "modacasual"
+      ]
+    },
+    "score": {
+      "nota_geral": 78,
+      "conversao": 82,
+      "clareza": 85,
+      "urgencia": 70,
+      "naturalidade": 88,
+      "aprovacao_meta": 75,
+      "criatividade": 65,
+      "nivel_risco": "medio",
+      "resumo": "Campanha sólida com linguagem natural e estratégia bem definida para o público jovem. Preço competitivo e posicionamento claro, mas precisa de mais urgência real e alguns ajustes para compliance total com Meta.",
+      "pontos_fortes": [
+        "Linguagem autêntica que conecta com o público jovem (18-28 anos)",
+        "Preço bem posicionado com parcelamento estratégico (R$ 119,90 em 3x)",
+        "Estratégia omnichannel consistente entre Instagram, Stories e WhatsApp"
+      ],
+      "melhorias": [
+        {
+          "campo": "urgencia",
+          "problema": "Urgência baseada apenas em 'poucas unidades' sem dados concretos",
+          "sugestao": "Adicionar deadline específico ou quantidade exata restante (ex: 'últimas 8 peças')",
+          "impacto": "alto"
+        },
+        {
+          "campo": "meta_ads",
+          "problema": "Texto muito genérico e sem diferenciação para anúncios pagos",
+          "sugestao": "Destacar benefício único como 'pregas exclusivas nas mangas' ou 'bordado artesanal'",
+          "impacto": "medio"
+        },
+        {
+          "campo": "headlines",
+          "problema": "Headlines focam mais no hype que nos benefícios concretos",
+          "sugestao": "Testar variações focadas em resultado: 'Look completo que valoriza seu corpo'",
+          "impacto": "medio"
+        }
+      ],
+      "alertas_meta": [
+        {
+          "trecho": "vai bombar no seu Instagram",
+          "politica": "Promessas de resultado em redes sociais",
+          "nivel": "aviso",
+          "correcao": "Alterar para 'look perfeito para suas fotos' ou 'super fotogênico'"
+        },
+        {
+          "trecho": "tá viralizando no meu direct",
+          "politica": "Claims de viralização sem comprovação",
+          "nivel": "aviso",
+          "correcao": "Usar 'muito procurado' ou 'as clientes estão amando'"
+        }
+      ],
+      "previsao_engajamento": "alto"
+    },
+    "totalTimeMs": 56795
+  }
+}

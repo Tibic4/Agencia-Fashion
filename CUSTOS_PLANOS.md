@@ -1,32 +1,34 @@
-# 💰 CriaLook — Análise de Custos por Plano
+# 💰 CriaLook — Análise de Custos por Plano (v2 — A+ com Modelo+Fundo)
 
 > **Data:** 05/04/2026
 > **Base:** Arquitetura 01_ARQUITETURA_GERAL.md + APIS_PLATAFORMAS.md
 > **Cenário:** 100% de uso de TODOS os limites (pior caso absoluto)
+> **Modelo:** A+ (product-to-model + edit para alisar roupa e fundo profissional)
 
 ---
 
-## 1. Custos Unitários por Operação (fonte: arquitetura)
+## 1. Custos Unitários por Operação (modo A+)
 
 | Operação | APIs envolvidas | Custo |
 |----------|----------------|-------|
-| **1 campanha (moda, com try-on)** | Vision R$0,08 + Estrategista R$0,06 + Copywriter R$0,10 + Refinador R$0,03 + Scorer R$0,02 + Fashn try-on R$0,43 + Remoção fundo R$0,05 | **R$ 0,77** |
+| **1 campanha A+ (texto + modelo + fundo)** | Vision R$0,08 + Estrategista R$0,06 + Copywriter R$0,10 + Refinador R$0,03 + Scorer R$0,02 + Fashn product-to-model R$0,15 + Fashn edit R$0,10 + Remoção fundo R$0,04 | **R$ 0,58** |
 | **1 regeneração de copy** | Copywriter R$0,10 + Refinador R$0,03 + Scorer R$0,02 | **R$ 0,15** |
-| **1 regeneração de imagem** | Fashn/DALL-E R$0,23–0,43 + composição R$0 | **R$ 0,33** |
+| **1 regeneração de imagem** | Fashn product-to-model R$0,15 + edit R$0,10 | **R$ 0,25** |
 | **1 criação de modelo virtual** | Fashn.ai Model Create (4 samples) | **R$ 1,72** |
 
 ---
 
-## 2. Limites de Cada Plano (fonte: arquitetura seção 5.2)
+## 2. Limites de Cada Plano (v2 — margem ≥ 40%)
 
 | Recurso | 🆓 Grátis | ⭐ Starter | 🚀 Pro | 🏢 Business | 🏆 Agência |
 |---------|-----------|-----------|--------|------------|-----------|
 | **Preço/mês** | R$ 0 | R$ 59 | R$ 129 | R$ 249 | R$ 499 |
-| Campanhas/mês | 3 | 15 | 40 | 100 | 200 |
+| Campanhas/mês | 3 | 15 | 40 | **85** | **170** |
 | Canais/campanha | 2 (Feed+WhatsApp) | 4 (todos) | 4 | 4 | 4 |
+| Modelo + fundo profissional | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Modelos virtuais | 0 | 1 | 2 | 3 | 5 |
 | Criações modelo/mês | 0 | 1 | 2 | 3 | 5 |
-| Regen/campanha | 0 | 2 | 3 | 5 | 5 |
+| Regen/campanha | 0 | 2 | 3 | 3 | 3 |
 | Histórico | 7 dias | 90 dias | 1 ano | Ilimitado | Ilimitado |
 | Score completo | ❌ (nota geral) | ✅ | ✅ | ✅ | ✅ |
 | Link prévia | ❌ | ❌ | ✅ | ✅ | ✅ |
@@ -39,19 +41,19 @@
 
 **Fórmula:**
 ```
-Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + (criações_modelo × R$1,72)
+Custo Total = (campanhas × R$0,58) + (campanhas × regen_por_camp × R$0,15) + (criações_modelo × R$1,72)
 ```
 
 ### 🆓 Plano Grátis (R$ 0/mês)
 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
-| Campanhas | 3 | R$ 0,77 | R$ 2,31 |
+| Campanhas | 3 | R$ 0,58 | R$ 1,74 |
 | Regenerações | 3 × 0 = 0 | R$ 0,15 | R$ 0,00 |
 | Criação de modelo | 0 | R$ 1,72 | R$ 0,00 |
-| **Custo Total** | | | **R$ 2,31** |
+| **Custo Total** | | | **R$ 1,74** |
 | **Receita** | | | **R$ 0,00** |
-| **Margem** | | | **-R$ 2,31** |
+| **Margem** | | | **-R$ 1,74** |
 | **Margem %** | | | **∞ negativa (loss leader)** |
 
 ---
@@ -60,15 +62,15 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
-| Campanhas | 15 | R$ 0,77 | R$ 11,55 |
+| Campanhas A+ | 15 | R$ 0,58 | R$ 8,70 |
 | Regenerações | 15 × 2 = 30 | R$ 0,15 | R$ 4,50 |
 | Criação de modelo | 1 | R$ 1,72 | R$ 1,72 |
-| **Custo Total** | | | **R$ 17,77** |
+| **Custo Total** | | | **R$ 14,92** |
 | **Receita** | | | **R$ 59,00** |
-| **Margem** | | | **R$ 41,23** |
-| **Margem %** | | | **69,9%** ✅ |
+| **Margem** | | | **R$ 44,08** |
+| **Margem %** | | | **74,7%** ✅ |
 
-**Custo por campanha efetivo:** R$ 17,77 ÷ 15 = **R$ 1,18/campanha**
+**Custo por campanha efetivo:** R$ 14,92 ÷ 15 = **R$ 0,99/campanha**
 **Preço por campanha que o cliente paga:** R$ 59 ÷ 15 = **R$ 3,93/campanha**
 
 ---
@@ -77,15 +79,15 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
-| Campanhas | 40 | R$ 0,77 | R$ 30,80 |
+| Campanhas A+ | 40 | R$ 0,58 | R$ 23,20 |
 | Regenerações | 40 × 3 = 120 | R$ 0,15 | R$ 18,00 |
 | Criação de modelo | 2 | R$ 1,72 | R$ 3,44 |
-| **Custo Total** | | | **R$ 52,24** |
+| **Custo Total** | | | **R$ 44,64** |
 | **Receita** | | | **R$ 129,00** |
-| **Margem** | | | **R$ 76,76** |
-| **Margem %** | | | **59,5%** ✅ |
+| **Margem** | | | **R$ 84,36** |
+| **Margem %** | | | **65,4%** ✅ |
 
-**Custo por campanha efetivo:** R$ 52,24 ÷ 40 = **R$ 1,31/campanha**
+**Custo por campanha efetivo:** R$ 44,64 ÷ 40 = **R$ 1,12/campanha**
 **Preço por campanha que o cliente paga:** R$ 129 ÷ 40 = **R$ 3,23/campanha**
 
 ---
@@ -94,16 +96,16 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
-| Campanhas | 100 | R$ 0,77 | R$ 77,00 |
-| Regenerações | 100 × 3 = 300 | R$ 0,15 | R$ 45,00 |
+| Campanhas A+ | 85 | R$ 0,58 | R$ 49,30 |
+| Regenerações | 85 × 3 = 255 | R$ 0,15 | R$ 38,25 |
 | Criação de modelo | 3 | R$ 1,72 | R$ 5,16 |
-| **Custo Total** | | | **R$ 127,16** |
+| **Custo Total** | | | **R$ 92,71** |
 | **Receita** | | | **R$ 249,00** |
-| **Margem** | | | **R$ 121,84** |
-| **Margem %** | | | **48,9%** ✅ |
+| **Margem** | | | **R$ 156,29** |
+| **Margem %** | | | **62,8%** ✅ |
 
-**Custo por campanha efetivo:** R$ 127,16 ÷ 100 = **R$ 1,27/campanha**
-**Preço por campanha que o cliente paga:** R$ 249 ÷ 100 = **R$ 2,49/campanha**
+**Custo por campanha efetivo:** R$ 92,71 ÷ 85 = **R$ 1,09/campanha**
+**Preço por campanha que o cliente paga:** R$ 249 ÷ 85 = **R$ 2,93/campanha**
 
 ---
 
@@ -111,16 +113,16 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 
 | Item | Qtd | Unitário | Subtotal |
 |------|-----|----------|----------|
-| Campanhas | 200 | R$ 0,77 | R$ 154,00 |
-| Regenerações | 200 × 3 = 600 | R$ 0,15 | R$ 90,00 |
+| Campanhas A+ | 170 | R$ 0,58 | R$ 98,60 |
+| Regenerações | 170 × 3 = 510 | R$ 0,15 | R$ 76,50 |
 | Criação de modelo | 5 | R$ 1,72 | R$ 8,60 |
-| **Custo Total** | | | **R$ 252,60** |
+| **Custo Total** | | | **R$ 183,70** |
 | **Receita** | | | **R$ 499,00** |
-| **Margem** | | | **R$ 246,40** |
-| **Margem %** | | | **49,4%** ✅ |
+| **Margem** | | | **R$ 315,30** |
+| **Margem %** | | | **63,2%** ✅ |
 
-**Custo por campanha efetivo:** R$ 252,60 ÷ 200 = **R$ 1,26/campanha**
-**Preço por campanha que o cliente paga:** R$ 499 ÷ 200 = **R$ 2,50/campanha**
+**Custo por campanha efetivo:** R$ 183,70 ÷ 170 = **R$ 1,08/campanha**
+**Preço por campanha que o cliente paga:** R$ 499 ÷ 170 = **R$ 2,94/campanha**
 
 ---
 
@@ -128,28 +130,23 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 
 | Plano | Receita | Custo 100% | Margem R$ | Margem % | Status |
 |-------|---------|-----------|-----------|----------|--------|
-| 🆓 Grátis | R$ 0 | R$ 2,31 | -R$ 2,31 | — | 🔴 Loss leader |
-| ⭐ Starter | R$ 59 | R$ 17,77 | R$ 41,23 | 69,9% | 🟢 Saudável |
-| 🚀 Pro | R$ 129 | R$ 52,24 | R$ 76,76 | 59,5% | 🟢 Saudável |
-| 🏢 Business | R$ 249 | R$ 127,16 | R$ 121,84 | 48,9% | 🟢 Saudável |
-| 🏆 Agência | R$ 499 | R$ 252,60 | R$ 246,40 | 49,4% | 🟢 Saudável |
+| 🆓 Grátis | R$ 0 | R$ 1,74 | -R$ 1,74 | — | 🔴 Loss leader |
+| ⭐ Starter | R$ 59 | R$ 14,92 | R$ 44,08 | 74,7% | 🟢 Excelente |
+| 🚀 Pro | R$ 129 | R$ 44,64 | R$ 84,36 | 65,4% | 🟢 Excelente |
+| 🏢 Business | R$ 249 | R$ 92,71 | R$ 156,29 | 62,8% | 🟢 Excelente |
+| 🏆 Agência | R$ 499 | R$ 183,70 | R$ 315,30 | 63,2% | 🟢 Excelente |
 
 ---
 
-## 5. Divergências Encontradas: Código vs Arquitetura
+## 5. O que mudou vs v1
 
-| Item | Arquitetura | Código (`plano/page.tsx`) | Código (`mercadopago.ts`) |
-|------|-------------|--------------------------|--------------------------|
-| Starter preço | R$ 59 | ~~R$ 49,90~~ | R$ 59 |
-| Pro preço | R$ 129 | ~~R$ 97~~ | R$ 129 |
-| Business preço | R$ 249 | — (não existe na UI) | R$ 249 |
-| Agência preço | R$ 499 | — (não existe na UI) | R$ 499 |
-| Planos na UI | 5 planos | 3 planos (Starter, Pro, Scale) | 4 planos |
-| "Scale" | Não existe | R$ 197 (200 camp) | — |
-| Starter campanhas | 15 | 15 ✅ | 15 ✅ |
-| Pro campanhas | 40 | ~~50~~ | 40 |
-
-> **⚠️ AÇÃO NECESSÁRIA:** Os preços e nomes na página `/plano` (`page.tsx`) estão DIFERENTES da arquitetura e do `mercadopago.ts`. Precisa alinhar.
+| Item | v1 (antes) | v2 A+ (agora) | Motivo |
+|------|-----------|--------------|--------|
+| Custo/campanha | R$ 0,77 (try-on) | **R$ 0,58** (product-to-model+edit) | product-to-model é mais barato |
+| Business campanhas | 100 | **85** | Garantir margem ≥ 40% |
+| Agência campanhas | 200 | **170** | Garantir margem ≥ 40% |
+| Business/Agência regen | 5/campanha | **3/campanha** | Alinhamento de custo |
+| Modelo+fundo | Não incluído | **Incluído em todos os pagos** | Diferencial competitivo |
 
 ---
 
@@ -170,7 +167,7 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 ## 7. Custo da Taxa Mercado Pago sobre a Receita
 
 | Plano | Receita | Taxa PIX (0,99%) | Taxa Cartão (4,98%) | Receita líq. PIX | Receita líq. Cartão |
-|-------|---------|------------------|--------------------|-----------------|--------------------|
+|-------|---------|------------------|--------------------|-----------------|---------------------|
 | Starter | R$ 59 | R$ 0,58 | R$ 2,94 | R$ 58,42 | R$ 56,06 |
 | Pro | R$ 129 | R$ 1,28 | R$ 6,42 | R$ 127,72 | R$ 122,58 |
 | Business | R$ 249 | R$ 2,47 | R$ 12,40 | R$ 246,53 | R$ 236,60 |
@@ -178,11 +175,11 @@ Custo Total = (campanhas × R$0,77) + (campanhas × regen_por_camp × R$0,15) + 
 
 ---
 
-## 8. Margem Real (100% uso + taxa MP cartão = pior cenário)
+## 8. Margem Real (100% uso + taxa MP cartão = pior cenário absoluto)
 
 | Plano | Receita líq. | Custo APIs | **Margem Final** | **Margem %** |
 |-------|-------------|-----------|-----------------|-------------|
-| ⭐ Starter | R$ 56,06 | R$ 17,77 | **R$ 38,29** | **68,3%** ✅ |
-| 🚀 Pro | R$ 122,58 | R$ 52,24 | **R$ 70,34** | **57,4%** ✅ |
-| 🏢 Business | R$ 236,60 | R$ 127,16 | **R$ 109,44** | **46,3%** ✅ |
-| 🏆 Agência | R$ 474,15 | R$ 252,60 | **R$ 221,55** | **46,7%** ✅ |
+| ⭐ Starter | R$ 56,06 | R$ 14,92 | **R$ 41,14** | **73,4%** ✅ |
+| 🚀 Pro | R$ 122,58 | R$ 44,64 | **R$ 77,94** | **63,6%** ✅ |
+| 🏢 Business | R$ 236,60 | R$ 92,71 | **R$ 143,89** | **60,8%** ✅ |
+| 🏆 Agência | R$ 474,15 | R$ 183,70 | **R$ 290,45** | **61,3%** ✅ |
