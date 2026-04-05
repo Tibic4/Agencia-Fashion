@@ -1,6 +1,20 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+
+/* ═══════════════════════════════════════
+   Plan model limits (01_ARQUITETURA_GERAL.md)
+   Grátis: 0 | Starter: 1 | Pro: 2 | Business: 3 | Agência: 5
+   ═══════════════════════════════════════ */
+const planModelLimits: Record<string, number> = {
+  free: 0,
+  gratis: 0,
+  starter: 1,
+  pro: 2,
+  business: 3,
+  agencia: 5,
+};
 
 const skinTones = [
   { value: "branca", label: "Clara", color: "#F5D0B5" },
@@ -36,7 +50,31 @@ const ages = [
   { value: "madura_36_50", label: "36-50 anos" },
 ];
 
+/* ═══════════════════════════════════════
+   Model type
+   ═══════════════════════════════════════ */
+interface StoreModel {
+  id: string;
+  name: string;
+  skin_tone: string;
+  hair_style: string;
+  body_type: string;
+  style: string;
+  age_range: string;
+  is_active: boolean;
+  created_at: string;
+  photo_url?: string | null;
+}
+
 export default function ModeloVirtual() {
+  // ── Existing models list ──
+  const [models, setModels] = useState<StoreModel[]>([]);
+  const [loadingModels, setLoadingModels] = useState(true);
+  const [userPlan, setUserPlan] = useState("free");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // ── Create form state ──
   const [skin, setSkin] = useState("morena_clara");
   const [hair, setHair] = useState("ondulado");
   const [body, setBody] = useState("media");
@@ -46,9 +84,30 @@ export default function ModeloVirtual() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const maxModels = planModelLimits[userPlan] || 1;
+  const canCreate = models.length < maxModels;
+
+  // ── Load existing models ──
+  useEffect(() => {
+    async function loadModels() {
+      try {
+        const res = await fetch("/api/model/list");
+        if (res.ok) {
+          const data = await res.json();
+          setModels(data.models || []);
+          setUserPlan(data.plan || "free");
+        }
+      } catch {
+        // If API doesn't exist yet, use empty list
+      } finally {
+        setLoadingModels(false);
+      }
+    }
+    loadModels();
+  }, []);
 
   function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []).slice(0, 4);
@@ -89,7 +148,21 @@ export default function ModeloVirtual() {
         throw new Error(json.error || "Erro ao criar modelo");
       }
 
-      setSuccess(true);
+      // Add new model to list
+      const newModel: StoreModel = {
+        id: json.id || crypto.randomUUID(),
+        name: name || "Modelo",
+        skin_tone: skin,
+        hair_style: hair,
+        body_type: body,
+        style: style,
+        age_range: age,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      };
+      setModels((prev) => [...prev, newModel]);
+      setShowCreateForm(false);
+      resetForm();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
       setError(msg);
@@ -98,32 +171,237 @@ export default function ModeloVirtual() {
     }
   }
 
-  if (success) {
-    return (
-      <div className="animate-fade-in-up flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="text-7xl mb-6">✅</div>
-          <h2 className="text-2xl font-bold mb-2">Modelo criada!</h2>
-          <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
-            {name || "Sua modelo"} está pronta. Agora quando gerar uma campanha com &quot;Usar Modelo Virtual&quot;
-            ativado, a roupa será vestida nela automaticamente.
-          </p>
-          <button className="btn-primary" onClick={() => setSuccess(false)}>
-            Criar outra modelo
-          </button>
-        </div>
-      </div>
-    );
+  async function handleDelete(modelId: string) {
+    setDeletingId(modelId);
+    try {
+      await fetch(`/api/model/${modelId}`, { method: "DELETE" });
+      setModels((prev) => prev.filter((m) => m.id !== modelId));
+    } catch {
+      // Silent fail
+    } finally {
+      setDeletingId(null);
+    }
   }
 
-  return (
+  async function handleSetActive(modelId: string) {
+    setModels((prev) =>
+      prev.map((m) => ({
+        ...m,
+        is_active: m.id === modelId,
+      }))
+    );
+    try {
+      await fetch(`/api/model/${modelId}/activate`, { method: "POST" });
+    } catch {
+      // Silent fail
+    }
+  }
+
+  function resetForm() {
+    setName("");
+    setSkin("morena_clara");
+    setHair("ondulado");
+    setBody("media");
+    setStyle("casual_natural");
+    setAge("adulta_26_35");
+    setPhotos([]);
+    setPhotoPreview([]);
+    setError("");
+  }
+
+  // ── Models list view ──
+  const renderModelsList = () => (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Modelos <span className="gradient-text">Virtuais</span>
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+            {models.length}/{maxModels} modelos · Plano{" "}
+            <span className="font-semibold capitalize">{userPlan}</span>
+          </p>
+        </div>
+        {canCreate ? (
+          <button
+            className="btn-primary !py-2.5 text-sm"
+            onClick={() => setShowCreateForm(true)}
+          >
+            + Nova modelo
+          </button>
+        ) : (
+          <Link
+            href="/plano"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+            style={{
+              background: "var(--gradient-brand)",
+              color: "white",
+            }}
+          >
+            {maxModels === 0 ? "⭐ Assinar plano para criar modelos" : "⬆️ Upgrade para mais modelos"}
+          </Link>
+        )}
+      </div>
+
+      {/* Models grid */}
+      {loadingModels ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl h-64 animate-pulse"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            />
+          ))}
+        </div>
+      ) : models.length === 0 ? (
+        /* Empty state */
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="text-8xl mb-6">👩</div>
+          <h2 className="text-xl font-bold mb-2">
+            Nenhuma modelo ainda
+          </h2>
+          <p className="text-sm mb-6 max-w-md" style={{ color: "var(--muted)" }}>
+            {maxModels === 0
+              ? "Faça upgrade para um plano pago e crie sua modelo virtual. Suas roupas serão vestidas nela automaticamente."
+              : "Crie uma modelo virtual que representa suas clientes. Suas roupas serão vestidas nela automaticamente quando gerar campanhas."
+            }
+          </p>
+          {maxModels === 0 ? (
+            <Link href="/plano" className="btn-primary">
+              ⭐ Ver planos a partir de R$ 59/mês
+            </Link>
+          ) : (
+            <button
+              className="btn-primary"
+              onClick={() => setShowCreateForm(true)}
+            >
+              ✨ Criar primeira modelo
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {models.map((model) => (
+            <div
+              key={model.id}
+              className="rounded-2xl overflow-hidden transition-all group"
+              style={{
+                border: model.is_active
+                  ? "2px solid var(--brand-500)"
+                  : "1px solid var(--border)",
+                background: "var(--background)",
+                boxShadow: model.is_active ? "0 4px 20px rgba(236,72,153,0.15)" : "none",
+              }}
+            >
+              {/* Model visual */}
+              <div
+                className="aspect-[4/3] flex items-center justify-center relative"
+                style={{ background: "var(--gradient-brand-soft)" }}
+              >
+                <div className="text-6xl">👩</div>
+                {model.is_active && (
+                  <div
+                    className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full"
+                    style={{ background: "var(--gradient-brand)", color: "white" }}
+                  >
+                    ✅ Ativa
+                  </div>
+                )}
+              </div>
+
+              {/* Model info */}
+              <div className="p-4">
+                <h3 className="font-semibold mb-1">{model.name}</h3>
+                <div className="flex flex-wrap gap-1 mb-3">
+                  <span className="badge badge-brand text-[10px]">
+                    {skinTones.find((s) => s.value === model.skin_tone)?.label || model.skin_tone}
+                  </span>
+                  <span className="badge badge-brand text-[10px]">
+                    {hairStyles.find((h) => h.value === model.hair_style)?.label || model.hair_style}
+                  </span>
+                  <span className="badge badge-brand text-[10px]">
+                    {bodyTypes.find((b) => b.value === model.body_type)?.label || model.body_type}
+                  </span>
+                  <span className="badge badge-brand text-[10px]">
+                    {styles.find((s) => s.value === model.style)?.label || model.style}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  {!model.is_active && (
+                    <button
+                      onClick={() => handleSetActive(model.id)}
+                      className="flex-1 text-xs font-medium py-2 rounded-lg transition-all"
+                      style={{
+                        background: "var(--brand-100)",
+                        color: "var(--brand-700)",
+                        border: "1px solid var(--brand-200)",
+                      }}
+                    >
+                      Usar esta
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(model.id)}
+                    disabled={deletingId === model.id}
+                    className="text-xs font-medium py-2 px-3 rounded-lg transition-all"
+                    style={{
+                      background: "var(--surface)",
+                      color: "var(--error)",
+                      border: "1px solid var(--border)",
+                      opacity: deletingId === model.id ? 0.5 : 1,
+                    }}
+                  >
+                    {deletingId === model.id ? "..." : "🗑️"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Add more card (if within limits) */}
+          {canCreate && (
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="rounded-2xl flex flex-col items-center justify-center aspect-[4/3] transition-all hover:scale-[1.02]"
+              style={{
+                border: "2px dashed var(--border)",
+                background: "var(--surface)",
+                color: "var(--muted)",
+              }}
+            >
+              <div className="text-4xl mb-2">+</div>
+              <span className="text-sm font-medium">Nova modelo</span>
+              <span className="text-[10px] mt-1">
+                {models.length}/{maxModels}
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Create form view ──
+  const renderCreateForm = () => (
     <div className="animate-fade-in-up">
       <div className="mb-8">
+        <button
+          onClick={() => { setShowCreateForm(false); resetForm(); }}
+          className="flex items-center gap-1 text-sm font-medium mb-4 transition"
+          style={{ color: "var(--muted)" }}
+        >
+          ← Voltar para modelos
+        </button>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Modelo <span className="gradient-text">Virtual</span>
+          Nova Modelo <span className="gradient-text">Virtual</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Crie uma modelo IA que representa suas clientes. Suas roupas serão vestidas nela.
+          Crie uma modelo IA que representa suas clientes.
+          {models.length > 0 && ` (${models.length}/${maxModels} usadas)`}
         </p>
       </div>
 
@@ -262,6 +540,7 @@ export default function ModeloVirtual() {
               <div className="grid grid-cols-4 gap-2 mb-3">
                 {photoPreview.map((url, i) => (
                   <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt={`Ref ${i + 1}`} className="w-full h-full object-cover" />
                     <button
                       onClick={() => removePhoto(i)}
@@ -355,6 +634,12 @@ export default function ModeloVirtual() {
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="animate-fade-in-up">
+      {showCreateForm ? renderCreateForm() : renderModelsList()}
     </div>
   );
 }

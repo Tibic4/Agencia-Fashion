@@ -99,6 +99,7 @@ export interface CreateModelInput {
   bodyType: string;
   style?: string;
   ageRange?: string;
+  name?: string;
 }
 
 export async function createStoreModel(input: CreateModelInput) {
@@ -112,6 +113,7 @@ export async function createStoreModel(input: CreateModelInput) {
       body_type: input.bodyType,
       style: input.style || "casual",
       age_range: input.ageRange || "25-35",
+      name: input.name || "Modelo",
     })
     .select()
     .single();
@@ -139,6 +141,75 @@ export async function getActiveModel(storeId: string) {
     return null;
   }
   return data;
+}
+
+/** Lista todos os modelos da loja */
+export async function listStoreModels(storeId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("store_models")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(`Erro ao listar modelos: ${error.message}`);
+  return data || [];
+}
+
+/** Deleta um modelo da loja */
+export async function deleteStoreModel(storeId: string, modelId: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("store_models")
+    .delete()
+    .eq("id", modelId)
+    .eq("store_id", storeId);
+
+  if (error) throw new Error(`Erro ao deletar modelo: ${error.message}`);
+}
+
+/** Define um modelo como ativo (desativa os outros) */
+export async function setActiveModel(storeId: string, modelId: string) {
+  const supabase = createAdminClient();
+
+  // Desativar todos
+  await supabase
+    .from("store_models")
+    .update({ is_active: false })
+    .eq("store_id", storeId);
+
+  // Ativar o selecionado
+  await supabase
+    .from("store_models")
+    .update({ is_active: true })
+    .eq("id", modelId)
+    .eq("store_id", storeId);
+}
+
+/** Retorna o nome do plano da loja */
+export async function getStorePlanName(storeId: string): Promise<string> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("stores")
+    .select("plan_id, plans(name)")
+    .eq("id", storeId)
+    .single();
+
+  if (!data?.plans) return "free";
+  const plans = data.plans as unknown as { name: string };
+  return plans.name || "free";
+}
+
+/** Limites de modelos por plano (01_ARQUITETURA_GERAL.md) */
+export function getModelLimitForPlan(planName: string): number {
+  const limits: Record<string, number> = {
+    gratis: 0,
+    starter: 1,
+    pro: 2,
+    business: 3,
+    agencia: 5,
+  };
+  return limits[planName] ?? 0;
 }
 
 // ═══════════════════════════════════════════════════════════
