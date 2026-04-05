@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
+import { getCategory } from "@/lib/ai/config";
 import { runMockPipeline } from "@/lib/ai/mock-data";
 import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel, consumeCredit, getStoreCredits } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -50,6 +51,9 @@ export async function POST(request: NextRequest) {
     const storeName = (formData.get("storeName") as string) || "Minha Loja";
     const targetAudience = formData.get("targetAudience") as string | null;
     const toneOverride = formData.get("toneOverride") as string | null;
+    const productType = formData.get("productType") as string | null;
+    const modelBankId = formData.get("modelBankId") as string | null;
+    const backgroundType = (formData.get("backgroundType") as string) || "branco";
     const useModel = formData.get("useModel") !== "false";
 
     // Validation
@@ -157,14 +161,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ── VIRTUAL TRY-ON (Fashn.ai → fal.ai → foto original) ──
+    // ── VIRTUAL TRY-ON (Banco de Modelos → Fashn try-on) ──
     let tryOnImageUrl: string | null = null;
     let tryOnProvider: string | null = null;
     if (useModel && store) {
       try {
-        const model = await getActiveModel(store.id);
-        const modelImageUrl = model?.preview_url || null;
-
         // Obter URL pública do produto
         let productUrl: string | null = null;
         if (campaignRecord) {
@@ -178,88 +179,125 @@ export async function POST(request: NextRequest) {
           } catch { /* ignore */ }
         }
 
-        if (modelImageUrl && productUrl) {
-          // Check admin setting for try-on provider control
-          let fashnEnabled = true;
+        // Prioridade 1: Modelo do banco (nova funcionalidade)
+        if (modelBankId && productUrl && process.env.FASHN_API_KEY) {
           try {
             const { createAdminClient } = await import("@/lib/supabase/admin");
             const supabase = createAdminClient();
-            const { data: setting } = await supabase
-              .from("admin_settings")
-              .select("value")
-              .eq("key", "enable_tryon")
+            const { data: bankModel } = await supabase
+              .from("model_bank")
+              .select("image_url")
+              .eq("id", modelBankId)
               .single();
-            fashnEnabled = setting?.value !== "false" && setting?.value !== false;
-          } catch { /* default to enabled */ }
 
-          // 1️⃣ Tentar Fashn.ai primeiro (melhor qualidade) — se habilitado no admin
-          if (fashnEnabled && process.env.FASHN_API_KEY) {
-            try {
-              const { tryOnProduct } = await import("@/lib/fashn/client");
-              console.log("[TryOn] 👗 Tentando Fashn.ai...");
-              const result = await tryOnProduct({
-                garmentImageUrl: productUrl,
-                modelImageUrl,
-                category: "tops",
-              });
+            if (bankModel?.image_url) {
+              const { generateWithModelBank } = await import("@/lib/fashn/client");
+              const category = getCategory(productType || "auto");
+              console.log(`[TryOn] 🏦 Usando modelo do banco (${modelBankId}), categoria: ${category}`);
+              const result = await generateWithModelBank(
+                productUrl,
+                bankModel.image_url,
+                category,
+                backgroundType as any,
+              );
               if (result.status === "completed" && result.outputUrl) {
                 tryOnImageUrl = result.outputUrl;
-                tryOnProvider = "fashn.ai";
-                console.log("[TryOn] ✅ Fashn.ai sucesso");
+                tryOnProvider = "fashn.ai-bank";
+                console.log("[TryOn] ✅ Modelo do banco + try-on sucesso");
               }
-            } catch (e) {
-              console.warn("[TryOn] Fashn.ai falhou:", e);
             }
-          } else if (!fashnEnabled) {
-            console.log("[TryOn] ⚠️ Fashn.ai DESABILITADO no admin — pulando para fal.ai");
+          } catch (e) {
+            console.warn("[TryOn] Banco de modelos falhou:", e);
           }
+        }
 
-          // 2️⃣ Fallback: fal.ai IDM-VTON (mais barato)
-          if (!tryOnImageUrl && process.env.FAL_KEY) {
-            try {
-              const { falTryOn } = await import("@/lib/fal/client");
-              console.log("[TryOn] 🔄 Fallback fal.ai IDM-VTON...");
-              const result = await falTryOn({
-                garmentImageUrl: productUrl,
-                modelImageUrl,
-                description: "Fashion garment for virtual try-on",
-              });
-              if (result.status === "completed" && result.outputUrl) {
-                tryOnImageUrl = result.outputUrl;
-                tryOnProvider = "fal.ai";
-                console.log("[TryOn] ✅ fal.ai sucesso");
-              }
-            } catch (e) {
-              console.warn("[TryOn] fal.ai falhou:", e);
-            }
-          }
+        // Prioridade 2: Modelo ativa da loja (legado)
+        if (!tryOnImageUrl) {
+          const model = await getActiveModel(store.id);
+          const modelImageUrl = model?.preview_url || null;
 
-          // 📊 Registrar custo do try-on (se usou algum provider)
-          if (tryOnProvider && store) {
+          if (modelImageUrl && productUrl) {
+            let fashnEnabled = true;
             try {
               const { createAdminClient } = await import("@/lib/supabase/admin");
               const supabase = createAdminClient();
-              const costUsd = tryOnProvider === "fashn.ai" ? 0.075 : 0.035;
-              const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
-              await supabase.from("api_cost_logs").insert({
-                store_id: store.id,
-                campaign_id: campaignRecord?.id || null,
-                provider: tryOnProvider,
-                model_used: tryOnProvider === "fashn.ai" ? "fashn-tryon" : "idm-vton",
-                action: "virtual_try_on",
-                cost_usd: costUsd,
-                cost_brl: costUsd * exchangeRate,
-              });
-            } catch (costErr) {
-              console.warn("[TryOn] Falha ao registrar custo:", costErr);
+              const { data: setting } = await supabase
+                .from("admin_settings")
+                .select("value")
+                .eq("key", "enable_tryon")
+                .single();
+              fashnEnabled = setting?.value !== "false" && setting?.value !== false;
+            } catch { /* default to enabled */ }
+
+            if (fashnEnabled && process.env.FASHN_API_KEY) {
+              try {
+                const { tryOnProduct } = await import("@/lib/fashn/client");
+                console.log("[TryOn] 👗 Tentando Fashn.ai (modelo ativa da loja)...");
+                const result = await tryOnProduct({
+                  garmentImage: productUrl,
+                  modelImage: modelImageUrl,
+                  category: getCategory(productType || "auto") as any,
+                });
+                if (result.status === "completed" && result.outputUrl) {
+                  tryOnImageUrl = result.outputUrl;
+                  tryOnProvider = "fashn.ai";
+                  console.log("[TryOn] ✅ Fashn.ai sucesso");
+                }
+              } catch (e) {
+                console.warn("[TryOn] Fashn.ai falhou:", e);
+              }
+            }
+
+            // Fallback: fal.ai
+            if (!tryOnImageUrl && process.env.FAL_KEY) {
+              try {
+                const { falTryOn } = await import("@/lib/fal/client");
+                console.log("[TryOn] 🔄 Fallback fal.ai...");
+                const result = await falTryOn({
+                  garmentImageUrl: productUrl,
+                  modelImageUrl,
+                  description: "Fashion garment for virtual try-on",
+                });
+                if (result.status === "completed" && result.outputUrl) {
+                  tryOnImageUrl = result.outputUrl;
+                  tryOnProvider = "fal.ai";
+                  console.log("[TryOn] ✅ fal.ai sucesso");
+                }
+              } catch (e) {
+                console.warn("[TryOn] fal.ai falhou:", e);
+              }
             }
           }
+        }
 
-          if (!tryOnImageUrl) {
-            console.log("[TryOn] Nenhum provider disponível, usando foto original");
+        // 📊 Registrar custo do try-on
+        if (tryOnProvider && store) {
+          try {
+            const { createAdminClient } = await import("@/lib/supabase/admin");
+            const supabase = createAdminClient();
+            const costMap: Record<string, number> = {
+              "fashn.ai-bank": 0.075 + 0.017, // try-on + edit
+              "fashn.ai": 0.075,
+              "fal.ai": 0.035,
+            };
+            const costUsd = costMap[tryOnProvider] || 0.075;
+            const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+            await supabase.from("api_cost_logs").insert({
+              store_id: store.id,
+              campaign_id: campaignRecord?.id || null,
+              provider: tryOnProvider,
+              model_used: tryOnProvider === "fal.ai" ? "idm-vton" : "fashn-tryon",
+              action: "virtual_try_on",
+              cost_usd: costUsd,
+              cost_brl: costUsd * exchangeRate,
+            });
+          } catch (costErr) {
+            console.warn("[TryOn] Falha ao registrar custo:", costErr);
           }
-        } else {
-          console.log("[TryOn] Modelo sem preview_url ou sem URL do produto");
+        }
+
+        if (!tryOnImageUrl) {
+          console.log("[TryOn] Nenhum provider disponível, usando foto original");
         }
       } catch (tryOnErr) {
         console.warn("[TryOn] Erro geral (não fatal):", tryOnErr);
@@ -311,6 +349,7 @@ export async function POST(request: NextRequest) {
           toneOverride: toneOverride || undefined,
           storeSegment: store?.segment_primary || undefined,
           bodyType: activeModelBodyType,
+          productType: productType || undefined,
         },
         (step, label, progress) => {
           console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
