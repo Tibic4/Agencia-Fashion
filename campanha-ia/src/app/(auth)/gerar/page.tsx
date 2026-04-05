@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import QuotaExceededModal from "@/components/QuotaExceededModal";
 
 const IconUpload = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -63,6 +64,9 @@ export default function GerarCampanha() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState<{
+    used: number; limit: number; credits: number;
+  } | null>(null);
 
   const generationSteps = [
     { label: "Analisando produto...", progress: 15 },
@@ -123,6 +127,16 @@ export default function GerarCampanha() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (errorData.code === "QUOTA_EXCEEDED") {
+          clearInterval(interval);
+          setIsGenerating(false);
+          setQuotaExceeded({
+            used: errorData.used || 0,
+            limit: errorData.limit || 0,
+            credits: errorData.credits || 0,
+          });
+          return;
+        }
         throw new Error(errorData.error || `Erro ${response.status}`);
       }
 
@@ -217,6 +231,28 @@ export default function GerarCampanha() {
 
   return (
     <div className="animate-fade-in-up">
+      {/* Quota Exceeded Modal (seção 5.5) */}
+      {quotaExceeded && (
+        <QuotaExceededModal
+          used={quotaExceeded.used}
+          limit={quotaExceeded.limit}
+          credits={quotaExceeded.credits}
+          onClose={() => setQuotaExceeded(null)}
+          onUpgrade={() => { window.location.href = "/plano"; }}
+          onBuyCredits={async (type, qty) => {
+            try {
+              const res = await fetch("/api/credits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type, quantity: qty }),
+              });
+              const data = await res.json();
+              if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+            } catch { /* ignore */ }
+          }}
+        />
+      )}
+
       {/* Error banner */}
       {error && (
         <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
