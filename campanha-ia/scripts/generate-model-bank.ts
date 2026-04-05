@@ -195,9 +195,13 @@ const MODELS: ModelSpec[] = [
 // ═══════════════════════════════════════
 
 async function submitProductToModel(prompt: string): Promise<string> {
-  // Gerar uma imagem branca simples como base64 (1x1 pixel PNG branco)
-  // O prompt controla tudo — corpo/pele/pose da modelo
-  const whitePixelPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAIAAAAP3aGbAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6AQFDgAsL8VfKAAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAIElEQVR42u3BAQEAAAACIP+vbkhAAQAAAAAAAAAAAADeBk1AAAGrG0jEAAAAAElFTkSuQmCC";
+  // Usar imagem real de camiseta branca como base (Fashn rejeita pixel branco)
+  const basePath = path.resolve(__dirname, "../test-images/white-tshirt-base.png");
+  if (!fs.existsSync(basePath)) {
+    throw new Error("Base image not found: " + basePath);
+  }
+  const baseBuffer = fs.readFileSync(basePath);
+  const baseImage = `data:image/png;base64,${baseBuffer.toString("base64")}`;
 
   const res = await fetch(`${FASHN_API_URL}/run`, {
     method: "POST",
@@ -208,7 +212,7 @@ async function submitProductToModel(prompt: string): Promise<string> {
     body: JSON.stringify({
       model_name: "product-to-model",
       inputs: {
-        product_image: whitePixelPng,
+        product_image: baseImage,
         prompt,
         aspect_ratio: "9:16",
       },
