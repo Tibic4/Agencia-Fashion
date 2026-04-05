@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import CreativePreview from "@/components/CreativePreview";
 import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
@@ -20,12 +20,20 @@ const IconCheck = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 
-const channels = [
-  { id: "instagram_feed", label: "Instagram Feed", icon: "📸" },
-  { id: "instagram_stories", label: "Stories", icon: "📱" },
-  { id: "whatsapp", label: "WhatsApp", icon: "💬" },
-  { id: "meta_ads", label: "Meta Ads", icon: "📢" },
+const allChannels = [
+  { id: "instagram_feed", label: "Instagram Feed", icon: "📸", freeAccess: true },
+  { id: "instagram_stories", label: "Stories", icon: "📱", freeAccess: false },
+  { id: "whatsapp", label: "WhatsApp", icon: "💬", freeAccess: true },
+  { id: "meta_ads", label: "Meta Ads", icon: "📢", freeAccess: false },
 ];
+
+interface PlanUsage {
+  plan_name: string;
+  regen_limit: number;
+  full_score: boolean;
+  all_channels: boolean;
+  preview_link: boolean;
+}
 
 // Fallback mock data (used when no sessionStorage data)
 const fallbackTexts: Record<string, { title: string; text: string; extra?: string }> = {
@@ -71,6 +79,11 @@ export default function ResultadoCampanha() {
   const [regenerating, setRegenerating] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null);
+  const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
+  const [regenUsed, setRegenUsed] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [copyingLink, setCopyingLink] = useState(false);
+  const [campaignId, setCampaignId] = useState<string | null>(null);
 
   // Load data from sessionStorage on mount
   useEffect(() => {
@@ -80,6 +93,7 @@ export default function ResultadoCampanha() {
         const parsed = JSON.parse(stored);
         setCampaignData(parsed.data);
         setIsDemo(parsed.demo === true);
+        if (parsed.data?.campaignId) setCampaignId(parsed.data.campaignId);
       }
       // Load product image from form data
       const formStored = sessionStorage.getItem("campaignFormData");
@@ -90,12 +104,41 @@ export default function ResultadoCampanha() {
         }
       }
     } catch {}
+    // Load plan usage
+    fetch("/api/store/usage").then(r => r.json()).then(d => {
+      if (d.data) setPlanUsage(d.data);
+    }).catch(() => {});
   }, []);
 
-  // ── Regerar canal ──
+  // ── Regerar canal (com enforcement de limite) ──
   const handleRegenerate = async () => {
+    // Verificar limite de regeneração
+    const regenLimit = planUsage?.regen_limit ?? 0;
+    if (regenLimit === 0) {
+      alert("Regenerações não estão disponíveis no plano Grátis. Faça upgrade!");
+      return;
+    }
+    if (regenUsed >= regenLimit) {
+      alert(`Limite de ${regenLimit} regenerações atingido para esta campanha.`);
+      return;
+    }
+
     setRegenerating(true);
     try {
+      // Verificar no backend (se tiver campaignId)
+      if (campaignId) {
+        const checkRes = await fetch(`/api/campaign/${campaignId}/regenerate`, { method: "POST" });
+        const checkData = await checkRes.json();
+        if (!checkRes.ok) {
+          alert(checkData.error || "Limite de regenerações atingido.");
+          setRegenerating(false);
+          return;
+        }
+        setRegenUsed(checkData.data.used);
+      } else {
+        setRegenUsed(prev => prev + 1);
+      }
+
       const stored = sessionStorage.getItem("campaignFormData");
       if (!stored) {
         alert("Dados da campanha original não encontrados. Gere uma nova campanha.");
@@ -103,7 +146,6 @@ export default function ResultadoCampanha() {
       }
       const formData = new FormData();
       const original = JSON.parse(stored);
-      // Re-send with same parameters
       if (original.imageBase64) {
         const blob = await fetch(`data:image/jpeg;base64,${original.imageBase64}`).then(r => r.blob());
         formData.append("image", blob, "product.jpg");
@@ -128,6 +170,28 @@ export default function ResultadoCampanha() {
       alert("Erro de conexão ao regerar.");
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  // ── Gerar link de prévia ──
+  const handleGeneratePreview = async () => {
+    if (!campaignId) return;
+    setCopyingLink(true);
+    try {
+      const res = await fetch(`/api/campaign/${campaignId}/preview`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setPreviewUrl(data.data.url);
+        navigator.clipboard.writeText(data.data.url);
+        setCopiedField("preview");
+        setTimeout(() => setCopiedField(null), 3000);
+      } else {
+        alert(data.error || "Erro ao gerar link.");
+      }
+    } catch {
+      alert("Erro ao gerar link de prévia.");
+    } finally {
+      setCopyingLink(false);
     }
   };
 
@@ -197,7 +261,7 @@ export default function ResultadoCampanha() {
     allTexts += `Score: ${scoreData.nota_geral}/100\n`;
     allTexts += `═══════════════════════════════════════\n\n`;
 
-    channels.forEach(ch => {
+    visibleChannels.forEach(ch => {
       const c = getChannelContent(ch.id);
       allTexts += `${ch.icon} ${c.title}\n${"-".repeat(40)}\n${c.text}\n\n`;
       if (c.extra) allTexts += `Hashtags: ${c.extra}\n\n`;
@@ -255,6 +319,13 @@ export default function ResultadoCampanha() {
   const productName = campaignData?.vision?.produto?.nome_generico || "Vestido Floral";
   const durationSec = campaignData?.durationMs ? Math.round(campaignData.durationMs / 1000) : 47;
 
+  // Filtrar canais por plano
+  const hasAllChannelsAccess = planUsage?.all_channels ?? false;
+  const visibleChannels = hasAllChannelsAccess ? allChannels : allChannels.filter(ch => ch.freeAccess);
+  const regenLimit = planUsage?.regen_limit ?? 0;
+  const showFullScore = planUsage?.full_score ?? false;
+  const canPreview = planUsage?.preview_link ?? false;
+
   return (
     <div className="animate-fade-in-up">
       {/* Header */}
@@ -265,34 +336,64 @@ export default function ResultadoCampanha() {
             {productName} — <span className="gradient-text">Campanha</span>
           </h1>
           <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-            Gerada em {durationSec}s · Score {scoreData.nota_geral}/100 · 4 canais{isDemo && " · 🎭 Demo"}
+            Gerada em {durationSec}s · Score {scoreData.nota_geral}/100 · {visibleChannels.length} canais{isDemo && " · 🎭 Demo"}
+            {regenLimit > 0 && ` · 🔄 ${regenUsed}/${regenLimit} regen`}
           </p>
         </div>
-        <Link href="/gerar" className="btn-secondary text-sm !py-2">
-          + Nova campanha
-        </Link>
+        <div className="flex gap-2">
+          {canPreview && campaignId && (
+            <button
+              onClick={handleGeneratePreview}
+              disabled={copyingLink}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+              style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--border)" }}
+            >
+              {copiedField === "preview" ? "✅ Link copiado!" : copyingLink ? "⏳ Gerando..." : "🔗 Link de prévia"}
+            </button>
+          )}
+          <Link href="/gerar" className="btn-secondary text-sm !py-2">
+            + Nova campanha
+          </Link>
+        </div>
       </div>
+
+      {/* Preview URL banner */}
+      {previewUrl && (
+        <div className="mb-4 p-3 rounded-xl flex items-center justify-between text-xs" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-200)" }}>
+          <span>🔗 <strong>Link público:</strong> <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--brand-600)" }}>{previewUrl}</a></span>
+          <button onClick={() => { navigator.clipboard.writeText(previewUrl); setCopiedField("preview"); setTimeout(() => setCopiedField(null), 2000); }} className="px-2 py-1 rounded" style={{ color: "var(--brand-600)" }}>
+            {copiedField === "preview" ? "✓" : "Copiar"}
+          </button>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left — Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Channel tabs */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {channels.map((ch) => (
-              <button
-                key={ch.id}
-                onClick={() => setActiveChannel(ch.id)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
-                style={{
-                  background: activeChannel === ch.id ? "var(--gradient-brand)" : "var(--surface)",
-                  color: activeChannel === ch.id ? "white" : "var(--muted)",
-                  border: activeChannel === ch.id ? "none" : "1px solid var(--border)",
-                }}
-              >
-                <span>{ch.icon}</span>
-                {ch.label}
-              </button>
-            ))}
+            {allChannels.map((ch) => {
+              const locked = !ch.freeAccess && !hasAllChannelsAccess;
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => !locked && setActiveChannel(ch.id)}
+                  disabled={locked}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
+                  style={{
+                    background: locked ? "var(--surface)" : activeChannel === ch.id ? "var(--gradient-brand)" : "var(--surface)",
+                    color: locked ? "var(--muted)" : activeChannel === ch.id ? "white" : "var(--muted)",
+                    border: activeChannel === ch.id && !locked ? "none" : "1px solid var(--border)",
+                    opacity: locked ? 0.5 : 1,
+                    cursor: locked ? "not-allowed" : "pointer",
+                  }}
+                >
+                  <span>{ch.icon}</span>
+                  {ch.label}
+                  {locked && <span className="text-[10px] ml-1">🔒</span>}
+                </button>
+              );
+            })}
           </div>
 
           {/* Content card */}
@@ -312,19 +413,23 @@ export default function ResultadoCampanha() {
                 </button>
                 <button
                   onClick={handleRegenerate}
-                  disabled={regenerating}
+                  disabled={regenerating || regenUsed >= regenLimit}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                   style={{
                     background: regenerating ? "var(--surface)" : "var(--brand-100)",
                     color: regenerating ? "var(--muted)" : "var(--brand-700)",
                     border: "1px solid var(--border)",
-                    opacity: regenerating ? 0.6 : 1,
+                    opacity: regenerating || regenUsed >= regenLimit ? 0.5 : 1,
+                    cursor: regenUsed >= regenLimit ? "not-allowed" : "pointer",
                   }}
+                  title={regenUsed >= regenLimit ? `Limite de ${regenLimit} regenerações atingido` : `${regenUsed}/${regenLimit} regenerações usadas`}
                 >
                   {regenerating ? (
                     <><span className="animate-spin inline-block w-3 h-3 border-2 border-brand-300 border-t-brand-600 rounded-full" /> Regerando...</>
+                  ) : regenUsed >= regenLimit ? (
+                    <>🔒 Limite ({regenLimit})</>
                   ) : (
-                    <><IconRefresh /> Regerar</>
+                    <><IconRefresh /> Regerar ({regenUsed}/{regenLimit})</>
                   )}
                 </button>
               </div>
@@ -475,32 +580,41 @@ export default function ResultadoCampanha() {
               </div>
             </div>
 
-            {/* Individual scores */}
-            <div className="space-y-3">
-              {[
-                { label: "Conversão", value: scoreData.conversao },
-                { label: "Clareza", value: scoreData.clareza },
-                { label: "Urgência", value: scoreData.urgencia },
-                { label: "Naturalidade", value: scoreData.naturalidade },
-                { label: "Meta Ads ✓", value: scoreData.aprovacao_meta },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span style={{ color: "var(--muted)" }}>{s.label}</span>
-                    <span className="font-semibold">{s.value}</span>
+            {/* Individual scores — only for paid plans */}
+            {showFullScore ? (
+              <div className="space-y-3">
+                {[
+                  { label: "Conversão", value: scoreData.conversao },
+                  { label: "Clareza", value: scoreData.clareza },
+                  { label: "Urgência", value: scoreData.urgencia },
+                  { label: "Naturalidade", value: scoreData.naturalidade },
+                  { label: "Meta Ads ✓", value: scoreData.aprovacao_meta },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span style={{ color: "var(--muted)" }}>{s.label}</span>
+                      <span className="font-semibold">{s.value}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${s.value}%`,
+                          background: s.value >= 80 ? "var(--success)" : s.value >= 60 ? "var(--warning)" : "var(--error)",
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${s.value}%`,
-                        background: s.value >= 80 ? "var(--success)" : s.value >= 60 ? "var(--warning)" : "var(--error)",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs" style={{ color: "var(--muted)" }}>Score detalhado disponível nos planos pagos</p>
+                <Link href="/plano" className="text-xs font-semibold mt-2 inline-block" style={{ color: "var(--brand-600)" }}>
+                  ⬆️ Fazer upgrade
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Strengths */}
