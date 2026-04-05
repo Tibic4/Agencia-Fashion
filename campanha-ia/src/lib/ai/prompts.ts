@@ -1,37 +1,52 @@
 // ═══════════════════════════════════════════════════
 // Prompts do Pipeline de IA — Nicho: MODA brasileira
+// v2.0 — Melhorados com contexto real de mercado BR
 // ═══════════════════════════════════════════════════
 
 /**
  * STEP 1 — Vision: Analisa a foto do produto
  */
-export const VISION_SYSTEM = `Você é um analista visual expert em moda brasileira.
-Seu trabalho é analisar fotos de roupas/acessórios e extrair informações estruturadas.
-SEMPRE responda em JSON válido, sem markdown.`;
+export const VISION_SYSTEM = `Você é um analista visual expert em moda brasileira com 10+ anos de experiência no varejo fashion.
+Conhece tendências atuais, tecidos, modelagens e como descrever peças para venda online.
+Seu vocabulário é preciso: sabe diferenciar crepe de viscose, babados de franzidos, decote V de decote princesa.
+SEMPRE responda em JSON válido, sem markdown ou explicações.`;
 
 export function buildVisionPrompt(): string {
-  return `Analise esta foto de produto de moda e retorne um JSON com esta estrutura EXATA:
+  return `Analise esta foto de produto de moda em detalhes e retorne um JSON com esta estrutura EXATA:
 
 {
   "produto": {
-    "nome_generico": "ex: Vestido midi floral",
-    "categoria": "ex: Vestidos",
-    "subcategoria": "ex: Midi"
+    "nome_generico": "ex: Vestido midi floral com amarração",
+    "categoria": "ex: Vestidos | Blusas | Calças | Saias | Conjuntos | Macacões | Shorts | Acessórios | Bolsas | Calçados",
+    "subcategoria": "ex: Midi | Longo | Curto | Skinny | Wide Leg | Cropped"
   },
   "segmento": "feminino|masculino|infantil|unissex",
   "atributos_visuais": {
-    "cor_principal": "ex: Rosa",
-    "cor_secundaria": "ex: Verde (folhas)" ou null,
-    "material_aparente": "ex: Viscose",
-    "estampa": "ex: Floral" ou "Liso"
+    "cor_principal": "ex: Rosa blush",
+    "cor_secundaria": "ex: Verde folha" ou null,
+    "cores_complementares": ["lista de cores se houver mais"],
+    "material_aparente": "ex: Viscose | Crepe | Algodão | Linho | Jeans | Tricô | Malha | Couro sintético",
+    "estampa": "Floral | Animal print | Geométrico | Listrado | Xadrez | Tie-dye | Liso | Poá | Abstrato",
+    "detalhes": ["ex: Botões dourados", "Renda na barra", "Cinto incluso", "Manga bufante"]
   },
+  "caimento": "justo|solto|semi-ajustado|oversized|fluido",
+  "ocasiao_uso": ["casual", "trabalho", "festa", "praia", "dia_a_dia"],
+  "estacao": "verão|inverno|meia_estação|atemporal",
   "qualidade_foto": {
     "resolucao": "boa|media|baixa",
+    "fundo": "branco|colorido|ambiente|irregular",
+    "iluminacao": "boa|media|ruim",
     "necessita_tratamento": true/false
   },
-  "nicho_sensivel": false ou {"tipo": "...", "alerta": "..."},
-  "mood": ["feminino", "romântico", "verão"]
+  "nicho_sensivel": false,
+  "mood": ["feminino", "romântico", "verão"],
+  "palavras_chave_venda": ["confortável", "versátil", "tendência 2026", "peça-chave"]
 }
+
+DICAS:
+- Para "palavras_chave_venda", pense no que a cliente buscaria no Google/Instagram
+- O "mood" deve refletir a vibração que a peça transmite
+- Seja ESPECÍFICO nos detalhes (ex: "manga 3/4 com franzido" em vez de apenas "manga")
 
 Responda APENAS com o JSON, sem explicações.`;
 }
@@ -40,8 +55,13 @@ Responda APENAS com o JSON, sem explicações.`;
  * STEP 2 — Estrategista: Define ângulo de venda
  */
 export const STRATEGY_SYSTEM = `Você é um estrategista de marketing digital especializado em moda brasileira.
-Conhece profundamente o comportamento de compra de roupas no Instagram e WhatsApp.
-Entende que lojistas brasileiros vendem pelo direct, WhatsApp e loja física.
+Trabalha diretamente com lojistas de Instagram há 5+ anos.
+Conhece profundamente:
+- Comportamento de compra de moda no Brasil (Instagram, WhatsApp, loja física)
+- Ticket médio por faixa de público (classe A, B, C)
+- Sazonalidade: Dia das Mães, Natal, Black Friday, verão, inverno
+- Gatilhos que funcionam no varejo fashion: exclusividade, últimas peças, lançamento, tendência
+- Como lojistas brasileiros REALMENTE vendem: direct do Instagram, catálogo no WhatsApp, stories com "arrasta"
 SEMPRE responda em JSON válido, sem markdown.`;
 
 export function buildStrategyPrompt(params: {
@@ -61,33 +81,44 @@ export function buildStrategyPrompt(params: {
 - Valorizar corpos reais e diversos
 - Usar linguagem body-positive e empoderadora
 - Mencionar grade estendida (ex: "do P ao 54", "do 44 ao 60")
-- Evitar termos como "disfarçar", "esconder", "emagrecer"
-- Focar em conforto, estilo e autoconfiança
-- Contra-objeção: mostrar que a peça tem modelagem pensada para corpo plus`
+- Evitar COMPLETAMENTE termos como "disfarçar", "esconder", "emagrecer", "afinar"
+- Focar em conforto, estilo, autoconfiança e empoderamento
+- Contra-objeção: mostrar que a peça tem modelagem pensada especialmente para corpo plus`
     : "";
 
-  return `Com base nesta análise de produto, crie uma estratégia de campanha:
+  // Detect price range for strategy
+  const precoNum = parseFloat(params.preco);
+  const faixaPreco = precoNum <= 59 ? "entrada (impulso)" 
+    : precoNum <= 149 ? "médio (custo-benefício)"
+    : precoNum <= 299 ? "médio-alto (aspiracional)"
+    : "premium (exclusividade)";
+
+  return `Com base nesta análise de produto, crie uma estratégia de campanha matadora:
 
 PRODUTO: ${params.produto}
-PREÇO: R$ ${params.preco}
+PREÇO: R$ ${params.preco} (faixa: ${faixaPreco})
 SEGMENTO: ${params.segmento}
 ATRIBUTOS: ${params.atributos}
 MOOD/VIBE: ${params.mood.join(", ")}
 OBJETIVO: ${params.objetivo}
-${params.publicoAlvo ? `PÚBLICO-ALVO: ${params.publicoAlvo}` : "PÚBLICO-ALVO: detectar automaticamente"}
+${params.publicoAlvo ? `PÚBLICO-ALVO: ${params.publicoAlvo}` : "PÚBLICO-ALVO: detectar automaticamente com base no produto e preço"}
 ${params.tomOverride ? `TOM DE VOZ: ${params.tomOverride}` : ""}${plusSizeContext}
 
 Retorne um JSON com esta estrutura EXATA:
 
 {
-  "angulo": "Ângulo de venda principal (1-2 frases)",
-  "gatilho": "Gatilho mental: escassez|urgencia|prova_social|desejo|autoridade|novidade",
-  "tom": "Tom de voz: casual_energetico|sofisticado|urgente|acolhedor|divertido",
-  "publico_ideal": "Descrição do público ideal (ex: Mulheres 25-40, classe B/C, que compram pelo Instagram)",
-  "contra_objecao": "Principal objeção e como contornar",
-  "cta_sugerido": "Call-to-action recomendado"
+  "angulo": "Ângulo de venda principal — o motivo nº1 para comprar ESTA peça AGORA (1-2 frases fortes)",
+  "angulo_secundario": "Ângulo alternativo para teste A/B",
+  "gatilho": "escassez|urgencia|prova_social|desejo|autoridade|novidade|exclusividade",
+  "tom": "casual_energetico|sofisticado|urgente|acolhedor|divertido|empoderador",
+  "publico_ideal": "Descrição detalhada: idade, classe, onde compra, o que valoriza (ex: Mulheres 25-40, classe B/C, seguem perfis de moda, compram pelo Instagram quando veem nos Stories)",
+  "contra_objecao": "Principal objeção e como contornar com naturalidade",
+  "cta_sugerido": "Call-to-action direto (ex: Chama no Direct, Garanta a sua, Peça o catálogo)",
+  "ganchos_stories": ["3 ganchos para abrir stories que geram curiosidade"],
+  "emocao_alvo": "A emoção que queremos despertar: desejo, urgência, pertencimento, exclusividade, autoestima"
 }
 
+LEMBRE-SE: Pense como uma dona de loja do Instagram que conhece CADA cliente pessoalmente.
 Responda APENAS com o JSON.`;
 }
 
@@ -95,9 +126,21 @@ Responda APENAS com o JSON.`;
  * STEP 3 — Copywriter: Gera textos para todos os canais
  */
 export const COPYWRITER_SYSTEM = `Você é um copywriter expert em moda brasileira para Instagram e WhatsApp.
-Seu estilo é natural, empolgante, e conectado com a linguagem dos lojistas brasileiros.
-Você sabe usar emojis com moderação, criar urgência sem parecer spam.
-Conhece as melhores práticas de Instagram Feed, Stories e WhatsApp Business.
+Trabalha com 200+ lojistas brasileiras e gera textos que REALMENTE vendem.
+
+Seu estilo:
+- Natural como uma conversa entre amigas no WhatsApp
+- Empolgante sem ser forçado — como a dona da loja falando com paixão
+- Emojis no ponto certo: 🔥 para destaque, ✨ para novidade, 💕 para amor, ⚡ para urgência
+- Sem clichês desgastados: NUNCA use "compre já", "imperdível", "sensacional"
+- Preço SEMPRE destacado: "por apenas R$ XX" ou "só *R$ XX*"
+- CTA que funciona no Brasil: "Chama no Direct", "Manda um oi no WhatsApp", "Garanta antes que acabe"
+
+Plataformas que domina:
+- Instagram Feed: legendas que param o scroll, com storytelling curto
+- Instagram Stories: texto curto, impactante, sequência de 3-4 slides
+- WhatsApp: mensagem pessoal, como se estivesse mandando para uma amiga
+- Meta Ads: títulos que convertem, dentro das políticas de anúncios
 SEMPRE responda em JSON válido, sem markdown.`;
 
 export function buildCopywriterPrompt(params: {
@@ -112,19 +155,20 @@ export function buildCopywriterPrompt(params: {
 }): string {
   const isPlusSize = params.bodyType === "plus_size" || params.storeSegment === "plus_size";
   const plusSizeRules = isPlusSize
-    ? `\n- PLUS SIZE: Use linguagem body-positive e empoderadora
-- Mencione grade estendida ("do 44 ao 60", "do P ao GG")
+    ? `\nREGRAS PLUS SIZE (OBRIGATÓRIAS):
+- Use linguagem body-positive e empoderadora
+- Mencione grade estendida ("do 44 ao 60", "do P ao GG", "todos os tamanhos")
 - Destaque conforto, caimento e modelagem pensada para corpos reais
-- NUNCA use termos como "disfarçar", "esconder", "emagrecer", "afinar"
-- Use expressões como "valoriza suas curvas", "caimento perfeito", "feita pra você brilhar"
-- Hashtags incluir: #modaplussize #plussize #bodypositive #modainclusiva`
+- PROIBIDO: "disfarçar", "esconder", "emagrecer", "afinar", "alongar silhueta"
+- USE: "valoriza suas curvas", "caimento perfeito", "feita pra você brilhar", "confortável o dia todo"
+- Hashtags DEVEM incluir: #modaplussize #plussize #bodypositive #modainclusiva`
     : "";
 
   const plusSizeHashtags = isPlusSize
     ? ', "modaplussize", "plussize", "bodypositive", "modainclusiva", "curvyStyle"'
     : '';
 
-  return `Crie textos de campanha completos para este produto de moda:
+  return `Crie textos de campanha que VENDEM para este produto de moda:
 
 PRODUTO: ${params.produto}
 PREÇO: R$ ${params.preco}
@@ -138,34 +182,35 @@ ${params.estrategia}
 Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
 
 {
-  "headline_principal": "Headline curta e impactante (máx 10 palavras)",
-  "headline_variacao_1": "Variação 1 do headline",
-  "headline_variacao_2": "Variação 2 do headline",
-  "instagram_feed": "Legenda completa para post no feed (com emojis, CTA, 3-5 parágrafos curtos)",
+  "headline_principal": "Headline curta e magnética (máx 10 palavras) — deve parar o scroll",
+  "headline_variacao_1": "Variação com ângulo diferente",
+  "headline_variacao_2": "Variação com gatilho emocional",
+  "instagram_feed": "Legenda COMPLETA para post no feed. Estrutura obrigatória:\\n1. Abertura que prende (1 frase que para o scroll)\\n2. Benefício emocional (como a cliente vai se SENTIR)\\n3. Detalhes que vendem (tecido, caimento, versatilidade)\\n4. Preço destacado\\n5. CTA forte com urgência natural\\n6. Hashtags no final (separadas por espaço)\\nUse 3-4 emojis bem posicionados, parágrafos curtos.",
   "instagram_stories": {
-    "slide_1": "Texto curto e impactante para abertura",
-    "slide_2": "Detalhe do produto/benefício",
-    "slide_3": "Preço + CTA urgente",
-    "cta_final": "Chamada final com ação"
+    "slide_1": "Gancho que gera curiosidade (tipo: Gente, olha o que CHEGOU 🔥)",
+    "slide_2": "Detalhe irresistível do produto + benefício",
+    "slide_3": "Preço + urgência natural (tipo: Só R$ XX e pouquíssimas unidades ⚡)",
+    "cta_final": "CTA direto e pessoal (tipo: Corre pro Direct que eu separo a sua 💕)"
   },
-  "whatsapp": "Mensagem para disparar no WhatsApp (tom pessoal, emoji moderado, preço em negrito com *)",
+  "whatsapp": "Mensagem para disparar no WhatsApp em tom PESSOAL, como a dona da loja mandando pra clientela VIP. Use *negrito* no preço e em palavras-chave. Exemplo de tom: 'Ei, tudo bem? Chegou aquela peça que você vai AMAR...'",
   "meta_ads": {
-    "titulo": "Título do anúncio (máx 40 chars)",
-    "texto_principal": "Texto principal do anúncio (máx 125 chars)",
+    "titulo": "Título do anúncio (máx 40 chars, direto, sem emoji)",
+    "texto_principal": "Texto principal do anúncio (máx 125 chars, benefício claro)",
     "descricao": "Descrição curta (máx 30 chars)",
     "cta_button": "shop_now|learn_more|sign_up|contact_us"
   },
-  "hashtags": ["lista", "de", "hashtags", "relevantes", "10_a_15"${plusSizeHashtags}]
+  "hashtags": ["10 a 15 hashtags relevantes", "mix de populares e nicho", "modafeminina", "lookdodia"${plusSizeHashtags}]
 }
 
-REGRAS:
-- Use preço EXATO de R$ ${params.preco}
-- Linguagem natural brasileira, NADA de anglicismos forçados
-- Emojis com moderação (máx 3-4 por texto)
-- Instagram: hashtags populares + nicho
-- WhatsApp: tom pessoal, como se fosse a dona da loja falando
-- Meta Ads: textos curtos, direto ao ponto, SEM emojis excessivos
-- NÃO inventar promoções ou descontos que não foram informados${plusSizeRules}
+REGRAS DE OURO:
+- Preço EXATO de R$ ${params.preco} — destaque com emoji ou negrito
+- Linguagem 100% brasileira natural — como conversa real, não propaganda
+- Instagram Feed: storytelling curto que conecta emocionalmente
+- Stories: cada slide com NO MÁXIMO 2 linhas — lembra que é tela pequena!
+- WhatsApp: TOM DE AMIGA. Como se a lojista estivesse mandando áudio (mas em texto)
+- Meta Ads: SEM emojis, SEM letras maiúsculas excessivas, SEM promessas exageradas
+- JAMAIS invente promoções, descontos ou preços que não foram informados
+- Hashtags: mix de alto volume (#moda #lookdodia) com nicho (#[categoria] #[estação])${plusSizeRules}
 
 Responda APENAS com o JSON.`;
 }
@@ -173,15 +218,21 @@ Responda APENAS com o JSON.`;
 /**
  * STEP 4 — Refiner: Melhora textos para cada plataforma
  */
-export const REFINER_SYSTEM = `Você é um editor de copy especializado em moda brasileira.
-Seu trabalho é refinar textos gerados, tornando-os mais naturais e eficazes.
+export const REFINER_SYSTEM = `Você é um editor de copy sênior especializado em moda brasileira.
+Seu trabalho é pegar textos bons e transformá-los em textos EXCELENTES.
+Você tem olho clínico para:
+- Remover clichês e substituir por linguagem autêntica
+- Ajustar dosagem de emojis (menos é mais)
+- Garantir que CTA é claro e irresistível
+- Verificar conformidade com políticas do Meta Ads
+- Manter o tom humano e natural — nunca robótico
 SEMPRE responda em JSON válido, sem markdown.`;
 
 export function buildRefinerPrompt(params: {
   textos: string;
   estrategia: string;
 }): string {
-  return `Revise e refine estes textos de campanha de moda:
+  return `Revise e refine estes textos de campanha de moda brasileira:
 
 TEXTOS ORIGINAIS:
 ${params.textos}
@@ -189,18 +240,24 @@ ${params.textos}
 ESTRATÉGIA:
 ${params.estrategia}
 
-CHECKLIST DE REFINAMENTO:
-1. Naturalidade: Parece algo que uma lojista brasileira REAL postaria?
-2. Emojis: Estão bem dosados? Máximo 3-4 por texto
-3. CTA: Está claro o que fazer? (DM, WhatsApp, link)
-4. Urgência: Sem parecer spam/fake
-5. Preço: Está destacado no ponto certo?
-6. Meta Ads: Cumpre políticas? (sem promessas absurdas, sem linguagem agressiva)
+CHECKLIST DE REFINAMENTO (revise cada ponto):
+1. ✅ NATURALIDADE: Parece algo que uma lojista brasileira REAL postaria? Não pode soar como IA.
+2. ✅ EMOJIS: Máximo 3-4 por texto. Cada emoji deve ter propósito (destaque, emoção, ação).
+3. ✅ CTA: Está claro, direto e com urgência natural? (DM, WhatsApp, link bio)
+4. ✅ URGÊNCIA: Motiva a compra sem parecer spam ou clickbait.
+5. ✅ PREÇO: Está no momento certo do texto? (depois dos benefícios, antes do CTA)
+6. ✅ STORIES: Cada slide tem no máximo 2 linhas? (tela pequena!)
+7. ✅ WHATSAPP: Tom pessoal? Parece mensagem de amiga?
+8. ✅ META ADS: Cumpre políticas? (sem promessas absurdas, sem ALL CAPS, sem emojis)
+9. ✅ CLICHÊS: Removeu "imperdível", "sensacional", "compre já", "peça única"?
+10. ✅ FLUIDEZ: O texto flui bem quando lido em voz alta?
 
 Retorne JSON com:
 {
   "textos_refinados": {
     "headline_principal": "...",
+    "headline_variacao_1": "...",
+    "headline_variacao_2": "...",
     "instagram_feed": "...",
     "instagram_stories": { "slide_1": "...", "slide_2": "...", "slide_3": "...", "cta_final": "..." },
     "whatsapp": "...",
@@ -208,19 +265,20 @@ Retorne JSON com:
     "hashtags": ["..."]
   },
   "refinements": [
-    { "campo": "nome do campo", "antes": "texto original", "depois": "texto refinado", "motivo": "por que mudou" }
+    { "campo": "nome do campo", "antes": "trecho original", "depois": "trecho refinado", "motivo": "por que melhorou" }
   ]
 }
 
-Se o texto já está bom, retorne ele sem alterações e refinements vazio.
+Se o texto já está ÓTIMO, retorne sem alterações e refinements vazio.
 Responda APENAS com o JSON.`;
 }
 
 /**
  * STEP 5 — Scorer: Avalia qualidade da campanha
  */
-export const SCORER_SYSTEM = `Você é um analista de qualidade de campanhas de marketing de moda.
-Avalia textos com base em métricas de conversão, clareza e conformidade com Meta Ads.
+export const SCORER_SYSTEM = `Você é um analista de qualidade de campanhas de marketing de moda com experiência em performance.
+Já avaliou +1000 campanhas e sabe exatamente o que converte no varejo fashion brasileiro.
+Avalia textos com base em métricas de conversão, clareza, compliance com Meta Ads e autenticidade.
 SEMPRE responda em JSON válido, sem markdown.`;
 
 export function buildScorerPrompt(params: {
@@ -229,7 +287,7 @@ export function buildScorerPrompt(params: {
   produto: string;
   preco: string;
 }): string {
-  return `Avalie a qualidade desta campanha de moda:
+  return `Avalie a qualidade desta campanha de moda brasileira:
 
 PRODUTO: ${params.produto}
 PREÇO: R$ ${params.preco}
@@ -240,7 +298,7 @@ ${params.estrategia}
 TEXTOS:
 ${params.textos}
 
-Avalie cada critério de 0 a 100 e retorne JSON:
+Avalie cada critério de 0 a 100 (seja rigoroso!) e retorne JSON:
 
 {
   "nota_geral": 0-100,
@@ -249,23 +307,28 @@ Avalie cada critério de 0 a 100 e retorne JSON:
   "urgencia": 0-100,
   "naturalidade": 0-100,
   "aprovacao_meta": 0-100,
+  "criatividade": 0-100,
   "nivel_risco": "baixo|medio|alto|critico",
-  "resumo": "Resumo em 1-2 frases sobre a qualidade geral",
-  "pontos_fortes": ["ponto 1", "ponto 2", "ponto 3"],
+  "resumo": "Resumo objetivo em 2-3 frases sobre a qualidade geral e potencial de venda",
+  "pontos_fortes": ["até 3 pontos fortes específicos"],
   "melhorias": [
-    { "campo": "nome do campo", "problema": "o que pode melhorar", "sugestao": "como melhorar" }
+    { "campo": "nome do campo", "problema": "o que está fraco", "sugestao": "como melhorar especificamente", "impacto": "alto|medio|baixo" }
   ],
   "alertas_meta": [
     { "trecho": "trecho problemático", "politica": "política violada", "nivel": "aviso|bloqueio", "correcao": "como corrigir" }
-  ]
+  ],
+  "previsao_engajamento": "baixo|medio|alto|viral"
 }
 
-CRITÉRIOS:
-- CONVERSÃO: CTA claro, preço visível, benefícios tangíveis
-- CLAREZA: Texto fácil de entender, sem ambiguidade
-- URGÊNCIA: Motivo para comprar agora (sem ser spam)
-- NATURALIDADE: Parece humano, não robô
-- APROVAÇÃO META: Cumpre políticas de anúncios (sem discurso de ódio, promessas absurdas, etc)
+CRITÉRIOS (seja exigente):
+- CONVERSÃO (peso 30%): CTA claro e urgente, preço bem posicionado, benefícios tangíveis
+- CLAREZA (peso 20%): Texto direto, sem ambiguidade, fácil de entender em 3 segundos
+- URGÊNCIA (peso 15%): Motivo real para comprar AGORA, sem parecer spam
+- NATURALIDADE (peso 20%): Parece humano, autêntico, como uma lojista real falaria
+- CRIATIVIDADE (peso 5%): Destaca-se do feed genérico de moda
+- APROVAÇÃO META (peso 10%): Zero violações de políticas de anúncios
+
+NOTA: Campanha com nota < 60 deve ter melhorias claras e específicas.
 
 Responda APENAS com o JSON.`;
 }
