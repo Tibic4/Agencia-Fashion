@@ -38,8 +38,8 @@ export const PLANS = {
     price: 249.0,
     campaigns_per_month: 100,
     models: 3,
-    regen_per_campaign: 5,
-    features: ["100 campanhas/mês", "4 canais", "3 modelos virtuais", "5 regen/campanha", "Score completo", "Link de prévia", "Histórico ilimitado", "Suporte WhatsApp"],
+    regen_per_campaign: 3,
+    features: ["100 campanhas/mês", "4 canais", "3 modelos virtuais", "3 regen/campanha", "Score completo", "Link de prévia", "Histórico ilimitado", "Suporte WhatsApp"],
   },
   agencia: {
     id: "agencia",
@@ -47,8 +47,8 @@ export const PLANS = {
     price: 499.0,
     campaigns_per_month: 200,
     models: 5,
-    regen_per_campaign: 5,
-    features: ["200 campanhas/mês", "4 canais", "5 modelos virtuais", "5 regen/campanha", "Marca branca", "API pública", "Histórico ilimitado", "Suporte VIP"],
+    regen_per_campaign: 3,
+    features: ["200 campanhas/mês", "4 canais", "5 modelos virtuais", "3 regen/campanha", "Marca branca", "API pública", "Histórico ilimitado", "Suporte VIP"],
   },
 } as const;
 
