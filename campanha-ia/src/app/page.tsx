@@ -187,8 +187,8 @@ export default function Home() {
       {/* ═══ NAVBAR ═══ */}
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="container flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="CriaLook" width={44} height={44} className="rounded-full" priority />
+          <Link href="/" className="flex items-center gap-1.5">
+            <Image src="/logo.png" alt="CriaLook" width={52} height={52} className="rounded-full" priority />
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
               Cria<span className="gradient-text">Look</span>
             </span>
