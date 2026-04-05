@@ -32,11 +32,11 @@ interface FashnProductToModelParams {
 
 interface FashnTryOnParams {
   /** URL ou base64 da foto do produto (roupa) */
-  garmentImage: string;
+  productImage: string;
   /** URL ou base64 da foto do modelo */
   modelImage: string;
-  /** Categoria da peça */
-  category?: "tops" | "bottoms" | "one-pieces" | "auto";
+  /** Prompt opcional para ajustes (ex: "tuck in shirt") */
+  prompt?: string;
 }
 
 interface FashnEditParams {
@@ -142,10 +142,10 @@ export async function productToModel(params: FashnProductToModelParams): Promise
  * Custo: ~R$ 0,43
  */
 export async function tryOnProduct(params: FashnTryOnParams): Promise<FashnJobResult> {
-  const jobId = await submitJob("tryon-v1.6", {
+  const jobId = await submitJob("tryon-max", {
     model_image: params.modelImage,
-    garment_image: params.garmentImage,
-    category: params.category || "auto",
+    product_image: params.productImage,
+    ...(params.prompt && { prompt: params.prompt }),
   });
   return pollResult(jobId);
 }
@@ -180,10 +180,10 @@ export async function generateModelImage(
   backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
   backgroundValue?: string,
 ): Promise<FashnJobResult> {
-  // Passo 1: Gerar modelo vestindo a peça (com prompt melhor)
+  // Passo 1: Gerar modelo vestindo a peça (corpo inteiro, head to feet)
   const jobId = await submitJob("product-to-model", {
     product_image: productImage,
-    prompt: "Full body fashion model, standing pose, natural skin tone on legs and arms, no mannequin, no black legs, no stand or pole, professional fashion photo, white studio background",
+    prompt: "Full body photo from head to feet of a Brazilian woman, confident smile, standing relaxed, wearing simple black cotton shorts, barefoot, showing full legs and feet, white studio background, fashion ecommerce photography",
     aspect_ratio: "9:16",
   });
   const modelResult = await pollResult(jobId);
@@ -206,17 +206,15 @@ export async function generateModelImage(
  * Custo total: ~R$ 0,53
  */
 export async function generateWithModelBank(
-  garmentImage: string,
+  productImage: string,
   modelImageUrl: string,
-  category: "tops" | "bottoms" | "one-pieces" | "auto" = "auto",
   backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
   backgroundValue?: string,
 ): Promise<FashnJobResult> {
-  // Passo 1: Try-On — vestir a peça na modelo do banco
+  // Passo 1: Try-On Max — vestir a peça na modelo do banco
   const tryonResult = await tryOnProduct({
-    garmentImage,
+    productImage,
     modelImage: modelImageUrl,
-    category,
   });
 
   if (tryonResult.status !== "completed" || !tryonResult.outputUrl) {

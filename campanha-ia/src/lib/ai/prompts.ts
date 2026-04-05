@@ -13,13 +13,20 @@ Conhece tendências atuais, tecidos, modelagens e como descrever peças para ven
 Seu vocabulário é preciso: sabe diferenciar crepe de viscose, babados de franzidos, decote V de decote princesa.
 SEMPRE responda em JSON válido, sem markdown ou explicações.`;
 
-export function buildVisionPrompt(productType?: string, material?: string): string {
+export function buildVisionPrompt(productType?: string, material?: string, hasMultiplePhotos?: boolean): string {
   let userHints = "";
   if (productType) {
     userHints += `\nIMPORTANTE: O usuário informou que este produto é do tipo "${productType}".`;
   }
   if (material) {
     userHints += `\nIMPORTANTE: O usuário informou que o material/tecido é "${material}". Use EXATAMENTE este material na análise, NÃO tente adivinhar outro.`;
+  }
+  if (hasMultiplePhotos) {
+    userHints += `\nIMPORTANTE: O usuário enviou MÚLTIPLAS FOTOS do mesmo produto:
+- FOTO 1: Visão geral/completa da peça (use para identificar formato, cor, modelagem)
+- FOTO 2: Close-up/detalhe do tecido (use para identificar com PRECISÃO o tipo de tecido, textura, trama, gramatura)
+- FOTO 3 (se houver): Outra peça do conjunto ou outro ângulo
+Combine as informações de TODAS as fotos para uma análise mais precisa do material.`;
   }
   if (userHints) {
     userHints = userHints + "\nUse essas informações do usuário como verdade absoluta para confirmar ou corrigir sua análise visual.";

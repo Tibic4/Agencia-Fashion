@@ -72,20 +72,39 @@ export async function callClaude({
   throw lastError || new Error("Falha após 3 tentativas");
 }
 
-// Wrapper para Vision (imagem)
+// Wrapper para Vision (imagem) — aceita 1 ou mais fotos
 export async function callClaudeVision({
   system,
   prompt,
   imageBase64,
+  extraImages,
   mediaType = "image/jpeg",
   maxTokens = 1024,
 }: {
   system: string;
   prompt: string;
   imageBase64: string;
+  extraImages?: { base64: string; mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }[];
   mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
   maxTokens?: number;
 }): Promise<string> {
+  // Montar array de imagens: principal + extras (close-up, etc)
+  const imageBlocks: Anthropic.ImageBlockParam[] = [
+    {
+      type: "image",
+      source: { type: "base64", media_type: mediaType, data: imageBase64 },
+    },
+  ];
+
+  if (extraImages?.length) {
+    for (const img of extraImages) {
+      imageBlocks.push({
+        type: "image",
+        source: { type: "base64", media_type: img.mediaType || "image/jpeg", data: img.base64 },
+      });
+    }
+  }
+
   return callClaude({
     model: MODELS.FAST,
     system,
@@ -95,10 +114,7 @@ export async function callClaudeVision({
       {
         role: "user",
         content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: mediaType, data: imageBase64 },
-          },
+          ...imageBlocks,
           { type: "text", text: prompt },
         ],
       },
