@@ -194,11 +194,10 @@ export async function POST(request: NextRequest) {
             if (bankModel?.image_url) {
               const { generateWithModelBank } = await import("@/lib/fashn/client");
               const category = getCategory(productType || "auto");
-              console.log(`[TryOn] 🏦 Usando modelo do banco (${modelBankId}), categoria: ${category}`);
+              console.log(`[TryOn] 🏦 Usando modelo do banco (${modelBankId})`);
               const result = await generateWithModelBank(
                 productUrl,
                 bankModel.image_url,
-                category,
                 backgroundType as any,
               );
               if (result.status === "completed" && result.outputUrl) {
@@ -235,9 +234,8 @@ export async function POST(request: NextRequest) {
                 const { tryOnProduct } = await import("@/lib/fashn/client");
                 console.log("[TryOn] 👗 Tentando Fashn.ai (modelo ativa da loja)...");
                 const result = await tryOnProduct({
-                  garmentImage: productUrl,
+                  productImage: productUrl,
                   modelImage: modelImageUrl,
-                  category: getCategory(productType || "auto") as any,
                 });
                 if (result.status === "completed" && result.outputUrl) {
                   tryOnImageUrl = result.outputUrl;
@@ -249,23 +247,32 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // Fallback: fal.ai
-            if (!tryOnImageUrl && process.env.FAL_KEY) {
+            // Fallback: Google Nano Banana 2
+            if (!tryOnImageUrl && process.env.GOOGLE_AI_API_KEY) {
               try {
-                const { falTryOn } = await import("@/lib/fal/client");
-                console.log("[TryOn] 🔄 Fallback fal.ai...");
-                const result = await falTryOn({
-                  garmentImageUrl: productUrl,
-                  modelImageUrl,
-                  description: "Fashion garment for virtual try-on",
+                const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
+                console.log("[TryOn] 🍌 Fallback Nano Banana 2...");
+                
+                // Converter URLs para base64 para o Nano Banana
+                const productRes = await fetch(productUrl);
+                const productBuf = Buffer.from(await productRes.arrayBuffer());
+                const modelRes = await fetch(modelImageUrl);
+                const modelBuf = Buffer.from(await modelRes.arrayBuffer());
+
+                const result = await nanoBananaTryOn({
+                  productImageBase64: productBuf.toString("base64"),
+                  productMimeType: "image/jpeg",
+                  modelImageBase64: modelBuf.toString("base64"),
+                  modelMimeType: "image/png",
                 });
-                if (result.status === "completed" && result.outputUrl) {
-                  tryOnImageUrl = result.outputUrl;
-                  tryOnProvider = "fal.ai";
-                  console.log("[TryOn] ✅ fal.ai sucesso");
+                if (result.status === "completed" && result.imageBase64) {
+                  // Salvar a imagem base64 como URL (data URI)
+                  tryOnImageUrl = `data:image/png;base64,${result.imageBase64}`;
+                  tryOnProvider = "nano-banana-2";
+                  console.log("[TryOn] ✅ Nano Banana 2 sucesso");
                 }
               } catch (e) {
-                console.warn("[TryOn] fal.ai falhou:", e);
+                console.warn("[TryOn] Nano Banana 2 falhou:", e);
               }
             }
           }
