@@ -165,8 +165,21 @@ export async function POST(request: NextRequest) {
         }
 
         if (modelImageUrl && productUrl) {
-          // 1️⃣ Tentar Fashn.ai primeiro (melhor qualidade)
-          if (process.env.FASHN_API_KEY) {
+          // Check admin setting for try-on provider control
+          let fashnEnabled = true;
+          try {
+            const { createAdminClient } = await import("@/lib/supabase/admin");
+            const supabase = createAdminClient();
+            const { data: setting } = await supabase
+              .from("admin_settings")
+              .select("value")
+              .eq("key", "enable_tryon")
+              .single();
+            fashnEnabled = setting?.value !== "false" && setting?.value !== false;
+          } catch { /* default to enabled */ }
+
+          // 1️⃣ Tentar Fashn.ai primeiro (melhor qualidade) — se habilitado no admin
+          if (fashnEnabled && process.env.FASHN_API_KEY) {
             try {
               const { tryOnProduct } = await import("@/lib/fashn/client");
               console.log("[TryOn] 👗 Tentando Fashn.ai...");
@@ -183,6 +196,8 @@ export async function POST(request: NextRequest) {
             } catch (e) {
               console.warn("[TryOn] Fashn.ai falhou:", e);
             }
+          } else if (!fashnEnabled) {
+            console.log("[TryOn] ⚠️ Fashn.ai DESABILITADO no admin — pulando para fal.ai");
           }
 
           // 2️⃣ Fallback: fal.ai IDM-VTON (mais barato)
