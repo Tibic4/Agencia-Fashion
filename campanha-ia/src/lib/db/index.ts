@@ -412,3 +412,110 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
       .eq("id", usage.id);
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+// CRÉDITOS AVULSOS (seção 5.4 da arquitetura)
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Adiciona créditos à loja após pagamento aprovado
+ */
+export async function addCreditsToStore(
+  storeId: string,
+  type: "campaigns" | "models" | "regenerations",
+  quantity: number,
+  priceBrl: number,
+  mpPaymentId: string
+) {
+  const supabase = createAdminClient();
+
+  // 1. Registrar a compra
+  await supabase.from("credit_purchases").insert({
+    store_id: storeId,
+    package_type: type,
+    quantity,
+    price_brl: priceBrl,
+    mercadopago_payment_id: mpPaymentId,
+    payment_status: "approved",
+  });
+
+  // 2. Incrementar créditos na loja
+  const columnMap = {
+    campaigns: "credit_campaigns",
+    models: "credit_models",
+    regenerations: "credit_regenerations",
+  };
+
+  const column = columnMap[type];
+
+  // Buscar valor atual e somar
+  const { data: store } = await supabase
+    .from("stores")
+    .select(column)
+    .eq("id", storeId)
+    .single();
+
+  const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
+
+  await supabase
+    .from("stores")
+    .update({ [column]: currentValue + quantity })
+    .eq("id", storeId);
+
+  console.log(`[Credits] ✅ +${quantity} ${type} adicionados à loja ${storeId}`);
+}
+
+/**
+ * Consome 1 crédito avulso (retorna true se tinha crédito, false se não)
+ */
+export async function consumeCredit(
+  storeId: string,
+  type: "campaigns" | "models" | "regenerations"
+): Promise<boolean> {
+  const supabase = createAdminClient();
+
+  const columnMap = {
+    campaigns: "credit_campaigns",
+    models: "credit_models",
+    regenerations: "credit_regenerations",
+  };
+
+  const column = columnMap[type];
+
+  const { data: store } = await supabase
+    .from("stores")
+    .select(column)
+    .eq("id", storeId)
+    .single();
+
+  const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
+
+  if (currentValue <= 0) return false;
+
+  await supabase
+    .from("stores")
+    .update({ [column]: currentValue - 1 })
+    .eq("id", storeId);
+
+  console.log(`[Credits] 🔻 -1 ${type} consumido da loja ${storeId} (restam: ${currentValue - 1})`);
+  return true;
+}
+
+/**
+ * Retorna saldo de créditos avulsos da loja
+ */
+export async function getStoreCredits(storeId: string) {
+  const supabase = createAdminClient();
+
+  const { data: store } = await supabase
+    .from("stores")
+    .select("credit_campaigns, credit_models, credit_regenerations")
+    .eq("id", storeId)
+    .single();
+
+  return {
+    campaigns: store?.credit_campaigns || 0,
+    models: store?.credit_models || 0,
+    regenerations: store?.credit_regenerations || 0,
+  };
+}
