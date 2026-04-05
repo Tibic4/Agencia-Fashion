@@ -54,7 +54,7 @@ export default function FloatingWhatsApp() {
         }
         .wa-btn:hover {
           transform: scale(1.05) translateY(-4px) !important;
-          filter: drop-shadow(0 8px 20px rgba(37, 211, 102, 0.4));
+          filter: drop-shadow(0 8px 20px rgba(236, 72, 153, 0.4));
         }
         .wa-btn:active {
           transform: scale(0.95) !important;
@@ -66,7 +66,7 @@ export default function FloatingWhatsApp() {
           position: absolute;
           inset: -4px;
           border-radius: 50%;
-          border: 2px solid rgba(37, 211, 102, 0.35);
+          border: 2px solid rgba(236, 72, 153, 0.35);
           animation: ringExpand 0.8s ease-out;
           pointer-events: none;
         }
@@ -80,13 +80,13 @@ export default function FloatingWhatsApp() {
         className={`wa-btn ${pulse ? "wa-heartbeat" : ""}`}
       >
         {pulse && <span className="wa-ring" />}
-        <div className="relative w-16 h-16 rounded-full overflow-hidden shadow-2xl ring-2 ring-white/20">
+        <div className="relative w-16 h-16 drop-shadow-2xl">
           <Image
             src="/zap-buton.png"
             alt="WhatsApp"
             fill
             unoptimized
-            className="object-cover"
+            className="object-contain"
           />
         </div>
       </a>
