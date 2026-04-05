@@ -206,14 +206,15 @@ Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
 }
 
 REGRAS DE OURO:
-- ANO ATUAL: ${CURRENT_YEAR} — use este ano para referências de tendência (NUNCA use anos anteriores)
+- ANO ATUAL: ${CURRENT_YEAR} — use para Instagram e WhatsApp (ex: "tendência ${CURRENT_YEAR}"). Para META ADS use "tendência do momento" ou "em alta" (sem mencionar ano).
 - Preço EXATO de R$ ${params.preco} — destaque com emoji ou negrito
 - Linguagem 100% brasileira natural — como conversa real, não propaganda
 - Instagram Feed: storytelling curto + emojis estratégicos (mínimo 3, máximo 5)
 - Stories: cada slide com NO MÁXIMO 2 linhas — lembra que é tela pequena!
 - WhatsApp: TOM DE AMIGA. Como se a lojista estivesse mandando áudio (mas em texto)
-- Meta Ads: SEM emojis, SEM letras maiúsculas excessivas, SEM claims não comprováveis ("resolve X%", "favorece todos")
+- Meta Ads: SEM emojis, SEM letras maiúsculas, SEM claims não comprováveis (nada de "a cor de 2026", "resolve X%", "favorece todos", "já voou várias"). Use fatos objetivos.
 - JAMAIS invente promoções, descontos ou preços que não foram informados
+- JAMAIS compare com marcas específicas (Zara, Shein, etc.) — risco de compliance
 - Hashtags: SEM prefixo # (apenas a palavra). Mix de alto volume (modafeminina, lookdodia) com nicho (categoria, estação). Sem erros de digitação!${plusSizeRules}
 
 Responda APENAS com o JSON.`;
