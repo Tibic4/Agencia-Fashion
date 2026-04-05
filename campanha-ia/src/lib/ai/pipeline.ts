@@ -1,4 +1,5 @@
 import { callClaude, callClaudeVision } from "./anthropic";
+import { AI_MODELS } from "./config";
 import {
   VISION_SYSTEM,
   buildVisionPrompt,
@@ -35,6 +36,8 @@ export interface PipelineInput {
   bodyType?: string;
   storeId?: string;
   campaignId?: string;
+  /** Tipo de produto (blusa, saia, vestido, etc.) */
+  productType?: string;
 }
 
 export interface PipelineResult {
@@ -105,7 +108,7 @@ export async function runCampaignPipeline(
   costs.push({
     step: "vision",
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: AI_MODELS.VISION,
     durationMs: Date.now() - visionStart,
     estimatedCostBrl: 0.08, // ~1K tokens in + 500 out
   });
@@ -141,7 +144,7 @@ export async function runCampaignPipeline(
   costs.push({
     step: "strategy",
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: AI_MODELS.STRATEGY,
     durationMs: Date.now() - stratStart,
     estimatedCostBrl: 0.06,
   });
@@ -176,7 +179,7 @@ export async function runCampaignPipeline(
   costs.push({
     step: "copywriter",
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: AI_MODELS.COPYWRITER,
     durationMs: Date.now() - copyStart,
     estimatedCostBrl: 0.10,
   });
@@ -205,7 +208,7 @@ export async function runCampaignPipeline(
   costs.push({
     step: "refiner",
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: AI_MODELS.REFINER,
     durationMs: Date.now() - refineStart,
     estimatedCostBrl: 0.05,
   });
@@ -238,7 +241,7 @@ export async function runCampaignPipeline(
   costs.push({
     step: "scorer",
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: AI_MODELS.SCORER,
     durationMs: Date.now() - scoreStart,
     estimatedCostBrl: 0.04,
   });
@@ -274,7 +277,7 @@ export async function runCampaignPipeline(
     costs.push({
       step: "copywriter_retry",
       provider: "anthropic",
-      model: "claude-sonnet-4-20250514",
+      model: AI_MODELS.COPYWRITER,
       durationMs: 0,
       estimatedCostBrl: 0.10,
     });
