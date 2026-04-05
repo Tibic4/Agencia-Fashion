@@ -27,6 +27,8 @@ import type {
 export interface PipelineInput {
   imageBase64: string;
   mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  /** Fotos extras (close-up do tecido, outra peça do conjunto, etc.) */
+  extraImages?: { base64: string; mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }[];
   price: string;
   objective: string;
   storeName: string;
@@ -98,11 +100,13 @@ export async function runCampaignPipeline(
   // ── STEP 1: Vision ──────────────────────────
   onProgress?.("vision", "Analisando produto...", 10);
   const visionStart = Date.now();
+  const hasMultiplePhotos = !!(input.extraImages && input.extraImages.length > 0);
   const { result: visionRaw } = await withRetry(
     () => callClaudeVision({
       system: VISION_SYSTEM,
-      prompt: buildVisionPrompt(input.productType, input.material),
+      prompt: buildVisionPrompt(input.productType, input.material, hasMultiplePhotos),
       imageBase64: input.imageBase64,
+      extraImages: input.extraImages,
       mediaType: input.mediaType,
     }),
     "Vision",

@@ -1,0 +1,279 @@
+{
+  "vision": {
+    "produto": {
+      "nome_generico": "Vestido midi canelado laranja com detalhe frontal",
+      "categoria": "Vestidos",
+      "subcategoria": "Midi"
+    },
+    "segmento": "feminino",
+    "atributos_visuais": {
+      "cor_principal": "Laranja vibrante",
+      "cor_secundaria": null,
+      "cores_complementares": [],
+      "material_aparente": "Malha canelada",
+      "estampa": "Liso",
+      "detalhes": [
+        "Detalhe franzido no decote",
+        "Botão decorativo central",
+        "Decote V",
+        "Manga curta",
+        "Textura canelada vertical"
+      ]
+    },
+    "caimento": "semi-ajustado",
+    "ocasiao_uso": [
+      "casual",
+      "dia_a_dia",
+      "trabalho"
+    ],
+    "estacao": "verão",
+    "qualidade_foto": {
+      "resolucao": "boa",
+      "fundo": "ambiente",
+      "iluminacao": "boa",
+      "necessita_tratamento": false
+    },
+    "nicho_sensivel": false,
+    "mood": [
+      "feminino",
+      "vibrante",
+      "moderno"
+    ],
+    "palavras_chave_venda": [
+      "vestido laranja",
+      "midi canelado",
+      "confortável",
+      "versátil",
+      "tendência 2026",
+      "cor vibrante"
+    ]
+  },
+  "strategy": {
+    "angulo": "O vestido laranja que está fazendo TODAS pararem na rua - cor do momento que valoriza qualquer tom de pele e marca presença onde você chegar",
+    "angulo_secundario": "A peça coringa que resolve qualquer look: trabalho, happy hour ou encontro especial - vestiu, arrasou!",
+    "gatilho": "desejo",
+    "tom": "empoderador",
+    "publico_ideal": "Mulheres 28-45 anos, classe B/B+, trabalham fora, seguem influencers de moda, compram pelo Instagram quando veem peças diferenciadas nos Stories. Valorizam qualidade e exclusividade, querem se destacar no ambiente profissional e social, dispostas a investir em peças que as façam se sentir confiantes e elegantes",
+    "contra_objecao": "Sobre o laranja ser 'difícil': 'Gente, essa cor é UNIVERSAL! Fica linda em morena, loira, ruiva... o segredo está no tom certo, e esse aqui é perfeito para nossa pele brasileira'",
+    "cta_sugerido": "Chama no Direct para garantir o seu tamanho",
+    "ganchos_stories": [
+      "A cor que TODO MUNDO tá perguntando onde comprei...",
+      "POV: você quer causar impacto sem muito esforço",
+      "O vestido que resolve 80% dos seus looks de 2024"
+    ],
+    "emocao_alvo": "autoestima"
+  },
+  "output": {
+    "vision_analysis": {
+      "produto": {
+        "nome_generico": "Vestido midi canelado laranja com detalhe frontal",
+        "categoria": "Vestidos",
+        "subcategoria": "Midi"
+      },
+      "segmento": "feminino",
+      "atributos_visuais": {
+        "cor_principal": "Laranja vibrante",
+        "cor_secundaria": null,
+        "cores_complementares": [],
+        "material_aparente": "Malha canelada",
+        "estampa": "Liso",
+        "detalhes": [
+          "Detalhe franzido no decote",
+          "Botão decorativo central",
+          "Decote V",
+          "Manga curta",
+          "Textura canelada vertical"
+        ]
+      },
+      "caimento": "semi-ajustado",
+      "ocasiao_uso": [
+        "casual",
+        "dia_a_dia",
+        "trabalho"
+      ],
+      "estacao": "verão",
+      "qualidade_foto": {
+        "resolucao": "boa",
+        "fundo": "ambiente",
+        "iluminacao": "boa",
+        "necessita_tratamento": false
+      },
+      "nicho_sensivel": false,
+      "mood": [
+        "feminino",
+        "vibrante",
+        "moderno"
+      ],
+      "palavras_chave_venda": [
+        "vestido laranja",
+        "midi canelado",
+        "confortável",
+        "versátil",
+        "tendência 2026",
+        "cor vibrante"
+      ]
+    },
+    "strategy": {
+      "angulo": "O vestido laranja que está fazendo TODAS pararem na rua - cor do momento que valoriza qualquer tom de pele e marca presença onde você chegar",
+      "angulo_secundario": "A peça coringa que resolve qualquer look: trabalho, happy hour ou encontro especial - vestiu, arrasou!",
+      "gatilho": "desejo",
+      "tom": "empoderador",
+      "publico_ideal": "Mulheres 28-45 anos, classe B/B+, trabalham fora, seguem influencers de moda, compram pelo Instagram quando veem peças diferenciadas nos Stories. Valorizam qualidade e exclusividade, querem se destacar no ambiente profissional e social, dispostas a investir em peças que as façam se sentir confiantes e elegantes",
+      "contra_objecao": "Sobre o laranja ser 'difícil': 'Gente, essa cor é UNIVERSAL! Fica linda em morena, loira, ruiva... o segredo está no tom certo, e esse aqui é perfeito para nossa pele brasileira'",
+      "cta_sugerido": "Chama no Direct para garantir o seu tamanho",
+      "ganchos_stories": [
+        "A cor que TODO MUNDO tá perguntando onde comprei...",
+        "POV: você quer causar impacto sem muito esforço",
+        "O vestido que resolve 80% dos seus looks de 2024"
+      ],
+      "emocao_alvo": "autoestima"
+    },
+    "headline_principal": "O vestido laranja que faz você parar o trânsito",
+    "headline_variacao_1": "A peça que resolve trabalho, happy hour e encontro",
+    "headline_variacao_2": "Vista e sinta todos os olhares em você",
+    "instagram_feed": "Gente, esse vestido laranja está causando uma revolução por aqui! 🔥\n\nSabe aquela sensação de vestir uma peça e se sentir PODEROSA? É exatamente isso que esse midi canelado faz com você. A textura canelada abraça o corpo de um jeito incrível, o decote V alonga o colo e esse laranja vibrante... ai meu Deus, que cor LINDA!\n\nO detalhe franzido no decote dá um charme especial, e o botão decorativo é puro requinte. É daquelas peças que você veste pra trabalhar e já serve pro happy hour depois ✨\n\nPor apenas R$ 89,90 você leva pra casa essa peça que tá sendo super procurada aqui!\n\nChama no Direct que eu separo a sua antes que esgote 💕",
+    "instagram_stories": {
+      "slide_1": "Gente, chegou O vestido que vocês tanto pediram 🔥",
+      "slide_2": "Laranja vibrante + malha canelada que modela PERFEITO ✨",
+      "slide_3": "Só R$ 89,90 e tá saindo rapidinho daqui ⚡",
+      "cta_final": "Corre pro Direct que eu separo o seu tamanho 💕"
+    },
+    "whatsapp": "Oi, tudo bem? 😍\n\nChegou aquele vestido laranja que eu te falei e tô APAIXONADA! É um midi canelado que fica um luxo no corpo, sabe?\n\nA cor é PERFEITA - laranja vibrante que fica lindo na nossa pele brasileira. Tem um decote V lindo, detalhe franzido que dá um charme especial e a textura canelada que modela maravilhosamente.\n\nEstá R$ 89,90 e sinceramente, pelo que essa peça entrega, tá um preço incrível!\n\nQuer que eu separe um pra você? Manda seu tamanho que eu já reservo 💕",
+    "meta_ads": {
+      "titulo": "Vestido midi laranja canelado com decote V",
+      "texto_principal": "Vestido midi canelado laranja com decote V e detalhes franzidos. Malha texturizada que modela o corpo. Cor versátil muito procurada pelas clientes.",
+      "descricao": "Vestido midi laranja canelado",
+      "cta_button": "shop_now"
+    },
+    "hashtags": [
+      "modafeminina",
+      "vestidolaranja",
+      "midicanelado",
+      "lookdodia",
+      "modabrasileira",
+      "tendencia2026",
+      "vestidomidi",
+      "outfitinspiration",
+      "modafashion",
+      "estilopessoal",
+      "looktrabalho",
+      "vestidoversatil",
+      "laranjamoda",
+      "moda2026",
+      "fashionbrasil"
+    ],
+    "product_image_clean_url": null,
+    "model_image_url": null,
+    "lifestyle_image_url": null,
+    "creative_feed_url": null,
+    "creative_stories_url": null,
+    "refinements": [
+      {
+        "campo": "instagram_feed",
+        "antes": "que tá sendo super disputada aqui!\n\nChama no Direct que eu separo a sua antes que voe",
+        "depois": "que tá sendo super procurada aqui!\n\nChama no Direct que eu separo a sua antes que esgote",
+        "motivo": "Substituiu 'disputada' e 'voe' por linguagem mais natural e direta"
+      },
+      {
+        "campo": "whatsapp",
+        "antes": "valoriza muito nossa pele brasileira",
+        "depois": "fica lindo na nossa pele brasileira",
+        "motivo": "Removeu claim não comprovável 'valoriza muito' por descrição mais objetiva"
+      },
+      {
+        "campo": "meta_ads",
+        "antes": "Sinta-se poderosa com este vestido midi",
+        "depois": "Vestido midi laranja canelado com decote V",
+        "motivo": "Removeu linguagem emocional não permitida no Meta Ads, focou em descrição objetiva"
+      },
+      {
+        "campo": "meta_ads",
+        "antes": "Vestido midi canelado laranja com decote V e detalhes franzidos. Malha texturizada que modela o corpo.",
+        "depois": "Vestido midi canelado laranja com decote V e detalhes franzidos. Malha texturizada que modela o corpo. Cor versátil muito procurada pelas clientes.",
+        "motivo": "Adicionou informação objetiva sobre a procura, evitando claims não comprováveis"
+      }
+    ]
+  },
+  "score": {
+    "nota_geral": 72,
+    "conversao": 75,
+    "clareza": 80,
+    "urgencia": 65,
+    "naturalidade": 85,
+    "aprovacao_meta": 90,
+    "criatividade": 60,
+    "nivel_risco": "baixo",
+    "resumo": "Campanha sólida com linguagem natural e posicionamento claro do produto. Preço atrativo bem comunicado, mas falta urgência real e diferenciação criativa para maximizar conversões.",
+    "pontos_fortes": [
+      "Linguagem muito natural e autêntica, como uma lojista real falaria",
+      "Preço bem posicionado (R$ 89,90) com justificativa de valor",
+      "Estratégia de público bem definida e textos alinhados ao perfil"
+    ],
+    "melhorias": [
+      {
+        "campo": "urgencia",
+        "problema": "Falta motivo real para comprar agora - apenas menciona 'saindo rapidinho' sem prova",
+        "sugestao": "Adicionar estoque específico ('últimas 3 peças') ou prazo real ('promoção até domingo')",
+        "impacto": "alto"
+      },
+      {
+        "campo": "meta_ads",
+        "problema": "Texto muito genérico e sem apelo emocional para anúncio pago",
+        "sugestao": "Usar linguagem mais persuasiva: 'O vestido laranja que todas estão usando - cor que valoriza qualquer tom de pele'",
+        "impacto": "alto"
+      },
+      {
+        "campo": "criatividade",
+        "problema": "Ganchos previsíveis para o nicho de moda",
+        "sugestao": "Explorar mais o ângulo da cor laranja ser tendência ou criar comparação com peças mais caras",
+        "impacto": "medio"
+      },
+      {
+        "campo": "hashtags",
+        "problema": "Hashtag 'tendencia2026' está incorreta para 2024",
+        "sugestao": "Corrigir para 'tendencia2024' ou 'moda2024'",
+        "impacto": "baixo"
+      }
+    ],
+    "alertas_meta": [],
+    "previsao_engajamento": "medio"
+  },
+  "durationMs": 59422,
+  "costBreakdown": [
+    {
+      "step": "vision",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 6210,
+      "estimatedCostBrl": 0.08
+    },
+    {
+      "step": "strategy",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 10375,
+      "estimatedCostBrl": 0.06
+    },
+    {
+      "step": "copywriter",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 18352,
+      "estimatedCostBrl": 0.1
+    },
+    {
+      "step": "refiner",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 14021,
+      "estimatedCostBrl": 0.05
+    },
+    {
+      "step": "scorer",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-20250514",
+      "durationMs": 10462,
+      "estimatedCostBrl": 0.04
+    }
+  ]
+}

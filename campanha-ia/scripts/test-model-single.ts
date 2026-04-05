@@ -16,7 +16,7 @@ async function main() {
   const baseImage = `data:image/png;base64,${baseBuffer.toString("base64")}`;
 
   // Prompt otimizado: corpo inteiro, pés visíveis, shorts básico
-  const prompt = "Full body photo from head to feet of a curvy plus size Brazilian woman, size 48-50, light brown skin, wavy dark hair, confident smile, standing relaxed, wearing plain white t-shirt and simple black cotton shorts, barefoot, showing full legs and feet, white studio background, fashion ecommerce photography, 9:16 vertical portrait";
+  const prompt = "Full body photo from head to feet of a curvy plus size Brazilian woman, size 48-50, light brown skin, wavy dark hair, confident smile, standing relaxed, wearing plain white t-shirt and simple white cotton shorts, barefoot, showing full legs and feet, white studio background, fashion ecommerce photography, 9:16 vertical portrait";
 
   console.log("🧪 Teste: 1 modelo com prompt otimizado");
   console.log(`📝 Prompt: ${prompt.slice(0, 80)}...`);
@@ -60,7 +60,7 @@ async function main() {
       console.log(`\n✅ Gerada: ${url}`);
       const imgRes = await fetch(url);
       const buf = Buffer.from(await imgRes.arrayBuffer());
-      const out = path.resolve(__dirname, "../test-images/model-bank/teste-modelo-v2.png");
+      const out = path.resolve(__dirname, "../test-images/model-bank/teste-modelo-v2-branco.png");
       if (!fs.existsSync(path.dirname(out))) fs.mkdirSync(path.dirname(out), { recursive: true });
       fs.writeFileSync(out, buf);
       console.log(`📁 Salva: ${out}`);
