@@ -1,10 +1,29 @@
 import Link from "next/link";
-import Image from "next/image";
 import ShowcaseSection from "@/components/ShowcaseSection";
 
 /* ═══════════════════════════════════════
    Icons (inline SVGs to avoid deps)
    ═══════════════════════════════════════ */
+const LogoIcon = ({ size = 40 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#e879a8" />
+        <stop offset="50%" stopColor="#a855f7" />
+        <stop offset="100%" stopColor="#7c3aed" />
+      </linearGradient>
+    </defs>
+    <circle cx="50" cy="50" r="48" fill="url(#logoGrad)" />
+    <circle cx="50" cy="50" r="45" fill="none" stroke="white" strokeWidth="1.5" opacity="0.3" />
+    {/* Hanger */}
+    <path d="M50 22c-3.5 0-6 2.5-6 6 0 2 1 3.5 2.5 4.5L30 52c-2 1.5-1 4.5 1.5 4.5h37c2.5 0 3.5-3 1.5-4.5L53.5 32.5C55 31.5 56 30 56 28c0-3.5-2.5-6-6-6z" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    <circle cx="50" cy="28" r="2.5" fill="white" />
+    {/* Sparkles */}
+    <path d="M72 30l-1.2 3.6a1 1 0 01-.7.7L66.5 35.5l3.6 1.2a1 1 0 01.7.7L72 41l1.2-3.6a1 1 0 01.7-.7l3.6-1.2-3.6-1.2a1 1 0 01-.7-.7L72 30z" fill="white" />
+    <path d="M65 64l-.8 2.4a.7.7 0 01-.5.5L61.3 67.7l2.4.8a.7.7 0 01.5.5L65 71.4l.8-2.4a.7.7 0 01.5-.5l2.4-.8-2.4-.8a.7.7 0 01-.5-.5L65 64z" fill="white" opacity="0.8" />
+    <path d="M78 48l-.6 1.8a.5.5 0 01-.35.35L75.25 50.8l1.8.6a.5.5 0 01.35.35L78 53.5l.6-1.8a.5.5 0 01.35-.35l1.8-.6-1.8-.6a.5.5 0 01-.35-.35L78 48z" fill="white" opacity="0.6" />
+  </svg>
+);
 const IconCamera = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
 );
@@ -187,8 +206,8 @@ export default function Home() {
       {/* ═══ NAVBAR ═══ */}
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="container flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="CriaLook" width={36} height={36} className="rounded-lg" />
+          <Link href="/" className="flex items-center gap-2.5">
+            <LogoIcon size={40} />
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
               Cria<span className="gradient-text">Look</span>
             </span>
@@ -538,8 +557,8 @@ export default function Home() {
         <div className="container">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Image src="/logo.png" alt="CriaLook" width={32} height={32} className="rounded-lg" />
+              <div className="flex items-center gap-2.5 mb-4">
+                <LogoIcon size={36} />
                 <span className="text-lg font-bold text-white">CriaLook</span>
               </div>
               <p className="text-sm leading-relaxed">
