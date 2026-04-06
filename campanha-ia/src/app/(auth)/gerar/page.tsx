@@ -124,17 +124,31 @@ export default function GerarCampanha() {
   const [material, setMaterial] = useState("");
   const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
+  const [customModels, setCustomModels] = useState<{ id: string; name: string; body_type: string; photo_url?: string | null; is_active: boolean }[]>([]);
+  const [userPlan, setUserPlan] = useState("free");
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
   const [modelFilter, setModelFilter] = useState<string>("all");
   const [quotaExceeded, setQuotaExceeded] = useState<{
     used: number; limit: number; credits: number;
   } | null>(null);
 
-  // Carregar banco de modelos
+  const planModelLimits: Record<string, number> = {
+    free: 0, gratis: 0, starter: 1, pro: 2, business: 3, agencia: 5,
+  };
+  const maxModels = planModelLimits[userPlan] || 1;
+
+  // Carregar banco de modelos (stock) + modelos personalizadas da loja
   useEffect(() => {
     fetch("/api/models/bank")
       .then(res => res.json())
       .then(data => setModelBank(data.models || []))
+      .catch(() => {});
+    fetch("/api/model/list")
+      .then(res => res.json())
+      .then(data => {
+        setCustomModels(data.models || []);
+        setUserPlan(data.plan || "free");
+      })
       .catch(() => {});
   }, []);
 
@@ -693,72 +707,163 @@ export default function GerarCampanha() {
             </div>
           </div>
 
-          {/* Model Bank Selector */}
-          {modelBank.length > 0 && (
-            <div className="animate-fade-in">
-              <div className="flex items-center justify-between mb-3">
+          {/* Model Bank Selector — Unificado (customizadas + stock) */}
+          <div className="animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <div>
                 <label className="text-sm font-semibold">Escolha a modelo</label>
-                <div className="flex gap-1">
-                  {["all", "normal", "plus_size"].map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setModelFilter(f)}
-                      className="px-2 py-1 rounded-md text-[10px] font-medium transition-all"
-                      style={{
-                        background: modelFilter === f ? "var(--brand-100)" : "transparent",
-                        color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
-                      }}
-                    >
-                      {f === "all" ? "Todas" : f === "normal" ? "Normal" : "Plus"}
-                    </button>
-                  ))}
-                </div>
+                {customModels.length > 0 && (
+                  <span className="text-[10px] ml-2" style={{ color: "var(--muted)" }}>
+                    {customModels.length}/{maxModels} personalizadas
+                  </span>
+                )}
               </div>
-              <div className="grid grid-cols-5 gap-2">
-                {/* Opção aleatória */}
-                <button
-                  onClick={() => setSelectedModelId("random")}
-                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all"
-                  style={{
-                    border: selectedModelId === "random"
-                      ? "2px solid var(--brand-500)"
-                      : "1px solid var(--border)",
-                    background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
-                  }}
-                >
-                  <span className="text-lg">🎲</span>
-                  <span className="text-[9px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
-                </button>
-                {/* Modelos do banco */}
-                {modelBank
-                  .filter(m => modelFilter === "all" || m.body_type === modelFilter)
-                  .map((model) => (
+              <div className="flex gap-1">
+                {["all", "normal", "plus_size"].map((f) => (
                   <button
-                    key={model.id}
-                    onClick={() => setSelectedModelId(model.id)}
-                    className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                    key={f}
+                    onClick={() => setModelFilter(f)}
+                    className="px-2 py-1 rounded-md text-[10px] font-medium transition-all"
                     style={{
-                      border: selectedModelId === model.id
-                        ? "2px solid var(--brand-500)"
-                        : "1px solid var(--border)",
+                      background: modelFilter === f ? "var(--brand-100)" : "transparent",
+                      color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
                     }}
-                    title={model.name}
                   >
-                    <img
-                      src={model.thumbnail_url || model.image_url}
-                      alt={model.name}
-                      className="w-full h-full object-cover"
-                    />
-                    {selectedModelId === model.id && (
-                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">✓</span>
-                      </div>
-                    )}
+                    {f === "all" ? "Todas" : f === "normal" ? "Normal" : "Plus"}
                   </button>
                 ))}
               </div>
             </div>
-          )}
+            <div className="grid grid-cols-5 gap-2">
+              {/* Opção aleatória */}
+              <button
+                onClick={() => setSelectedModelId("random")}
+                className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all"
+                style={{
+                  border: selectedModelId === "random"
+                    ? "2px solid var(--brand-500)"
+                    : "1px solid var(--border)",
+                  background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
+                }}
+              >
+                <span className="text-lg">🎲</span>
+                <span className="text-[9px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
+              </button>
+
+              {/* ⭐ Modelos personalizadas da loja (borda dourada) */}
+              {customModels
+                .filter(m => modelFilter === "all" || m.body_type === modelFilter || (modelFilter === "plus_size" && m.body_type === "plus_size"))
+                .map((model) => (
+                <button
+                  key={`custom-${model.id}`}
+                  onClick={() => setSelectedModelId(model.id)}
+                  className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                  style={{
+                    border: selectedModelId === model.id
+                      ? "2px solid var(--brand-500)"
+                      : "2px solid #D4A017",
+                    boxShadow: "0 0 8px rgba(212,160,23,0.25)",
+                  }}
+                  title={`⭐ ${model.name} (sua modelo)`}
+                >
+                  {model.photo_url ? (
+                    <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #FFF8E1, #FFE082)" }}>
+                      <span className="text-2xl">👩</span>
+                      <span className="text-[8px] font-medium mt-1" style={{ color: "#8B6914" }}>{model.name}</span>
+                    </div>
+                  )}
+                  {/* Badge ⭐ */}
+                  <div className="absolute top-1 left-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
+                    ⭐ Sua
+                  </div>
+                  {selectedModelId === model.id && (
+                    <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">✓</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+
+              {/* + Criar nova modelo / Upgrade CTA */}
+              {customModels.length < maxModels ? (
+                <a
+                  href="/modelo"
+                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03]"
+                  style={{
+                    border: "2px dashed #D4A017",
+                    background: "var(--surface)",
+                    color: "#8B6914",
+                  }}
+                  title="Criar modelo personalizada"
+                >
+                  <span className="text-lg">+</span>
+                  <span className="text-[8px] font-semibold mt-1">Nova modelo</span>
+                  <span className="text-[7px] mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
+                </a>
+              ) : maxModels > 0 ? (
+                <a
+                  href="/plano"
+                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03]"
+                  style={{
+                    border: "1px solid var(--border)",
+                    background: "linear-gradient(135deg, var(--surface), var(--brand-50))",
+                    color: "var(--brand-600)",
+                  }}
+                  title="Faça upgrade para mais modelos"
+                >
+                  <span className="text-lg">⬆️</span>
+                  <span className="text-[8px] font-semibold mt-1">+ Modelos</span>
+                  <span className="text-[7px] mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
+                </a>
+              ) : null}
+
+              {/* Modelos stock do banco */}
+              {modelBank
+                .filter(m => modelFilter === "all" || m.body_type === modelFilter)
+                .map((model) => (
+                <button
+                  key={model.id}
+                  onClick={() => setSelectedModelId(model.id)}
+                  className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                  style={{
+                    border: selectedModelId === model.id
+                      ? "2px solid var(--brand-500)"
+                      : "1px solid var(--border)",
+                  }}
+                  title={model.name}
+                >
+                  <img
+                    src={model.thumbnail_url || model.image_url}
+                    alt={model.name}
+                    className="w-full h-full object-cover"
+                  />
+                  {selectedModelId === model.id && (
+                    <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">✓</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* CTA comprar modelo avulsa — quando atingiu limite e plano não é free */}
+            {maxModels > 0 && customModels.length >= maxModels && (
+              <div className="mt-3 p-2.5 rounded-xl text-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+                  Limite atingido ({customModels.length}/{maxModels}) ·{" "}
+                  <a href="/plano" className="font-semibold" style={{ color: "var(--brand-600)" }}>
+                    Upgrade
+                  </a>{" "}
+                  ou{" "}
+                  <a href="/plano#avulsos" className="font-semibold" style={{ color: "var(--brand-600)" }}>
+                    compre avulsa (R$ 4,90)
+                  </a>
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Background */}
           <div>
