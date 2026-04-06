@@ -1,6 +1,5 @@
 // TODO: Next.js 16 deprecou "middleware" em favor de "proxy". Migrar quando API estabilizar.
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 
 // Rotas que exigem login
 const isProtectedRoute = createRouteMatcher([
@@ -18,10 +17,12 @@ const isProtectedRoute = createRouteMatcher([
 // Rotas que exigem role admin (publicMetadata.role === "admin")
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
-// ⚠️ TESTING MODE — auth desabilitado para testes via tunnel
-// TODO: Restaurar auth.protect() antes de deploy em produção
-export default clerkMiddleware(async (_auth, _request) => {
-  // pass-through — sem proteção de rota para testes
+export default clerkMiddleware(async (auth, request) => {
+  if (isAdminRoute(request)) {
+    await auth.protect({ role: "org:admin" });
+  } else if (isProtectedRoute(request)) {
+    await auth.protect();
+  }
 });
 
 export const config = {
