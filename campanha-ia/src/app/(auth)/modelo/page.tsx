@@ -150,7 +150,7 @@ export default function ModeloVirtual() {
 
       // Add new model to list
       const newModel: StoreModel = {
-        id: json.id || crypto.randomUUID(),
+        id: json.data?.id || json.id || crypto.randomUUID(),
         name: name || "Modelo",
         skin_tone: skin,
         hair_style: hair,
@@ -159,6 +159,7 @@ export default function ModeloVirtual() {
         age_range: age,
         is_active: true,
         created_at: new Date().toISOString(),
+        photo_url: json.data?.previewUrl || null,
       };
       setModels((prev) => [...prev, newModel]);
       setShowCreateForm(false);
@@ -297,10 +298,14 @@ export default function ModeloVirtual() {
             >
               {/* Model visual */}
               <div
-                className="aspect-[4/3] flex items-center justify-center relative"
+                className="aspect-[3/4] flex items-center justify-center relative overflow-hidden"
                 style={{ background: "var(--gradient-brand-soft)" }}
               >
-                <div className="text-6xl">👩</div>
+                {model.photo_url ? (
+                  <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-6xl">👩</div>
+                )}
                 {model.is_active && (
                   <div
                     className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full"
