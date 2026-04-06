@@ -219,11 +219,16 @@ export default function Onboarding() {
                     <div className="flex gap-4 justify-center">
                       {skinTones.map((s) => (
                         <button key={s.value} onClick={() => setSkin(s.value)}
-                          className="transition-all"
-                          style={{ transform: skin === s.value ? "scale(1.2)" : "scale(1)" }}>
-                          <div className="w-14 h-14 rounded-full transition-all"
+                          className="transition-all flex flex-col items-center gap-1.5"
+                          style={{ transform: skin === s.value ? "scale(1.1)" : "scale(1)" }}
+                          aria-label={`Tom de pele: ${s.value}`}
+                          aria-pressed={skin === s.value}>
+                          <div className="w-12 h-12 rounded-full transition-all"
                             style={{ background: s.color, border: skin === s.value ? "3px solid var(--brand-500)" : "3px solid transparent", boxShadow: skin === s.value ? "var(--shadow-glow)" : "none" }}
                           />
+                          <span className="text-[10px] font-medium capitalize" style={{ color: skin === s.value ? "var(--brand-600)" : "var(--muted)" }}>
+                            {s.value}
+                          </span>
                         </button>
                       ))}
                     </div>

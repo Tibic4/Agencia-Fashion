@@ -125,8 +125,8 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body);
 }
 
 /* ═══════════════════════════════════════
@@ -138,15 +138,25 @@
 }
 
 html {
+  scroll-behavior: auto;
+}
+
+/* Smooth scroll only for anchor links */
+html:has(:target) {
   scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Display font for headings */
+h1, h2, h3 {
+  font-family: var(--font-display), Georgia, serif;
 }
 
 ::selection {
@@ -277,17 +287,45 @@ body {
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
+/* Accessibility: Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-scale-in {
+    animation: none;
+    opacity: 1;
+  }
+  .animate-float,
+  .animate-shimmer,
+  .animate-pulse-glow,
+  .animate-gradient,
+  .animate-bounce-subtle {
+    animation: none;
+  }
+  .stagger-children > * {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Stagger children animations */
 .stagger-children > * {
-  opacity: 0;
-  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 1;
 }
-.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+@media (prefers-reduced-motion: no-preference) {
+  .stagger-children > * {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+}
 
 /* ═══════════════════════════════════════
    Component Styles
@@ -295,7 +333,7 @@ body {
 
 /* Gradient Text */
 .gradient-text {
-  background: var(--gradient-brand);
+  background: linear-gradient(135deg, #db2777 0%, #9333ea 50%, #4f46e5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -476,4 +514,58 @@ body {
   ::-webkit-scrollbar-thumb:hover {
     background: var(--gray-600);
   }
+}
+
+/* ═══════════════════════════════════════
+   Skeleton Loader
+   ═══════════════════════════════════════ */
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+  height: 14px;
+  width: 80%;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-xl);
+}
+
+.skeleton-card {
+  height: 80px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+/* ═══════════════════════════════════════
+   Custom Select
+   ═══════════════════════════════════════ */
+
+.custom-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+.custom-select:focus {
+  border-color: var(--brand-300);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+  outline: none;
 }

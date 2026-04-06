@@ -213,7 +213,7 @@ export default function Home() {
               </div>
 
               {/* Headline */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
                 Foto da roupa.{" "}
                 <span className="gradient-text">Campanha pronta.</span>
               </h1>
@@ -357,7 +357,7 @@ export default function Home() {
               {steps.map((step) => (
                 <div key={step.number} className="relative text-center group">
                   {/* Step number */}
-                  <div className="text-7xl font-black mb-4 opacity-5" style={{ color: 'var(--brand-500)' }}>
+                  <div className="text-7xl font-black mb-4 opacity-[0.12]" style={{ color: 'var(--brand-500)' }}>
                     {step.number}
                   </div>
                   {/* Icon */}
@@ -473,10 +473,11 @@ export default function Home() {
                 >
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1 rounded-full" style={{
-                      background: 'white',
-                      color: 'var(--brand-600)',
+                      background: 'var(--gray-950)',
+                      color: 'white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                     }}>
-                      Mais popular
+                      ⭐ Mais popular
                     </div>
                   )}
 
@@ -557,7 +558,7 @@ export default function Home() {
       {/* ═══ FOOTER ═══ */}
       <footer className="py-12" style={{ background: 'var(--gray-950)', color: 'var(--gray-400)' }}>
         <div className="container">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
                 <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
@@ -576,15 +577,10 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Legal</h4>
+              <h4 className="text-sm font-semibold text-white mb-3">Legal & Contato</h4>
               <div className="space-y-2 text-sm">
                 <Link href="/termos" className="block hover:text-white transition">Termos de Uso</Link>
                 <Link href="/privacidade" className="block hover:text-white transition">Privacidade</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Contato</h4>
-              <div className="space-y-2 text-sm">
                 <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition">contato@crialook.com.br</a>
                 <Link href="/sobre" className="block hover:text-white transition">Sobre nós</Link>
               </div>
