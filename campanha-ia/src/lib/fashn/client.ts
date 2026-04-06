@@ -27,11 +27,15 @@ interface FashnJobResult {
 
 // Custos fixos por operação Fashn.ai (em USD)
 // Fonte: https://help.fashn.ai/plans-and-pricing/api-pricing
-// On-Demand: $0.075/crédito. Fast/1K = 1 crédito por chamada.
-// Não passamos resolution nem generation_mode, então usa padrão (1 crédito).
+// On-Demand: $0.075/crédito.
+// IMPORTANTE: quando generation_mode é omitido, o Fashn escolhe automaticamente:
+//   - product-to-model em 1K → 'fast' (1 crédito)
+//   - tryon-max → 'quality' (2 créditos mínimo!)
+//   - edit em 1K → 'fast' (1 crédito)
+// Ref: docs.fashn.ai/api-reference/tryon-max
 const FASHN_COST_USD: Record<string, number> = {
   "product-to-model": 0.075, // 1 crédito (Fast/1K default)
-  "tryon-max": 0.075,        // 1 crédito (Fast/1K default)
+  "tryon-max": 0.15,         // 2 créditos (Quality/1K — quality auto quando generation_mode omitido)
   "edit": 0.075,             // 1 crédito (Fast/1K default)
   "model-create": 0.075,     // 1 crédito (Fast/1K default)
   "background-remove": 0.075, // 1 crédito fixo
@@ -192,7 +196,7 @@ export async function productToModel(params: FashnProductToModelParams & { store
 /**
  * Vestir uma peça em um modelo (Virtual Try-On).
  * Requer foto de modelo com corpo visível.
- * Custo: ~R$ 0,43
+ * Custo: ~R$ 0,87 (2 créditos — quality mode auto)
  */
 export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
   const start = Date.now();
@@ -245,7 +249,7 @@ function getBodyTypeInstruction(bodyType?: "normal" | "plus"): string {
 /**
  * Pipeline A+: product-to-model + edit (alisar + fundo).
  * Usado quando NÃO há modelo do banco selecionada.
- * Custo total: ~R$ 0,25
+ * Custo Fashn: ~R$ 0,88 (2 créditos: 1 p2m + 1 edit)
  */
 export async function generateModelImage(
   productImage: string,
@@ -278,7 +282,7 @@ export async function generateModelImage(
 /**
  * Pipeline com Banco de Modelos: try-on + edit.
  * Usa uma modelo pré-gerada do banco para vestir a peça.
- * Custo total: ~R$ 0,53
+ * Custo Fashn: ~R$ 1,31 (3 créditos: 2 tryon-max + 1 edit)
  */
 export async function generateWithModelBank(
   productImage: string,
@@ -354,13 +358,20 @@ export async function generateCustomModelPreview(params: {
     adulta_26_35: "adult woman aged 26-35",
     madura_36_50: "mature woman aged 36-50",
   };
+  const styleMap: Record<string, string> = {
+    casual_natural: "relaxed casual pose, natural friendly expression, hands relaxed at sides",
+    elegante: "elegant confident pose, sophisticated poised expression, one hand on hip",
+    esportivo: "dynamic athletic pose, energetic bright expression, slight weight shift",
+    urbano: "cool street-style pose, edgy confident expression, relaxed asymmetric stance",
+  };
 
   const skinDesc = skinMap[params.skinTone] || "medium skin";  
   const hairDesc = hairMap[params.hairStyle] || "wavy hair";
   const bodyDesc = bodyMap[params.bodyType] || "average build";
   const ageDesc = ageMap[params.ageRange] || "adult woman aged 26-35";
+  const styleDesc = styleMap[params.style] || "relaxed natural pose, friendly expression";
 
-  const prompt = `Full body photo from head to bare feet of a Brazilian ${ageDesc} with ${skinDesc}, ${hairDesc}, ${bodyDesc}. Wearing a plain white crew-neck t-shirt and plain black shorts. Confident natural smile, relaxed standing pose. Clean white studio background, professional fashion e-commerce photography. High resolution, sharp focus. Barefoot, NO shoes. Full body VISIBLE from head to toes. NO cropping at knees or ankles. NO accessories, NO jewelry. Natural pose, hands relaxed at sides.`;
+  const prompt = `Full body photo from head to bare feet of a Brazilian ${ageDesc} with ${skinDesc}, ${hairDesc}, ${bodyDesc}. Wearing a plain white crew-neck t-shirt and plain black shorts. ${styleDesc}. Clean white studio background, professional fashion e-commerce photography. High resolution, sharp focus. Barefoot, NO shoes. Full body VISIBLE from head to toes. NO cropping at knees or ankles. NO accessories, NO jewelry.`;
 
   const start = Date.now();
   const jobId = await submitJob("product-to-model", {

@@ -302,8 +302,8 @@ export async function POST(request: NextRequest) {
             const { createAdminClient } = await import("@/lib/supabase/admin");
             const supabase = createAdminClient();
             const costMap: Record<string, number> = {
-              "fashn.ai-bank": 0.075, // tryon-max: 1 crédito Fast/1K ($0.075)
-              "fashn.ai": 0.075,      // product-to-model: 1 crédito
+              "fashn.ai-bank": 0.15,  // tryon-max: 2 créditos Quality/1K ($0.15) — quality auto
+              "fashn.ai": 0.15,      // tryon-max: 2 créditos Quality/1K ($0.15)
               "fal.ai": 0.035,
               "nano-banana-2": 0.04,  // Gemini imagen ~$0.04/image
             };
