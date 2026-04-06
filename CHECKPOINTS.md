@@ -27,7 +27,7 @@
 - [x] Tabela `model_bank` populada (20 modelos: 10 normal + 10 plus_size)
 - [x] Tabela `admin_settings` populada (16 configurações)
 - [x] Storage buckets criados (product-photos, model-previews)
-- [ ] ⚠️ Fix: policy `showcase_admin_all` muito permissiva (USING true)
+- [x] ✅ Fix: policy `showcase_admin_all` corrigida → restrita a `service_role`
 
 ## Fase 4: Landing Page ✅ 100%
 - [x] Hero section com CTA
@@ -103,14 +103,14 @@
 - [x] Rate limiting por IP
 - [x] Credit safety (não debita se pipeline falhar)
 
-## Fase 12: Deploy Produção 🔶 70%
+## Fase 12: Deploy Produção 🔶 80%
 - [x] VPS KingHost configurada
 - [x] PM2 instalado
 - [x] Nginx configurado como reverse proxy
 - [x] Build otimizado (sem turbopack, CPU limit)
 - [x] Script de deploy criado
-- [ ] ❌ Resolver 502 Bad Gateway em crialook.com.br
-- [ ] Verificar SSL/Certbot
+- [x] SSL/Certbot instalado e funcionando (HTTPS ativo)
+- [ ] ❌ Resolver 502 Bad Gateway (PM2/Next.js não está rodando)
 - [ ] Configurar webhooks externos (MP, Clerk, Inngest)
 - [ ] Configurar .env.local na VPS com keys de produção
 
