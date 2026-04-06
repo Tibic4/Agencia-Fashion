@@ -13,6 +13,39 @@ export interface KonvaCompositorProps {
   storeName?: string;
   score?: number;
   format?: "feed" | "story";
+  /** Allow importing custom images (logos, stickers, badges) */
+  enableCustomElements?: boolean;
+}
+
+/* ═══════════════════════════════════════
+   Custom Imported Elements
+   ═══════════════════════════════════════ */
+export interface CustomElement {
+  id: string;
+  name: string;
+  imageUrl: string;
+  loadedImg: HTMLImageElement | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  originalWidth: number;
+  originalHeight: number;
+  rotation: number;
+  opacity: number;
+  /** Whether this element is circular (e.g. logo) */
+  circular: boolean;
+}
+
+export const MIN_IMPORT_SIZE = 128;  // Minimum 128×128px for quality
+export const MAX_IMPORT_SIZE = 4096; // Maximum dimension
+export const DEFAULT_ELEMENT_SIZE = 200; // Default display size on canvas
+
+export interface ImportValidation {
+  valid: boolean;
+  error?: string;
+  width: number;
+  height: number;
 }
 
 /* ═══════════════════════════════════════
