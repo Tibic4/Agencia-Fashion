@@ -13,16 +13,16 @@ interface QuotaExceededModalProps {
 }
 
 const CREDIT_PACKAGES = [
-  { qty: 5, price: "14,90", perUnit: "2,98", type: "campaigns" },
-  { qty: 10, price: "24,90", perUnit: "2,49", type: "campaigns" },
-  { qty: 25, price: "49,90", perUnit: "2,00", type: "campaigns" },
+  { qty: 1, price: "7,99", perUnit: "7,99", type: "campaigns" },
+  { qty: 5, price: "34,99", perUnit: "7,00", type: "campaigns" },
+  { qty: 10, price: "59,99", perUnit: "6,00", type: "campaigns" },
 ];
 
 const PLAN_UPGRADE = [
-  { name: "Starter", price: 59, campaigns: 15 },
-  { name: "Pro", price: 129, campaigns: 40 },
-  { name: "Business", price: 249, campaigns: 85 },
-  { name: "Agência", price: 499, campaigns: 170 },
+  { name: "Starter", price: 79, campaigns: 20 },
+  { name: "Pro", price: 179, campaigns: 45 },
+  { name: "Business", price: 349, campaigns: 90 },
+  { name: "Agência", price: 699, campaigns: 180 },
 ];
 
 export default function QuotaExceededModal({

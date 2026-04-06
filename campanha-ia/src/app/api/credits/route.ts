@@ -9,46 +9,36 @@ export const dynamic = "force-dynamic";
  * Pacotes de créditos avulsos
  */
 const CREDIT_PACKAGES = {
-  // Pack de entrada — 1x por conta nova (R$ 3,30/crédito)
-  "3_campanhas_trial": {
+  // Campanhas avulso
+  "1_campanha": {
     type: "campaigns" as const,
-    quantity: 3,
-    price: 9.90,
-    title: "Teste na Prática",
-    description: "3 campanhas completas com modelo virtual (R$ 3,30/cada)",
-    trial: true,
+    quantity: 1,
+    price: 7.99,
+    title: "+1 Campanha",
+    description: "1 campanha completa com modelo virtual",
+    trial: false,
   },
-  // Packs avulsos — mais caros que plano para incentivar assinatura
-  // Starter = R$ 3,93/crédito | Pro = R$ 3,23 | Business = R$ 2,93
   "5_campanhas": {
     type: "campaigns" as const,
     quantity: 5,
-    price: 29.90,
+    price: 34.99,
     title: "+5 Campanhas",
-    description: "5 campanhas extras com modelo virtual (R$ 5,98/cada)",
+    description: "5 campanhas extras com modelo virtual (R$ 7,00/cada)",
     trial: false,
   },
   "10_campanhas": {
     type: "campaigns" as const,
     quantity: 10,
-    price: 49.90,
+    price: 59.99,
     title: "+10 Campanhas",
-    description: "10 campanhas extras com modelo virtual (R$ 4,99/cada)",
-    trial: false,
-  },
-  "25_campanhas": {
-    type: "campaigns" as const,
-    quantity: 25,
-    price: 99.90,
-    title: "+25 Campanhas",
-    description: "25 campanhas extras com modelo virtual (R$ 4,00/cada)",
+    description: "10 campanhas extras com modelo virtual (R$ 6,00/cada)",
     trial: false,
   },
   // Modelos virtuais personalizadas
   "1_modelo": {
     type: "models" as const,
     quantity: 1,
-    price: 4.90,
+    price: 5.99,
     title: "+1 Modelo Virtual",
     description: "1 modelo virtual personalizada para suas campanhas",
     trial: false,
@@ -56,18 +46,9 @@ const CREDIT_PACKAGES = {
   "3_modelos": {
     type: "models" as const,
     quantity: 3,
-    price: 12.90,
+    price: 14.99,
     title: "+3 Modelos Virtuais",
-    description: "3 modelos virtuais personalizadas (R$ 4,30/cada)",
-    trial: false,
-  },
-  // Regenerações
-  "10_regeneracoes": {
-    type: "regenerations" as const,
-    quantity: 10,
-    price: 9.90,
-    title: "+10 Regenerações",
-    description: "10 regenerações extras de copy ou imagem",
+    description: "3 modelos virtuais personalizadas (R$ 4,99/cada)",
     trial: false,
   },
 } as const;
