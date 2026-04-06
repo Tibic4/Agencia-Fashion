@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
 import { getCategory } from "@/lib/ai/config";
 import { runMockPipeline } from "@/lib/ai/mock-data";
-import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel, consumeCredit, getStoreCredits } from "@/lib/db";
+import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel, consumeCredit, getStoreCredits, hasAvulsoCredit } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { PipelineStep } from "@/types";
 
@@ -84,18 +84,18 @@ export async function POST(request: NextRequest) {
       store = await getStoreByClerkId(clerkUserId);
     }
 
-    // ── Verificar quota (seção 5.5 da arquitetura) ──
-    let usedAvulsoCredit = false;
+    // ── Verificar quota (só verifica, NÃO consome ainda) ──
+    let needsAvulsoCredit = false;
     if (store) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
-        // Plano esgotou — tentar crédito avulso
-        const creditUsed = await consumeCredit(store.id, "campaigns");
-        if (creditUsed) {
-          usedAvulsoCredit = true;
-          console.log(`[Generate] 💳 Crédito avulso consumido (plano esgotado: ${quota.used}/${quota.limit})`);
+        // Plano esgotou — verificar se TEM crédito avulso (sem consumir)
+        const hasCredit = await hasAvulsoCredit(store.id, "campaigns");
+        if (hasCredit) {
+          needsAvulsoCredit = true;
+          console.log(`[Generate] 💳 Crédito avulso reservado (plano esgotado: ${quota.used}/${quota.limit})`);
         } else {
-          // Sem créditos — retorna com info de créditos disponíveis
+          // Sem créditos — bloquear
           const credits = await getStoreCredits(store.id);
           return NextResponse.json({
             error: `Suas ${quota.limit} campanhas do mês acabaram!`,
@@ -347,7 +347,13 @@ export async function POST(request: NextRequest) {
           output: mockResult.output as unknown as Record<string, unknown>,
           score: mockResult.score as unknown as Record<string, unknown>,
         });
-        await incrementCampaignsUsed(store!.id);
+        // Descontar uso SOMENTE após sucesso
+        if (needsAvulsoCredit) {
+          await consumeCredit(store!.id, "campaigns");
+          console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (demo)`);
+        } else {
+          await incrementCampaignsUsed(store!.id);
+        }
       }
 
       return NextResponse.json({
@@ -409,7 +415,13 @@ export async function POST(request: NextRequest) {
           output: result.output as unknown as Record<string, unknown>,
           score: result.score as unknown as Record<string, unknown>,
         });
-        await incrementCampaignsUsed(store!.id);
+        // Descontar uso SOMENTE após sucesso
+        if (needsAvulsoCredit) {
+          await consumeCredit(store!.id, "campaigns");
+          console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (produção)`);
+        } else {
+          await incrementCampaignsUsed(store!.id);
+        }
       }
 
       return NextResponse.json({
