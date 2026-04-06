@@ -65,27 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 });
     }
 
-    // Upload de fotos de referência (se houver)
-    const photoUrls: string[] = [];
     const supabase = createAdminClient();
-
-    for (let i = 0; i < 4; i++) {
-      const photo = formData.get(`photo_${i}`) as File | null;
-      if (!photo) continue;
-
-      const ext = photo.type.split("/")[1] || "jpg";
-      const path = `${store.id}/model_ref_${Date.now()}_${i}.${ext}`;
-      const buffer = Buffer.from(await photo.arrayBuffer());
-
-      const { error: uploadErr } = await supabase.storage
-        .from("model-previews")
-        .upload(path, buffer, { contentType: photo.type, upsert: true });
-
-      if (!uploadErr) {
-        const { data } = supabase.storage.from("model-previews").getPublicUrl(path);
-        photoUrls.push(data.publicUrl);
-      }
-    }
 
     // Salvar no banco
     const model = await createStoreModel({
@@ -116,39 +96,16 @@ export async function POST(request: NextRequest) {
 
         if (previewResult.status === "completed" && previewResult.outputUrl) {
           previewUrl = previewResult.outputUrl;
-          // Salvar URL do preview no modelo
           await supabase
             .from("store_models")
             .update({ photo_url: previewUrl, preview_url: previewUrl })
             .eq("id", model.id);
-          console.log(`[Model] ✅ Preview gerado com sucesso: ${previewUrl.slice(0, 60)}...`);
+          console.log(`[Model] ✅ Preview gerado: ${previewUrl.slice(0, 60)}...`);
         } else {
           console.warn(`[Model] ⚠️ Preview falhou: ${previewResult.error || "status=" + previewResult.status}`);
         }
       } catch (previewErr) {
         console.warn("[Model] Preview generation falhou:", previewErr);
-        // Não é erro fatal — modelo salvo no banco, preview é bônus
-      }
-    }
-
-    // Se tem fotos de referência, tentar criar modelo treinado no Fashn.ai
-    let fashnModelId: string | null = null;
-    if (photoUrls.length >= 1 && process.env.FASHN_API_KEY) {
-      try {
-        const { createModel } = await import("@/lib/fashn/client");
-        const result = await createModel({
-          name: `${name}_${store.id.slice(0, 8)}`,
-          sampleImages: photoUrls,
-        });
-        fashnModelId = result.id;
-
-        // Salvar ID do Fashn no modelo
-        await supabase
-          .from("store_models")
-          .update({ fashn_model_id: fashnModelId, reference_photos: photoUrls })
-          .eq("id", model.id);
-      } catch (fashnErr) {
-        console.warn("[Model] Fashn.ai model create falhou:", fashnErr);
       }
     }
 
@@ -156,9 +113,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         id: model.id,
-        fashnModelId,
         previewUrl,
-        photoCount: photoUrls.length,
       },
     });
   } catch (error: unknown) {
@@ -167,4 +122,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-

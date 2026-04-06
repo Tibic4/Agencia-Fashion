@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 /* ═══════════════════════════════════════
@@ -81,11 +81,8 @@ export default function ModeloVirtual() {
   const [style, setStyle] = useState("casual_natural");
   const [age, setAge] = useState("adulta_26_35");
   const [name, setName] = useState("");
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [photoPreview, setPhotoPreview] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const maxModels = planModelLimits[userPlan] || 1;
   const canCreate = models.length < maxModels;
@@ -109,17 +106,6 @@ export default function ModeloVirtual() {
     loadModels();
   }, []);
 
-  function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []).slice(0, 4);
-    setPhotos(files);
-    setPhotoPreview(files.map((f) => URL.createObjectURL(f)));
-  }
-
-  function removePhoto(i: number) {
-    setPhotos((prev) => prev.filter((_, idx) => idx !== i));
-    setPhotoPreview((prev) => prev.filter((_, idx) => idx !== i));
-  }
-
   async function handleCreate() {
     setLoading(true);
     setError("");
@@ -132,10 +118,6 @@ export default function ModeloVirtual() {
       formData.append("style", style);
       formData.append("ageRange", age);
       formData.append("name", name || "Modelo");
-
-      photos.forEach((photo, i) => {
-        formData.append(`photo_${i}`, photo);
-      });
 
       const res = await fetch("/api/model/create", {
         method: "POST",
@@ -205,8 +187,6 @@ export default function ModeloVirtual() {
     setBody("media");
     setStyle("casual_natural");
     setAge("adulta_26_35");
-    setPhotos([]);
-    setPhotoPreview([]);
     setError("");
   }
 
@@ -532,53 +512,7 @@ export default function ModeloVirtual() {
             />
           </div>
 
-          {/* Photo upload */}
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              Fotos de referência <span style={{ color: "var(--muted)" }}>(opcional, até 4)</span>
-            </label>
-            <p className="text-xs mb-3" style={{ color: "var(--foreground)", opacity: 0.65 }}>
-              Suba fotos de corpo inteiro da pessoa que será a modelo. Isso melhora muito o resultado do try-on.
-            </p>
 
-            {photoPreview.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {photoPreview.map((url, i) => (
-                  <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt={`Ref ${i + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => removePhoto(i)}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs"
-                      style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotos}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="w-full p-3 rounded-xl text-sm font-medium transition-all cursor-pointer hover:border-brand-300"
-              style={{
-                background: "var(--surface)",
-                border: "1px dashed var(--border)",
-                color: "var(--muted)",
-              }}
-            >
-              📸 {photos.length > 0 ? `${photos.length} foto${photos.length > 1 ? "s" : ""} selecionada${photos.length > 1 ? "s" : ""}` : "Clique para adicionar fotos"}
-            </button>
-          </div>
 
           {/* Error */}
           {error && (
@@ -626,11 +560,7 @@ export default function ModeloVirtual() {
                   <span className="badge badge-brand text-xs">{styles.find(s => s.value === style)?.label}</span>
                   <span className="badge badge-brand text-xs">{ages.find(a => a.value === age)?.label}</span>
                 </div>
-                {photos.length > 0 && (
-                  <p className="text-xs mt-4" style={{ color: "var(--brand-500)" }}>
-                    📸 {photos.length} foto{photos.length > 1 ? "s" : ""} de referência
-                  </p>
-                )}
+
                 <p className="text-xs mt-6" style={{ color: "var(--muted)" }}>
                   A modelo será gerada pela IA após clicar em &quot;Criar&quot;
                 </p>
