@@ -34,7 +34,6 @@
 - [ ] Testar fluxo completo de pagamento (PIX + cartão) em sandbox
 - [ ] Testar geração de campanha em produção (foto real)
 - [ ] Configurar admin user no Clerk (role = admin)
-- [ ] Fix: policy RLS `showcase_admin_all` em `showcase_items` (restringir para admin)
 - [ ] Remover arquivo `senha` da raiz + rotacionar credenciais
 - [ ] Remover arquivos temporários: `out.txt`, `extract_docx.py`, `campanha_extracted.txt`
 
