@@ -24,6 +24,9 @@ const IconCreditCard = () => (
 const IconLogOut = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
 );
+const IconShield = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+);
 
 const navItems = [
   { href: "/gerar", label: "Nova Campanha", shortLabel: "Criar", icon: <IconPlus /> },
@@ -57,6 +60,7 @@ export default function AuthLayout({
 
   const userName = user?.firstName || user?.fullName || "Minha Loja";
   const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const isAdmin = (user?.publicMetadata as Record<string, string>)?.role === "admin";
   const userInitial = userName.charAt(0).toUpperCase();
 
   const campaignsUsed = usage?.campaigns_generated ?? 0;
@@ -101,6 +105,24 @@ export default function AuthLayout({
               </Link>
             );
           })}
+          {/* Admin link — only visible for admins */}
+          {isAdmin && (
+            <>
+              <div className="my-2 mx-3" style={{ borderTop: "1px solid var(--border)" }} />
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={{
+                  background: pathname.startsWith("/admin") ? "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.03))" : "transparent",
+                  color: pathname.startsWith("/admin") ? "#ef4444" : "var(--muted)",
+                  borderLeft: pathname.startsWith("/admin") ? "3px solid #ef4444" : "3px solid transparent",
+                }}
+              >
+                <IconShield />
+                Painel Admin
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Usage indicator — real data */}
