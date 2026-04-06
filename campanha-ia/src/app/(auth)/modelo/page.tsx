@@ -303,7 +303,7 @@ export default function ModeloVirtual() {
                 <div className="text-6xl">👩</div>
                 {model.is_active && (
                   <div
-                    className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full"
+                    className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full"
                     style={{ background: "var(--gradient-brand)", color: "white" }}
                   >
                     ✅ Ativa
@@ -315,16 +315,16 @@ export default function ModeloVirtual() {
               <div className="p-4">
                 <h3 className="font-semibold mb-1">{model.name}</h3>
                 <div className="flex flex-wrap gap-1 mb-3">
-                  <span className="badge badge-brand text-[10px]">
+                  <span className="badge badge-brand text-xs">
                     {skinTones.find((s) => s.value === model.skin_tone)?.label || model.skin_tone}
                   </span>
-                  <span className="badge badge-brand text-[10px]">
+                  <span className="badge badge-brand text-xs">
                     {hairStyles.find((h) => h.value === model.hair_style)?.label || model.hair_style}
                   </span>
-                  <span className="badge badge-brand text-[10px]">
+                  <span className="badge badge-brand text-xs">
                     {bodyTypes.find((b) => b.value === model.body_type)?.label || model.body_type}
                   </span>
-                  <span className="badge badge-brand text-[10px]">
+                  <span className="badge badge-brand text-xs">
                     {styles.find((s) => s.value === model.style)?.label || model.style}
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export default function ModeloVirtual() {
             >
               <div className="text-4xl mb-2">+</div>
               <span className="text-sm font-medium">Nova modelo</span>
-              <span className="text-[10px] mt-1">
+              <span className="text-xs mt-1">
                 {models.length}/{maxModels}
               </span>
             </button>
@@ -391,7 +391,7 @@ export default function ModeloVirtual() {
       <div className="mb-8">
         <button
           onClick={() => { setShowCreateForm(false); resetForm(); }}
-          className="flex items-center gap-1 text-sm font-medium mb-4 transition"
+          className="flex items-center gap-1 text-sm font-medium mb-4 transition hover:opacity-70 cursor-pointer"
           style={{ color: "var(--muted)" }}
         >
           ← Voltar para modelos
@@ -411,7 +411,7 @@ export default function ModeloVirtual() {
           {/* Skin tone */}
           <div>
             <label className="block text-sm font-semibold mb-3">Tom de pele</label>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               {skinTones.map((s) => (
                 <button
                   key={s.value}
@@ -423,7 +423,7 @@ export default function ModeloVirtual() {
                   }}
                 >
                   <div className="w-10 h-10 rounded-full" style={{ background: s.color }} />
-                  <span className="text-xs font-medium">{s.label}</span>
+                  <span className="text-[11px] sm:text-xs font-medium leading-tight text-center">{s.label}</span>
                 </button>
               ))}
             </div>
@@ -500,7 +500,7 @@ export default function ModeloVirtual() {
                 <button
                   key={a.value}
                   onClick={() => setAge(a.value)}
-                  className="flex-1 p-2.5 rounded-xl text-xs font-medium text-center transition-all"
+                  className="flex-1 p-3 rounded-xl text-sm font-medium text-center transition-all"
                   style={{
                     background: age === a.value ? "var(--brand-100)" : "var(--surface)",
                     color: age === a.value ? "var(--brand-700)" : "var(--muted)",
@@ -522,8 +522,8 @@ export default function ModeloVirtual() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Ana, Bia, Carla..."
               maxLength={20}
-              className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="w-full h-11 px-4 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-brand-300"
+              style={{ background: "var(--background)", border: "1.5px solid var(--border)", color: "var(--foreground)" }}
             />
           </div>
 
@@ -532,7 +532,7 @@ export default function ModeloVirtual() {
             <label className="block text-sm font-semibold mb-2">
               Fotos de referência <span style={{ color: "var(--muted)" }}>(opcional, até 4)</span>
             </label>
-            <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
+            <p className="text-xs mb-3" style={{ color: "var(--foreground)", opacity: 0.65 }}>
               Suba fotos de corpo inteiro da pessoa que será a modelo. Isso melhora muito o resultado do try-on.
             </p>
 
@@ -564,7 +564,7 @@ export default function ModeloVirtual() {
             />
             <button
               onClick={() => fileRef.current?.click()}
-              className="w-full p-3 rounded-xl text-sm font-medium transition-all"
+              className="w-full p-3 rounded-xl text-sm font-medium transition-all cursor-pointer hover:border-brand-300"
               style={{
                 background: "var(--surface)",
                 border: "1px dashed var(--border)",
@@ -598,7 +598,7 @@ export default function ModeloVirtual() {
               "✨ Criar modelo virtual"
             )}
           </button>
-          <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
+          <p className="text-xs text-center mt-3" style={{ color: "var(--muted)" }}>
             Consome 1 criação de modelo do seu plano · Leva ~30 segundos
           </p>
         </div>
@@ -638,7 +638,7 @@ export default function ModeloVirtual() {
   );
 
   return (
-    <div className="animate-fade-in-up">
+    <div className="animate-fade-in-up pb-24 md:pb-0">
       {showCreateForm ? renderCreateForm() : renderModelsList()}
     </div>
   );
