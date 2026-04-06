@@ -23,7 +23,7 @@ const IS_DEMO_MODE = !process.env.GOOGLE_AI_API_KEY && !process.env.ANTHROPIC_AP
  *   - storeName: string
  *   - targetAudience?: string
  *   - toneOverride?: string
- *   - useModel?: "true" | "false"
+
  *   - backgroundType?: string
  *   - bodyType?: "normal" | "plus"
  */
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const material = formData.get("material") as string | null;
     const modelBankId = formData.get("modelBankId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
-    const useModel = formData.get("useModel") !== "false";
+
     const bodyType = (formData.get("bodyType") as string) as "normal" | "plus" | null;
 
     // Validation
@@ -176,14 +176,14 @@ export async function POST(request: NextRequest) {
         objective,
         targetAudience: targetAudience || undefined,
         toneOverride: toneOverride || undefined,
-        useModel,
+
       });
     }
 
     // ── VIRTUAL TRY-ON (Banco de Modelos → Fashn try-on) ──
     let tryOnImageUrl: string | null = null;
     let tryOnProvider: string | null = null;
-    if (useModel && store) {
+    if (store) {
       try {
         // Obter URL pública do produto
         let productUrl: string | null = null;

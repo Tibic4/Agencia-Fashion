@@ -327,8 +327,7 @@ export interface CreateCampaignInput {
   objective: string;
   targetAudience?: string;
   toneOverride?: string;
-  useModel: boolean;
-  modelId?: string;
+
 }
 
 export interface SavePipelineResultInput {
@@ -353,8 +352,7 @@ export async function createCampaign(input: CreateCampaignInput) {
       objective: input.objective,
       target_audience: input.targetAudience || null,
       tone_override: input.toneOverride || null,
-      use_model: input.useModel,
-      model_id: input.modelId || null,
+      use_model: true,
       status: "processing",
       pipeline_started_at: new Date().toISOString(),
     })
