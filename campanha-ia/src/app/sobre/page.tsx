@@ -21,7 +21,7 @@ export default function Sobre() {
       <main className="flex-1 pt-32 pb-20">
         <div className="container max-w-3xl">
           <div className="badge badge-brand mb-4 inline-flex">Sobre nós</div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">
             Marketing de moda <span className="gradient-text">simplificado</span>
           </h1>
           <div className="space-y-6 text-base leading-relaxed" style={{ color: "var(--muted)" }}>
