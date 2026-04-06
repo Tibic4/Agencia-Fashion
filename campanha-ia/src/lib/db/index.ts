@@ -37,13 +37,7 @@ export interface StoreRecord {
 export async function createStore(input: CreateStoreInput): Promise<StoreRecord> {
   const supabase = createAdminClient();
 
-  // Buscar plano free/starter padrão
-  const { data: freePlan } = await supabase
-    .from("plans")
-    .select("id, campaigns_per_month")
-    .eq("name", "gratis")
-    .single();
-
+  // Novo usuário começa sem plano — precisa comprar créditos ou assinar
   const { data: store, error } = await supabase
     .from("stores")
     .insert({
@@ -53,7 +47,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
       city: input.city || null,
       state: input.state || null,
       instagram_handle: input.instagramHandle || null,
-      plan_id: freePlan?.id || null,
+      plan_id: null,
       onboarding_completed: true,
     })
     .select()
@@ -61,7 +55,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
 
   if (error) throw new Error(`Erro ao criar loja: ${error.message}`);
 
-  // Criar período de usage do mês atual
+  // Criar período de usage do mês atual — começa com 0 campanhas
   const now = new Date();
   const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -71,7 +65,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
     period_start: periodStart.toISOString().split("T")[0],
     period_end: periodEnd.toISOString().split("T")[0],
     campaigns_generated: 0,
-    campaigns_limit: freePlan?.campaigns_per_month || 5,
+    campaigns_limit: 0,
   });
 
   return store;
@@ -620,13 +614,16 @@ export async function addCreditsToStore(
   const supabase = createAdminClient();
 
   // 1. Registrar a compra
+  const now = new Date();
   await supabase.from("credit_purchases").insert({
     store_id: storeId,
-    package_type: type,
+    type,
     quantity,
     price_brl: priceBrl,
     mercadopago_payment_id: mpPaymentId,
-    payment_status: "approved",
+    period_start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0],
+    period_end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
+    consumed: 0,
   });
 
   // 2. Incrementar créditos na loja

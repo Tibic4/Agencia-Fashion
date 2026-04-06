@@ -13,7 +13,7 @@ export default function Sobre() {
           </Link>
           <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-3 sm:!py-2.5 sm:!px-5">
             <span className="sm:hidden">Começar</span>
-            <span className="hidden sm:inline">Começar grátis</span>
+            <span className="hidden sm:inline">Testar na prática</span>
           </Link>
         </div>
       </header>

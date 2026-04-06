@@ -9,50 +9,66 @@ export const dynamic = "force-dynamic";
  * Pacotes de créditos avulsos
  */
 const CREDIT_PACKAGES = {
-  // Campanhas — preços da seção 5.4 da arquitetura
+  // Pack de entrada — 1x por conta nova (R$ 3,30/crédito)
+  "3_campanhas_trial": {
+    type: "campaigns" as const,
+    quantity: 3,
+    price: 9.90,
+    title: "Teste na Prática",
+    description: "3 campanhas completas com modelo virtual (R$ 3,30/cada)",
+    trial: true,
+  },
+  // Packs avulsos — mais caros que plano para incentivar assinatura
+  // Starter = R$ 3,93/crédito | Pro = R$ 3,23 | Business = R$ 2,93
   "5_campanhas": {
     type: "campaigns" as const,
     quantity: 5,
-    price: 14.90,
+    price: 29.90,
     title: "+5 Campanhas",
-    description: "5 campanhas extras de copy IA (R$ 2,98/cada)",
+    description: "5 campanhas extras com modelo virtual (R$ 5,98/cada)",
+    trial: false,
   },
   "10_campanhas": {
     type: "campaigns" as const,
     quantity: 10,
-    price: 24.90,
+    price: 49.90,
     title: "+10 Campanhas",
-    description: "10 campanhas extras de copy IA (R$ 2,49/cada)",
+    description: "10 campanhas extras com modelo virtual (R$ 4,99/cada)",
+    trial: false,
   },
   "25_campanhas": {
     type: "campaigns" as const,
     quantity: 25,
-    price: 49.90,
+    price: 99.90,
     title: "+25 Campanhas",
-    description: "25 campanhas extras de copy IA (R$ 2,00/cada)",
+    description: "25 campanhas extras com modelo virtual (R$ 4,00/cada)",
+    trial: false,
   },
-  // Modelos virtuais
+  // Modelos virtuais personalizadas
   "1_modelo": {
     type: "models" as const,
     quantity: 1,
-    price: 9.90,
+    price: 4.90,
     title: "+1 Modelo Virtual",
-    description: "1 modelo virtual IA para try-on de produto",
+    description: "1 modelo virtual personalizada para suas campanhas",
+    trial: false,
   },
   "3_modelos": {
     type: "models" as const,
     quantity: 3,
-    price: 19.90,
+    price: 12.90,
     title: "+3 Modelos Virtuais",
-    description: "3 modelos virtuais IA para try-on (R$ 6,63/cada)",
+    description: "3 modelos virtuais personalizadas (R$ 4,30/cada)",
+    trial: false,
   },
   // Regenerações
   "10_regeneracoes": {
     type: "regenerations" as const,
     quantity: 10,
-    price: 4.90,
+    price: 9.90,
     title: "+10 Regenerações",
     description: "10 regenerações extras de copy ou imagem",
+    trial: false,
   },
 } as const;
 

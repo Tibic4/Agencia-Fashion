@@ -24,6 +24,7 @@ const IS_DEMO_MODE = !process.env.ANTHROPIC_API_KEY;
  *   - toneOverride?: string
  *   - useModel?: "true" | "false"
  *   - backgroundType?: string
+ *   - bodyType?: "normal" | "plus"
  */
 export async function POST(request: NextRequest) {
   try {
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
     const modelBankId = formData.get("modelBankId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
     const useModel = formData.get("useModel") !== "false";
+    const bodyType = (formData.get("bodyType") as string) as "normal" | "plus" | null;
 
     // Validation
     if (!imageFile) {
@@ -264,6 +266,7 @@ export async function POST(request: NextRequest) {
                   productMimeType: "image/jpeg",
                   modelImageBase64: modelBuf.toString("base64"),
                   modelMimeType: "image/png",
+                  bodyType: bodyType || "normal",
                 });
                 if (result.status === "completed" && result.imageBase64) {
                   // Salvar a imagem base64 como URL (data URI)
@@ -356,7 +359,7 @@ export async function POST(request: NextRequest) {
           targetAudience: targetAudience || undefined,
           toneOverride: toneOverride || undefined,
           storeSegment: store?.segment_primary || undefined,
-          bodyType: activeModelBodyType,
+          bodyType: bodyType || "normal",
           productType: productType || undefined,
           material: material || undefined,
         },
@@ -388,6 +391,8 @@ export async function POST(request: NextRequest) {
           output: result.output,
           score: result.score,
           durationMs: result.durationMs,
+          tryOnImageUrl: tryOnImageUrl || null,
+          tryOnProvider: tryOnProvider || null,
         },
       });
     } catch (pipelineError: unknown) {
