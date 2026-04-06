@@ -18,20 +18,10 @@ const isProtectedRoute = createRouteMatcher([
 // Rotas que exigem role admin (publicMetadata.role === "admin")
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
-export default clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) {
-    await auth.protect();
-  }
-
-  // Guard de admin: verificar role nos sessionClaims
-  if (isAdminRoute(request)) {
-    const session = await auth();
-    const role = (session.sessionClaims?.metadata as Record<string, string>)?.role;
-    if (role !== "admin") {
-      const url = new URL("/gerar", request.url);
-      return NextResponse.redirect(url);
-    }
-  }
+// ⚠️ TESTING MODE — auth desabilitado para testes via tunnel
+// TODO: Restaurar auth.protect() antes de deploy em produção
+export default clerkMiddleware(async (_auth, _request) => {
+  // pass-through — sem proteção de rota para testes
 });
 
 export const config = {

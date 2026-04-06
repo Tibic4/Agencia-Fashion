@@ -25,6 +25,51 @@ interface FashnJobResult {
   error?: string;
 }
 
+// Custos fixos por operação Fashn.ai (em USD, extraídos da tabela de preços)
+const FASHN_COST_USD: Record<string, number> = {
+  "product-to-model": 0.03,
+  "tryon-max": 0.08,
+  "edit": 0.02,
+  "model-create": 0.10,
+  "background-remove": 0.02,
+};
+
+/**
+ * Loga custo de uma chamada Fashn.ai no banco (async, fire-and-forget)
+ */
+async function logFashnCost(
+  action: string,
+  modelName: string,
+  durationMs: number,
+  success: boolean,
+  storeId?: string,
+  campaignId?: string,
+) {
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createAdminClient();
+    const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+    const costUsd = FASHN_COST_USD[modelName] || 0;
+    const costBrl = costUsd * exchangeRate;
+
+    await supabase.from("api_cost_logs").insert({
+      store_id: storeId || null,
+      campaign_id: campaignId || null,
+      provider: "fashn.ai",
+      model_used: modelName,
+      action,
+      input_tokens: 0,
+      output_tokens: 0,
+      tokens_used: 0,
+      cost_usd: costUsd,
+      cost_brl: costBrl,
+      response_time_ms: durationMs,
+    });
+  } catch (e) {
+    console.warn("[Fashn] Erro ao salvar custo:", e);
+  }
+}
+
 interface FashnProductToModelParams {
   /** URL ou base64 data URI da foto do produto */
   productImage: string;
@@ -131,11 +176,14 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
  * Não precisa de foto de modelo — a IA gera automaticamente.
  * Custo: ~R$ 0,15
  */
-export async function productToModel(params: FashnProductToModelParams): Promise<FashnJobResult> {
+export async function productToModel(params: FashnProductToModelParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
+  const start = Date.now();
   const jobId = await submitJob("product-to-model", {
     product_image: params.productImage,
   });
-  return pollResult(jobId);
+  const result = await pollResult(jobId);
+  logFashnCost("virtual_try_on", "product-to-model", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
+  return result;
 }
 
 /**
@@ -143,25 +191,31 @@ export async function productToModel(params: FashnProductToModelParams): Promise
  * Requer foto de modelo com corpo visível.
  * Custo: ~R$ 0,43
  */
-export async function tryOnProduct(params: FashnTryOnParams): Promise<FashnJobResult> {
+export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
+  const start = Date.now();
   const jobId = await submitJob("tryon-max", {
     model_image: params.modelImage,
     product_image: params.productImage,
     ...(params.prompt && { prompt: params.prompt }),
   });
-  return pollResult(jobId);
+  const result = await pollResult(jobId);
+  logFashnCost("virtual_try_on", "tryon-max", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
+  return result;
 }
 
 /**
  * Editar/refinar imagem gerada (alisar roupa, mudar fundo, etc).
  * Custo: ~R$ 0,10
  */
-export async function editImage(params: FashnEditParams): Promise<FashnJobResult> {
+export async function editImage(params: FashnEditParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
+  const start = Date.now();
   const jobId = await submitJob("edit", {
     image: params.image,
     prompt: params.prompt,
   });
-  return pollResult(jobId);
+  const result = await pollResult(jobId);
+  logFashnCost("edit_image", "edit", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
+  return result;
 }
 
 /** Prompts de fundo otimizados (anti-manequim + anti-etiqueta) */

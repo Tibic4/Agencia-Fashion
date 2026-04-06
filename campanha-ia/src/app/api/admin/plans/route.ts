@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * GET /api/admin/plans — lista todos os planos (admin only)
+ */
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    const admin = await requireAdmin();
+    if (!admin.isAdmin) {
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
     const supabase = createAdminClient();
