@@ -1,165 +1,135 @@
-# 📋 CriaLook — Checkpoints do Projeto
+# ✅ CriaLook — Checkpoints do Projeto
 
-> Marcar com `[x]` conforme cada item for concluído.
-> Última atualização: 2026-04-04
+> **Atualizado:** 06/04/2026 — Baseado no código real + banco de dados + commits
 
 ---
 
-## FASE 0 — Setup Inicial ✅
-- [x] Criar projeto Next.js 16 (App Router)
-- [x] Configurar Tailwind CSS v4
-- [x] Configurar Supabase SDK (client, server, admin)
-- [x] Configurar variáveis de ambiente (.env.local)
-- [x] Criar estrutura de pastas (src/app, lib, components)
-- [x] Configurar ESLint
+## Fase 1: Fundação ✅ 100%
+- [x] Projeto Next.js inicializado (App Router)
+- [x] Tailwind CSS v4 configurado
+- [x] Supabase conectado (browser + server + admin clients)
+- [x] TypeScript configurado
+- [x] Estrutura de pastas definida
 
-## FASE 1 — Banco de Dados (Supabase) ✅
-- [x] Migration: tabela `plans`
-- [x] Migration: tabela `stores`
-- [x] Migration: tabela `store_models`
-- [x] Migration: tabela `campaigns`
-- [x] Migration: tabela `campaign_outputs`
-- [x] Migration: tabela `campaign_scores`
-- [x] Migration: tabela `store_usage`
-- [x] Migration: tabela `api_cost_logs`
-- [x] Migration: tabela `admin_settings`
-- [x] Migration: tabela `credit_purchases`
-- [x] Migration: tabela `showcase_items`
-- [x] Configurar RLS em todas as tabelas (0 alertas segurança)
-- [x] Criar Storage Buckets (product-photos, generated-images, store-logos, model-previews, showcase)
-- [x] Seed: dados iniciais dos planos (5 planos)
-- [x] Seed: admin_settings padrão (9 configs)
-- [x] Renomear colunas Stripe → Mercado Pago
-- [x] Triggers `updated_at`
-- [x] Funções helper (`can_generate_campaign`, `increment_campaign_usage`)
-- [x] Views (`v_store_dashboard`, `v_admin_metrics`)
-- [x] Storage Policies
+## Fase 2: Autenticação ✅ 100%
+- [x] Clerk integrado (@clerk/nextjs v7)
+- [x] Páginas /sign-in e /sign-up
+- [x] Middleware de proteção de rotas (auth group)
+- [x] Roles admin via Clerk metadata
+- [x] Webhook Clerk → criar store no Supabase
 
-## FASE 2 — Auth (Clerk) ✅
-- [x] Instalar @clerk/nextjs + @clerk/localizations
-- [x] Configurar middleware de auth (rotas protegidas)
-- [x] Criar pages de sign-in e sign-up (dark theme)
-- [x] Proteger rotas autenticadas
-- [ ] Configurar webhook Clerk → Supabase (criar store auto)
-- [ ] Configurar role admin no Clerk Dashboard
+## Fase 3: Banco de Dados ✅ 100%
+- [x] Schema completo (12 tabelas)
+- [x] 20 migrations aplicadas no Supabase produção
+- [x] RLS ativado em todas as tabelas
+- [x] Políticas RLS: owner (read/write own data) + admin (read all)
+- [x] Tabela `plans` populada (5 planos, free desativado)
+- [x] Tabela `model_bank` populada (20 modelos: 10 normal + 10 plus_size)
+- [x] Tabela `admin_settings` populada (16 configurações)
+- [x] Storage buckets criados (product-photos, model-previews)
+- [ ] ⚠️ Fix: policy `showcase_admin_all` muito permissiva (USING true)
 
-## FASE 3 — Landing Page ✅
-- [x] Layout público (header, footer)
-- [x] Hero section com gradiente e animações
-- [x] Seção de benefícios
-- [x] Seção "Como funciona" (3 passos)
-- [x] Demo interativa (mockup do app)
-- [x] Vitrine Antes/Depois (dinâmica via admin)
-- [x] Seção de pricing (4 planos com toggle)
-- [x] CTA final
-- [x] SEO (meta tags, Open Graph, sitemap, robots)
+## Fase 4: Landing Page ✅ 100%
+- [x] Hero section com CTA
+- [x] Seção de planos/preços
+- [x] Showcase antes/depois (vitrine)
+- [x] Botão WhatsApp flutuante (heartbeat pulse)
+- [x] SEO: meta tags, robots.txt, sitemap.ts, manifest.ts
+- [x] Favicon/PWA icons
+- [x] Páginas /sobre, /termos, /privacidade
 - [x] Responsivo mobile
-- [x] WhatsApp flutuante (heartbeat pulse)
 
-## FASE 4 — Onboarding ✅
-- [x] Wizard etapa 1: dados da loja + segmento
-- [x] Wizard etapa 2: modelo virtual
-- [x] Wizard etapa 3: conclusão + redirect
-- [x] Guard: redirecionar para onboarding se não completou
-- [x] Salvar dados em `stores`
+## Fase 5: Pipeline de IA ✅ 100%
+- [x] Vision Analyzer (Claude Sonnet Vision)
+- [x] Estrategista de Varejo BR
+- [x] Copywriter de Varejo BR
+- [x] Refinador de Conversão
+- [x] Scorer + Meta Compliance
+- [x] System prompts otimizados para moda
+- [x] JSON parsing robusto (remove markdown wrappers)
+- [x] Retry com backoff (2x por step)
+- [x] Auto-retry quando score < 40
+- [x] Log de custos por etapa (api_cost_logs)
+- [x] Suporte a múltiplas fotos (close-up, conjunto)
+- [x] Suporte plus size no pipeline
 
-## FASE 5 — Pipeline de IA ✅
-- [x] Implementar Vision Analyzer (Claude Sonnet)
-- [x] Implementar Estrategista (Claude Sonnet)
-- [x] Implementar Copywriter (Claude Sonnet)
-- [x] Implementar Refinador (Claude Haiku)
-- [x] Implementar Scorer (Claude Haiku)
-- [x] Orquestrador do pipeline (`pipeline.ts`)
-- [x] Validação com Zod Schemas
-- [x] Mock pipeline para demo mode
-- [x] Suporte Plus Size (linguagem body-positive)
-- [ ] Log de custos em `api_cost_logs`
-- [ ] Progresso em tempo real (SSE ou Supabase Realtime)
+## Fase 6: Imagem & Try-on ✅ 100%
+- [x] Fashn.ai integrado (virtual try-on) — core
+- [x] fal.ai IDM-VTON integrado — fallback
+- [x] Model bank (20 modelos stock)
+- [x] Store models (modelos customizados por loja)
+- [x] Categorias de produto mapeadas (tops/bottoms/one-pieces)
+- [x] Materiais/tecidos configuráveis
 
-## FASE 6 — Geração de Campanha (UI) ✅
-- [x] Tela de upload + preço (`/gerar`)
-- [x] Verificação de cota antes de gerar
-- [x] Tela de resultado com dados dinâmicos
-- [x] Upload de imagem para Supabase Storage
-- [x] Rate limiting por IP (anti-abuso)
-- [x] Crédito protegido (não cobra se falhar)
-- [ ] Copiar texto 1-clique
-- [ ] Download de criativo (PNG) — botão "Em breve"
-- [ ] Regeneração parcial — botão "Em breve"
+## Fase 7: Compositor Visual (Konva.js) ✅ 100%
+- [x] KonvaCompositor component (25KB)
+- [x] Templates: com overlay e "Normal" (sem overlay)
+- [x] Zoom controls
+- [x] Export HD (browser-side)
+- [x] Drag & drop de elementos
+- [x] Responsivo
 
-## FASE 7 — Processamento de Imagem (Moda) 🔄
-- [x] Integração Fashn.ai configurada (API key)
-- [ ] Virtual Try-On funcional end-to-end
-- [ ] Remoção de fundo
-- [ ] Composição de criativo Feed 1:1
-- [ ] Composição de criativo Stories 9:16
+## Fase 8: Funcionalidades Core ✅ 100%
+- [x] Página /gerar (formulário de campanha)
+- [x] Página /historico (lista de campanhas)
+- [x] Página /modelo (gestão de modelos)
+- [x] Página /plano (planos + créditos avulsos)
+- [x] Página /configuracoes
+- [x] Regerar campanha (copy, image, full)
+- [x] Download PNG e textos .txt
+- [x] Tracking de uso (store_usage)
 
-## FASE 8 — Modelo Virtual 🔄
-- [x] Tela de criação da modelo (`/modelo`)
-- [x] Função `getActiveModel` no banco
-- [ ] Integração Fashn.ai Model Create
-- [ ] Seleção + salvamento do modelo
-- [ ] Preview na tela de geração
-
-## FASE 9 — Pagamentos (Mercado Pago) 🔄
-- [x] SDK instalado e configurado
-- [x] Tela de planos (`/plano`) com dados reais
-- [x] Checkout básico implementado
-- [x] Verificação de limites em cada geração
+## Fase 9: Pagamentos (Mercado Pago) 🔶 80%
+- [x] SDK Mercado Pago integrado
+- [x] Checkout de assinatura
+- [x] Checkout de créditos avulsos
+- [x] Webhook IPN implementado (/api/webhooks/mercadopago)
+- [x] Lógica backend: atualizar plan_id, store_usage, credit_*
 - [ ] Criar planos de assinatura no painel Mercado Pago
-- [ ] Webhook IPN → atualizar plano/créditos
-- [ ] Créditos extras (pagamento avulso)
-- [ ] Tela de bloqueio suave (cota esgotada)
+- [ ] Testar fluxo completo end-to-end em produção
+- [ ] Configurar URL webhook no painel Mercado Pago
 
-## FASE 10 — Painel do Lojista ✅
-- [x] Histórico de campanhas
-- [x] Configurações da loja
-- [x] Tela de plano e billing
-- [x] Indicador de uso (X/Y campanhas)
+## Fase 10: Admin Dashboard ✅ 100%
+- [x] Página /admin com gráficos Recharts
+- [x] Métricas: stores, campanhas, revenue, custos API
+- [x] Admin settings editável
+- [x] Toggle Fashn.ai on/off
+- [x] Proteção por role admin (Clerk)
 
-## FASE 11 — Painel Admin ✅
-- [x] Dashboard com cards de resumo
-- [x] Lista de clientes com filtros
-- [x] Campanhas (admin view)
-- [x] Custos API por provider
-- [x] Logs do sistema
-- [x] Vitrine Antes/Depois (upload drag & drop)
-- [x] Configurações
-- [ ] Gráficos de campanhas/dia e custo/dia (chart library)
-- [ ] KPIs de negócio detalhados
+## Fase 11: Monitoramento ✅ 100%
+- [x] Sentry configurado (erros + source maps)
+- [x] PostHog configurado (eventos, funil)
+- [x] Health check endpoint (/api/health)
+- [x] Rate limiting por IP
+- [x] Credit safety (não debita se pipeline falhar)
 
-## FASE 12 — Polimento e Deploy 🔄
-- [x] Tratamento de erros global
-- [x] Loading states
-- [x] Sentry configurado
-- [x] PostHog analytics
-- [x] Inngest (jobs assíncronos)
-- [x] PWA (manifest + ícones)
-- [x] Páginas legais (Termos, Privacidade)
-- [x] Página Sobre
-- [x] 404 personalizado
-- [ ] Deploy VPS (PM2 + Nginx + SSL) ← **PRÓXIMO**
-- [ ] DNS crialook.com.br
-- [ ] CI/CD (GitHub Actions → SSH)
+## Fase 12: Deploy Produção 🔶 70%
+- [x] VPS KingHost configurada
+- [x] PM2 instalado
+- [x] Nginx configurado como reverse proxy
+- [x] Build otimizado (sem turbopack, CPU limit)
+- [x] Script de deploy criado
+- [ ] ❌ Resolver 502 Bad Gateway em crialook.com.br
+- [ ] Verificar SSL/Certbot
+- [ ] Configurar webhooks externos (MP, Clerk, Inngest)
+- [ ] Configurar .env.local na VPS com keys de produção
 
 ---
 
-## 📊 Progresso Geral
+## Resumo de Progresso
 
-| Fase | Status | Conclusão |
+| Fase | Status | Progresso |
 |------|--------|-----------|
-| 0. Setup | ✅ | 100% |
-| 1. Banco | ✅ | 100% |
-| 2. Auth | ✅ | 90% |
-| 3. Landing | ✅ | 100% |
-| 4. Onboarding | ✅ | 100% |
-| 5. Pipeline IA | ✅ | 90% |
-| 6. Geração UI | ✅ | 85% |
-| 7. Imagem | 🔄 | 20% |
-| 8. Modelo Virtual | 🔄 | 30% |
-| 9. Pagamentos | 🔄 | 50% |
-| 10. Painel Lojista | ✅ | 100% |
-| 11. Painel Admin | ✅ | 90% |
-| 12. Deploy | 🔄 | 70% |
-
-**MVP pronto para deploy. Funcionalidades de imagem/try-on e pagamentos completos vêm na v2.**
+| Fundação | ✅ | 100% |
+| Auth | ✅ | 100% |
+| Banco | ✅ | 98% (1 fix RLS) |
+| Landing | ✅ | 100% |
+| Pipeline IA | ✅ | 100% |
+| Imagem/Try-on | ✅ | 100% |
+| Compositor | ✅ | 100% |
+| Core Features | ✅ | 100% |
+| Pagamentos | 🔶 | 80% |
+| Admin | ✅ | 100% |
+| Monitoramento | ✅ | 100% |
+| Deploy | 🔶 | 70% |
+| **TOTAL** | | **~95%** |
