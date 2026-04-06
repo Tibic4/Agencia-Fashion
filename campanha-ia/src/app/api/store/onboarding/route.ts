@@ -48,13 +48,47 @@ export async function POST(request: NextRequest) {
 
     // 2. Criar modelo virtual (se não pulou)
     let storeModel = null;
+    let previewUrl: string | null = null;
     if (model && !model.skip) {
       storeModel = await createStoreModel({
         storeId: store.id,
         skinTone: model.skin || "morena_clara",
         hairStyle: model.hair || "ondulado",
         bodyType: model.body || "media",
+        style: model.style || "casual_natural",
+        ageRange: model.age || "adulta_26_35",
+        name: model.name || "Modelo",
       });
+
+      // 2b. Gerar preview corpo inteiro (mesmo padrão do /api/model/create)
+      if (process.env.FASHN_API_KEY) {
+        try {
+          const { generateCustomModelPreview } = await import("@/lib/fashn/client");
+          console.log(`[Onboarding] 🎨 Gerando preview para modelo...`);
+          const previewResult = await generateCustomModelPreview({
+            skinTone: model.skin || "morena_clara",
+            hairStyle: model.hair || "ondulado",
+            bodyType: model.body || "media",
+            style: model.style || "casual_natural",
+            ageRange: model.age || "adulta_26_35",
+            name: model.name || "Modelo",
+            storeId: store.id,
+          });
+
+          if (previewResult.status === "completed" && previewResult.outputUrl) {
+            previewUrl = previewResult.outputUrl;
+            const { createAdminClient } = await import("@/lib/supabase/admin");
+            const supabase = createAdminClient();
+            await supabase
+              .from("store_models")
+              .update({ preview_url: previewUrl })
+              .eq("id", storeModel.id);
+            console.log(`[Onboarding] ✅ Preview gerado com sucesso`);
+          }
+        } catch (previewErr) {
+          console.warn("[Onboarding] Preview generation falhou (não fatal):", previewErr);
+        }
+      }
     }
 
     return NextResponse.json({

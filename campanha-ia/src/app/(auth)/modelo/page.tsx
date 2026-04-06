@@ -11,9 +11,9 @@ const planModelLimits: Record<string, number> = {
   free: 0,
   gratis: 0,
   starter: 1,
-  pro: 2,
-  business: 3,
-  agencia: 5,
+  pro: 3,
+  business: 5,
+  agencia: 10,
 };
 
 const skinTones = [

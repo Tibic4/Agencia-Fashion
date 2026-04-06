@@ -679,6 +679,33 @@ export async function consumeCredit(
 }
 
 /**
+ * Verifica se a loja tem crédito avulso disponível (sem consumir)
+ */
+export async function hasAvulsoCredit(
+  storeId: string,
+  type: "campaigns" | "models" | "regenerations"
+): Promise<boolean> {
+  const supabase = createAdminClient();
+
+  const columnMap = {
+    campaigns: "credit_campaigns",
+    models: "credit_models",
+    regenerations: "credit_regenerations",
+  };
+
+  const column = columnMap[type];
+
+  const { data: store } = await supabase
+    .from("stores")
+    .select(column)
+    .eq("id", storeId)
+    .single();
+
+  const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
+  return currentValue > 0;
+}
+
+/**
  * Retorna saldo de créditos avulsos da loja
  */
 export async function getStoreCredits(storeId: string) {
