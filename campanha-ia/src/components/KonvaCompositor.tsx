@@ -26,7 +26,8 @@ interface TemplateStyle {
   id: string;
   label: string;
   icon: string;
-  gradientColors: [string, string, string, string]; // 4 stops
+  hasGradient: boolean;
+  gradientColors: [string, string, string, string];
   textColor: string;
   priceColor: string;
   ctaBg: string;
@@ -38,9 +39,24 @@ interface TemplateStyle {
 
 const templateStyles: TemplateStyle[] = [
   {
+    id: "normal",
+    label: "Normal",
+    icon: "📷",
+    hasGradient: false,
+    gradientColors: ["rgba(0,0,0,0)", "rgba(0,0,0,0)", "rgba(0,0,0,0)", "rgba(0,0,0,0)"],
+    textColor: "#ffffff",
+    priceColor: "#ffffff",
+    ctaBg: "#ec4899",
+    ctaText: "#ffffff",
+    badgeBg: "rgba(0,0,0,0.3)",
+    badgeText: "#ffffff",
+    headlineColor: "rgba(255,255,255,0.8)",
+  },
+  {
     id: "elegant_dark",
     label: "Elegante Escuro",
     icon: "🖤",
+    hasGradient: true,
     gradientColors: ["rgba(10,10,20,0)", "rgba(10,10,20,0.55)", "rgba(10,10,20,0.8)", "rgba(10,10,20,0.95)"],
     textColor: "#ffffff",
     priceColor: "#f9a8d4",
@@ -54,6 +70,7 @@ const templateStyles: TemplateStyle[] = [
     id: "clean_light",
     label: "Clean Claro",
     icon: "✨",
+    hasGradient: true,
     gradientColors: ["rgba(255,255,255,0)", "rgba(255,255,255,0.7)", "rgba(255,255,255,0.9)", "rgba(255,255,255,0.98)"],
     textColor: "#111827",
     priceColor: "#7c3aed",
@@ -67,6 +84,7 @@ const templateStyles: TemplateStyle[] = [
     id: "vibrant_pink",
     label: "Rosa Vibrante",
     icon: "💖",
+    hasGradient: true,
     gradientColors: ["rgba(157,23,77,0)", "rgba(157,23,77,0.5)", "rgba(157,23,77,0.85)", "rgba(157,23,77,0.95)"],
     textColor: "#ffffff",
     priceColor: "#fce7f3",
@@ -80,6 +98,7 @@ const templateStyles: TemplateStyle[] = [
     id: "golden_luxury",
     label: "Gold Luxo",
     icon: "👑",
+    hasGradient: true,
     gradientColors: ["rgba(20,15,5,0)", "rgba(20,15,5,0.5)", "rgba(20,15,5,0.8)", "rgba(20,15,5,0.95)"],
     textColor: "#fef3c7",
     priceColor: "#fbbf24",
@@ -115,17 +134,20 @@ interface ElementPositions {
 const CANVAS_W = 1080;
 const FEED_H = 1350;
 const STORY_H = 1920;
-const PREVIEW_SCALE = 0.42;
+const DEFAULT_PREVIEW_SCALE = 0.42;
+const MIN_PREVIEW_SCALE = 0.22;
+const MAX_PREVIEW_SCALE = 0.65;
+const ZOOM_STEP = 0.04;
 
 function getDefaultPositions(h: number): ElementPositions {
   return {
     badge: { x: CANVAS_W / 2, y: 52 },
-    productName: { x: CANVAS_W / 2, y: h - 280 },
-    headline: { x: CANVAS_W / 2, y: h - 220 },
-    price: { x: CANVAS_W / 2, y: h - 155 },
-    cta: { x: CANVAS_W / 2, y: h - 90 },
-    score: { x: CANVAS_W - 70, y: h - 40 },
-    watermark: { x: CANVAS_W / 2, y: h - 22 },
+    productName: { x: CANVAS_W / 2, y: h - 310 },
+    headline: { x: CANVAS_W / 2, y: h - 245 },
+    price: { x: CANVAS_W / 2, y: h - 170 },
+    cta: { x: CANVAS_W / 2, y: h - 85 },
+    score: { x: CANVAS_W - 70, y: h - 35 },
+    watermark: { x: CANVAS_W / 2, y: h - 18 },
   };
 }
 
@@ -144,10 +166,13 @@ export default function KonvaCompositor({
   format = "feed",
 }: KonvaCompositorProps) {
   const stageRef = useRef<Konva.Stage>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [activeTemplate, setActiveTemplate] = useState("elegant_dark");
   const [downloading, setDownloading] = useState(false);
   const [loadedImg, setLoadedImg] = useState<HTMLImageElement | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [previewScale, setPreviewScale] = useState(DEFAULT_PREVIEW_SCALE);
+  const [maxAutoScale, setMaxAutoScale] = useState(DEFAULT_PREVIEW_SCALE);
 
   const CANVAS_H = format === "story" ? STORY_H : FEED_H;
   const [positions, setPositions] = useState<ElementPositions>(() => getDefaultPositions(CANVAS_H));
@@ -155,6 +180,21 @@ export default function KonvaCompositor({
   const t = templateStyles.find((s) => s.id === activeTemplate) || templateStyles[0];
   const displayPrice = price.includes("R$") ? price : `R$ ${price}`;
   const imageUrl = modelImageUrl || productImageUrl;
+
+  // Dynamic scale based on container width
+  useEffect(() => {
+    const updateScale = () => {
+      if (!containerRef.current) return;
+      const containerW = containerRef.current.offsetWidth - 32;
+      const idealScale = containerW / CANVAS_W;
+      const clamped = Math.max(MIN_PREVIEW_SCALE, Math.min(DEFAULT_PREVIEW_SCALE, idealScale));
+      setMaxAutoScale(clamped);
+      setPreviewScale(clamped);
+    };
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
 
   // Load image
   useEffect(() => {
@@ -212,46 +252,74 @@ export default function KonvaCompositor({
     setSelectedId(null);
   };
 
-  // Download full-res
+  // Zoom controls
+  const handleZoomIn = () => {
+    setPreviewScale((s) => Math.min(MAX_PREVIEW_SCALE, s + ZOOM_STEP));
+  };
+  const handleZoomOut = () => {
+    setPreviewScale((s) => Math.max(MIN_PREVIEW_SCALE, s - ZOOM_STEP));
+  };
+  const handleZoomReset = () => {
+    setPreviewScale(maxAutoScale);
+  };
+  const zoomPercent = Math.round((previewScale / DEFAULT_PREVIEW_SCALE) * 100);
+
+  // ═══════════════════════════════════════
+  //  FIXED Download - full resolution export
+  // ═══════════════════════════════════════
   const handleDownload = useCallback(() => {
     if (!stageRef.current) return;
     setDownloading(true);
-    setSelectedId(null); // remove selection highlight
+    setSelectedId(null);
 
     setTimeout(() => {
       try {
         const stage = stageRef.current!;
-        const oldScale = { x: stage.scaleX(), y: stage.scaleY() };
-        const oldSize = { w: stage.width(), h: stage.height() };
 
-        // Scale to full res
-        stage.scale({ x: 1 / PREVIEW_SCALE, y: 1 / PREVIEW_SCALE });
+        // Save current preview state
+        const savedScaleX = stage.scaleX();
+        const savedScaleY = stage.scaleY();
+        const savedWidth = stage.width();
+        const savedHeight = stage.height();
+
+        // Set to full resolution: scale=1 means coordinates map 1:1
+        stage.scale({ x: 1, y: 1 });
         stage.width(CANVAS_W);
         stage.height(CANVAS_H);
+        stage.batchDraw();
 
-        const uri = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png" });
+        // Export at 2x pixel ratio for sharp text
+        const uri = stage.toDataURL({
+          pixelRatio: 2,
+          mimeType: "image/png",
+          x: 0,
+          y: 0,
+          width: CANVAS_W,
+          height: CANVAS_H,
+        });
 
-        // Restore preview size
-        stage.scale(oldScale);
-        stage.width(oldSize.w);
-        stage.height(oldSize.h);
+        // Restore preview state
+        stage.scale({ x: savedScaleX, y: savedScaleY });
+        stage.width(savedWidth);
+        stage.height(savedHeight);
         stage.batchDraw();
 
         const link = document.createElement("a");
         const safeName = productName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
         link.download = `crialook-${safeName}-${activeTemplate}.png`;
         link.href = uri;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
       } catch (err) {
         console.error("Download error:", err);
       } finally {
         setDownloading(false);
       }
-    }, 100);
+    }, 200);
   }, [productName, activeTemplate, CANVAS_H]);
 
-  // Scale coords for preview
-  const S = PREVIEW_SCALE;
+  const S = previewScale;
   const crop = getCropConfig();
 
   // Gradient overlay canvas
@@ -263,16 +331,18 @@ export default function KonvaCompositor({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const overlayH = CANVAS_H * 0.55;
-    const grd = ctx.createLinearGradient(0, CANVAS_H - overlayH, 0, CANVAS_H);
-    const colors = t.gradientColors;
-    grd.addColorStop(0, colors[0]);
-    grd.addColorStop(0.3, colors[1]);
-    grd.addColorStop(0.6, colors[2]);
-    grd.addColorStop(1, colors[3]);
-
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, CANVAS_H - overlayH, CANVAS_W, overlayH);
+    if (t.hasGradient) {
+      const overlayH = CANVAS_H * 0.55;
+      const grd = ctx.createLinearGradient(0, CANVAS_H - overlayH, 0, CANVAS_H);
+      const colors = t.gradientColors;
+      grd.addColorStop(0, colors[0]);
+      grd.addColorStop(0.3, colors[1]);
+      grd.addColorStop(0.6, colors[2]);
+      grd.addColorStop(1, colors[3]);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, CANVAS_H - overlayH, CANVAS_W, overlayH);
+    }
+    // else: transparent canvas = no gradient
 
     const img = new window.Image();
     img.src = canvas.toDataURL();
@@ -290,7 +360,7 @@ export default function KonvaCompositor({
   return (
     <div>
       {/* Template selector */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
         {templateStyles.map((tpl) => (
           <button
             key={tpl.id}
@@ -313,10 +383,10 @@ export default function KonvaCompositor({
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
         {/* Toolbar */}
         <div
-          className="flex items-center justify-between px-4 py-3"
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-3"
           style={{ borderBottom: "1px solid var(--border)", background: "var(--background)" }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
               {format === "story" ? "Story 1080×1920" : "Feed 1080×1350"}
             </span>
@@ -334,14 +404,40 @@ export default function KonvaCompositor({
                 📸 Modelo IA
               </span>
             )}
-            <span
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-              style={{ background: "#fef3c7", color: "#92400e" }}
-            >
-              ✋ Arraste os textos
-            </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {/* Zoom controls */}
+            <div
+              className="flex items-center gap-0.5 rounded-lg overflow-hidden"
+              style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+            >
+              <button
+                onClick={handleZoomOut}
+                disabled={previewScale <= MIN_PREVIEW_SCALE}
+                className="px-2 py-1.5 text-xs font-bold hover:opacity-70 transition-opacity disabled:opacity-30"
+                style={{ color: "var(--foreground)" }}
+                title="Diminuir"
+              >
+                −
+              </button>
+              <button
+                onClick={handleZoomReset}
+                className="px-2 py-1.5 text-[10px] font-semibold hover:opacity-70"
+                style={{ color: "var(--muted)", borderLeft: "1px solid var(--border)", borderRight: "1px solid var(--border)" }}
+                title="Resetar zoom"
+              >
+                {zoomPercent}%
+              </button>
+              <button
+                onClick={handleZoomIn}
+                disabled={previewScale >= MAX_PREVIEW_SCALE}
+                className="px-2 py-1.5 text-xs font-bold hover:opacity-70 transition-opacity disabled:opacity-30"
+                style={{ color: "var(--foreground)" }}
+                title="Aumentar"
+              >
+                +
+              </button>
+            </div>
             <button
               onClick={handleReset}
               className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium transition-all hover:opacity-80"
@@ -362,7 +458,7 @@ export default function KonvaCompositor({
               {downloading ? (
                 <>
                   <span className="animate-spin inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full" />
-                  Gerando...
+                  Gerando HD...
                 </>
               ) : (
                 <>
@@ -371,7 +467,7 @@ export default function KonvaCompositor({
                     <polyline points="7 10 12 15 17 10" />
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  Baixar PNG 1080px
+                  Baixar PNG HD
                 </>
               )}
             </button>
@@ -380,8 +476,9 @@ export default function KonvaCompositor({
 
         {/* Konva Stage */}
         <div
-          className="flex items-center justify-center p-4"
-          style={{ background: "var(--surface)", cursor: selectedId ? "move" : "default" }}
+          ref={containerRef}
+          className="flex items-center justify-center p-2 sm:p-4"
+          style={{ background: "var(--surface)", cursor: selectedId ? "move" : "default", overflow: "auto" }}
         >
           <div style={{ borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,0.15)" }}>
             <Stage
@@ -409,8 +506,8 @@ export default function KonvaCompositor({
                   />
                 )}
 
-                {/* ── 3. Gradient overlay ── */}
-                {gradientImg && (
+                {/* ── 3. Gradient overlay (only if template has gradient) ── */}
+                {gradientImg && t.hasGradient && (
                   <KImage image={gradientImg} x={0} y={0} width={CANVAS_W} height={CANVAS_H} listening={false} />
                 )}
 
@@ -469,8 +566,8 @@ export default function KonvaCompositor({
                   <Text
                     x={positions.headline.x}
                     y={positions.headline.y}
-                    text={headline.length > 50 ? headline.slice(0, 50) + "…" : headline}
-                    fontSize={24}
+                    text={headline.length > 55 ? headline.slice(0, 55) + "…" : headline}
+                    fontSize={26}
                     fontFamily="Inter, system-ui, sans-serif"
                     fontStyle="500"
                     fill={t.headlineColor}
@@ -490,7 +587,7 @@ export default function KonvaCompositor({
                   x={positions.price.x}
                   y={positions.price.y}
                   text={displayPrice}
-                  fontSize={64}
+                  fontSize={68}
                   fontFamily="Inter, system-ui, sans-serif"
                   fontStyle="900"
                   fill={t.priceColor}
@@ -515,26 +612,26 @@ export default function KonvaCompositor({
                   {...getDragStyle("cta")}
                 >
                   <Rect
-                    offsetX={130}
-                    offsetY={25}
-                    width={260}
-                    height={50}
+                    offsetX={140}
+                    offsetY={27}
+                    width={280}
+                    height={54}
                     fill={t.ctaBg}
-                    cornerRadius={25}
+                    cornerRadius={27}
                     shadowColor={`${t.ctaBg}80`}
                     shadowBlur={16}
                     shadowOffsetY={6}
                   />
                   <Text
                     text={`${cta} 💕`}
-                    fontSize={24}
+                    fontSize={26}
                     fontFamily="Inter, system-ui, sans-serif"
                     fontStyle="bold"
                     fill={t.ctaText}
                     align="center"
-                    width={260}
-                    offsetX={130}
-                    offsetY={12}
+                    width={280}
+                    offsetX={140}
+                    offsetY={13}
                   />
                 </Group>
 
@@ -600,7 +697,7 @@ export default function KonvaCompositor({
           className="px-4 py-2 text-center text-[11px]"
           style={{ background: "var(--background)", borderTop: "1px solid var(--border)", color: "var(--muted)" }}
         >
-          ✋ Clique e arraste qualquer texto para reposicionar · Clique em &quot;Resetar&quot; para voltar ao layout padrão
+          ✋ Arraste textos para reposicionar · 🔍 Use −/+ para zoom · ↩ Resetar restaura o layout
         </div>
       </div>
     </div>

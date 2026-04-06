@@ -31,29 +31,49 @@
 | Monitoramento | Vercel Analytics + Sentry + PostHog | - | Performance + erros + funil de conversão |
 | Filas/Jobs | Inngest ou Vercel Cron | - | Pipeline assíncrono sem infraestrutura |
 
-### 2.2 Pipeline de IA
+### 2.2 Pipeline de IA (Implementação Atual)
 
-| Etapa | Tecnologia | Modelo/API | Custo estimado |
-|-------|-----------|------------|----------------|
-| Vision Analyzer | Anthropic API | claude-sonnet-4-20250514 | ~R$ 0,08/req |
-| Estrategista | Anthropic API | claude-sonnet-4-20250514 | ~R$ 0,06/req |
-| Copywriter | Anthropic API | claude-sonnet-4-20250514 | ~R$ 0,10/req |
-| Refinador | Anthropic API | claude-haiku-4-20250414 | ~R$ 0,03/req |
-| Scorer + Meta Check | Anthropic API | claude-haiku-4-20250414 | ~R$ 0,02/req |
-| Try-on moda | Fashn.ai | Product to Model | ~R$ 0,43/req |
-| Remoção de fundo | Stability AI API | Stable Diffusion 3 | ~R$ 0,05/req |
-| Imagem lifestyle | OpenAI API | DALL-E 3 | ~R$ 0,23/req |
-| Criativo final | Konva.js (Canvas) | Browser-side | R$ 0,00 |
-| **TOTAL por geração** | - | - | **~R$ 0,57–1,00** |
+| Etapa | Tecnologia | Modelo/API | Custo estimado | Status |
+|-------|-----------|------------|----------------|--------|
+| Análise da imagem | Google Gemini | gemini-2.0-flash | ~R$ 0,02/req | ✅ Implementado |
+| Geração de textos | Google Gemini | gemini-2.0-flash | ~R$ 0,03/req | ✅ Implementado |
+| Headline + CTA | Google Gemini | gemini-2.0-flash | ~R$ 0,02/req | ✅ Implementado |
+| Score da campanha | Google Gemini | gemini-2.0-flash | ~R$ 0,01/req | ✅ Implementado |
+| Try-on moda | Fashn.ai | Product to Model | ~R$ 0,43/req | ✅ Implementado |
+| Criativo final | Konva.js (Canvas) | Browser-side | R$ 0,00 | ✅ Implementado |
+| **TOTAL por geração** | - | - | **~R$ 0,08–0,51** | - |
+
+> 💡 **Decisão**: Usamos Google Gemini como LLM principal (custo ~5x menor que Anthropic). O Konva.js roda 100% no browser (custo zero de composição).
 
 ### 2.3 Fallbacks de Vendor
 
 | Vendor principal | Fallback 1 | Fallback 2 |
 |-----------------|------------|------------|
 | Fashn.ai (try-on) | Kolors Virtual Try-On | IDM-VTON (self-hosted) |
-| Stability AI (fundo) | fal.ai | remove.bg API |
-| DALL-E 3 (lifestyle) | Stability AI SDXL | Midjourney API |
-| Anthropic (LLM) | OpenAI GPT-4o | Google Gemini Pro |
+| Google Gemini (LLM) | Anthropic Claude Sonnet | OpenAI GPT-4o |
+| Konva.js (composição) | Server-side Canvas | Stability AI SDXL |
+
+### 2.4 Compositor Interativo (Konva.js)
+
+O compositor de criativos roda **100% client-side** usando `react-konva`, permitindo edição visual sem custos de API.
+
+| Funcionalidade | Descrição |
+|----------------|----------|
+| **Drag & Drop** | Todos os textos (nome, preço, headline, CTA, badges) são arrastáveis |
+| **5 Templates** | Normal (sem overlay), Elegante Escuro, Clean Claro, Rosa Vibrante, Gold Luxo |
+| **Zoom −/+** | Controles para aumentar/diminuir o canvas no preview |
+| **Export HD** | Download PNG em 1080×1350 (feed) ou 1080×1920 (story) com pixelRatio 2x |
+| **Responsivo** | Scale dinâmico baseado na largura do container (funciona mobile e desktop) |
+| **Reset** | Botão para restaurar posições originais dos elementos |
+
+**Arquivo principal:** `src/components/KonvaCompositor.tsx`
+
+**Pipeline de prompts Fashn.ai:**
+- Instrução anti-etiqueta: remove automaticamente price tags, barcodes e etiquetas de loja
+- Preserva acessórios funcionais (cintos, colares, relógios)
+- Background neutro profissional (estúdio fotográfico)
+
+**Arquivo de config:** `src/lib/fashn/client.ts`
 
 ---
 
