@@ -307,6 +307,7 @@ Respond with ONLY the JSON object, no markdown.`,
         }
 
         // Prioridade 1: Modelo do banco (nova funcionalidade)
+        console.log(`[TryOn] Debug: modelBankId=${modelBankId}, productUrl=${productUrl ? productUrl.substring(0, 80) + '...' : 'null'}, FASHN_KEY=${!!process.env.FASHN_API_KEY}`);
         if (modelBankId && productUrl && process.env.FASHN_API_KEY) {
           try {
             const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -317,10 +318,10 @@ Respond with ONLY the JSON object, no markdown.`,
               .eq("id", modelBankId)
               .single();
 
+            console.log(`[TryOn] Debug: bankModel.image_url=${bankModel?.image_url ? bankModel.image_url.substring(0, 80) + '...' : 'null'}`);
             if (bankModel?.image_url) {
               const { generateWithModelBank } = await import("@/lib/fashn/client");
-              const category = getCategory(productType || "auto");
-              console.log(`[TryOn] 🏦 Usando modelo do banco (${modelBankId})`);
+              console.log(`[TryOn] 🏦 Chamando Fashn.ai generateWithModelBank...`);
               const result = await generateWithModelBank(
                 productUrl,
                 bankModel.image_url,
@@ -328,6 +329,7 @@ Respond with ONLY the JSON object, no markdown.`,
                 undefined, // backgroundValue
                 vtoData, // ← VTO data do mini-vision
               );
+              console.log(`[TryOn] Debug: result.status=${result.status}, outputUrl=${result.outputUrl ? 'yes' : 'no'}`);
               if (result.status === "completed" && result.outputUrl) {
                 tryOnImageUrl = result.outputUrl;
                 tryOnProvider = "fashn.ai-bank";
@@ -335,8 +337,10 @@ Respond with ONLY the JSON object, no markdown.`,
               }
             }
           } catch (e) {
-            console.warn("[TryOn] Banco de modelos falhou:", e);
+            console.warn("[TryOn] ❌ Banco de modelos falhou:", e instanceof Error ? e.message : e);
           }
+        } else {
+          console.log(`[TryOn] ⚠️ Pré-condições não atendidas para modelo do banco`);
         }
 
         // Prioridade 2: Modelo ativa da loja (legado)
