@@ -57,19 +57,6 @@ const IconWhatsApp = () => (
    ═══════════════════════════════════════ */
 const plans = [
   {
-    name: "Grátis",
-    price: 0,
-    badge: "🆓",
-    popular: false,
-    campaigns: 3,
-    channels: "Feed + WhatsApp",
-    models: 0,
-    regen: 0,
-    history: "7 dias",
-    features: ["Nota geral de score", "Fundo branco"],
-    notIncluded: ["Modelo virtual", "Regenerações", "Score completo", "Link de prévia"],
-  },
-  {
     name: "Starter",
     price: 59,
     badge: "⭐",
@@ -204,7 +191,7 @@ export default function Home() {
             </Link>
             <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-3 sm:!py-2.5 sm:!px-5">
               <span className="sm:hidden">Começar</span>
-              <span className="hidden sm:inline">Começar grátis</span>
+              <span className="hidden sm:inline">Testar na prática</span>
             </Link>
           </div>
         </div>
@@ -241,7 +228,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 animate-pulse-glow">
                   <IconZap />
-                  Começar grátis — 3 campanhas
+                  Testar na prática — a partir de R$ 9,90
                 </Link>
                 <a href="#como-funciona" className="btn-secondary text-base !py-3.5 !px-8">
                   Ver como funciona
@@ -253,7 +240,7 @@ export default function Home() {
               <div className="flex items-center justify-center gap-6 mt-10 text-sm" style={{ color: 'var(--muted)' }}>
                 <div className="flex items-center gap-1.5">
                   <span style={{ color: 'var(--success)' }}>●</span>
-                  <span>Sem cartão de crédito</span>
+                  <span>Pague via PIX</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span style={{ color: 'var(--success)' }}>●</span>
@@ -432,11 +419,44 @@ export default function Home() {
             <div className="text-center mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Planos</div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                Comece grátis, <span className="gradient-text">cresça quando quiser</span>
+                Teste na prática, <span className="gradient-text">escale quando quiser</span>
               </h2>
               <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Sem compromisso. Faça upgrade ou downgrade a qualquer momento.
+                Comece com 3 campanhas por R$ 9,90. Gostou? Assine e pague menos por campanha.
               </p>
+            </div>
+
+            {/* Trial Pack */}
+            <div className="max-w-lg mx-auto mb-12">
+              <div className="rounded-2xl p-6 text-center transition-all hover:-translate-y-1" style={{
+                background: 'var(--gradient-brand-soft)',
+                border: '2px solid var(--brand-300)',
+                boxShadow: 'var(--shadow-lg)',
+              }}>
+                <div className="text-2xl mb-2">🎯</div>
+                <h3 className="text-xl font-bold mb-1">Teste na Prática</h3>
+                <div className="flex items-baseline justify-center gap-1 mb-2">
+                  <span className="text-3xl font-black">R$ 9,90</span>
+                  <span className="text-sm" style={{ color: 'var(--muted)' }}>único</span>
+                </div>
+                <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
+                  3 campanhas completas com modelo virtual • Sem mensalidade
+                </p>
+                <Link href="/sign-up" className="btn-primary w-full !py-3 text-base animate-pulse-glow">
+                  <IconZap />
+                  Começar por R$ 9,90
+                </Link>
+                <p className="text-xs mt-3" style={{ color: 'var(--muted)' }}>
+                  Pague via PIX ou cartão • Créditos não expiram
+                </p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-4 max-w-md mx-auto mb-12">
+              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>ou assine e pague menos</span>
+              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
@@ -486,7 +506,7 @@ export default function Home() {
                       color: plan.popular ? 'var(--brand-600)' : 'white',
                     }}
                   >
-                    {plan.price === 0 ? 'Começar grátis' : 'Assinar agora'}
+                    Assinar agora
                   </Link>
 
                   <div className="flex-1 space-y-2.5">
@@ -523,7 +543,7 @@ export default function Home() {
               Pronto para vender <span className="gradient-text">mais</span>?
             </h2>
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Comece agora com 3 campanhas grátis. Sem cartão, sem compromisso, sem complicação.
+              Teste com 3 campanhas por R$ 9,90. Sem compromisso, sem mensalidade, sem complicação.
             </p>
             <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 animate-pulse-glow">
               <IconZap />
