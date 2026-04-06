@@ -74,6 +74,10 @@ REGRAS CRÍTICAS DE ANÁLISE VISUAL:
   },
   "nicho_sensivel": false,
   "mood": ["feminino", "romântico", "verão"],
+  "vto_fabric_descriptor": "Descrição técnica CONCISA em INGLÊS do tecido para reprodução fotográfica pelo Fashn.ai (ex: 'ribbed knit with visible vertical channels, matte finish, medium weight' ou 'lightweight chiffon, semi-transparent, fluid drape'). Foque na TEXTURA VISÍVEL, acabamento e peso do tecido.",
+  "vto_garment_structure": "Estrutura/silhueta em INGLÊS para fidelidade de caimento no try-on (ex: 'structured shoulders, elastic waistband, A-line silhouette from waist down' ou 'relaxed oversized fit, drop shoulders, straight hemline at mid-thigh'). Descreva como a peça se sustenta no corpo.",
+  "vto_color_hex_estimate": "#RRGGBB — ESTIMATIVA do código hex da cor principal do tecido (ex: #F5C6D0 para rosa bebê, #2B3A67 para azul marinho). Analise a cor REAL do tecido, ignorando iluminação da foto.",
+  "vto_critical_details": ["Lista em INGLÊS de detalhes que DEVEM SER PRESERVADOS pelo try-on virtual — ex: 'gold buttons on front placket, 5 total', 'ribbed cuffs 3cm wide at wrists', 'smocked elastic gathering at waistline', 'embroidered star pattern on left chest, 3 stars'. Seja ESPECÍFICO com contagens e posições."],
   "palavras_chave_venda": ["confortável", "versátil", "tendência ${CURRENT_YEAR}", "peça-chave"]
 }
 
@@ -82,6 +86,9 @@ DICAS:
 - O "mood" deve refletir a vibração que a peça transmite
 - Seja ESPECÍFICO nos detalhes (ex: "manga 3/4 com franzido" em vez de apenas "manga")
 - NUNCA confunda a cor do manequim/suporte com a cor da peça
+- Para os campos "vto_*": use INGLÊS técnico de moda, pois eles alimentam a API de geração de imagem
+- vto_fabric_descriptor: descreva o que você VÊ na superfície do tecido (trama, brilho, peso)
+- vto_critical_details: liste APENAS detalhes que fariam diferença se estivessem errados na foto gerada
 
 Responda APENAS com o JSON, sem explicações.`;
 }
