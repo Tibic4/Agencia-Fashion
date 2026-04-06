@@ -59,10 +59,13 @@
 
 ---
 
-### PASSO 7 — Fashn.ai: Aplicar Cenário (edit)
-**O que faz:** Pega o resultado do passo 6 e aplica o cenário escolhido (branco, urbano, boutique, etc.)
+### PASSO 7 — Fashn.ai: Refinar + Cenário (edit)
+**O que faz:** 3 coisas em 1 chamada:
+- 🎨 Aplica o cenário escolhido (branco, urbano, boutique, etc.)
+- 👗 Alisa o tecido e corrige caimento da roupa
+- 🏷️ Remove etiquetas de preço, tags, adesivos e artefatos de manequim
 **Entrada:** Imagem do passo 6 + prompt do cenário
-**Saída:** Imagem final com fundo profissional
+**Saída:** Imagem final polida com fundo profissional
 **Custo:** $0.02
 
 ---

@@ -239,39 +239,65 @@ export default async function AdminCustos() {
         </div>
       </div>
 
-      {/* Recent logs table */}
+      {/* Recent logs */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">Últimas chamadas API</h2>
           <span className="text-xs text-gray-500">{logs.length} registros este mês</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Provider</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Etapa</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Modelo</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Custo</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Data</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
+
+        {logs.length === 0 ? (
+          <div className="px-6 py-12 text-center text-gray-500">Nenhum log ainda — gere uma campanha para iniciar o tracking</div>
+        ) : (
+          <>
+            {/* Mobile: compact cards */}
+            <div className="md:hidden divide-y divide-gray-800">
               {logs.slice(0, 30).map((log: Record<string, unknown>, i: number) => (
-                <tr key={i} className="hover:bg-gray-800/30 transition">
-                  <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
-                  <td className="px-6 py-2.5 text-gray-400 text-xs">{stepLabels[String(log.action || "")] || String(log.action || "—")}</td>
-                  <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
-                  <td className="px-6 py-2.5 text-emerald-400 font-medium">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
-                  <td className="px-6 py-2.5 text-gray-500 text-xs">{new Date(String(log.created_at)).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
-                </tr>
+                <div key={i} className="px-4 py-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br ${providerColors[String(log.provider || "")] || providerColors.unknown} text-white text-[9px] font-bold`}>
+                        {String(log.provider || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-xs text-white capitalize font-medium">{String(log.provider || "")}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-gray-500">
+                    <span>{stepLabels[String(log.action || "")] || String(log.action || "—")}</span>
+                    <span>{new Date(String(log.created_at)).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                </div>
               ))}
-              {logs.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Nenhum log ainda</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Provider</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Etapa</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Modelo</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Custo</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Data</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {logs.slice(0, 30).map((log: Record<string, unknown>, i: number) => (
+                    <tr key={i} className="hover:bg-gray-800/30 transition">
+                      <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
+                      <td className="px-6 py-2.5 text-gray-400 text-xs">{stepLabels[String(log.action || "")] || String(log.action || "—")}</td>
+                      <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
+                      <td className="px-6 py-2.5 text-emerald-400 font-medium">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
+                      <td className="px-6 py-2.5 text-gray-500 text-xs">{new Date(String(log.created_at)).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
