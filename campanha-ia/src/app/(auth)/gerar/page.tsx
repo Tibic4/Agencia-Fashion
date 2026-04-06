@@ -106,7 +106,7 @@ export default function GerarCampanha() {
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("");
   const [background, setBackground] = useState("branco");
-  const [useModel, setUseModel] = useState(true);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -207,12 +207,12 @@ export default function GerarCampanha() {
       if (productType) formData.append("productType", productType);
       if (material) formData.append("material", material);
       formData.append("bodyType", bodyType);
-      formData.append("useModel", String(useModel));
+
       formData.append("backgroundType", background);
       // Modelo do banco (aleatória ou selecionada)
-      if (useModel && selectedModelId !== "random") {
+      if (selectedModelId !== "random") {
         formData.append("modelBankId", selectedModelId);
-      } else if (useModel && modelBank.length > 0) {
+      } else if (modelBank.length > 0) {
         const randomModel = modelBank[Math.floor(Math.random() * modelBank.length)];
         formData.append("modelBankId", randomModel.id);
       }
@@ -259,7 +259,6 @@ export default function GerarCampanha() {
           objective,
           targetAudience: audience,
           toneOverride: tone,
-          useModel: String(useModel),
         }));
       };
       reader.readAsDataURL(selectedFile);
@@ -657,28 +656,10 @@ export default function GerarCampanha() {
             </div>
           </div>
 
-          {/* Model toggle */}
-          <div className="card-brand flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold">Usar modelo virtual</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>Roupa vestida em modelo IA</p>
-            </div>
-            <button
-              onClick={() => setUseModel(!useModel)}
-              className="w-12 h-7 rounded-full relative transition-all"
-              style={{
-                background: useModel ? "var(--gradient-brand)" : "var(--border)",
-              }}
-            >
-              <div
-                className="w-5 h-5 rounded-full bg-white absolute top-1 transition-all shadow"
-                style={{ left: useModel ? "26px" : "4px" }}
-              />
-            </button>
-          </div>
+
 
           {/* Body Type — Tipo de Corpo */}
-          {useModel && (
+          {
             <div className="animate-fade-in">
               <label className="block text-sm font-semibold mb-2">Tipo de corpo da modelo</label>
               <div className="grid grid-cols-2 gap-3">
@@ -712,10 +693,10 @@ export default function GerarCampanha() {
                 </button>
               </div>
             </div>
-          )}
+          }
 
           {/* Model Bank Selector */}
-          {useModel && modelBank.length > 0 && (
+          {modelBank.length > 0 && (
             <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-3">
                 <label className="text-sm font-semibold">Escolha a modelo</label>
