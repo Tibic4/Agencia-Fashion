@@ -97,6 +97,13 @@ export interface NanoBananaTryOnParams {
   storeId?: string;
   /** Campaign ID para tracking de custo */
   campaignId?: string;
+  /** Dados VTO do Vision Analysis (Step 1) para fidelidade máxima */
+  visionData?: {
+    fabricDescriptor?: string;
+    garmentStructure?: string;
+    colorHex?: string;
+    criticalDetails?: string[];
+  };
 }
 
 // ═══════════════════════════════════════
@@ -121,6 +128,12 @@ function buildTryOnPrompt(params: {
   bodyType?: "normal" | "plus";
   hasCloseUp?: boolean;
   hasCustomBackground?: boolean;
+  visionData?: {
+    fabricDescriptor?: string;
+    garmentStructure?: string;
+    colorHex?: string;
+    criticalDetails?: string[];
+  };
 }): string {
   const bg = params.background || "estudio";
   const bgPrompt = BACKGROUND_PROMPTS[bg];
@@ -154,11 +167,16 @@ MODEL BODY TYPE (CRITICAL):
 GARMENT RULES (CRITICAL):
 4. PRESERVE the garment EXACTLY: same color, fabric texture, pattern, neckline, sleeves, length, and ALL details (buttons, rings, zippers, embroidery, seams)
 5. The fabric texture must be IDENTICAL to the original product photo
+${params.visionData?.fabricDescriptor ? `5b. FABRIC TEXTURE FIDELITY: This garment is made of ${params.visionData.fabricDescriptor}. The generated image MUST show this exact texture — do not smooth, simplify, or change the fabric appearance.` : ""}
+${params.visionData?.colorHex ? `5c. COLOR TARGET: Match the garment color to approximately ${params.visionData.colorHex}. Do NOT shift the hue, saturation, or brightness.` : ""}
+${params.visionData?.garmentStructure ? `5d. GARMENT STRUCTURE: ${params.visionData.garmentStructure}. Maintain this exact silhouette when worn.` : ""}
+${params.visionData?.criticalDetails?.length ? `5e. CRITICAL DETAILS TO PRESERVE: ${params.visionData.criticalDetails.join("; ")}` : ""}
 6. PAY SPECIAL ATTENTION to elastic bands, ribbed edges, and cuffs — reproduce them tightly and precisely as shown on the mannequin
 7. DO NOT add, remove, or modify ANY garment detail
 8. EMBROIDERY/PRINTS COUNT: If the garment has embroidered elements (stars, flowers, etc.), reproduce the EXACT SAME NUMBER and SPACING as shown in the product photo. Do NOT add extra elements or make the pattern denser than the original.
 9. Match the EXACT proportions of the garment relative to the body — if the top is cropped, it should end at exactly the same point
 10. If the garment is a TOP (blouse, shirt, crop top), pair it with stylish high-waisted jeans or the bottom shown in the product photo
+11. DO NOT alter the garment in any way: no color shifts, no texture changes, no added or removed patterns, no simplified embroidery
 
 FOOTWEAR (MANDATORY):
 10. The model must ALWAYS wear appropriate footwear — NEVER barefoot
@@ -250,6 +268,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
         bodyType: params.bodyType,
         hasCloseUp: !!params.closeUpBase64,
         hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
+        visionData: params.visionData,
       }),
     });
 
