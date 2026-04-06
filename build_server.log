@@ -5,31 +5,20 @@
 ▲ Next.js 16.2.2 (Turbopack)
 - Environments: .env.local
 
-⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
+✓ Compiled successfully in 16.3s
+  Running TypeScript ...
+Failed to type check.
 
-> Build error occurred
-Error: Turbopack build failed with 1 errors:
-./src/components/KonvaCompositor.tsx:4:1
-Module not found: Can't resolve 'react-konva'
-  [90m2 |[0m
-  [90m3 |[0m [36mimport[0m { useRef, useState, useEffect, useCallback } [36mfrom[0m [32m"react"[0m;
-[31m[1m>[0m [90m4 |[0m [36mimport[0m { [33mStage[0m, [33mLayer[0m, [33mImage[0m [36mas[0m [33mKImage[0m, [33mText[0m, [33mRect[0m, [33mGroup[0m } [36mfrom[0m [32m"react-konva"[0m;
-  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-  [90m5 |[0m [36mimport[0m [33mKonva[0m [36mfrom[0m [32m"konva"[0m;
-  [90m6 |[0m
-  [90m7 |[0m /* ═══════════════════════════════════════
+./src/app/(auth)/gerar/page.tsx:1012:25
+Type error: Property 'ai' does not exist on type '{ value: string; label: string; thumb: string; } | { value: string; label: string; thumb: null; }'.
+  Property 'ai' does not exist on type '{ value: string; label: string; thumb: string; }'.
 
-
-
-Import trace:
-  Client Component Browser:
-    ./src/components/KonvaCompositor.tsx [Client Component Browser]
-    ./src/app/test-konva/page.tsx [Client Component Browser]
-    ./src/app/test-konva/page.tsx [Server Component]
-
-https://nextjs.org/docs/messages/module-not-found
-
-
-    at <unknown> (./src/components/KonvaCompositor.tsx:4:1)
-    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+  [90m1010 |[0m                   <div className=[32m"py-1.5 px-1"[0m style={{ background: [32m"var(--surface)"[0m }}>
+  [90m1011 |[0m                     <p className=[32m"text-[10px] font-medium"[0m>{bg.label}</p>
+[31m[1m>[0m [90m1012 |[0m                     {bg.ai && <span className=[32m"text-[8px] gradient-text font-semibold"[0m>...
+  [90m     |[0m                         [31m[1m^[0m
+  [90m1013 |[0m                   </div>
+  [90m1014 |[0m                 </button>
+  [90m1015 |[0m               ))}
+Next.js build worker exited with code: 1 and signal: null
