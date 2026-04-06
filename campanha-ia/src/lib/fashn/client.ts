@@ -25,13 +25,16 @@ interface FashnJobResult {
   error?: string;
 }
 
-// Custos fixos por operação Fashn.ai (em USD, extraídos da tabela de preços)
+// Custos fixos por operação Fashn.ai (em USD)
+// Fonte: https://help.fashn.ai/plans-and-pricing/api-pricing
+// On-Demand: $0.075/crédito. Fast/1K = 1 crédito por chamada.
+// Não passamos resolution nem generation_mode, então usa padrão (1 crédito).
 const FASHN_COST_USD: Record<string, number> = {
-  "product-to-model": 0.03,
-  "tryon-max": 0.08,
-  "edit": 0.02,
-  "model-create": 0.10,
-  "background-remove": 0.02,
+  "product-to-model": 0.075, // 1 crédito (Fast/1K default)
+  "tryon-max": 0.075,        // 1 crédito (Fast/1K default)
+  "edit": 0.075,             // 1 crédito (Fast/1K default)
+  "model-create": 0.075,     // 1 crédito (Fast/1K default)
+  "background-remove": 0.075, // 1 crédito fixo
 };
 
 /**
