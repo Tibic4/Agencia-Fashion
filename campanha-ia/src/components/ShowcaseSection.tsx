@@ -10,16 +10,17 @@ interface ShowcaseItem {
 }
 
 /**
- * Componente de comparação interativa antes/depois com slider arrastável
- * Corrigido: aspect-ratio fixo, labels responsivos, handle centralizado
+ * Componente de comparação interativa antes/depois com slider arrastável.
+ * Usa height fixa baseada em viewport para garantir consistência.
  */
-function BeforeAfterSlider({ item, isActive }: { item: ShowcaseItem; isActive: boolean }) {
+function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sliderPos, setSliderPos] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [imgError, setImgError] = useState<"before" | "after" | null>(null);
 
-  // Track container width for "before" image sizing
+  // Track container width via ResizeObserver
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -35,7 +36,7 @@ function BeforeAfterSlider({ item, isActive }: { item: ShowcaseItem; isActive: b
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const x = clientX - rect.left;
-    const percent = Math.max(5, Math.min(95, (x / rect.width) * 100));
+    const percent = Math.max(3, Math.min(97, (x / rect.width) * 100));
     setSliderPos(percent);
   }, []);
 
@@ -71,39 +72,44 @@ function BeforeAfterSlider({ item, isActive }: { item: ShowcaseItem; isActive: b
 
   return (
     <div
-      className="rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-500"
+      className="rounded-2xl overflow-hidden"
       style={{
         background: "var(--background)",
         border: "1px solid var(--border)",
-        boxShadow: isActive
-          ? "0 12px 48px rgba(0,0,0,0.15), 0 0 0 1px rgba(168,85,247,0.1)"
-          : "0 4px 16px rgba(0,0,0,0.08)",
-        transform: isActive ? "scale(1)" : "scale(0.92)",
-        opacity: isActive ? 1 : 0.5,
-        pointerEvents: isActive ? "auto" : "none",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
       }}
     >
-      {/* Slider area — aspect ratio based height */}
+      {/* Slider area */}
       <div
         ref={containerRef}
         className="relative select-none overflow-hidden"
         style={{
-          aspectRatio: "4 / 5",
-          maxHeight: "min(70vh, 600px)",
+          height: "clamp(320px, 55vw, 560px)",
           cursor: isDragging ? "grabbing" : "grab",
         }}
         onMouseDown={handleStart}
         onTouchStart={handleStart}
       >
-        {/* DEPOIS — imagem de fundo (100% largura) */}
+        {/* DEPOIS — full background image */}
         <img
           src={item.after_photo_url}
           alt="Depois — modelo IA"
           className="absolute inset-0 w-full h-full object-cover"
           draggable={false}
+          onError={() => setImgError("after")}
         />
 
-        {/* ANTES — imagem cortada pelo slider */}
+        {/* Fallback se imagem "depois" falhar */}
+        {imgError === "after" && (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: "var(--surface)" }}>
+            <div className="text-center">
+              <span className="text-3xl block mb-2">⚠️</span>
+              <p className="text-sm font-medium" style={{ color: "var(--muted)" }}>Imagem não carregada</p>
+            </div>
+          </div>
+        )}
+
+        {/* ANTES — imagem cortada pelo slider position */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ width: `${sliderPos}%` }}
@@ -113,40 +119,49 @@ function BeforeAfterSlider({ item, isActive }: { item: ShowcaseItem; isActive: b
             alt="Antes — foto original"
             className="absolute inset-0 h-full object-cover"
             style={{
-              width: containerWidth > 0 ? `${containerWidth}px` : "100vw",
+              width: containerWidth > 0 ? `${containerWidth}px` : "100%",
               maxWidth: "none",
             }}
             draggable={false}
+            onError={() => setImgError("before")}
           />
         </div>
 
-        {/* Linha divisória + handle */}
+        {/* Divider line + handle */}
         <div
           className="absolute top-0 bottom-0 z-10"
           style={{ left: `${sliderPos}%`, transform: "translateX(-50%)" }}
         >
-          {/* Linha */}
+          {/* Vertical line */}
           <div
-            className="absolute inset-0"
             style={{
-              width: "2px",
-              background: "white",
+              position: "absolute",
+              top: 0,
+              bottom: 0,
               left: "50%",
               transform: "translateX(-50%)",
-              boxShadow: "0 0 16px rgba(0,0,0,0.4)",
+              width: "2px",
+              background: "white",
+              boxShadow: "0 0 12px rgba(0,0,0,0.4)",
             }}
           />
-          {/* Handle circular — ALWAYS centered vertically */}
+          {/* Draggable handle — always vertically centered */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center backdrop-blur-md"
             style={{
+              position: "absolute",
               top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
               width: "44px",
               height: "44px",
               borderRadius: "50%",
               background: "rgba(255,255,255,0.95)",
               boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
               border: "3px solid white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backdropFilter: "blur(8px)",
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -156,27 +171,29 @@ function BeforeAfterSlider({ item, isActive }: { item: ShowcaseItem; isActive: b
           </div>
         </div>
 
-        {/* Labels — responsive */}
+        {/* Labels */}
         <span
-          className="absolute bottom-3 left-3 md:bottom-5 md:left-5 text-xs md:text-sm font-bold px-2.5 py-1 md:px-3.5 md:py-1.5 rounded-full backdrop-blur-md z-20 pointer-events-none"
-          style={{ background: "rgba(0,0,0,0.5)", color: "white" }}
+          className="absolute bottom-3 left-3 md:bottom-4 md:left-4 text-[11px] md:text-sm font-bold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full z-20 pointer-events-none"
+          style={{ background: "rgba(0,0,0,0.5)", color: "white", backdropFilter: "blur(8px)" }}
         >
           📷 Antes
         </span>
         <span
-          className="absolute bottom-3 right-3 md:bottom-5 md:right-5 text-xs md:text-sm font-bold px-2.5 py-1 md:px-3.5 md:py-1.5 rounded-full backdrop-blur-md z-20 pointer-events-none"
-          style={{ background: "var(--gradient-brand)", color: "white" }}
+          className="absolute bottom-3 right-3 md:bottom-4 md:right-4 text-[11px] md:text-sm font-bold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full z-20 pointer-events-none"
+          style={{ background: "var(--gradient-brand, linear-gradient(135deg, #A855F7, #EC4899))", color: "white", backdropFilter: "blur(8px)" }}
         >
           ✨ Depois
         </span>
 
-        {/* Dica sutil — desaparece ao interagir */}
+        {/* Hint — disappears when user interacts */}
         <div
-          className="absolute top-3 md:top-5 left-1/2 -translate-x-1/2 text-[10px] md:text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-md z-20 pointer-events-none transition-opacity duration-500"
+          className="absolute left-1/2 -translate-x-1/2 text-[10px] md:text-xs font-medium px-3 py-1.5 rounded-full z-20 pointer-events-none transition-opacity duration-500"
           style={{
+            top: "12px",
             background: "rgba(0,0,0,0.4)",
             color: "rgba(255,255,255,0.8)",
             opacity: sliderPos === 50 ? 1 : 0,
+            backdropFilter: "blur(8px)",
           }}
         >
           ← arraste para comparar →
@@ -195,48 +212,10 @@ function BeforeAfterSlider({ item, isActive }: { item: ShowcaseItem; isActive: b
   );
 }
 
-/**
- * Indicador de navegação por pontos
- */
-function DotIndicator({
-  total,
-  active,
-  onSelect,
-}: {
-  total: number;
-  active: number;
-  onSelect: (i: number) => void;
-}) {
-  if (total <= 1) return null;
-
-  return (
-    <div className="flex items-center justify-center gap-2 mt-6 md:mt-8">
-      {Array.from({ length: total }).map((_, i) => (
-        <button
-          key={i}
-          onClick={() => onSelect(i)}
-          className="transition-all duration-300 rounded-full"
-          style={{
-            width: i === active ? "24px" : "8px",
-            height: "8px",
-            background: i === active
-              ? "var(--brand-500, #A855F7)"
-              : "var(--border, #e5e5e5)",
-            opacity: i === active ? 1 : 0.5,
-          }}
-          aria-label={`Ir para vitrine ${i + 1}`}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function ShowcaseSection() {
   const [items, setItems] = useState<ShowcaseItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const showcaseRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/showcase")
@@ -248,32 +227,15 @@ export default function ShowcaseSection() {
       .finally(() => setLoaded(true));
   }, []);
 
-  // Swipe gesture for carousel (only when not dragging slider)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) return;
-    const diff = touchStart - e.changedTouches[0].clientX;
-    const threshold = 80; // px min for swipe
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0 && activeIndex < items.length - 1) {
-        setActiveIndex((prev) => prev + 1);
-      } else if (diff < 0 && activeIndex > 0) {
-        setActiveIndex((prev) => prev - 1);
-      }
-    }
-    setTouchStart(null);
-  };
+  // Não renderiza nada se não tem itens
+  if (loaded && items.length === 0) return null;
+  if (!loaded) return null;
 
   const goTo = (i: number) => {
     setActiveIndex(Math.max(0, Math.min(items.length - 1, i)));
   };
 
-  // Não renderiza nada se não tem itens
-  if (loaded && items.length === 0) return null;
-  if (!loaded) return null;
+  const activeItem = items[activeIndex];
 
   return (
     <section className="section" style={{ background: "var(--surface)" }}>
@@ -289,76 +251,9 @@ export default function ShowcaseSection() {
           </p>
         </div>
 
-        {/* Carousel container */}
-        <div
-          ref={showcaseRef}
-          className="relative max-w-2xl mx-auto"
-          onTouchStart={items.length > 1 ? handleTouchStart : undefined}
-          onTouchEnd={items.length > 1 ? handleTouchEnd : undefined}
-        >
-          {/* Navigation arrows (desktop, multiple items) */}
-          {items.length > 1 && (
-            <>
-              <button
-                onClick={() => goTo(activeIndex - 1)}
-                disabled={activeIndex === 0}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full hidden md:flex items-center justify-center z-20 transition-all disabled:opacity-20"
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "50%",
-                  background: "var(--background)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
-                  marginLeft: "-12px",
-                }}
-                aria-label="Anterior"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-              <button
-                onClick={() => goTo(activeIndex + 1)}
-                disabled={activeIndex === items.length - 1}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full hidden md:flex items-center justify-center z-20 transition-all disabled:opacity-20"
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "50%",
-                  background: "var(--background)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
-                  marginRight: "-12px",
-                }}
-                aria-label="Próximo"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </button>
-            </>
-          )}
-
-          {/* Slider stack — only active is visible/interactive */}
-          <div className="relative">
-            {items.map((item, index) => (
-              <div
-                key={item.id}
-                className="transition-all duration-500"
-                style={{
-                  display: Math.abs(index - activeIndex) > 1 ? "none" : "block",
-                  position: index === activeIndex ? "relative" : "absolute",
-                  inset: index === activeIndex ? undefined : 0,
-                  zIndex: index === activeIndex ? 1 : 0,
-                }}
-              >
-                <BeforeAfterSlider item={item} isActive={index === activeIndex} />
-              </div>
-            ))}
-          </div>
-
-          {/* Counter badge */}
+        {/* Single active slider — NO STACKING */}
+        <div className="max-w-3xl mx-auto relative">
+          {/* Counter badge (multiple items) */}
           {items.length > 1 && (
             <div
               className="absolute -top-3 right-2 md:right-0 text-[11px] font-bold px-3 py-1 rounded-full z-30"
@@ -371,10 +266,139 @@ export default function ShowcaseSection() {
               {activeIndex + 1} / {items.length}
             </div>
           )}
-        </div>
 
-        {/* Dot indicators */}
-        <DotIndicator total={items.length} active={activeIndex} onSelect={goTo} />
+          {/* Navigation arrows (desktop) */}
+          {items.length > 1 && (
+            <>
+              <button
+                onClick={() => goTo(activeIndex - 1)}
+                disabled={activeIndex === 0}
+                className="hidden md:flex absolute -left-16 top-1/2 -translate-y-1/2 items-center justify-center z-20 transition-all disabled:opacity-20 hover:scale-110"
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+                }}
+                aria-label="Anterior"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                onClick={() => goTo(activeIndex + 1)}
+                disabled={activeIndex === items.length - 1}
+                className="hidden md:flex absolute -right-16 top-1/2 -translate-y-1/2 items-center justify-center z-20 transition-all disabled:opacity-20 hover:scale-110"
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
+                }}
+                aria-label="Próximo"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* ONLY ONE SLIDER RENDERED AT A TIME — prevents stacking */}
+          {activeItem && (
+            <BeforeAfterSlider key={activeItem.id} item={activeItem} />
+          )}
+
+          {/* Mobile navigation (below slider) */}
+          {items.length > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-6 md:hidden">
+              <button
+                onClick={() => goTo(activeIndex - 1)}
+                disabled={activeIndex === 0}
+                className="flex items-center justify-center transition-all disabled:opacity-20"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                }}
+                aria-label="Anterior"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+
+              {/* Dots */}
+              <div className="flex items-center gap-2">
+                {items.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className="transition-all duration-300 rounded-full"
+                    style={{
+                      width: i === activeIndex ? "20px" : "8px",
+                      height: "8px",
+                      background: i === activeIndex
+                        ? "var(--brand-500, #A855F7)"
+                        : "var(--border, #e5e5e5)",
+                      opacity: i === activeIndex ? 1 : 0.4,
+                    }}
+                    aria-label={`Vitrine ${i + 1}`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={() => goTo(activeIndex + 1)}
+                disabled={activeIndex === items.length - 1}
+                className="flex items-center justify-center transition-all disabled:opacity-20"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                }}
+                aria-label="Próximo"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {/* Desktop dots */}
+          {items.length > 1 && (
+            <div className="hidden md:flex items-center justify-center gap-2 mt-6">
+              {items.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  className="transition-all duration-300 rounded-full"
+                  style={{
+                    width: i === activeIndex ? "24px" : "8px",
+                    height: "8px",
+                    background: i === activeIndex
+                      ? "var(--brand-500, #A855F7)"
+                      : "var(--border, #e5e5e5)",
+                    opacity: i === activeIndex ? 1 : 0.4,
+                  }}
+                  aria-label={`Vitrine ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
