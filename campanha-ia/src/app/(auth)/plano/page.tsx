@@ -17,6 +17,7 @@ interface StoreData {
   id: string;
   name: string;
   plan_id: string | null;
+  mercadopago_subscription_id?: string | null;
 }
 
 const plans = [
@@ -37,6 +38,7 @@ const extras = [
 export default function Plano() {
   const [loading, setLoading] = useState<string | null>(null);
   const [creditLoading, setCreditLoading] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [store, setStore] = useState<StoreData | null>(null);
   const [usage, setUsage] = useState<StoreUsage | null>(null);
@@ -129,6 +131,25 @@ export default function Plano() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano permanecerá ativo até o fim do período pago.")) return;
+    setCancelLoading(true);
+    try {
+      const response = await fetch("/api/subscription/cancel", { method: "POST" });
+      const data = await response.json();
+      if (data.success) {
+        setStatusMsg("✅ Assinatura cancelada. Seu plano permanece ativo até o fim do período.");
+        setStore((prev) => prev ? { ...prev, mercadopago_subscription_id: null } : prev);
+      } else {
+        setStatusMsg(data.error || "Erro ao cancelar assinatura.");
+      }
+    } catch {
+      setStatusMsg("Erro de conexão. Tente novamente.");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const campaignsUsed = usage?.campaigns_generated ?? 0;
   const campaignsLimit = usage?.campaigns_limit ?? 3;
   const usagePercent = campaignsLimit > 0 ? (campaignsUsed / campaignsLimit) * 100 : 0;
@@ -194,9 +215,21 @@ export default function Plano() {
             <span className="text-3xl">{currentPlanName === "Avulso" ? "💳" : plans.find((p) => p.name === currentPlanName)?.badge || "⭐"}</span>
             <div>
               <h2 className="text-xl font-bold">Plano {currentPlanName}</h2>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>Renova em {renewalStr}</p>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>
+                {store?.mercadopago_subscription_id ? "🔄 Assinatura ativa — " : ""}Renova em {renewalStr}
+              </p>
             </div>
           </div>
+          {store?.mercadopago_subscription_id && (
+            <button
+              onClick={handleCancelSubscription}
+              disabled={cancelLoading}
+              className="text-xs px-4 py-2 rounded-full transition-all hover:opacity-80 disabled:opacity-50"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--muted)" }}
+            >
+              {cancelLoading ? "Cancelando..." : "Cancelar assinatura"}
+            </button>
+          )}
         </div>
 
         {/* Usage bars */}
