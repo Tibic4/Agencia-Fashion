@@ -226,9 +226,10 @@ export default function Home() {
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 animate-pulse-glow">
+                <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 animate-pulse-glow">
                   <IconZap />
-                  Testar na prática — a partir de R$ 9,90
+                  <span className="sm:hidden">Testar — R$ 9,90</span>
+                  <span className="hidden sm:inline">Testar na prática — a partir de R$ 9,90</span>
                 </Link>
                 <a href="#como-funciona" className="btn-secondary text-base !py-3.5 !px-8">
                   Ver como funciona
@@ -237,7 +238,7 @@ export default function Home() {
               </div>
 
               {/* Social proof */}
-              <div className="flex items-center justify-center gap-6 mt-10 text-sm" style={{ color: 'var(--muted)' }}>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-10 text-sm" style={{ color: 'var(--muted)' }}>
                 <div className="flex items-center gap-1.5">
                   <span style={{ color: 'var(--success)' }}>●</span>
                   <span>Pague via PIX</span>
@@ -254,7 +255,7 @@ export default function Home() {
             </div>
 
             {/* Hero Visual — App Preview Mockup */}
-            <div className="mt-16 md:mt-20 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+            <div className="hidden md:block mt-16 md:mt-20 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <div className="relative rounded-2xl overflow-hidden" style={{ 
                 background: 'var(--gradient-card)', 
                 border: '1px solid var(--border)',
@@ -357,7 +358,7 @@ export default function Home() {
               {steps.map((step) => (
                 <div key={step.number} className="relative text-center group">
                   {/* Step number */}
-                  <div className="text-7xl font-black mb-4 opacity-[0.12]" style={{ color: 'var(--brand-500)' }}>
+                  <div className="text-7xl font-black mb-4 opacity-[0.06] md:opacity-[0.12]" style={{ color: 'var(--brand-500)' }}>
                     {step.number}
                   </div>
                   {/* Icon */}
@@ -459,11 +460,11 @@ export default function Home() {
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
+            <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto overflow-x-auto snap-x snap-mandatory pb-4 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
               {plans.map((plan) => (
                 <div
                   key={plan.name}
-                  className="relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1"
+                  className="relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 snap-center min-w-[280px] md:min-w-0 flex-shrink-0"
                   style={{
                     background: plan.popular ? 'var(--gradient-brand)' : 'var(--surface)',
                     border: plan.popular ? 'none' : '1px solid var(--border)',
@@ -512,7 +513,7 @@ export default function Home() {
 
                   <div className="flex-1 space-y-2.5">
                     {plan.features.map((f) => (
-                      <div key={f} className="flex items-start gap-2 text-xs">
+                      <div key={f} className="flex items-start gap-2 text-sm">
                         <span className="mt-0.5 flex-shrink-0" style={{ color: plan.popular ? 'white' : 'var(--success)' }}>
                           <IconCheck />
                         </span>
@@ -520,7 +521,7 @@ export default function Home() {
                       </div>
                     ))}
                     {plan.notIncluded.map((f) => (
-                      <div key={f} className="flex items-start gap-2 text-xs opacity-40">
+                      <div key={f} className="flex items-start gap-2 text-sm opacity-40">
                         <span className="mt-0.5 flex-shrink-0">
                           <IconX />
                         </span>
@@ -558,8 +559,8 @@ export default function Home() {
       {/* ═══ FOOTER ═══ */}
       <footer className="py-12" style={{ background: 'var(--gray-950)', color: 'var(--gray-400)' }}>
         <div className="container">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
+            <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
                 <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
                 <span className="text-lg font-bold text-white">CriaLook</span>
