@@ -61,6 +61,8 @@ export interface PipelineInput {
   productType?: string;
   /** Material/tecido informado pelo usuário (opcional) */
   material?: string;
+  /** Cenário/fundo escolhido (branco, estudio, urbano, personalizado:...) */
+  backgroundType?: string;
 }
 
 export interface PipelineResult {
