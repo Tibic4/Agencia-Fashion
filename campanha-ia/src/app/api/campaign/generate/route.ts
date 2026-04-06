@@ -379,6 +379,7 @@ export async function POST(request: NextRequest) {
           bodyType: bodyType || "normal",
           productType: productType || undefined,
           material: material || undefined,
+          backgroundType: backgroundType || undefined,
         },
         (step, label, progress) => {
           console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
