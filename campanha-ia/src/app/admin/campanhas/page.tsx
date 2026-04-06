@@ -63,45 +63,67 @@ export default async function AdminCampanhas() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Loja</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Objetivo</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Público</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Preço</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tempo</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {campaigns.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center text-gray-500">
-                    Nenhuma campanha gerada ainda
-                  </td>
-                </tr>
-              ) : (
-                campaigns.map((c: Record<string, unknown>) => (
-                  <tr key={c.id as string} className="hover:bg-gray-800/30 transition">
-                    <td className="px-6 py-3 text-white font-medium">{(c.stores as Record<string, string>)?.name || "—"}</td>
-                    <td className="px-6 py-3 text-gray-400">{c.objective as string || "—"}</td>
-                    <td className="px-6 py-3 text-gray-400">{c.target_audience as string || "—"}</td>
-                    <td className="px-6 py-3 text-gray-300">R$ {Number(c.price).toFixed(2)}</td>
-                    <td className="px-6 py-3 text-gray-400">{c.pipeline_duration_ms ? `${(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s` : "—"}</td>
-                    <td className="px-6 py-3"><StatusBadge status={c.status as string} /></td>
-                    <td className="px-6 py-3 text-gray-500 text-xs">{new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {campaigns.length === 0 ? (
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center text-gray-500">
+          Nenhuma campanha gerada ainda
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Mobile: Card Layout */}
+          <div className="md:hidden space-y-3">
+            {campaigns.map((c: Record<string, unknown>) => (
+              <div key={c.id as string} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-white font-medium text-sm truncate flex-1 mr-2">
+                    {(c.stores as Record<string, string>)?.name || "—"}
+                  </p>
+                  <StatusBadge status={c.status as string} />
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                  <span>🎯 {c.objective as string || "—"}</span>
+                  {Number(c.price) > 0 && <span>💰 R$ {Number(c.price).toFixed(2)}</span>}
+                  {Number(c.pipeline_duration_ms) > 0 && <span>⏱ {(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s</span>}
+                </div>
+                <p className="text-[10px] text-gray-600 mt-2">
+                  {new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Table */}
+          <div className="hidden md:block bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Loja</th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Objetivo</th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Público</th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Preço</th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tempo</th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {campaigns.map((c: Record<string, unknown>) => (
+                    <tr key={c.id as string} className="hover:bg-gray-800/30 transition">
+                      <td className="px-6 py-3 text-white font-medium">{(c.stores as Record<string, string>)?.name || "—"}</td>
+                      <td className="px-6 py-3 text-gray-400">{c.objective as string || "—"}</td>
+                      <td className="px-6 py-3 text-gray-400">{c.target_audience as string || "—"}</td>
+                      <td className="px-6 py-3 text-gray-300">{Number(c.price) > 0 ? `R$ ${Number(c.price).toFixed(2)}` : "—"}</td>
+                      <td className="px-6 py-3 text-gray-400">{c.pipeline_duration_ms ? `${(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s` : "—"}</td>
+                      <td className="px-6 py-3"><StatusBadge status={c.status as string} /></td>
+                      <td className="px-6 py-3 text-gray-500 text-xs">{new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -151,7 +151,7 @@ export default async function AdminLogs() {
 
       {/* Failed campaigns */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800 flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
           <h2 className="text-sm font-semibold text-white">Campanhas com erro ({failedCampaigns.length})</h2>
         </div>
@@ -162,21 +162,21 @@ export default async function AdminLogs() {
             </div>
           ) : (
             failedCampaigns.map((c: Record<string, unknown>) => (
-              <div key={c.id as string} className="px-6 py-4 hover:bg-gray-800/30 transition">
-                <div className="flex items-center justify-between mb-2">
+              <div key={c.id as string} className="px-4 md:px-6 py-4 hover:bg-gray-800/30 transition">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-white">
                       {(c.stores as Record<string, string>)?.name || "Loja desconhecida"}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
                       failed
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-[10px] text-gray-500">
                     {new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
-                <pre className="text-xs text-red-300/80 bg-red-950/30 rounded-lg p-3 overflow-x-auto font-mono whitespace-pre-wrap">
+                <pre className="text-[10px] md:text-xs text-red-300/80 bg-red-950/30 rounded-lg p-2 md:p-3 overflow-x-auto font-mono whitespace-pre-wrap break-all">
                   {(c.error_message as string) || "Sem mensagem de erro"}
                 </pre>
               </div>
@@ -187,40 +187,60 @@ export default async function AdminLogs() {
 
       {/* API call logs */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-3">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800 flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-blue-400" />
           <h2 className="text-sm font-semibold text-white">Chamadas API recentes ({recentCosts.length})</h2>
         </div>
-        <div className="overflow-x-auto max-h-96 overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-gray-900">
-              <tr className="border-b border-gray-800">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Hora</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Provider</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Etapa</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Modelo</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Custo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {recentCosts.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">Nenhuma chamada registrada</td></tr>
-              ) : (
-                recentCosts.map((log: Record<string, unknown>, i: number) => (
-                  <tr key={i} className="hover:bg-gray-800/30 transition">
-                    <td className="px-6 py-2.5 text-gray-400 text-xs font-mono">
-                      {new Date(String(log.created_at)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                    </td>
-                    <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
-                    <td className="px-6 py-2.5 text-gray-400 text-xs">{String(log.action || "—")}</td>
-                    <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
-                    <td className="px-6 py-2.5 text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
+
+        {recentCosts.length === 0 ? (
+          <div className="px-6 py-12 text-center text-gray-500">Nenhuma chamada registrada</div>
+        ) : (
+          <>
+            {/* Mobile: compact rows */}
+            <div className="md:hidden divide-y divide-gray-800 max-h-96 overflow-y-auto">
+              {recentCosts.map((log: Record<string, unknown>, i: number) => (
+                <div key={i} className="px-4 py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white capitalize font-medium">{String(log.provider || "")}</span>
+                      <span className="text-[10px] text-gray-500">{String(log.action || "—")}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-600">{new Date(String(log.created_at)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: full table */}
+            <div className="hidden md:block overflow-x-auto max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-gray-900">
+                  <tr className="border-b border-gray-800">
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Hora</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Provider</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Etapa</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Modelo</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Custo</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {recentCosts.map((log: Record<string, unknown>, i: number) => (
+                    <tr key={i} className="hover:bg-gray-800/30 transition">
+                      <td className="px-6 py-2.5 text-gray-400 text-xs font-mono">
+                        {new Date(String(log.created_at)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      </td>
+                      <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
+                      <td className="px-6 py-2.5 text-gray-400 text-xs">{String(log.action || "—")}</td>
+                      <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
+                      <td className="px-6 py-2.5 text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
