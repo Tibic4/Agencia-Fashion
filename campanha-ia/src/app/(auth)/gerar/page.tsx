@@ -66,7 +66,6 @@ const productTypes = [
   { value: "calca",     label: "👖 Calça / Shorts" },
   { value: "vestido",   label: "👗 Vestido" },
   { value: "macacao",   label: "🩱 Macacão / Culotte" },
-  { value: "conjunto",  label: "🎀 Conjunto" },
   { value: "jaqueta",   label: "🧥 Jaqueta / Casaco" },
   { value: "acessorio", label: "💎 Acessório" },
 ];
@@ -120,9 +119,22 @@ export default function GerarCampanha() {
   const [dragOverCloseUp, setDragOverCloseUp] = useState(false);
   const [dragOverSecond, setDragOverSecond] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [productType, setProductType] = useState("");
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
   const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
+  const [priceMode, setPriceMode] = useState<"conjunto" | "separado">("conjunto");
+  const [price2, setPrice2] = useState("");
+
+  const isConjunto = selectedTypes.length === 2;
+  const productType = isConjunto ? `conjunto:${selectedTypes.join("+")}` : selectedTypes[0] || "";
+
+  function toggleProductType(value: string) {
+    setSelectedTypes(prev => {
+      if (prev.includes(value)) return prev.filter(v => v !== value);
+      if (prev.length >= 2) return [prev[1], value]; // swap oldest
+      return [...prev, value];
+    });
+  }
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
   const [customModels, setCustomModels] = useState<{ id: string; name: string; body_type: string; photo_url?: string | null; is_active: boolean }[]>([]);
   const [userPlan, setUserPlan] = useState("free");
@@ -220,6 +232,10 @@ export default function GerarCampanha() {
       if (tone) formData.append("toneOverride", tone);
       if (productType) formData.append("productType", productType);
       if (material) formData.append("material", material);
+      if (isConjunto && priceMode === "separado" && price2) {
+        formData.append("price2", price2);
+        formData.append("priceMode", "separado");
+      }
       formData.append("bodyType", bodyType);
 
       formData.append("backgroundType", background);
@@ -573,27 +589,40 @@ export default function GerarCampanha() {
             </div>
           </div>
 
-          {/* Product Type */}
+          {/* Product Type — Multi-select (até 2 = conjunto) */}
           <div>
-            <label className="block text-sm font-semibold mb-2">Tipo de produto *</label>
+            <label className="block text-sm font-semibold mb-1">Tipo de produto *</label>
+            <p className="text-[10px] mb-2" style={{ color: "var(--muted)" }}>
+              Selecione 1 peça ou 2 para conjunto
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {productTypes.map((pt) => (
                 <button
                   key={pt.value}
-                  onClick={() => setProductType(pt.value)}
+                  onClick={() => toggleProductType(pt.value)}
                   className="p-2.5 rounded-xl text-left text-sm transition-all"
                   style={{
-                    background: productType === pt.value ? "var(--gradient-card)" : "var(--surface)",
-                    border: productType === pt.value
+                    background: selectedTypes.includes(pt.value) ? "var(--gradient-card)" : "var(--surface)",
+                    border: selectedTypes.includes(pt.value)
                       ? "1px solid var(--brand-300)"
                       : "1px solid var(--border)",
-                    fontWeight: productType === pt.value ? 600 : 400,
+                    fontWeight: selectedTypes.includes(pt.value) ? 600 : 400,
                   }}
                 >
                   {pt.label}
+                  {selectedTypes.includes(pt.value) && (
+                    <span className="ml-1 text-[10px]" style={{ color: "var(--brand-500)" }}>
+                      {selectedTypes.indexOf(pt.value) === 0 ? "①" : "②"}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+            {isConjunto && (
+              <div className="mt-2 p-2 rounded-lg text-[11px] font-medium flex items-center gap-1.5" style={{ background: "var(--brand-50)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}>
+                🎀 Conjunto: {productTypes.find(p => p.value === selectedTypes[0])?.label?.replace(/^.\s/, "")} + {productTypes.find(p => p.value === selectedTypes[1])?.label?.replace(/^.\s/, "")}
+              </div>
+            )}
           </div>
 
           {/* Material / Tecido (opcional) */}
@@ -619,29 +648,84 @@ export default function GerarCampanha() {
             </div>
           </div>
 
-          {/* Price */}
+          {/* Price — adaptável a conjunto */}
           <div>
-            <label className="block text-sm font-semibold mb-2">Preço de venda *</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
-                R$
-              </span>
-              <input
-                type="text"
-                value={price}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9.,]/g, "");
-                  setPrice(val);
-                }}
-                placeholder="Ex: 89,90"
-                className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: "var(--foreground)",
-                }}
-              />
-            </div>
+            <label className="block text-sm font-semibold mb-2">
+              {isConjunto ? "Preço do conjunto *" : "Preço de venda *"}
+            </label>
+
+            {/* Toggle preço conjunto vs separado */}
+            {isConjunto && (
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => setPriceMode("conjunto")}
+                  className="flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  style={{
+                    background: priceMode === "conjunto" ? "var(--brand-100)" : "var(--surface)",
+                    color: priceMode === "conjunto" ? "var(--brand-700)" : "var(--muted)",
+                    border: priceMode === "conjunto" ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                  }}
+                >
+                  💰 Preço único
+                </button>
+                <button
+                  onClick={() => setPriceMode("separado")}
+                  className="flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  style={{
+                    background: priceMode === "separado" ? "var(--brand-100)" : "var(--surface)",
+                    color: priceMode === "separado" ? "var(--brand-700)" : "var(--muted)",
+                    border: priceMode === "separado" ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                  }}
+                >
+                  💰💰 Preços separados
+                </button>
+              </div>
+            )}
+
+            {priceMode === "separado" && isConjunto ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: "var(--muted)" }}>R$</span>
+                  <input
+                    type="text"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    placeholder={productTypes.find(p => p.value === selectedTypes[0])?.label?.replace(/^.\s/, "") || "Peça 1"}
+                    className="w-full h-11 pl-9 pr-3 rounded-xl text-sm font-semibold outline-none transition-all"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                  />
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: "var(--muted)" }}>R$</span>
+                  <input
+                    type="text"
+                    value={price2}
+                    onChange={(e) => setPrice2(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    placeholder={productTypes.find(p => p.value === selectedTypes[1])?.label?.replace(/^.\s/, "") || "Peça 2"}
+                    className="w-full h-11 pl-9 pr-3 rounded-xl text-sm font-semibold outline-none transition-all"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
+                  R$
+                </span>
+                <input
+                  type="text"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                  placeholder="Ex: 89,90"
+                  className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: "var(--foreground)",
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
