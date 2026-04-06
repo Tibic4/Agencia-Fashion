@@ -218,11 +218,16 @@ export async function editImage(params: FashnEditParams & { storeId?: string; ca
   return result;
 }
 
-/** Prompts de fundo otimizados (anti-manequim + anti-etiqueta) */
+/** Prompts de cenário otimizados (anti-manequim + anti-etiqueta) */
 const BACKGROUND_PROMPTS: Record<string, string> = {
   branco: "Professional fashion e-commerce photo in clean white studio. CRITICAL: Preserve ALL garment details exactly — embroidery count, fabric texture, elastic bands, ribbed cuffs, folded hems, buttons. Smooth fabric without unnatural wrinkles. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders from the garment — these are NOT part of the design. KEEP functional accessories like belts, necklaces, bracelets. Remove any mannequin parts, stands, poles, or dark artifacts completely. Clean natural skin on legs and arms with consistent skin tone. Soft studio lighting with subtle shadows. Full body visible from head to feet including shoes.",
   estudio: "Professional fashion photo in elegant studio with soft gradient backdrop. CRITICAL: Preserve ALL garment details exactly — smocking, ruffles, embroidery patterns, elastic gathering, tie straps. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories like belts, necklaces. Remove any mannequin artifacts, stands or poles completely. Natural skin tones throughout body. Professional soft lighting.",
   lifestyle: "Professional fashion photo in urban outdoor setting with natural environment. CRITICAL: Preserve ALL garment construction details exactly as shown. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories. Remove any artificial elements, mannequin parts completely. Natural skin tones. Natural warm lighting.",
+  urbano: "Professional fashion photo on a modern city street. Textured concrete or brick wall background, urban sidewalk, moody street-style atmosphere. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Natural skin tones. Cool urban lighting with slight shadows.",
+  natureza: "Professional fashion photo in a beautiful natural garden setting. Lush green tropical plants, soft bokeh background, golden hour sunlight filtering through leaves. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Warm natural skin tones.",
+  interior: "Professional fashion photo in a modern minimalist interior. Clean white loft apartment with large windows and abundant natural light, contemporary furniture visible in soft focus. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Bright airy atmosphere.",
+  boutique: "Professional fashion photo inside a luxury fashion boutique. Elegant marble surfaces, gold accents, clothing racks softly blurred in background, warm ambient store lighting. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Premium retail atmosphere.",
+  gradiente: "Professional fashion photo with elegant smooth gradient backdrop transitioning from soft rose pink to warm peach gold. Abstract premium brand aesthetic feel. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Soft even studio lighting.",
   personalizado: "Professional fashion photo, smooth fabric without wrinkles. CRITICAL: Preserve ALL original garment details. REMOVE any price tags, store labels, hanging stickers, barcodes. KEEP functional accessories. Remove any mannequin artifacts.",
 };
 
@@ -241,7 +246,7 @@ function getBodyTypeInstruction(bodyType?: "normal" | "plus"): string {
  */
 export async function generateModelImage(
   productImage: string,
-  backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
+  backgroundType: string = "branco",
   backgroundValue?: string,
   bodyType?: "normal" | "plus",
 ): Promise<FashnJobResult> {
@@ -275,7 +280,7 @@ export async function generateModelImage(
 export async function generateWithModelBank(
   productImage: string,
   modelImageUrl: string,
-  backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
+  backgroundType: string = "branco",
   backgroundValue?: string,
 ): Promise<FashnJobResult> {
   // Passo 1: Try-On Max — vestir a peça na modelo do banco
