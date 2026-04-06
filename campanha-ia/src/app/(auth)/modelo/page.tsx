@@ -95,8 +95,18 @@ export default function ModeloVirtual() {
         const res = await fetch("/api/model/list");
         if (res.ok) {
           const data = await res.json();
-          setModels(data.models || []);
+          const loadedModels: StoreModel[] = data.models || [];
+          setModels(loadedModels);
           setUserPlan(data.plan || "free");
+
+          // Auto-generate preview for models without photo (once per session)
+          for (const m of loadedModels) {
+            const key = `preview_attempted_${m.id}`;
+            if (!m.photo_url && !sessionStorage.getItem(key)) {
+              sessionStorage.setItem(key, "1");
+              autoGeneratePreview(m.id);
+            }
+          }
         }
       } catch {
         // If API doesn't exist yet, use empty list
@@ -105,7 +115,32 @@ export default function ModeloVirtual() {
       }
     }
     loadModels();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Auto-gera preview para modelos sem foto (fire-and-forget) */
+  async function autoGeneratePreview(modelId: string) {
+    setRegeneratingId(modelId);
+    try {
+      const res = await fetch("/api/model/regenerate-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelId }),
+      });
+      const data = await res.json();
+      if (data.success && data.preview_url) {
+        setModels((prev) =>
+          prev.map((m) =>
+            m.id === modelId ? { ...m, photo_url: data.preview_url } : m
+          )
+        );
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setRegeneratingId(null);
+    }
+  }
 
   async function handleCreate() {
     setLoading(true);
@@ -181,28 +216,7 @@ export default function ModeloVirtual() {
     }
   }
 
-  async function handleRegeneratePreview(modelId: string) {
-    setRegeneratingId(modelId);
-    try {
-      const res = await fetch("/api/model/regenerate-preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelId }),
-      });
-      const data = await res.json();
-      if (data.success && data.preview_url) {
-        setModels((prev) =>
-          prev.map((m) =>
-            m.id === modelId ? { ...m, photo_url: data.preview_url } : m
-          )
-        );
-      }
-    } catch {
-      // Silent fail
-    } finally {
-      setRegeneratingId(null);
-    }
-  }
+  // handleRegeneratePreview moved to autoGeneratePreview above
 
   function resetForm() {
     setName("");
@@ -309,31 +323,22 @@ export default function ModeloVirtual() {
                   <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-3 p-4">
-                    <div className="text-5xl">👩</div>
-                    <button
-                      onClick={() => handleRegeneratePreview(model.id)}
-                      disabled={regeneratingId === model.id}
-                      className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
-                      style={{
-                        background: "var(--gradient-brand)",
-                        color: "white",
-                        opacity: regeneratingId === model.id ? 0.7 : 1,
-                      }}
-                    >
-                      {regeneratingId === model.id ? (
-                        <span className="flex items-center gap-1.5">
-                          <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                          </svg>
-                          Gerando foto...
-                        </span>
-                      ) : (
-                        "📸 Gerar foto"
-                      )}
-                    </button>
-                    <p className="text-[10px] text-center" style={{ color: "var(--muted)" }}>
-                      A IA criará uma foto da modelo
-                    </p>
+                    {regeneratingId === model.id ? (
+                      <>
+                        <div className="relative">
+                          <div className="w-16 h-16 rounded-full border-3 border-transparent animate-spin"
+                            style={{ borderTopColor: "var(--brand-500)", borderRightColor: "var(--brand-300)" }} />
+                          <span className="absolute inset-0 flex items-center justify-center text-2xl">✨</span>
+                        </div>
+                        <p className="text-xs font-medium" style={{ color: "var(--brand-500)" }}>Gerando foto...</p>
+                        <p className="text-[10px] text-center" style={{ color: "var(--muted)" }}>A IA está criando a foto da modelo</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-5xl animate-pulse">👩</div>
+                        <p className="text-[10px] text-center" style={{ color: "var(--muted)" }}>Aguardando preview...</p>
+                      </>
+                    )}
                   </div>
                 )}
                 {model.is_active && (
