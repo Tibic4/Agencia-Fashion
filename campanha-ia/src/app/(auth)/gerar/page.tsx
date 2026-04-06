@@ -152,6 +152,8 @@ export default function GerarCampanha() {
   const [userPlan, setUserPlan] = useState("free");
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
   const [modelFilter, setModelFilter] = useState<string>("all");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState<{
     used: number; limit: number; credits: number;
   } | null>(null);
@@ -594,7 +596,7 @@ export default function GerarCampanha() {
                     </div>
                     <div className="text-center">
                       <p className="text-xs font-semibold">Segunda peça</p>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>Calça do conjunto</p>
+                      <p className="text-xs" style={{ color: "var(--muted)" }}>Outra peça do look</p>
                     </div>
                     <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
@@ -874,36 +876,94 @@ export default function GerarCampanha() {
               {customModels
                 .filter(m => modelFilter === "all" || m.body_type === modelFilter || (modelFilter === "plus_size" && m.body_type === "plus_size"))
                 .map((model) => (
-                <button
-                  key={`custom-${model.id}`}
-                  onClick={() => setSelectedModelId(model.id)}
-                  className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
-                  style={{
-                    border: selectedModelId === model.id
-                      ? "2px solid var(--brand-500)"
-                      : "2px solid #D4A017",
-                    boxShadow: "0 0 8px rgba(212,160,23,0.25)",
-                  }}
-                  title={`⭐ ${model.name} (sua modelo)`}
-                >
-                  {model.photo_url ? (
-                    <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #FFF8E1, #FFE082)" }}>
-                      <span className="text-2xl">👩</span>
-                      <span className="text-[10px] font-medium mt-1" style={{ color: "#8B6914" }}>{model.name}</span>
+                <div key={`custom-${model.id}`} className="relative group">
+                  <button
+                    onClick={() => setSelectedModelId(model.id)}
+                    className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                    style={{
+                      border: selectedModelId === model.id
+                        ? "2px solid var(--brand-500)"
+                        : "2px solid #D4A017",
+                      boxShadow: "0 0 8px rgba(212,160,23,0.25)",
+                    }}
+                    title={`⭐ ${model.name} (sua modelo)`}
+                  >
+                    {model.photo_url ? (
+                      <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #FFF8E1, #FFE082)" }}>
+                        <span className="text-2xl">👩</span>
+                        <span className="text-[10px] font-medium mt-1" style={{ color: "#8B6914" }}>{model.name}</span>
+                      </div>
+                    )}
+                    {/* Badge ⭐ */}
+                    <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
+                      ⭐ Sua
+                    </div>
+                    {selectedModelId === model.id && (
+                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Botão excluir — visível no hover (desktop) e sempre no mobile */}
+                  {confirmDeleteId !== model.id && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(model.id); }}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:scale-110"
+                      style={{
+                        background: "rgba(220,38,38,0.85)",
+                        color: "white",
+                        fontSize: "14px",
+                        lineHeight: 1,
+                        backdropFilter: "blur(4px)",
+                      }}
+                      title="Excluir modelo"
+                    >
+                      ×
+                    </button>
+                  )}
+
+                  {/* Overlay de confirmação */}
+                  {confirmDeleteId === model.id && (
+                    <div
+                      className="absolute inset-0 rounded-lg flex flex-col items-center justify-center gap-2 z-10"
+                      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+                    >
+                      <p className="text-white text-xs font-semibold text-center px-2">Excluir modelo?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setDeletingModelId(model.id);
+                            try {
+                              const res = await fetch(`/api/models/${model.id}`, { method: "DELETE" });
+                              if (res.ok) {
+                                setCustomModels(prev => prev.filter(m => m.id !== model.id));
+                                if (selectedModelId === model.id) setSelectedModelId("random");
+                              }
+                            } catch { /* ignore */ }
+                            setDeletingModelId(null);
+                            setConfirmDeleteId(null);
+                          }}
+                          disabled={deletingModelId === model.id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                          style={{ background: "#DC2626", color: "white", opacity: deletingModelId === model.id ? 0.6 : 1 }}
+                        >
+                          {deletingModelId === model.id ? "..." : "Sim"}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                          style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
+                        >
+                          Não
+                        </button>
+                      </div>
                     </div>
                   )}
-                  {/* Badge ⭐ */}
-                  <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
-                    ⭐ Sua
-                  </div>
-                  {selectedModelId === model.id && (
-                    <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">✓</span>
-                    </div>
-                  )}
-                </button>
+                </div>
               ))}
 
               {/* + Criar nova modelo / Upgrade CTA */}
