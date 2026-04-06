@@ -380,6 +380,8 @@ export async function POST(request: NextRequest) {
           productType: productType || undefined,
           material: material || undefined,
           backgroundType: backgroundType || undefined,
+          storeId: store?.id,
+          campaignId: campaignRecord?.id,
         },
         (step, label, progress) => {
           console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
