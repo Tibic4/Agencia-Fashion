@@ -2,11 +2,14 @@
  * Admin guard — verifica se o usuário autenticado é admin.
  * Usado por TODAS as rotas /api/admin/*.
  *
- * Estratégia: checa `publicMetadata.role` via sessionClaims do Clerk.
- * A publicMetadata é configurada no Dashboard do Clerk por usuário.
+ * Estratégia:
+ * 1. Checa ADMIN_USER_IDS no .env (lista separada por vírgula)
+ * 2. Fallback: checa publicMetadata.role via sessionClaims do Clerk
  */
 
 import { auth } from "@clerk/nextjs/server";
+
+const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").map((s) => s.trim()).filter(Boolean);
 
 /**
  * Verifica se o user atual é admin.
@@ -15,26 +18,19 @@ import { auth } from "@clerk/nextjs/server";
 export async function requireAdmin(): Promise<{ isAdmin: true; userId: string } | { isAdmin: false; userId: null }> {
   const session = await auth();
   if (!session.userId) {
-    console.log("[Admin Guard] No userId — not authenticated");
     return { isAdmin: false, userId: null };
   }
 
-  // Debug: ver toda a estrutura de claims
-  const claims = session.sessionClaims;
-  console.log("[Admin Guard] userId:", session.userId);
-  console.log("[Admin Guard] sessionClaims keys:", claims ? Object.keys(claims) : "null");
-  console.log("[Admin Guard] metadata:", JSON.stringify((claims as Record<string, unknown>)?.metadata));
-  console.log("[Admin Guard] publicMetadata:", JSON.stringify((claims as Record<string, unknown>)?.publicMetadata));
-  console.log("[Admin Guard] public_metadata:", JSON.stringify((claims as Record<string, unknown>)?.public_metadata));
+  // 1. Checar por ID direto (mais confiável)
+  if (ADMIN_USER_IDS.includes(session.userId)) {
+    return { isAdmin: true, userId: session.userId };
+  }
 
-  // Tentar múltiplos paths possíveis
-  const metadata = (claims as Record<string, unknown>)?.metadata as { role?: string } | undefined;
-  const publicMetadata = (claims as Record<string, unknown>)?.publicMetadata as { role?: string } | undefined;
-  const publicMeta2 = (claims as Record<string, unknown>)?.public_metadata as { role?: string } | undefined;
-  
-  const role = metadata?.role || publicMetadata?.role || publicMeta2?.role;
-
-  console.log("[Admin Guard] Resolved role:", role);
+  // 2. Checar por publicMetadata.role no Clerk
+  const claims = session.sessionClaims as Record<string, unknown> | undefined;
+  const metadata = claims?.metadata as { role?: string } | undefined;
+  const publicMetadata = claims?.publicMetadata as { role?: string } | undefined;
+  const role = metadata?.role || publicMetadata?.role;
 
   if (role === "admin" || role === "super_admin") {
     return { isAdmin: true, userId: session.userId };
