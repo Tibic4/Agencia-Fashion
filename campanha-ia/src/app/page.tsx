@@ -58,54 +58,50 @@ const IconWhatsApp = () => (
 const plans = [
   {
     name: "Starter",
-    price: 59,
+    price: 79,
     badge: "⭐",
     popular: false,
-    campaigns: 15,
+    campaigns: 20,
     channels: "Todos (4)",
     models: 1,
-    regen: 2,
     history: "90 dias",
-    features: ["Score completo", "1 modelo virtual", "2 regenerações/camp", "Suporte email"],
-    notIncluded: ["Link de prévia", "Marca branca"],
+    features: ["Score completo", "1 modelo virtual", "Modelo + fundo profissional", "Suporte email"],
+    notIncluded: ["Marca branca"],
   },
   {
     name: "Pro",
-    price: 129,
+    price: 179,
     badge: "🚀",
     popular: true,
-    campaigns: 40,
+    campaigns: 45,
     channels: "Todos (4)",
-    models: 2,
-    regen: 3,
+    models: 3,
     history: "1 ano",
-    features: ["Score completo", "2 modelos virtuais", "3 regenerações/camp", "Link de prévia", "Suporte email"],
+    features: ["Score completo", "3 modelos virtuais", "Modelo + fundo profissional", "Suporte email"],
     notIncluded: ["Marca branca"],
   },
   {
     name: "Business",
-    price: 249,
+    price: 349,
     badge: "🏢",
     popular: false,
-    campaigns: 85,
+    campaigns: 90,
     channels: "Todos (4)",
-    models: 3,
-    regen: 3,
+    models: 5,
     history: "Ilimitado",
-    features: ["Tudo do Pro", "3 modelos virtuais", "Modelo + fundo profissional", "3 regenerações/camp", "Histórico ilimitado", "Suporte WhatsApp"],
+    features: ["Tudo do Pro", "5 modelos virtuais", "Modelo + fundo profissional", "Histórico ilimitado", "Suporte WhatsApp"],
     notIncluded: ["Marca branca"],
   },
   {
     name: "Agência",
-    price: 499,
+    price: 699,
     badge: "🏆",
     popular: false,
-    campaigns: 170,
+    campaigns: 180,
     channels: "Todos (4)",
-    models: 5,
-    regen: 3,
+    models: 10,
     history: "Ilimitado",
-    features: ["Tudo do Business", "5 modelos virtuais", "Modelo + fundo profissional", "Marca branca", "API pública", "Suporte prioritário"],
+    features: ["Tudo do Business", "10 modelos virtuais", "Modelo + fundo profissional", "Marca branca", "API pública", "Suporte prioritário"],
     notIncluded: [],
   },
 ];
@@ -228,8 +224,8 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 animate-pulse-glow">
                   <IconZap />
-                  <span className="sm:hidden">Testar — R$ 9,90</span>
-                  <span className="hidden sm:inline">Testar na prática — a partir de R$ 9,90</span>
+                  <span className="sm:hidden">Testar — R$ 9,99</span>
+                  <span className="hidden sm:inline">Testar na prática — a partir de R$ 9,99</span>
                 </Link>
                 <a href="#como-funciona" className="btn-secondary text-base !py-3.5 !px-8">
                   Ver como funciona
@@ -423,7 +419,7 @@ export default function Home() {
                 Teste na prática, <span className="gradient-text">escale quando quiser</span>
               </h2>
               <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Comece com 3 campanhas por R$ 9,90. Gostou? Assine e pague menos por campanha.
+                Comece com 3 campanhas por R$ 9,99. Gostou? Assine e pague menos por campanha.
               </p>
             </div>
 
@@ -437,7 +433,7 @@ export default function Home() {
                 <div className="text-2xl mb-2">🎯</div>
                 <h3 className="text-xl font-bold mb-1">Teste na Prática</h3>
                 <div className="flex items-baseline justify-center gap-1 mb-2">
-                  <span className="text-3xl font-black">R$ 9,90</span>
+                  <span className="text-3xl font-black">R$ 9,99</span>
                   <span className="text-sm" style={{ color: 'var(--muted)' }}>único</span>
                 </div>
                 <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
@@ -445,7 +441,7 @@ export default function Home() {
                 </p>
                 <Link href="/sign-up" className="btn-primary w-full !py-3 text-base animate-pulse-glow">
                   <IconZap />
-                  Começar por R$ 9,90
+                  Começar por R$ 9,99
                 </Link>
                 <p className="text-xs mt-3" style={{ color: 'var(--muted)' }}>
                   Pague via PIX ou cartão • Créditos não expiram
@@ -545,7 +541,7 @@ export default function Home() {
               Pronto para vender <span className="gradient-text">mais</span>?
             </h2>
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Teste com 3 campanhas por R$ 9,90. Sem compromisso, sem mensalidade, sem complicação.
+              Teste com 3 campanhas por R$ 9,99. Sem compromisso, sem mensalidade, sem complicação.
             </p>
             <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 animate-pulse-glow">
               <IconZap />

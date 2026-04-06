@@ -11,7 +11,6 @@ interface StoreUsage {
   campaigns_limit: number;
   models_used: number;
   models_limit: number;
-  regen_limit: number;
 }
 
 interface StoreData {
@@ -21,19 +20,18 @@ interface StoreData {
 }
 
 const plans = [
-  { id: "starter", name: "Starter", badge: "⭐", price: 59, campaigns: 15, models: 1, regen: 2, highlight: false },
-  { id: "pro", name: "Pro", badge: "🚀", price: 129, campaigns: 40, models: 2, regen: 3, highlight: true },
-  { id: "business", name: "Business", badge: "🏢", price: 249, campaigns: 85, models: 3, regen: 3, highlight: false },
-  { id: "agencia", name: "Agência", badge: "🏆", price: 499, campaigns: 170, models: 5, regen: 3, highlight: false },
+  { id: "starter", name: "Starter", badge: "⭐", price: 79, campaigns: 20, models: 1, highlight: false },
+  { id: "pro", name: "Pro", badge: "🚀", price: 179, campaigns: 45, models: 3, highlight: true },
+  { id: "business", name: "Business", badge: "🏢", price: 349, campaigns: 90, models: 5, highlight: false },
+  { id: "agencia", name: "Agência", badge: "🏆", price: 699, campaigns: 180, models: 10, highlight: false },
 ];
 
 const extras = [
-  { label: "+5 campanhas", price: "R$ 29,90", packageId: "5_campanhas" },
-  { label: "+10 campanhas", price: "R$ 49,90", packageId: "10_campanhas" },
-  { label: "+25 campanhas", price: "R$ 99,90", packageId: "25_campanhas" },
-  { label: "+1 modelo virtual", price: "R$ 4,90", packageId: "1_modelo" },
-  { label: "+3 modelos virtuais", price: "R$ 12,90", packageId: "3_modelos" },
-  { label: "+10 regenerações", price: "R$ 9,90", packageId: "10_regeneracoes" },
+  { label: "+1 campanha", price: "R$ 7,99", packageId: "1_campanha" },
+  { label: "+5 campanhas", price: "R$ 34,99", packageId: "5_campanhas" },
+  { label: "+10 campanhas", price: "R$ 59,99", packageId: "10_campanhas" },
+  { label: "+1 modelo virtual", price: "R$ 5,99", packageId: "1_modelo" },
+  { label: "+3 modelos virtuais", price: "R$ 14,99", packageId: "3_modelos" },
 ];
 
 export default function Plano() {
@@ -227,10 +225,8 @@ export default function Plano() {
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
-              <span style={{ color: "var(--muted)" }}>Regenerações/camp</span>
-              <span className="font-bold">
-                {dataLoading ? "..." : `${usage?.regen_limit ?? 0} por campanha`}
-              </span>
+              <span style={{ color: "var(--muted)" }}>Modelo + Fundo</span>
+              <span className="font-bold" style={{ color: "var(--success)" }}>✓ Incluso</span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
               <div className="h-full rounded-full" style={{ width: "100%", background: "var(--gradient-brand)" }} />
@@ -262,7 +258,7 @@ export default function Plano() {
             <div className="mt-4 space-y-2 flex-1">
               <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.campaigns} campanhas/mês</div>
               <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.models} modelos virtuais</div>
-              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.regen} regen/campanha</div>
+              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>Modelo + fundo profissional</div>
             </div>
             <button
               onClick={() => handleCheckout(plan.id)}
