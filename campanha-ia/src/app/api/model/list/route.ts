@@ -40,7 +40,7 @@ export async function GET() {
         age_range: m.age_range,
         is_active: m.is_active,
         created_at: m.created_at,
-        photo_url: m.reference_photos?.[0] || null,
+        photo_url: m.preview_url || m.reference_photos?.[0] || null,
       })),
       plan: planName,
       limit,
