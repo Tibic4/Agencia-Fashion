@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useEffect, useRef } from "react";
-import { Stage, Layer, Image as KImage, Text, Rect } from "react-konva";
+import { Stage, Layer, Image as KImage, Text, Rect, Group } from "react-konva";
 import Konva from "konva";
 import type {
   TemplateStyle,
@@ -9,6 +9,7 @@ import type {
   ElementKey,
   KonvaDragEvent,
   CropConfig,
+  CustomElement,
 } from "./types";
 import DraggableElement from "./DraggableElement";
 import { CANVAS_W, LAYOUT, truncateText, formatPrice } from "./constants";
@@ -34,6 +35,11 @@ interface KonvaCanvasProps {
   onDragEnd: (key: ElementKey, e: KonvaDragEvent) => void;
   onSelect: (key: ElementKey) => void;
   onDeselect: () => void;
+  /* Custom elements */
+  customElements?: CustomElement[];
+  selectedCustomId?: string | null;
+  onCustomDragEnd?: (id: string, x: number, y: number) => void;
+  onCustomSelect?: (id: string | null) => void;
 }
 
 /**
@@ -61,8 +67,14 @@ export default function KonvaCanvas({
   onDragEnd,
   onSelect,
   onDeselect,
+  customElements = [],
+  selectedCustomId,
+  onCustomDragEnd,
+  onCustomSelect,
 }: KonvaCanvasProps) {
   const fontLoadedRef = useRef(false);
+  const modelImgRef = useRef<Konva.Image>(null);
+  const gradientRef = useRef<Konva.Image>(null);
 
   // Ensure fonts are loaded before drawing
   useEffect(() => {
@@ -72,6 +84,27 @@ export default function KonvaCanvas({
       stageRef.current?.batchDraw();
     });
   }, [stageRef]);
+
+  // Cache static elements (pre-rasterize for faster redraws during drag)
+  useEffect(() => {
+    // Cache model image — doesn't change during interactions
+    if (modelImgRef.current && loadedImg) {
+      try {
+        modelImgRef.current.cache();
+        modelImgRef.current.getLayer()?.batchDraw();
+      } catch { /* cache may fail on cross-origin without proper CORS */ }
+    }
+  }, [loadedImg, canvasH]);
+
+  useEffect(() => {
+    // Cache gradient overlay — only changes when template switches
+    if (gradientRef.current && gradientImg) {
+      try {
+        gradientRef.current.cache();
+        gradientRef.current.getLayer()?.batchDraw();
+      } catch { /* safe fallback */ }
+    }
+  }, [gradientImg]);
 
   const displayPrice = useMemo(() => formatPrice(price), [price]);
   const S = previewScale;
@@ -196,22 +229,82 @@ export default function KonvaCanvas({
               {/* 1. Background */}
               <Rect x={0} y={0} width={CANVAS_W} height={canvasH} fill="#f5f5f5" />
 
-              {/* 2. Model image (cover) */}
+              {/* 2. Model image (cover) — cached for performance */}
               {loadedImg && crop && (
                 <KImage
+                  ref={modelImgRef}
                   image={loadedImg}
                   x={0}
                   y={0}
                   width={CANVAS_W}
                   height={canvasH}
                   crop={{ x: crop.cropX, y: crop.cropY, width: crop.cropW, height: crop.cropH }}
+                  listening={false}
                 />
               )}
 
-              {/* 3. Gradient overlay */}
+              {/* 3. Gradient overlay — cached for performance */}
               {gradientImg && t.hasGradient && (
-                <KImage image={gradientImg} x={0} y={0} width={CANVAS_W} height={canvasH} listening={false} />
+                <KImage
+                  ref={gradientRef}
+                  image={gradientImg}
+                  x={0}
+                  y={0}
+                  width={CANVAS_W}
+                  height={canvasH}
+                  listening={false}
+                />
               )}
+
+              {/* 3.5 Custom imported elements (between gradient and text) */}
+              {customElements.map((el) => (
+                <Group
+                  key={el.id}
+                  x={el.x}
+                  y={el.y}
+                  offsetX={el.width / 2}
+                  offsetY={el.height / 2}
+                  rotation={el.rotation}
+                  opacity={el.opacity}
+                  draggable
+                  onClick={() => {
+                    onDeselect();
+                    onCustomSelect?.(el.id);
+                  }}
+                  onTap={() => {
+                    onDeselect();
+                    onCustomSelect?.(el.id);
+                  }}
+                  onDragEnd={(e) => {
+                    const node = e.target;
+                    onCustomDragEnd?.(el.id, node.x(), node.y());
+                  }}
+                  onDragStart={() => {
+                    onCustomSelect?.(el.id);
+                  }}
+                >
+                  <KImage
+                    image={el.loadedImg!}
+                    width={el.width}
+                    height={el.height}
+                    cornerRadius={el.circular ? el.width / 2 : 0}
+                  />
+                  {/* Selection highlight */}
+                  {selectedCustomId === el.id && (
+                    <Rect
+                      x={-3}
+                      y={-3}
+                      width={el.width + 6}
+                      height={el.height + 6}
+                      stroke="#ec4899"
+                      strokeWidth={2}
+                      dash={[6, 3]}
+                      cornerRadius={el.circular ? (el.width + 6) / 2 : 4}
+                      listening={false}
+                    />
+                  )}
+                </Group>
+              ))}
 
               {/* 4. Store badge */}
               <DraggableElement

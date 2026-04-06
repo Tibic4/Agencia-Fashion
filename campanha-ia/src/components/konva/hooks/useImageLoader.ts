@@ -18,13 +18,10 @@ export function useImageLoader(imageUrl: string | null | undefined): UseImageLoa
   const [imgLoading, setImgLoading] = useState(false);
 
   useEffect(() => {
-    if (!imageUrl) {
-      setLoadedImg(null);
-      setImgError(false);
-      setImgLoading(false);
-      return;
-    }
+    // No URL — reset handled via cleanup pattern
+    if (!imageUrl) return;
 
+    let cancelled = false;
     setImgLoading(true);
     setImgError(false);
 
@@ -32,21 +29,29 @@ export function useImageLoader(imageUrl: string | null | undefined): UseImageLoa
     img.crossOrigin = "anonymous";
 
     img.onload = () => {
-      setLoadedImg(img);
-      setImgLoading(false);
+      if (!cancelled) {
+        setLoadedImg(img);
+        setImgLoading(false);
+      }
     };
 
     img.onerror = () => {
-      setLoadedImg(null);
-      setImgError(true);
-      setImgLoading(false);
+      if (!cancelled) {
+        setLoadedImg(null);
+        setImgError(true);
+        setImgLoading(false);
+      }
     };
 
     img.src = imageUrl;
 
     return () => {
+      cancelled = true;
       img.onload = null;
       img.onerror = null;
+      setLoadedImg(null);
+      setImgError(false);
+      setImgLoading(false);
     };
   }, [imageUrl]);
 

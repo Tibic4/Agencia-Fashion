@@ -171,6 +171,7 @@ export default function TestKonvaPage() {
         storeName={storeName}
         score={score}
         format={format}
+        enableCustomElements
       />
     </div>
   );
