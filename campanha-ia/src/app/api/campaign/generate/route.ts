@@ -66,9 +66,8 @@ export async function POST(request: NextRequest) {
     if (!imageFile) {
       return NextResponse.json({ error: "Envie a foto do produto", code: "MISSING_IMAGE" }, { status: 400 });
     }
-    if (!price) {
-      return NextResponse.json({ error: "Informe o preço do produto", code: "MISSING_PRICE" }, { status: 400 });
-    }
+    const priceStr = price || "";
+
 
     const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!validTypes.includes(imageFile.type)) {
@@ -172,7 +171,7 @@ export async function POST(request: NextRequest) {
         storeId: store.id,
         productPhotoUrl,
         productPhotoStoragePath: storagePath,
-        price: parseFloat(price.replace(",", ".")),
+        price: priceStr ? parseFloat(priceStr.replace(",", ".")) : 0,
         objective,
         targetAudience: targetAudience || undefined,
         toneOverride: toneOverride || undefined,
@@ -371,7 +370,7 @@ export async function POST(request: NextRequest) {
           imageBase64,
           mediaType,
           extraImages: extraImages.length > 0 ? extraImages : undefined,
-          price,
+          price: priceStr,
           objective,
           storeName: store?.name || storeName,
           targetAudience: targetAudience || undefined,

@@ -208,7 +208,7 @@ export default function GerarCampanha() {
   };
 
   const handleGenerate = async () => {
-    if (!preview || !price || !selectedFile) return;
+    if (!preview || !selectedFile) return;
     setIsGenerating(true);
     setGenerationStep(0);
     setError(null);
@@ -672,7 +672,7 @@ export default function GerarCampanha() {
           {/* Price — adaptável a conjunto */}
           <div>
             <label className="block text-sm font-semibold mb-2">
-              {isConjunto ? "Preço do conjunto *" : "Preço de venda *"}
+              {isConjunto ? "Preço do conjunto" : "Preço de venda"} <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional)</span>
             </label>
 
             {/* Toggle preço conjunto vs separado */}
