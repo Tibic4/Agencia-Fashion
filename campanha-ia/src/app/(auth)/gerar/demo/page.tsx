@@ -6,9 +6,48 @@ import CreativePreview from "@/components/CreativePreview";
 import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
 import HeadlineABTest from "@/components/HeadlineABTest";
 import MobilePreview from "@/components/MobilePreview";
+import { extractPrice } from "@/components/konva/constants";
 import dynamic from "next/dynamic";
 
 const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { ssr: false });
+
+/* ═══════════════════════════════════════
+   Campaign Data Type (replaces `any`)
+   ═══════════════════════════════════════ */
+interface CampaignOutput {
+  instagram_feed?: string;
+  instagram_stories?: {
+    slide_1: string;
+    slide_2: string;
+    slide_3: string;
+    cta_final: string;
+  };
+  whatsapp?: string;
+  meta_ads?: {
+    titulo: string;
+    texto_principal: string;
+    descricao: string;
+    cta_button: string;
+  };
+  hashtags?: string[];
+  headline_principal?: string;
+  headline_variacao_1?: string;
+  headline_variacao_2?: string;
+}
+
+interface CampaignVision {
+  produto?: { nome_generico?: string };
+  contexto?: { loja?: string };
+}
+
+interface CampaignData {
+  output?: CampaignOutput;
+  vision?: CampaignVision;
+  score?: typeof fallbackScore;
+  durationMs?: number;
+  campaignId?: string;
+  tryOnImageUrl?: string;
+}
 
 const IconCopy = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -78,7 +117,7 @@ export default function ResultadoCampanha() {
   const [activeChannel, setActiveChannel] = useState("instagram_feed");
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
-  const [campaignData, setCampaignData] = useState<any>(null);
+  const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
   const [regenerating, setRegenerating] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [productImageUrl, setProductImageUrl] = useState<string | null>(null);
@@ -200,65 +239,7 @@ export default function ResultadoCampanha() {
     }
   };
 
-  // ── Baixar PNG do criativo ──
-  const handleDownloadPNG = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1080;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
-    gradient.addColorStop(0, "#fdf2f8");
-    gradient.addColorStop(0.5, "#fce7f3");
-    gradient.addColorStop(1, "#f5f3ff");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1080, 1080);
-
-    // Brand badge
-    ctx.fillStyle = "#ec4899";
-    ctx.font = "bold 24px Inter, system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("✨ CriaLook", 540, 80);
-
-    // Product name
-    ctx.fillStyle = "#1a1a2e";
-    ctx.font = "bold 64px Inter, system-ui, sans-serif";
-    ctx.fillText(productName, 540, 480);
-
-    // Price
-    const priceText = campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || "";
-    if (priceText) {
-      ctx.fillStyle = "#ec4899";
-      ctx.font = "bold 72px Inter, system-ui, sans-serif";
-      ctx.fillText(priceText, 540, 580);
-    }
-
-    // CTA
-    ctx.fillStyle = "#ec4899";
-    ctx.beginPath();
-    ctx.roundRect(290, 700, 500, 70, 35);
-    ctx.fill();
-    ctx.fillStyle = "white";
-    ctx.font = "bold 28px Inter, system-ui, sans-serif";
-    ctx.fillText("Compre agora 💕", 540, 745);
-
-    // Score badge
-    ctx.fillStyle = "rgba(0,0,0,0.08)";
-    ctx.beginPath();
-    ctx.roundRect(410, 900, 260, 50, 25);
-    ctx.fill();
-    ctx.fillStyle = "#666";
-    ctx.font = "18px Inter, system-ui, sans-serif";
-    ctx.fillText(`Score: ${scoreData.nota_geral}/100 ⭐`, 540, 932);
-
-    // Download
-    const link = document.createElement("a");
-    link.download = `crialook-${productName.toLowerCase().replace(/\s+/g, "-")}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  };
+  // ── Download de PNG removido — agora usa o download integrado do KonvaCompositor ──
 
   // ── Baixar todos os textos ──
   const handleDownloadTexts = () => {
@@ -470,7 +451,7 @@ export default function ResultadoCampanha() {
                 modelImageUrl={tryOnImageUrl}
                 productImageUrl={productImageUrl}
                 productName={productName}
-                price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
+                price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
                 headline={campaignData?.output?.meta_ads?.titulo || ""}
                 cta={campaignData?.output?.meta_ads?.cta_button || "Compre agora"}
                 storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
@@ -482,7 +463,7 @@ export default function ResultadoCampanha() {
           {/* Criativo com foto do produto (fallback/complementar) */}
           <CreativePreview
             productName={productName}
-            price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
+            price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
             headline={campaignData?.output?.meta_ads?.titulo || ""}
             cta={campaignData?.output?.meta_ads?.cta_button || "Comprar agora"}
             productImageUrl={productImageUrl}
@@ -492,7 +473,7 @@ export default function ResultadoCampanha() {
           {/* Stories 1080×1920 — 3 slides */}
           <CreativeStoriesPreview
             productName={productName}
-            price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
+            price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
             slideGancho={campaignData?.output?.instagram_stories?.slide_1 || "Olha o que acabou de chegar! 😍"}
             slideProduto={campaignData?.output?.instagram_stories?.slide_2 || ""}
             slideCTA={campaignData?.output?.instagram_stories?.slide_3 || "Chama no direct! 💬"}
@@ -544,7 +525,7 @@ export default function ResultadoCampanha() {
                 {productName}
               </div>
               <div style={{ fontSize: 18, fontWeight: 900, color: "#ec4899", marginTop: 4 }}>
-                {campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || "R$ 89,90"}
+                {extractPrice(campaignData?.output?.meta_ads?.texto_principal) || "R$ 89,90"}
               </div>
               <div
                 style={{
