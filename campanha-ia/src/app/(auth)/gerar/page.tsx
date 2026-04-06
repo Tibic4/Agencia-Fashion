@@ -55,15 +55,15 @@ const tones = [
 ];
 
 const backgrounds = [
-  { value: "branco",     label: "Branco",       thumb: "/bg/branco.png" },
-  { value: "estudio",    label: "Estúdio",       thumb: "/bg/estudio.png" },
-  { value: "lifestyle",  label: "Lifestyle",    thumb: "/bg/lifestyle.png" },
-  { value: "urbano",     label: "Urbano",       thumb: "/bg/urbano.png" },
-  { value: "natureza",   label: "Natureza",     thumb: "/bg/natureza.png" },
-  { value: "interior",   label: "Interior",     thumb: "/bg/interior.png" },
-  { value: "boutique",   label: "Boutique",     thumb: "/bg/boutique.png" },
-  { value: "gradiente",  label: "Gradiente",    thumb: "/bg/gradiente.png" },
-  { value: "personalizado", label: "Personalizado", thumb: null },
+  { value: "branco",     label: "Branco",       thumb: "/bg/branco.png",    ai: false },
+  { value: "estudio",    label: "Estúdio",       thumb: "/bg/estudio.png",   ai: false },
+  { value: "lifestyle",  label: "Lifestyle",    thumb: "/bg/lifestyle.png", ai: true },
+  { value: "urbano",     label: "Urbano",       thumb: "/bg/urbano.png",    ai: true },
+  { value: "natureza",   label: "Natureza",     thumb: "/bg/natureza.png",  ai: true },
+  { value: "interior",   label: "Interior",     thumb: "/bg/interior.png",  ai: true },
+  { value: "boutique",   label: "Boutique",     thumb: "/bg/boutique.png",  ai: true },
+  { value: "gradiente",  label: "Gradiente",    thumb: "/bg/gradiente.png", ai: false },
+  { value: "personalizado", label: "Personalizado", thumb: null,            ai: true },
 ];
 
 const productTypes = [
@@ -695,7 +695,7 @@ export default function GerarCampanha() {
               <div className="flex gap-2 mb-2">
                 <button
                   onClick={() => setPriceMode("conjunto")}
-                  className="flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
                   style={{
                     background: priceMode === "conjunto" ? "var(--brand-100)" : "var(--surface)",
                     color: priceMode === "conjunto" ? "var(--brand-700)" : "var(--muted)",
@@ -706,7 +706,7 @@ export default function GerarCampanha() {
                 </button>
                 <button
                   onClick={() => setPriceMode("separado")}
-                  className="flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                  className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
                   style={{
                     background: priceMode === "separado" ? "var(--brand-100)" : "var(--surface)",
                     color: priceMode === "separado" ? "var(--brand-700)" : "var(--muted)",
@@ -808,7 +808,7 @@ export default function GerarCampanha() {
               >
                 <span className="text-2xl">👤</span>
                 <p className="text-sm font-semibold mt-1">Normal</p>
-                <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos P / M / G</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos P / M / G</p>
               </button>
               <button
                 onClick={() => { setBodyType("plus"); setModelFilter("plus_size"); }}
@@ -822,7 +822,7 @@ export default function GerarCampanha() {
               >
                 <span className="text-2xl">💃</span>
                 <p className="text-sm font-semibold mt-1">Plus Size</p>
-                <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos GG / XGG / EGG</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos GG / XGG / EGG</p>
               </button>
             </div>
           </div>
@@ -833,7 +833,7 @@ export default function GerarCampanha() {
               <div>
                 <label className="text-sm font-semibold">Escolha a modelo</label>
                 {customModels.length > 0 && (
-                  <span className="text-[10px] ml-2" style={{ color: "var(--muted)" }}>
+                  <span className="text-xs ml-2" style={{ color: "var(--muted)" }}>
                     {customModels.length}/{maxModels} personalizadas
                   </span>
                 )}
@@ -843,7 +843,7 @@ export default function GerarCampanha() {
                   <button
                     key={f}
                     onClick={() => setModelFilter(f)}
-                    className="px-2 py-1 rounded-md text-[10px] font-medium transition-all"
+                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
@@ -854,7 +854,7 @@ export default function GerarCampanha() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
               {/* Opção aleatória */}
               <button
                 onClick={() => setSelectedModelId("random")}
@@ -867,7 +867,7 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-lg">🎲</span>
-                <span className="text-[9px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
+                <span className="text-[10px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
               </button>
 
               {/* ⭐ Modelos personalizadas da loja (borda dourada) */}
@@ -891,11 +891,11 @@ export default function GerarCampanha() {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #FFF8E1, #FFE082)" }}>
                       <span className="text-2xl">👩</span>
-                      <span className="text-[8px] font-medium mt-1" style={{ color: "#8B6914" }}>{model.name}</span>
+                      <span className="text-[10px] font-medium mt-1" style={{ color: "#8B6914" }}>{model.name}</span>
                     </div>
                   )}
                   {/* Badge ⭐ */}
-                  <div className="absolute top-1 left-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
+                  <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
                     ⭐ Sua
                   </div>
                   {selectedModelId === model.id && (
@@ -919,8 +919,8 @@ export default function GerarCampanha() {
                   title="Criar modelo personalizada"
                 >
                   <span className="text-lg">+</span>
-                  <span className="text-[8px] font-semibold mt-1">Nova modelo</span>
-                  <span className="text-[7px] mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
+                  <span className="text-[10px] font-semibold mt-1">Nova modelo</span>
+                  <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
                 </a>
               ) : maxModels > 0 ? (
                 <a
@@ -934,8 +934,8 @@ export default function GerarCampanha() {
                   title="Faça upgrade para mais modelos"
                 >
                   <span className="text-lg">⬆️</span>
-                  <span className="text-[8px] font-semibold mt-1">+ Modelos</span>
-                  <span className="text-[7px] mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
+                  <span className="text-[10px] font-semibold mt-1">+ Modelos</span>
+                  <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
                 </a>
               ) : null}
 
@@ -971,7 +971,7 @@ export default function GerarCampanha() {
             {/* CTA comprar modelo avulsa — quando atingiu limite e plano não é free */}
             {maxModels > 0 && customModels.length >= maxModels && (
               <div className="mt-3 p-2.5 rounded-xl text-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+                <p className="text-xs" style={{ color: "var(--muted)" }}>
                   Limite atingido ({customModels.length}/{maxModels}) ·{" "}
                   <a href="/plano" className="font-semibold" style={{ color: "var(--brand-600)" }}>
                     Upgrade
@@ -1008,8 +1008,7 @@ export default function GerarCampanha() {
                     </div>
                   )}
                   <div className="py-1.5 px-1" style={{ background: "var(--surface)" }}>
-                    <p className="text-[10px] font-medium">{bg.label}</p>
-                    {bg.ai && <span className="text-[8px] gradient-text font-semibold">✨ IA</span>}
+                    <p className="text-xs font-medium">{bg.label}</p>
                   </div>
                 </button>
               ))}
@@ -1044,7 +1043,7 @@ export default function GerarCampanha() {
             {showAdvanced && (
               <div className="mt-4 space-y-4 animate-fade-in">
                 <div>
-                  <label className="block text-xs font-semibold mb-2" style={{ color: "var(--muted)" }}>Público-alvo</label>
+                  <label className="block text-sm font-semibold mb-2">Público-alvo</label>
                   <select
                     value={audience}
                     onChange={(e) => setAudience(e.target.value)}
@@ -1058,7 +1057,7 @@ export default function GerarCampanha() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-2" style={{ color: "var(--muted)" }}>Tom de voz</label>
+                  <label className="block text-sm font-semibold mb-2">Tom de voz</label>
                   <div className="flex flex-wrap gap-2">
                     {tones.map((t) => (
                       <button
