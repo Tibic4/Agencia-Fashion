@@ -55,9 +55,15 @@ const tones = [
 ];
 
 const backgrounds = [
-  { value: "branco", label: "Branco", color: "#ffffff", border: true },
-  { value: "estudio", label: "Estúdio", gradient: "linear-gradient(135deg, #F5E6E0, #E8E8E8)" },
-  { value: "lifestyle", label: "Lifestyle IA", gradient: "linear-gradient(135deg, #E0EAF0, #E0F0E8)", ai: true },
+  { value: "branco",     label: "Branco",       thumb: "/bg/branco.png" },
+  { value: "estudio",    label: "Estúdio",       thumb: "/bg/estudio.png" },
+  { value: "lifestyle",  label: "Lifestyle",    thumb: "/bg/lifestyle.png",  ai: true },
+  { value: "urbano",     label: "Urbano",       thumb: "/bg/urbano.png" },
+  { value: "natureza",   label: "Natureza",     thumb: "/bg/natureza.png" },
+  { value: "interior",   label: "Interior",     thumb: "/bg/interior.png" },
+  { value: "boutique",   label: "Boutique",     thumb: "/bg/boutique.png" },
+  { value: "gradiente",  label: "Gradiente",    thumb: "/bg/gradiente.png" },
+  { value: "personalizado", label: "Personalizado", thumb: null },
 ];
 
 const productTypes = [
@@ -109,6 +115,7 @@ export default function GerarCampanha() {
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("");
   const [background, setBackground] = useState("branco");
+  const [customBg, setCustomBg] = useState("");
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
@@ -244,7 +251,8 @@ export default function GerarCampanha() {
       }
       formData.append("bodyType", bodyType);
 
-      formData.append("backgroundType", background);
+      const bgFinal = background === "personalizado" ? `personalizado:${customBg}` : background;
+      formData.append("backgroundType", bgFinal);
       // Modelo do banco (aleatória ou selecionada)
       if (selectedModelId !== "random") {
         formData.append("modelBankId", selectedModelId);
@@ -970,34 +978,47 @@ export default function GerarCampanha() {
             )}
           </div>
 
-          {/* Background */}
+          {/* Cenário */}
           <div>
-            <label className="block text-sm font-semibold mb-3">Fundo do criativo</label>
-            <div className="flex gap-3">
+            <label className="block text-sm font-semibold mb-3">Cenário</label>
+            <div className="grid grid-cols-4 gap-2">
               {backgrounds.map((bg) => (
                 <button
                   key={bg.value}
                   onClick={() => setBackground(bg.value)}
-                  className="flex-1 p-3 rounded-xl text-center transition-all"
+                  className="rounded-xl overflow-hidden text-center transition-all"
                   style={{
                     border: background === bg.value
                       ? "2px solid var(--brand-500)"
                       : "1px solid var(--border)",
-                    background: "var(--surface)",
                   }}
                 >
-                  <div
-                    className="w-10 h-10 rounded-lg mx-auto mb-2"
-                    style={{
-                      background: bg.gradient || bg.color,
-                      border: bg.border ? "1px solid var(--border)" : "none",
-                    }}
-                  />
-                  <p className="text-xs font-medium">{bg.label}</p>
-                  {bg.ai && <span className="text-[10px] gradient-text font-semibold">✨ IA</span>}
+                  {bg.thumb ? (
+                    <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover" />
+                  ) : (
+                    <div className="w-full aspect-square flex items-center justify-center" style={{ background: "var(--surface)" }}>
+                      <span className="text-lg">✏️</span>
+                    </div>
+                  )}
+                  <div className="py-1.5 px-1" style={{ background: "var(--surface)" }}>
+                    <p className="text-[10px] font-medium">{bg.label}</p>
+                    {bg.ai && <span className="text-[8px] gradient-text font-semibold">✨ IA</span>}
+                  </div>
                 </button>
               ))}
             </div>
+            {background === "personalizado" && (
+              <input
+                type="text"
+                value={customBg}
+                onChange={(e) => setCustomBg(e.target.value)}
+                placeholder="Ex: parede rosa da loja, praia ao pôr do sol..."
+                maxLength={60}
+                className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
+                style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
+                autoFocus
+              />
+            )}
           </div>
 
           {/* Advanced options */}
@@ -1055,19 +1076,19 @@ export default function GerarCampanha() {
           {/* Generate button */}
           <button
             onClick={handleGenerate}
-            disabled={!preview || !price || !productType}
+            disabled={!preview || selectedTypes.length === 0}
             className="btn-primary w-full !py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
             style={{
-              boxShadow: preview && price ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
+              boxShadow: preview && selectedTypes.length > 0 ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
             }}
           >
             <IconZap />
             Gerar Campanha
           </button>
 
-          {(!preview || !price || !productType) && (
+          {(!preview || selectedTypes.length === 0) && (
             <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
-              {!preview ? "Faça upload da foto para continuar" : !productType ? "Selecione o tipo de produto" : "Informe o preço para continuar"}
+              {!preview ? "Faça upload da foto para continuar" : "Selecione o tipo de produto"}
             </p>
           )}
         </div>
