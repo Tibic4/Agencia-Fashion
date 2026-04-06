@@ -161,7 +161,7 @@ export default function GerarCampanha() {
   } | null>(null);
 
   const planModelLimits: Record<string, number> = {
-    free: 0, gratis: 0, starter: 1, pro: 2, business: 3, agencia: 5,
+    free: 0, gratis: 0, starter: 1, pro: 3, business: 5, agencia: 10,
   };
   const maxModels = planModelLimits[userPlan] || 1;
 
@@ -391,14 +391,25 @@ export default function GerarCampanha() {
           onClose={() => setQuotaExceeded(null)}
           onUpgrade={() => { window.location.href = "/plano"; }}
           onBuyCredits={async (type, qty) => {
+            // Mapear type+qty para packageId que a API espera
+            const packageMap: Record<string, string> = {
+              "campaigns_1": "1_campanha",
+              "campaigns_5": "5_campanhas",
+              "campaigns_10": "10_campanhas",
+              "models_1": "1_modelo",
+              "models_3": "3_modelos",
+            };
+            const packageId = packageMap[`${type}_${qty}`];
+            if (!packageId) return;
+
             try {
               const res = await fetch("/api/credits", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ type, quantity: qty }),
+                body: JSON.stringify({ packageId }),
               });
               const data = await res.json();
-              if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+              if (data.data?.checkoutUrl) window.location.href = data.data.checkoutUrl;
             } catch { /* ignore */ }
           }}
         />

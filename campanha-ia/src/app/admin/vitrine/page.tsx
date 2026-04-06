@@ -8,6 +8,7 @@ interface ShowcaseItem {
   after_photo_url: string;
   caption: string | null;
   is_active: boolean;
+  sort_order: number;
   created_at: string;
 }
 
@@ -21,6 +22,8 @@ export default function AdminVitrine() {
   const [beforePreview, setBeforePreview] = useState<string | null>(null);
   const [afterPreview, setAfterPreview] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCaption, setEditCaption] = useState("");
 
   const fetchItems = useCallback(async () => {
     try {
@@ -97,13 +100,83 @@ export default function AdminVitrine() {
     }
   };
 
+  // ── Delete (com limpeza de storage) ──
   const handleDelete = async (id: string) => {
-    if (!confirm("Remover este item da vitrine?")) return;
+    if (!confirm("Remover este item da vitrine? As imagens serão excluídas permanentemente.")) return;
     try {
-      await fetch(`/api/admin/showcase?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/showcase?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMsg("✅ Item removido e imagens excluídas do storage.");
+        fetchItems();
+      } else {
+        setStatusMsg(`❌ ${data.error}`);
+      }
+    } catch {
+      setStatusMsg("❌ Erro ao remover");
+    }
+  };
+
+  // ── Toggle ativo/inativo ──
+  const handleToggle = async (id: string, currentActive: boolean) => {
+    try {
+      await fetch("/api/admin/showcase", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, is_active: !currentActive }),
+      });
       fetchItems();
     } catch {
-      alert("Erro ao remover");
+      setStatusMsg("❌ Erro ao atualizar");
+    }
+  };
+
+  // ── Editar legenda inline ──
+  const startEditing = (item: ShowcaseItem) => {
+    setEditingId(item.id);
+    setEditCaption(item.caption || "");
+  };
+
+  const saveCaption = async (id: string) => {
+    try {
+      await fetch("/api/admin/showcase", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, caption: editCaption }),
+      });
+      setEditingId(null);
+      fetchItems();
+    } catch {
+      setStatusMsg("❌ Erro ao salvar legenda");
+    }
+  };
+
+  // ── Reordenar (mover pra cima/baixo) ──
+  const handleMove = async (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === items.length - 1) return;
+
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    const currentItem = items[index];
+    const swapItem = items[swapIndex];
+
+    // Trocar sort_order entre os dois
+    try {
+      await Promise.all([
+        fetch("/api/admin/showcase", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: currentItem.id, sort_order: swapItem.sort_order }),
+        }),
+        fetch("/api/admin/showcase", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: swapItem.id, sort_order: currentItem.sort_order }),
+        }),
+      ]);
+      fetchItems();
+    } catch {
+      setStatusMsg("❌ Erro ao reordenar");
     }
   };
 
@@ -114,13 +187,14 @@ export default function AdminVitrine() {
           🖼️ <span className="gradient-text">Vitrine</span> Antes/Depois
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Arraste fotos do manequim e do modelo IA — aparece automaticamente na landing page
+          Gerencie as transformações que aparecem na landing page
         </p>
       </div>
 
       {statusMsg && (
-        <div className="mb-6 p-4 rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="mb-6 p-4 rounded-xl flex items-center justify-between" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <p className="text-sm">{statusMsg}</p>
+          <button onClick={() => setStatusMsg(null)} className="text-sm ml-4" style={{ color: "var(--muted)" }}>✕</button>
         </div>
       )}
 
@@ -218,9 +292,15 @@ export default function AdminVitrine() {
       </div>
 
       {/* Lista de itens existentes */}
-      <h2 className="font-bold mb-4">
-        Itens na vitrine ({items.length})
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold">
+          Itens na vitrine ({items.length})
+        </h2>
+        <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: "var(--success)" }} /> Ativo
+          <span className="inline-block w-2 h-2 rounded-full ml-2" style={{ background: "var(--border)" }} /> Oculto
+        </div>
+      </div>
 
       {loading ? (
         <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando...</p>
@@ -231,9 +311,18 @@ export default function AdminVitrine() {
           <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Arraste as fotos acima para começar</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
-          {items.map((item) => (
-            <div key={item.id} className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="space-y-4">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className="rounded-2xl overflow-hidden transition-all"
+              style={{
+                background: "var(--surface)",
+                border: `1px solid ${item.is_active ? "var(--border)" : "var(--error)"}`,
+                opacity: item.is_active ? 1 : 0.6,
+              }}
+            >
+              {/* Imagens lado a lado */}
               <div className="grid grid-cols-2 gap-1 p-2">
                 <div className="relative">
                   <img src={item.before_photo_url} alt="Antes" className="w-full h-40 object-cover rounded-lg" />
@@ -246,17 +335,87 @@ export default function AdminVitrine() {
                     style={{ background: "var(--success)", color: "white" }}>DEPOIS</span>
                 </div>
               </div>
-              <div className="px-4 py-3 flex items-center justify-between">
-                <p className="text-xs" style={{ color: "var(--muted)" }}>
-                  {item.caption || "Sem legenda"}
-                </p>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="text-xs px-3 py-1 rounded-lg transition"
-                  style={{ color: "var(--error)" }}
-                >
-                  🗑️ Remover
-                </button>
+
+              {/* Caption (editable) */}
+              <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border)" }}>
+                {editingId === item.id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editCaption}
+                      onChange={(e) => setEditCaption(e.target.value)}
+                      placeholder="Nova legenda..."
+                      autoFocus
+                      className="flex-1 px-3 py-1.5 text-xs rounded-lg"
+                      style={{ background: "var(--background)", border: "1px solid var(--brand-500)", color: "var(--foreground)" }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveCaption(item.id);
+                        if (e.key === "Escape") setEditingId(null);
+                      }}
+                    />
+                    <button onClick={() => saveCaption(item.id)} className="text-xs px-2 py-1 rounded-lg" style={{ background: "var(--success)", color: "white" }}>
+                      ✓
+                    </button>
+                    <button onClick={() => setEditingId(null)} className="text-xs px-2 py-1 rounded-lg" style={{ color: "var(--muted)" }}>
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <p
+                    className="text-xs cursor-pointer hover:underline"
+                    style={{ color: item.caption ? "var(--foreground)" : "var(--muted)" }}
+                    onClick={() => startEditing(item)}
+                    title="Clique para editar"
+                  >
+                    {item.caption || "Sem legenda — clique para adicionar"}
+                  </p>
+                )}
+              </div>
+
+              {/* Ações */}
+              <div className="px-4 py-2 flex items-center justify-between gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+                {/* Reordenar */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleMove(index, "up")}
+                    disabled={index === 0}
+                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30"
+                    title="Mover para cima"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => handleMove(index, "down")}
+                    disabled={index === items.length - 1}
+                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30"
+                    title="Mover para baixo"
+                  >
+                    ↓
+                  </button>
+                  <span className="text-[10px] ml-1" style={{ color: "var(--muted)" }}>#{index + 1}</span>
+                </div>
+
+                {/* Toggle + Delete */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleToggle(item.id, item.is_active)}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all"
+                    style={{
+                      background: item.is_active ? "var(--background)" : "var(--success)",
+                      color: item.is_active ? "var(--muted)" : "white",
+                      border: `1px solid ${item.is_active ? "var(--border)" : "transparent"}`,
+                    }}
+                  >
+                    {item.is_active ? "👁️ Ocultar" : "✅ Ativar"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-red-500/10"
+                    style={{ color: "var(--error)" }}
+                  >
+                    🗑️ Excluir
+                  </button>
+                </div>
               </div>
             </div>
           ))}
