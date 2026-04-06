@@ -9,13 +9,15 @@ import { useImageLoader } from "./hooks/useImageLoader";
 import { useGradientOverlay } from "./hooks/useGradientOverlay";
 import { useDragPositions } from "./hooks/useDragPositions";
 import { useCanvasZoom } from "./hooks/useCanvasZoom";
+import { useCustomElements } from "./hooks/useCustomElements";
 import TemplateSelector from "./TemplateSelector";
 import KonvaToolbar from "./KonvaToolbar";
 import KonvaCanvas from "./KonvaCanvas";
+import ImportPanel from "./ImportPanel";
 
 /**
- * Orchestrator component — ~120 lines instead of 706.
- * Composes hooks + sub-components, manages download logic.
+ * Orchestrator component — composes hooks + sub-components.
+ * Now supports custom element imports (logos, stickers, badges).
  */
 export default function KonvaCompositor({
   modelImageUrl,
@@ -27,6 +29,7 @@ export default function KonvaCompositor({
   storeName = "CriaLook",
   score,
   format = "feed",
+  enableCustomElements = false,
 }: KonvaCompositorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const [activeTemplate, setActiveTemplate] = useState("elegant_dark");
@@ -57,38 +60,69 @@ export default function KonvaCompositor({
     handleZoomOut,
     handleZoomReset,
   } = useCanvasZoom();
+  const {
+    elements: customElements,
+    selectedCustomId,
+    setSelectedCustomId,
+    importElement,
+    removeElement,
+    updatePosition,
+    updateOpacity,
+    reorderElement,
+  } = useCustomElements(CANVAS_H);
+
+  // ═══════════════════════════════════════
+  //  Deselect coordination (text ↔ custom)
+  // ═══════════════════════════════════════
+  const handleDeselectAll = useCallback(() => {
+    handleDeselect();
+    setSelectedCustomId(null);
+  }, [handleDeselect, setSelectedCustomId]);
+
+  const handleSelectText = useCallback(
+    (key: Parameters<typeof handleSelect>[0]) => {
+      setSelectedCustomId(null);
+      handleSelect(key);
+    },
+    [handleSelect, setSelectedCustomId]
+  );
+
+  const handleSelectCustom = useCallback(
+    (id: string | null) => {
+      setSelectedId(null);
+      setSelectedCustomId(id);
+    },
+    [setSelectedId, setSelectedCustomId]
+  );
 
   // ═══════════════════════════════════════
   //  Download — reactive approach (no setTimeout hack)
   // ═══════════════════════════════════════
   const handleDownloadClick = useCallback(() => {
     setSelectedId(null);
+    setSelectedCustomId(null);
     setPendingDownload(true);
     setDownloading(true);
-  }, [setSelectedId]);
+  }, [setSelectedId, setSelectedCustomId]);
 
   useEffect(() => {
     if (!pendingDownload || selectedId !== null) return;
 
-    // selectedId is now null — safe to export
     const performExport = () => {
       try {
         const stage = stageRef.current;
         if (!stage) return;
 
-        // Save preview state
         const savedScaleX = stage.scaleX();
         const savedScaleY = stage.scaleY();
         const savedWidth = stage.width();
         const savedHeight = stage.height();
 
-        // Full resolution
         stage.scale({ x: 1, y: 1 });
         stage.width(CANVAS_W);
         stage.height(CANVAS_H);
         stage.batchDraw();
 
-        // Export at 2x for sharp text
         const uri = stage.toDataURL({
           pixelRatio: 2,
           mimeType: "image/png",
@@ -98,13 +132,11 @@ export default function KonvaCompositor({
           height: CANVAS_H,
         });
 
-        // Restore preview
         stage.scale({ x: savedScaleX, y: savedScaleY });
         stage.width(savedWidth);
         stage.height(savedHeight);
         stage.batchDraw();
 
-        // Trigger download (no need to append to DOM in modern browsers)
         const link = document.createElement("a");
         const safeName = productName
           .toLowerCase()
@@ -121,7 +153,6 @@ export default function KonvaCompositor({
       }
     };
 
-    // Use requestAnimationFrame to ensure the canvas has redrawn without selection
     requestAnimationFrame(performExport);
   }, [pendingDownload, selectedId, productName, activeTemplate, CANVAS_H]);
 
@@ -130,9 +161,21 @@ export default function KonvaCompositor({
       {/* Template selector */}
       <TemplateSelector activeTemplate={activeTemplate} onSelect={setActiveTemplate} />
 
+      {/* Custom elements import panel */}
+      {enableCustomElements && (
+        <ImportPanel
+          elements={customElements}
+          selectedCustomId={selectedCustomId}
+          onImport={importElement}
+          onRemove={removeElement}
+          onSelect={handleSelectCustom}
+          onUpdateOpacity={updateOpacity}
+          onReorder={reorderElement}
+        />
+      )}
+
       {/* Preview + toolbar */}
       <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-        {/* Toolbar */}
         <KonvaToolbar
           format={format}
           template={t}
@@ -147,13 +190,12 @@ export default function KonvaCompositor({
           onDownload={handleDownloadClick}
         />
 
-        {/* Canvas */}
         <div
           ref={containerRef}
           className="flex items-center justify-center p-2 sm:p-4"
           style={{
             background: "var(--surface)",
-            cursor: selectedId ? "move" : "default",
+            cursor: selectedId || selectedCustomId ? "move" : "default",
             overflow: "auto",
           }}
         >
@@ -176,12 +218,16 @@ export default function KonvaCompositor({
             score={score}
             modelImageUrl={modelImageUrl}
             onDragEnd={handleDragEnd}
-            onSelect={handleSelect}
-            onDeselect={handleDeselect}
+            onSelect={handleSelectText}
+            onDeselect={handleDeselectAll}
+            /* Custom elements */
+            customElements={customElements}
+            selectedCustomId={selectedCustomId}
+            onCustomDragEnd={updatePosition}
+            onCustomSelect={handleSelectCustom}
           />
         </div>
 
-        {/* Help footer */}
         <div
           className="px-4 py-2 text-center text-[11px]"
           style={{
@@ -191,6 +237,7 @@ export default function KonvaCompositor({
           }}
         >
           ✋ Arraste textos para reposicionar · 🔍 Use −/+ para zoom · ↩ Resetar restaura o layout
+          {enableCustomElements && " · 📎 Importe logos e stickers"}
         </div>
       </div>
     </div>
