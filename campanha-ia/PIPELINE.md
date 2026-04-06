@@ -1,7 +1,9 @@
 # Pipeline CriaLook — Passo a Passo
 
 > Resumo executivo: cada campanha faz **5 chamadas LLM + 2 chamadas Fashn.ai**.
-> Custo total por campanha: **~R$ 0,42** (Pipeline A+) ou **~R$ 0,70** (com Banco de Modelos).
+> Custo total por campanha: **~R$ 1,11** (Pipeline A+) ou **~R$ 1,11** (com Banco de Modelos).
+> Custo de criar modelo personalizada: **R$ 0,44** (1 crédito Fashn.ai).
+> Fonte: [help.fashn.ai/plans-and-pricing/api-pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
 
 ---
 
@@ -52,10 +54,13 @@
 **Entrada:** Foto do produto + tipo de corpo (normal/plus)
 **Saída:** Imagem da modelo vestindo a roupa (fundo branco)
 
-| Caminho | Quando usa | Chamada | Custo USD |
-|---------|-----------|---------|-----------|
-| **Pipeline A+** | Sem modelo do banco | `product-to-model` | $0.03 |
-| **Banco de Modelos** | Com modelo selecionada | `tryon-max` | $0.08 |
+| Caminho | Quando usa | Chamada | Créditos | Custo USD |
+|---------|-----------|---------|----------|----------|
+| **Pipeline A+** | Sem modelo do banco | `product-to-model` | 1 | $0.075 |
+| **Banco de Modelos** | Com modelo selecionada | `tryon-max` | 1 | $0.075 |
+
+> ⚠️ Ambos custam **o mesmo** na config padrão (Fast/1K = 1 crédito).
+> Custo sobe se mudar resolução: 2K=2 créd, 4K Quality=5 créd ($0.375 = R$ 2,18).
 
 ---
 
@@ -66,7 +71,7 @@
 - 🏷️ Remove etiquetas de preço, tags, adesivos e artefatos de manequim
 **Entrada:** Imagem do passo 6 + prompt do cenário
 **Saída:** Imagem final polida com fundo profissional
-**Custo:** $0.02
+**Custo:** 1 crédito = $0.075 (Fast/1K default)
 
 ---
 
@@ -83,22 +88,30 @@
 | Scorer | Google | Gemini 2.5 Flash | ~2.500 | ~500 | R$ 0,01 |
 | **Subtotal LLM** | | | | | **R$ 0,24** |
 
-### Fashn.ai (imagem) — câmbio R$ 5,80/USD
+### Fashn.ai (imagem) — $0.075/crédito, câmbio R$ 5,80/USD
 
-| Operação | Custo USD | Custo R$ |
-|----------|-----------|----------|
-| product-to-model (Pipeline A+) | $0.03 | R$ 0,17 |
-| *ou* tryon-max (Banco Modelos) | $0.08 | R$ 0,46 |
-| edit (cenário) | $0.02 | R$ 0,12 |
-| **Subtotal Fashn (A+)** | **$0.05** | **R$ 0,29** |
-| **Subtotal Fashn (Banco)** | **$0.10** | **R$ 0,58** |
+> Fonte oficial: [Fashn API Pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
+> Nosso pipeline usa padrão Fast/1K (1 crédito por chamada).
+
+| Operação | Créditos | Custo USD | Custo R$ |
+|----------|----------|-----------|----------|
+| product-to-model (Pipeline A+) | 1 | $0.075 | R$ 0,44 |
+| tryon-max (Banco Modelos) | 1 | $0.075 | R$ 0,44 |
+| edit (cenário) | 1 | $0.075 | R$ 0,44 |
+| model-create (criar modelo personalizada) | 1 | $0.075 | R$ 0,44 |
+| **Subtotal Fashn (por campanha)** | **2** | **$0.15** | **R$ 0,87** |
+
+> 📝 `product-to-model` e `tryon-max` custam o mesmo no Fast/1K.
+> O custo R$ 2,18 que aparece em alguns docs é para Quality/4K (5 créditos).
 
 ### TOTAL por Campanha
 
-| Caminho | LLM | Fashn | **TOTAL** |
-|---------|-----|-------|-----------|
-| Pipeline A+ (sem banco) | R$ 0,24 | R$ 0,29 | **R$ 0,53** |
-| Com Banco de Modelos | R$ 0,24 | R$ 0,58 | **R$ 0,82** |
+| Caminho | LLM | Fashn (2 chamadas) | **TOTAL** |
+|---------|-----|-------------------|-----------|
+| Pipeline A+ (sem banco) | R$ 0,24 | R$ 0,87 | **R$ 1,11** |
+| Com Banco de Modelos | R$ 0,24 | R$ 0,87 | **R$ 1,11** |
+
+> Custo de **criar modelo personalizada** (passo extra, fora do pipeline): +R$ 0,44
 
 ---
 

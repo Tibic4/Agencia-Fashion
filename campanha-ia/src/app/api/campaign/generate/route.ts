@@ -302,10 +302,10 @@ export async function POST(request: NextRequest) {
             const { createAdminClient } = await import("@/lib/supabase/admin");
             const supabase = createAdminClient();
             const costMap: Record<string, number> = {
-              "fashn.ai-bank": 0.075 + 0.017, // try-on + edit
-              "fashn.ai": 0.075,
+              "fashn.ai-bank": 0.075, // tryon-max: 1 crédito Fast/1K ($0.075)
+              "fashn.ai": 0.075,      // product-to-model: 1 crédito
               "fal.ai": 0.035,
-              "nano-banana-2": 0.04, // Gemini imagen ~$0.04/image
+              "nano-banana-2": 0.04,  // Gemini imagen ~$0.04/image
             };
             const costUsd = costMap[tryOnProvider] || 0.075;
             const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
