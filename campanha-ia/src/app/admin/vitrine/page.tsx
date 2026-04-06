@@ -75,10 +75,21 @@ export default function AdminVitrine() {
       formData.append("after_photo", afterFile);
       if (caption.trim()) formData.append("caption", caption.trim());
 
+      console.log("[Vitrine] Enviando upload...", { before: beforeFile.name, after: afterFile.name });
+
       const res = await fetch("/api/admin/showcase", {
         method: "POST",
         body: formData,
       });
+
+      console.log("[Vitrine] Resposta:", res.status, res.statusText);
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("[Vitrine] Erro HTTP:", res.status, text);
+        setStatusMsg(`❌ Erro ${res.status}: ${text}`);
+        return;
+      }
 
       const data = await res.json();
 
@@ -91,10 +102,11 @@ export default function AdminVitrine() {
         setCaption("");
         fetchItems();
       } else {
-        setStatusMsg(`❌ ${data.error}`);
+        setStatusMsg(`❌ ${data.error || "Erro desconhecido"}`);
       }
-    } catch {
-      setStatusMsg("❌ Erro de conexão");
+    } catch (err) {
+      console.error("[Vitrine] Erro:", err);
+      setStatusMsg(`❌ Erro de conexão: ${err instanceof Error ? err.message : "desconhecido"}`);
     } finally {
       setUploading(false);
     }
