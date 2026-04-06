@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
     // Parse FormData
     const formData = await request.formData();
     const imageFile = formData.get("image") as File | null;
+    const closeUpImage = formData.get("closeUpImage") as File | null;
+    const secondImage = formData.get("secondImage") as File | null;
     const price = formData.get("price") as string | null;
     const objective = (formData.get("objective") as string) || "venda_imediata";
     const storeName = (formData.get("storeName") as string) || "Minha Loja";
@@ -120,6 +122,19 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await imageFile.arrayBuffer();
     const imageBase64 = Buffer.from(arrayBuffer).toString("base64");
     const mediaType = imageFile.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+
+    // ── Converter fotos extras (close-up + segunda peça) ──
+    const extraImages: { base64: string; mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }[] = [];
+    if (closeUpImage && closeUpImage.size > 0) {
+      const buf = Buffer.from(await closeUpImage.arrayBuffer());
+      extraImages.push({ base64: buf.toString("base64"), mediaType: closeUpImage.type as any });
+      console.log(`[Generate] 📷 Close-up recebido (${(closeUpImage.size / 1024).toFixed(0)}KB)`);
+    }
+    if (secondImage && secondImage.size > 0) {
+      const buf = Buffer.from(await secondImage.arrayBuffer());
+      extraImages.push({ base64: buf.toString("base64"), mediaType: secondImage.type as any });
+      console.log(`[Generate] 📷 Segunda peça recebida (${(secondImage.size / 1024).toFixed(0)}KB)`);
+    }
 
     // ── Criar campanha no banco (se tem loja) ──
     let campaignRecord = null;
@@ -355,6 +370,7 @@ export async function POST(request: NextRequest) {
         {
           imageBase64,
           mediaType,
+          extraImages: extraImages.length > 0 ? extraImages : undefined,
           price,
           objective,
           storeName: store?.name || storeName,
