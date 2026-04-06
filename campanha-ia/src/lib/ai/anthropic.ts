@@ -1,3 +1,8 @@
+/**
+ * @deprecated — Use providers/claude.ts em vez deste módulo.
+ * Mantido apenas para compatibilidade com código legado.
+ * O pipeline v2.0 usa a abstração LLMProvider.
+ */
 import Anthropic from "@anthropic-ai/sdk";
 
 // Singleton client

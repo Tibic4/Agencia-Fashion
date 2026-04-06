@@ -1,22 +1,18 @@
 /**
  * Configuração centralizada de modelos de IA
- * 
- * Para trocar um modelo, basta alterar a variável no .env.local
- * Exemplo: AI_MODEL_SCORER=claude-3-5-haiku-20241022
+ *
+ * v2.0 — Migração híbrida Claude/Gemini
+ *
+ * Modelo por step configurável via .env.local:
+ *   AI_MODEL_VISION=gemini-2.5-flash
+ *   AI_MODEL_STRATEGY=gemini-2.5-pro
+ *   AI_MODEL_COPYWRITER=claude-sonnet-4-20250514
+ *   AI_MODEL_REFINER=gemini-2.5-flash
+ *   AI_MODEL_SCORER=gemini-2.5-flash
+ *
+ * Para forçar tudo Claude: não setar GOOGLE_AI_API_KEY
+ * Para forçar tudo Gemini: não setar ANTHROPIC_API_KEY
  */
-
-export const AI_MODELS = {
-  /** Modelo para análise visual do produto */
-  VISION:     process.env.AI_MODEL_VISION     || "claude-sonnet-4-20250514",
-  /** Modelo para estratégia de campanha */
-  STRATEGY:   process.env.AI_MODEL_STRATEGY   || "claude-sonnet-4-20250514",
-  /** Modelo para geração de copy */
-  COPYWRITER: process.env.AI_MODEL_COPYWRITER || "claude-sonnet-4-20250514",
-  /** Modelo para refinamento de textos */
-  REFINER:    process.env.AI_MODEL_REFINER    || "claude-sonnet-4-20250514",
-  /** Modelo para scoring da campanha */
-  SCORER:     process.env.AI_MODEL_SCORER     || "claude-sonnet-4-20250514",
-} as const;
 
 /** Tipos de produto disponíveis com categoria Fashn correspondente */
 export const PRODUCT_TYPES = [
