@@ -2,12 +2,11 @@
  * Admin guard — verifica se o usuário autenticado é admin.
  * Usado por TODAS as rotas /api/admin/*.
  *
- * Estratégia: checa `stores.role` no Supabase (fonte de verdade do DB)
- * O middleware já filtra por sessionClaims (Clerk), esta é a segunda camada.
+ * Estratégia: checa `publicMetadata.role` via sessionClaims do Clerk.
+ * A publicMetadata é configurada no Dashboard do Clerk por usuário.
  */
 
 import { auth } from "@clerk/nextjs/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Verifica se o user atual é admin.
@@ -19,14 +18,10 @@ export async function requireAdmin(): Promise<{ isAdmin: true; userId: string } 
     return { isAdmin: false, userId: null };
   }
 
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("stores")
-    .select("role")
-    .eq("clerk_user_id", session.userId)
-    .single();
+  // Clerk expõe publicMetadata como sessionClaims.metadata
+  const metadata = session.sessionClaims?.metadata as { role?: string } | undefined;
+  const role = metadata?.role;
 
-  const role = data?.role;
   if (role === "admin" || role === "super_admin") {
     return { isAdmin: true, userId: session.userId };
   }

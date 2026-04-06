@@ -19,7 +19,12 @@ export function buildVisionPrompt(productType?: string, material?: string, hasMu
     userHints += `\nIMPORTANTE: O usuário informou que este produto é do tipo "${productType}".`;
   }
   if (material) {
-    userHints += `\nIMPORTANTE: O usuário informou que o material/tecido é "${material}". Use EXATAMENTE este material na análise, NÃO tente adivinhar outro.`;
+    if (material.includes("|")) {
+      // Conjunto com materiais diferentes por peça
+      userHints += `\nIMPORTANTE: Este é um CONJUNTO com materiais DIFERENTES por peça. ${material}. Analise CADA PEÇA com seu respectivo material. NÃO misture os materiais entre as peças.`;
+    } else {
+      userHints += `\nIMPORTANTE: O usuário informou que o material/tecido é "${material}". Use EXATAMENTE este material na análise, NÃO tente adivinhar outro.`;
+    }
   }
   if (hasMultiplePhotos) {
     userHints += `\nIMPORTANTE: O usuário enviou MÚLTIPLAS FOTOS do mesmo produto:
