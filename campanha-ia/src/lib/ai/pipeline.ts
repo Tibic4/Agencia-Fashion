@@ -153,7 +153,7 @@ export async function runCampaignPipeline(
       extraImages: input.extraImages,
       mediaType: input.mediaType,
       temperature: 0.3,
-      maxTokens: 1024,
+      maxTokens: 4096,
       responseSchema: visionConfig.structuredOutput ? VisionOutputSchema : undefined,
     }),
     "Vision",
