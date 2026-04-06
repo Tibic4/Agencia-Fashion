@@ -71,18 +71,22 @@ const productTypes = [
 ];
 
 const materials = [
-  { value: "",          label: "Não sei / Deixar IA detectar" },
   { value: "viscose",   label: "Viscose" },
   { value: "algodao",   label: "Algodão" },
   { value: "linho",     label: "Linho" },
   { value: "crepe",     label: "Crepe" },
   { value: "malha",     label: "Malha" },
-  { value: "jeans",     label: "Jeans / Denim" },
+  { value: "jeans",     label: "Jeans" },
   { value: "trico",     label: "Tricô" },
   { value: "seda",      label: "Seda / Cetim" },
-  { value: "couro",     label: "Couro / Couro Sintético" },
+  { value: "couro",     label: "Couro" },
   { value: "moletom",   label: "Moletom" },
-  { value: "chiffon",   label: "Chiffon / Musseline" },
+  { value: "chiffon",   label: "Chiffon" },
+  { value: "poliester", label: "Poliéster" },
+  { value: "la",        label: "Lã" },
+  { value: "nylon",     label: "Nylon" },
+  { value: "suede",     label: "Suede" },
+  { value: "outro",     label: "Outro" },
 ];
 
 interface ModelBankItem {
@@ -121,6 +125,7 @@ export default function GerarCampanha() {
   const [error, setError] = useState<string | null>(null);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
+  const [customMaterial, setCustomMaterial] = useState("");
   const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
   const [priceMode, setPriceMode] = useState<"conjunto" | "separado">("conjunto");
   const [price2, setPrice2] = useState("");
@@ -231,7 +236,8 @@ export default function GerarCampanha() {
       if (audience) formData.append("targetAudience", audience);
       if (tone) formData.append("toneOverride", tone);
       if (productType) formData.append("productType", productType);
-      if (material) formData.append("material", material);
+      const materialFinal = material === "outro" ? customMaterial : material;
+      if (materialFinal) formData.append("material", materialFinal);
       if (isConjunto && priceMode === "separado" && price2) {
         formData.append("price2", price2);
         formData.append("priceMode", "separado");
@@ -625,27 +631,42 @@ export default function GerarCampanha() {
             )}
           </div>
 
-          {/* Material / Tecido (opcional) */}
+          {/* Material / Tecido — chips visuais */}
           <div>
-            <label className="block text-sm font-semibold mb-2">
-              Material / Tecido <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional — melhora a precisão)</span>
+            <label className="block text-sm font-semibold mb-1">
+              Material / Tecido
             </label>
-            <div className="relative">
-              <select
-                value={material}
-                onChange={(e) => setMaterial(e.target.value)}
-                className="custom-select w-full h-11 px-4 rounded-xl text-sm outline-none transition-all cursor-pointer"
-                style={{
-                  background: "var(--surface)",
-                  border: material ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                  color: "var(--foreground)",
-                }}
-              >
-                {materials.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
+            <p className="text-[10px] mb-2" style={{ color: "var(--muted)" }}>
+              Opcional — a IA detecta pela foto, mas informar melhora a precisão
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {materials.map((m) => (
+                <button
+                  key={m.value}
+                  onClick={() => setMaterial(material === m.value ? "" : m.value)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: material === m.value ? "var(--brand-100)" : "var(--surface)",
+                    color: material === m.value ? "var(--brand-700)" : "var(--muted)",
+                    border: material === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
             </div>
+            {material === "outro" && (
+              <input
+                type="text"
+                value={customMaterial}
+                onChange={(e) => setCustomMaterial(e.target.value)}
+                placeholder="Ex: crepe georgette, tricoline..."
+                maxLength={40}
+                className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
+                style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
+                autoFocus
+              />
+            )}
           </div>
 
           {/* Price — adaptável a conjunto */}
