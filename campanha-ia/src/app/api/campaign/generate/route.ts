@@ -10,7 +10,8 @@ import type { PipelineStep } from "@/types";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-const IS_DEMO_MODE = !process.env.ANTHROPIC_API_KEY;
+// v2: Pipeline híbrido precisa de pelo menos uma key. Demo mode se nenhuma key existe.
+const IS_DEMO_MODE = !process.env.GOOGLE_AI_API_KEY && !process.env.ANTHROPIC_API_KEY;
 
 /**
  * POST /api/campaign/generate
@@ -290,6 +291,7 @@ export async function POST(request: NextRequest) {
               "fashn.ai-bank": 0.075 + 0.017, // try-on + edit
               "fashn.ai": 0.075,
               "fal.ai": 0.035,
+              "nano-banana-2": 0.04, // Gemini imagen ~$0.04/image
             };
             const costUsd = costMap[tryOnProvider] || 0.075;
             const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
@@ -297,7 +299,7 @@ export async function POST(request: NextRequest) {
               store_id: store.id,
               campaign_id: campaignRecord?.id || null,
               provider: tryOnProvider,
-              model_used: tryOnProvider === "fal.ai" ? "idm-vton" : "fashn-tryon",
+              model_used: tryOnProvider === "fal.ai" ? "idm-vton" : tryOnProvider === "nano-banana-2" ? "gemini-imagen" : "fashn-tryon",
               action: "virtual_try_on",
               cost_usd: costUsd,
               cost_brl: costUsd * exchangeRate,
