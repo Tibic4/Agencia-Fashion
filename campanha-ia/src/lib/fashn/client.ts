@@ -77,6 +77,55 @@ async function logFashnCost(
   }
 }
 
+// ═══════════════════════════════════════
+// VTO Vision Bridge — dados do Step 1 para instruir Fashn
+// ═══════════════════════════════════════
+
+export interface VisionDataForVTO {
+  fabricDescriptor?: string;  // ex: "ribbed knit with visible vertical channels, matte finish"
+  garmentStructure?: string;  // ex: "structured shoulders, elastic waistband, A-line silhouette"
+  colorHex?: string;          // ex: "#F5C6D0"
+  criticalDetails?: string[]; // ex: ["gold buttons on front placket, 5 total"]
+}
+
+/**
+ * Constrói prompt dinâmico para Fashn.ai tryon-max usando dados do Vision.
+ * Maximiza fidelidade de textura, cor e detalhes da peça.
+ */
+function buildFashnTryOnPrompt(visionData?: VisionDataForVTO): string {
+  const parts: string[] = [];
+
+  // Base instruction
+  parts.push("Dress the model in the garment shown in the product photo. The garment must fit naturally on the model body.");
+
+  // Fabric fidelity (highest priority)
+  if (visionData?.fabricDescriptor) {
+    parts.push(`FABRIC FIDELITY (CRITICAL): The garment fabric is ${visionData.fabricDescriptor}. Reproduce this EXACT texture on the model — the surface must show the same weave pattern, sheen level, and weight. Do NOT smooth or simplify the texture.`);
+  }
+
+  // Structural integrity
+  if (visionData?.garmentStructure) {
+    parts.push(`GARMENT STRUCTURE: ${visionData.garmentStructure}. The garment must maintain this exact silhouette when worn.`);
+  }
+
+  // Color accuracy
+  if (visionData?.colorHex) {
+    parts.push(`COLOR ACCURACY: The garment color must match approximately ${visionData.colorHex}. Do NOT shift the hue, saturation, or brightness of the fabric.`);
+  }
+
+  // Critical details
+  if (visionData?.criticalDetails?.length) {
+    parts.push(`MUST PRESERVE these exact details: ${visionData.criticalDetails.join("; ")}.`);
+  }
+
+  // Universal garment preservation + negative prompts
+  parts.push("Preserve ALL garment details exactly: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems, ribbed cuffs.");
+  parts.push("REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment. KEEP functional accessories like belts, necklaces, bracelets.");
+  parts.push("DO NOT alter the garment in any way: no color shifts, no texture changes, no added or removed patterns, no simplified embroidery, no extra decorative elements.");
+
+  return parts.join("\n");
+}
+
 interface FashnProductToModelParams {
   /** URL ou base64 data URI da foto do produto */
   productImage: string;
@@ -91,6 +140,8 @@ interface FashnTryOnParams {
   modelImage: string;
   /** Prompt opcional para ajustes (ex: "tuck in shirt") */
   prompt?: string;
+  /** Dados VTO do Vision Analysis (Step 1) para fidelidade máxima */
+  visionData?: VisionDataForVTO;
 }
 
 interface FashnEditParams {
@@ -185,10 +236,13 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
  */
 export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
   const start = Date.now();
+  // Construir prompt dinâmico usando VTO data do Vision (se disponível)
+  const prompt = params.prompt || buildFashnTryOnPrompt(params.visionData);
   const jobId = await submitJob("tryon-max", {
     model_image: params.modelImage,
     product_image: params.productImage,
-    ...(params.prompt && { prompt: params.prompt }),
+    prompt,
+    generation_mode: "quality", // Forçar quality explícito (2 créditos, mesmo custo do default auto)
   });
   const result = await pollResult(jobId);
   logFashnCost("virtual_try_on", "tryon-max", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
@@ -210,17 +264,19 @@ export async function editImage(params: FashnEditParams & { storeId?: string; ca
   return result;
 }
 
-/** Prompts de cenário otimizados (anti-manequim + anti-etiqueta) */
+/** Prompts de cenário v2 — iluminação coerente + negative prompts universais */
+const UNIVERSAL_NEGATIVE = "DO NOT alter garment color, DO NOT change fabric texture, DO NOT add patterns, DO NOT remove or simplify embroidery. The garment must retain its true color regardless of ambient lighting — warm/cool light should tint SKIN but NOT the garment fabric.";
+
 const BACKGROUND_PROMPTS: Record<string, string> = {
-  branco: "Professional fashion e-commerce photo in clean white studio. CRITICAL: Preserve ALL garment details exactly — embroidery count, fabric texture, elastic bands, ribbed cuffs, folded hems, buttons. Smooth fabric without unnatural wrinkles. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders from the garment — these are NOT part of the design. KEEP functional accessories like belts, necklaces, bracelets. Remove any mannequin parts, stands, poles, or dark artifacts completely. Clean natural skin on legs and arms with consistent skin tone. Soft studio lighting with subtle shadows. Full body visible from head to feet including shoes.",
-  estudio: "Professional fashion photo in elegant studio with soft gradient backdrop. CRITICAL: Preserve ALL garment details exactly — smocking, ruffles, embroidery patterns, elastic gathering, tie straps. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories like belts, necklaces. Remove any mannequin artifacts, stands or poles completely. Natural skin tones throughout body. Professional soft lighting.",
-  lifestyle: "Professional fashion photo in urban outdoor setting with natural environment. CRITICAL: Preserve ALL garment construction details exactly as shown. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories. Remove any artificial elements, mannequin parts completely. Natural skin tones. Natural warm lighting.",
-  urbano: "Professional fashion photo on a modern city street. Textured concrete or brick wall background, urban sidewalk, moody street-style atmosphere. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Natural skin tones. Cool urban lighting with slight shadows.",
-  natureza: "Professional fashion photo in a beautiful natural garden setting. Lush green tropical plants, soft bokeh background, golden hour sunlight filtering through leaves. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Warm natural skin tones.",
-  interior: "Professional fashion photo in a modern minimalist interior. Clean white loft apartment with large windows and abundant natural light, contemporary furniture visible in soft focus. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Bright airy atmosphere.",
-  boutique: "Professional fashion photo inside a luxury fashion boutique. Elegant marble surfaces, gold accents, clothing racks softly blurred in background, warm ambient store lighting. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Premium retail atmosphere.",
-  gradiente: "Professional fashion photo with elegant smooth gradient backdrop transitioning from soft rose pink to warm peach gold. Abstract premium brand aesthetic feel. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Soft even studio lighting.",
-  personalizado: "Professional fashion photo, smooth fabric without wrinkles. CRITICAL: Preserve ALL original garment details. REMOVE any price tags, store labels, hanging stickers, barcodes. KEEP functional accessories. Remove any mannequin artifacts.",
+  branco: `Professional fashion e-commerce photo in clean white studio. Even soft diffused overhead lighting at 5500K (neutral white), subtle floor shadow. CRITICAL: Preserve ALL garment details exactly — embroidery count, fabric texture, elastic bands, ribbed cuffs, folded hems, buttons. Smooth fabric without unnatural wrinkles. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders from the garment — these are NOT part of the design. KEEP functional accessories like belts, necklaces, bracelets. Remove any mannequin parts, stands, poles, or dark artifacts completely. Clean natural skin on legs and arms with consistent skin tone. Full body visible from head to feet including shoes. ${UNIVERSAL_NEGATIVE}`,
+  estudio: `Professional fashion photo in elegant studio with soft gradient backdrop (light grey to white). Professional softbox lighting from front-left, fill light from right, creating soft directional shadows. CRITICAL: Preserve ALL garment details exactly — smocking, ruffles, embroidery patterns, elastic gathering, tie straps. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories like belts, necklaces. Remove any mannequin artifacts, stands or poles completely. Natural skin tones throughout body. ${UNIVERSAL_NEGATIVE}`,
+  lifestyle: `Professional fashion photo in bright modern apartment interior with natural sunlight from large windows. Warm golden-hour light from the left, creating soft natural shadows. Contemporary furniture visible in soft focus background. CRITICAL: Preserve ALL garment construction details exactly as shown. Smooth fabric draping naturally with the pose. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories. Remove any artificial elements, mannequin parts completely. Natural warm skin tones matching ambient light. ${UNIVERSAL_NEGATIVE}`,
+  urbano: `Professional fashion photo on a modern city street. Textured concrete or brick wall background, urban sidewalk, moody street-style atmosphere. Cool overcast daylight at ~6500K with slight shadows from buildings. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Natural skin tones with cool undertone from environment. ${UNIVERSAL_NEGATIVE}`,
+  natureza: `Professional fashion photo in a beautiful natural garden setting. Lush green tropical plants, soft bokeh background, golden hour sunlight filtering through leaves from the right side. Warm 4500K light temperature. CRITICAL: Preserve ALL garment details exactly. Smooth fabric draping naturally. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Warm natural skin tones matching golden hour. ${UNIVERSAL_NEGATIVE}`,
+  interior: `Professional fashion photo in a modern minimalist interior. Clean white loft apartment with large windows and abundant natural light from behind, contemporary furniture visible in soft focus. Bright airy atmosphere with neutral 5000K lighting. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. ${UNIVERSAL_NEGATIVE}`,
+  boutique: `Professional fashion photo inside a luxury fashion boutique. Elegant marble surfaces, gold accents, clothing racks softly blurred in background, warm ambient store lighting at ~3500K. Premium retail atmosphere. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. ${UNIVERSAL_NEGATIVE}`,
+  gradiente: `Professional fashion photo with elegant smooth gradient backdrop transitioning from soft rose pink to warm peach gold. Abstract premium brand aesthetic feel. Soft even studio lighting at 5500K, no directional shadows. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. ${UNIVERSAL_NEGATIVE}`,
+  personalizado: `Professional fashion photo, smooth fabric without wrinkles. CRITICAL: Preserve ALL original garment details. REMOVE any price tags, store labels, hanging stickers, barcodes. KEEP functional accessories. Remove any mannequin artifacts. ${UNIVERSAL_NEGATIVE}`,
 };
 
 /**
@@ -233,12 +289,13 @@ export async function generateWithModelBank(
   modelImageUrl: string,
   backgroundType: string = "branco",
   backgroundValue?: string,
+  visionData?: VisionDataForVTO,
 ): Promise<FashnJobResult> {
-  // Passo 1: Try-On Max — vestir a peça na modelo do banco
+  // Passo 1: Try-On Max — vestir a peça na modelo do banco (com VTO data do Vision)
   const tryonResult = await tryOnProduct({
     productImage,
     modelImage: modelImageUrl,
-    prompt: "Preserve ALL garment details exactly: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems. Do NOT add or remove decorative design elements. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment. KEEP functional accessories like belts, necklaces, bracelets. Garment must fit naturally on the model body.",
+    visionData,
   });
 
   if (tryonResult.status !== "completed" || !tryonResult.outputUrl) {
