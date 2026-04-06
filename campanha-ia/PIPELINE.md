@@ -1,7 +1,7 @@
 # Pipeline CriaLook — Passo a Passo
 
 > Resumo executivo: cada campanha faz **5 chamadas LLM + 2 chamadas Fashn.ai**.
-> Custo total por campanha: **~R$ 1,12** (Pipeline A+) ou **~R$ 1,55** (com Banco de Modelos).
+> Custo total por campanha: **~R$ 1,55** (3 créditos Fashn + LLM).
 > Custo de criar modelo personalizada: **R$ 0,44** (1 crédito Fashn.ai).
 > Fonte: [help.fashn.ai/plans-and-pricing/api-pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
 
@@ -50,18 +50,13 @@
 ---
 
 ### PASSO 6 — Fashn.ai: Gerar Modelo (product-to-model ou try-on)
-**O que faz:** Pega a foto da roupa e gera uma modelo vestindo a peça (corpo inteiro).
-**Entrada:** Foto do produto + tipo de corpo (normal/plus)
-**Saída:** Imagem da modelo vestindo a roupa (fundo branco)
+**O que faz:** Pega a foto da roupa e veste na modelo do banco (corpo inteiro).
+**Entrada:** Foto do produto + modelo do banco selecionada
+**Saída:** Imagem da modelo vestindo a roupa
+**Chamada:** `tryon-max` (2 créditos — quality mode auto)
+**Custo:** $0.15 = **R$ 0,87**
 
-| Caminho | Quando usa | Chamada | Créditos | Custo USD | Custo R$ |
-|---------|-----------|---------|----------|----------|----------|
-| **Pipeline A+** | Sem modelo do banco | `product-to-model` | 1 | $0.075 | R$ 0,44 |
-| **Banco de Modelos** | Com modelo selecionada | `tryon-max` | **2** | **$0.15** | **R$ 0,87** |
-
-> ⚠️ **ATENÇÃO:** `tryon-max` NÃO custa o mesmo que `product-to-model`!
-> Quando `generation_mode` é omitido, **tryon-max usa 'quality' automaticamente** (2 créditos).
-> `product-to-model` usa 'fast' automaticamente (1 crédito).
+> ⚠️ Quando `generation_mode` é omitido, **tryon-max usa 'quality' automaticamente** (2 créditos).
 > Ref: [docs.fashn.ai/api-reference/tryon-max](https://docs.fashn.ai/api-reference/tryon-max)
 
 ---
@@ -101,19 +96,19 @@
 
 | Operação | Créditos | Custo USD | Custo R$ | Notas |
 |----------|----------|-----------|----------|-------|
-| product-to-model (Pipeline A+) | 1 | $0.075 | R$ 0,44 | fast/1K auto |
-| **tryon-max (Banco Modelos)** | **2** | **$0.15** | **R$ 0,87** | **quality auto!** |
-| edit (cenário) | 1 | $0.075 | R$ 0,44 | fast/1K auto |
+| **tryon-max** (vestir peça na modelo) | **2** | **$0.15** | **R$ 0,87** | quality auto |
+| edit (cenário/refinamento) | 1 | $0.075 | R$ 0,44 | fast/1K auto |
 | model-create (criar modelo) | 1 | $0.075 | R$ 0,44 | avulso |
 
 ### TOTAL por Campanha
 
-| Caminho | LLM | Fashn (créditos) | **TOTAL** |
-|---------|-----|-----------------|-----------|
-| **Pipeline A+** (sem banco) | R$ 0,24 | R$ 0,88 (1+1 = 2 créd) | **R$ 1,12** |
-| **Com Banco de Modelos** | R$ 0,24 | R$ 1,31 (2+1 = 3 créd) | **R$ 1,55** |
+| Componente | Custo |
+|-----------|-------|
+| LLM (5 chamadas) | R$ 0,24 |
+| Fashn tryon-max (2 créd) | R$ 0,87 |
+| Fashn edit (1 créd) | R$ 0,44 |
+| **TOTAL** | **R$ 1,55** |
 
-> ⚠️ O fluxo "Banco de Modelos" é **~39% mais caro** que o Pipeline A+.
 > Custo de **criar modelo personalizada** (passo extra, fora do pipeline): +R$ 0,44
 
 ---
