@@ -373,7 +373,7 @@ export default function GerarCampanha() {
   }
 
   return (
-    <div className="animate-fade-in-up">
+    <div className="animate-fade-in-up pb-24 md:pb-0">
       {/* Quota Exceeded Modal (seção 5.5) */}
       {quotaExceeded && (
         <QuotaExceededModal
@@ -462,7 +462,7 @@ export default function GerarCampanha() {
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-sm font-semibold">Trocar foto</span>
                   </div>
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: "var(--brand-500)", color: "white" }}>Principal</span>
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-xs font-semibold" style={{ background: "var(--brand-500)", color: "white" }}>Principal</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-3 p-6 h-full">
@@ -471,7 +471,7 @@ export default function GerarCampanha() {
                   </div>
                   <div className="text-center">
                     <p className="font-semibold text-sm mb-0.5">Foto principal *</p>
-                    <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+                    <p className="text-xs" style={{ color: "var(--muted)" }}>
                       Visão completa da peça
                     </p>
                   </div>
@@ -534,9 +534,9 @@ export default function GerarCampanha() {
                     </div>
                     <div className="text-center">
                       <p className="text-xs font-semibold">Close-up do tecido</p>
-                      <p className="text-[10px]" style={{ color: "var(--muted)" }}>Melhora a precisão</p>
+                      <p className="text-xs" style={{ color: "var(--muted)" }}>Melhora a precisão</p>
                     </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -594,9 +594,9 @@ export default function GerarCampanha() {
                     </div>
                     <div className="text-center">
                       <p className="text-xs font-semibold">Segunda peça</p>
-                      <p className="text-[10px]" style={{ color: "var(--muted)" }}>Calça do conjunto</p>
+                      <p className="text-xs" style={{ color: "var(--muted)" }}>Calça do conjunto</p>
                     </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -606,7 +606,7 @@ export default function GerarCampanha() {
           {/* Product Type — Multi-select (até 2 = conjunto) */}
           <div>
             <label className="block text-sm font-semibold mb-1">Tipo de produto *</label>
-            <p className="text-[10px] mb-2" style={{ color: "var(--muted)" }}>
+            <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
               Selecione 1 peça ou 2 para conjunto
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -625,15 +625,22 @@ export default function GerarCampanha() {
                 >
                   {pt.label}
                   {selectedTypes.includes(pt.value) && (
-                    <span className="ml-1 text-[10px]" style={{ color: "var(--brand-500)" }}>
-                      {selectedTypes.indexOf(pt.value) === 0 ? "①" : "②"}
+                    <span
+                      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ml-2"
+                      style={{
+                        background: "var(--brand-500)",
+                        color: "white",
+                        minWidth: "20px"
+                      }}
+                    >
+                      {selectedTypes.indexOf(pt.value) + 1}
                     </span>
                   )}
                 </button>
               ))}
             </div>
             {isConjunto && (
-              <div className="mt-2 p-2 rounded-lg text-[11px] font-medium flex items-center gap-1.5" style={{ background: "var(--brand-50)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}>
+              <div className="mt-3 p-3 rounded-xl text-sm font-semibold flex items-center gap-2" style={{ background: "var(--brand-50)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}>
                 🎀 Conjunto: {productTypes.find(p => p.value === selectedTypes[0])?.label?.replace(/^.\s/, "")} + {productTypes.find(p => p.value === selectedTypes[1])?.label?.replace(/^.\s/, "")}
               </div>
             )}
@@ -644,7 +651,7 @@ export default function GerarCampanha() {
             <label className="block text-sm font-semibold mb-1">
               Material / Tecido
             </label>
-            <p className="text-[10px] mb-2" style={{ color: "var(--muted)" }}>
+            <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
               Opcional — a IA detecta pela foto, mas informar melhora a precisão
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -652,7 +659,7 @@ export default function GerarCampanha() {
                 <button
                   key={m.value}
                   onClick={() => setMaterial(material === m.value ? "" : m.value)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  className="px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
                   style={{
                     background: material === m.value ? "var(--brand-100)" : "var(--surface)",
                     color: material === m.value ? "var(--brand-700)" : "var(--muted)",
