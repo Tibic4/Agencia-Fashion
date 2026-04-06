@@ -180,30 +180,89 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ── MINI-VISION: extrair dados VTO ultra-rápido para instruir Fashn/NanoBanana ──
-    // Roda ANTES do try-on (cost: ~R$ 0.002, ~200ms) para fornecer dados de tecido ao Fashn
+    // ── MINI-VISION: extrair dados VTO usando TODAS as fotos + dados do lojista ──
+    // Combina: foto principal + close-up (textura!) + 2ª peça + material selecionado + tipo produto
     let vtoData: { fabricDescriptor?: string; garmentStructure?: string; colorHex?: string; criticalDetails?: string[] } | undefined;
+
+    // Mapa de materiais → descritor de tecido em inglês (dados do lojista = fonte confiável)
+    const MATERIAL_FABRIC_MAP: Record<string, string> = {
+      viscose: "viscose/rayon fabric, soft drape, slight sheen, lightweight",
+      algodao: "cotton fabric, matte finish, natural texture, breathable",
+      linho: "linen fabric, natural slubbed texture, visible weave, crisp hand feel",
+      crepe: "crepe fabric, slightly crinkled surface texture, matte finish, fluid drape",
+      malha: "jersey knit fabric, smooth surface, slight stretch, medium weight",
+      jeans: "denim fabric, diagonal twill weave, sturdy cotton, visible texture",
+      trico: "knit fabric with visible ribbed or cable texture, matte finish, medium to heavy weight",
+      seda: "silk/satin fabric, smooth glossy surface, luxurious sheen, lightweight fluid drape",
+      couro: "leather or faux leather, smooth or textured surface, slight sheen, structured",
+      moletom: "sweatshirt fleece fabric, soft brushed interior, matte cotton exterior, heavyweight",
+      chiffon: "chiffon/mousseline, sheer semi-transparent, delicate flowing drape, lightweight",
+      poliester: "polyester fabric, smooth synthetic surface, slight sheen",
+      la: "wool fabric, soft fuzzy texture, matte finish, medium to heavy weight",
+      nylon: "nylon fabric, smooth synthetic surface, slight sheen, lightweight",
+      suede: "suede or faux suede, soft velvety napped texture, matte finish",
+      renda: "lace fabric, open decorative pattern, delicate texture, semi-transparent",
+    };
+
+    // Mapa de tipo de produto → seed de estrutura
+    const PRODUCT_STRUCTURE_MAP: Record<string, string> = {
+      blusa: "upper body garment, neckline and sleeves define silhouette",
+      saia: "lower body garment from waist, hemline defines length",
+      calca: "lower body garment covering full legs, rise and leg width define fit",
+      vestido: "full-body one-piece garment from shoulders to hemline",
+      macacao: "full-body jumpsuit/romper, connected top and bottom",
+      conjunto: "two-piece coordinated set, each piece has its own structure",
+      jaqueta: "outerwear layer, structured shoulders, front closure, defined collar",
+      acessorio: "fashion accessory item",
+    };
+
+    // Seed do fabricDescriptor a partir do material selecionado pelo lojista
+    const userFabricSeed = material ? MATERIAL_FABRIC_MAP[material.toLowerCase()] : undefined;
+    const userStructureSeed = productType ? PRODUCT_STRUCTURE_MAP[productType.split(":")[0]] : undefined;
+
     if (process.env.GOOGLE_AI_API_KEY) {
       try {
         const { GeminiProvider } = await import("@/lib/ai/providers/gemini");
         const miniVision = new GeminiProvider(process.env.AI_MODEL_GEMINI_FLASH || "gemini-2.5-flash");
+
+        // Montar hints do lojista para o prompt
+        const hints: string[] = [];
+        if (userFabricSeed) hints.push(`The user confirmed the fabric is: ${userFabricSeed}. Use this as your BASE, then ADD visual details you observe (sheen, weight, texture pattern).`);
+        if (userStructureSeed) hints.push(`Product type: ${userStructureSeed}. Use this to seed the garmentStructure field.`);
+        if (material2) {
+          const mat2Seed = MATERIAL_FABRIC_MAP[material2.toLowerCase()];
+          if (mat2Seed) hints.push(`Second piece fabric (for conjunto): ${mat2Seed}`);
+        }
+
         const miniResult = await miniVision.generateWithVision({
-          system: `You are a fashion garment analyst. Analyze the product photo and return ONLY a JSON object with these 4 fields:
+          system: `You are a fashion garment analyst. Analyze ALL provided photos (main product + close-up texture detail + second piece if present) and return ONLY a JSON object with these 4 fields:
 - "fabricDescriptor": concise English description of the visible fabric texture for photographic reproduction (e.g., "ribbed knit with visible vertical channels, matte finish, medium weight")
 - "garmentStructure": English description of garment silhouette and structure (e.g., "structured shoulders, elastic waistband, A-line silhouette from waist down")
 - "colorHex": estimated hex color code of the main fabric color (e.g., "#F5C6D0")
 - "criticalDetails": array of English strings describing details that MUST be preserved in virtual try-on (e.g., ["gold buttons on front placket, 5 total", "ribbed cuffs 3cm wide"])
+${hints.length > 0 ? "\nUSER-PROVIDED DATA (use as authoritative source):\n" + hints.join("\n") : ""}
+The CLOSE-UP photo (if provided) is the most important for fabric texture analysis — examine it carefully.
 Respond with ONLY the JSON object, no markdown.`,
-          messages: [{ role: "user", content: "Analyze this garment photo for virtual try-on fidelity." }],
+          messages: [{ role: "user", content: "Analyze this garment for virtual try-on. Use close-up for fabric detail." }],
           imageBase64,
           mediaType,
+          extraImages: extraImages.length > 0 ? extraImages : undefined, // ← close-up + 2ª peça!
           temperature: 0.1,
-          maxTokens: 300,
+          maxTokens: 400,
         });
         try {
           const cleaned = miniResult.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
           vtoData = JSON.parse(cleaned);
-          console.log(`[MiniVision] 🔍 VTO data extraído: fabric=${vtoData?.fabricDescriptor?.substring(0, 40)}...`);
+
+          // Garantir que material do lojista prevalece sobre detecção da IA (quando informado)
+          if (userFabricSeed && vtoData) {
+            // IA enriquece mas NÃO contradiz o lojista
+            if (!vtoData.fabricDescriptor?.toLowerCase().includes(material!.toLowerCase())) {
+              vtoData.fabricDescriptor = `${userFabricSeed} — ${vtoData.fabricDescriptor || ""}`;
+            }
+          }
+
+          console.log(`[MiniVision] 🔍 VTO data extraído (${extraImages.length} fotos extras): fabric=${vtoData?.fabricDescriptor?.substring(0, 50)}...`);
           // Registrar custo do mini-vision (~$0.0004)
           if (store) {
             try {
