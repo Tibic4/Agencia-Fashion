@@ -8,11 +8,23 @@ import QuotaExceededModal from "@/components/QuotaExceededModal";
 const IconUpload = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
 );
+const IconUploadSmall = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+);
+const IconSearch = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+);
+const IconPlus = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+);
 const IconZap = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
 );
 const IconImage = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+);
+const IconX = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
 );
 const IconChevronDown = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -98,7 +110,15 @@ export default function GerarCampanha() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const closeUpInputRef = useRef<HTMLInputElement>(null);
+  const secondInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [closeUpFile, setCloseUpFile] = useState<File | null>(null);
+  const [closeUpPreview, setCloseUpPreview] = useState<string | null>(null);
+  const [secondFile, setSecondFile] = useState<File | null>(null);
+  const [secondPreview, setSecondPreview] = useState<string | null>(null);
+  const [dragOverCloseUp, setDragOverCloseUp] = useState(false);
+  const [dragOverSecond, setDragOverSecond] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [productType, setProductType] = useState("");
   const [material, setMaterial] = useState("");
@@ -138,6 +158,24 @@ export default function GerarCampanha() {
     }
   };
 
+  const handleCloseUpFile = (file: File) => {
+    if (file && file.type.startsWith("image/")) {
+      setCloseUpFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setCloseUpPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSecondFile = (file: File) => {
+    if (file && file.type.startsWith("image/")) {
+      setSecondFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setSecondPreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!preview || !price || !selectedFile) return;
     setIsGenerating(true);
@@ -159,6 +197,8 @@ export default function GerarCampanha() {
       // Build FormData
       const formData = new FormData();
       formData.append("image", selectedFile);
+      if (closeUpFile) formData.append("closeUpImage", closeUpFile);
+      if (secondFile) formData.append("secondImage", secondFile);
       formData.append("price", price);
       formData.append("objective", objective);
       formData.append("storeName", "Minha Loja");
@@ -333,64 +373,191 @@ export default function GerarCampanha() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Left — Upload */}
+        {/* Left — Upload (3 fotos: 1 grande + 2 pequenas) */}
         <div className="space-y-6">
-          {/* Upload Area */}
-          <div
-            className="relative rounded-2xl overflow-hidden transition-all cursor-pointer group"
-            style={{
-              border: dragOver
-                ? "2px dashed var(--brand-500)"
-                : preview
-                ? "2px solid var(--border)"
-                : "2px dashed var(--border)",
-              background: dragOver ? "var(--brand-50)" : "var(--background)",
-            }}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              const file = e.dataTransfer.files[0];
-              if (file) handleFile(file);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
+          {/* Upload Area — Layout 1 grande + 2 pequenas */}
+          <div className="flex gap-3" style={{ minHeight: "320px" }}>
+            {/* Foto Principal (grande) */}
+            <div
+              className="relative rounded-2xl overflow-hidden transition-all cursor-pointer group flex-[3]"
+              style={{
+                border: dragOver
+                  ? "2px dashed var(--brand-500)"
+                  : preview
+                  ? "2px solid var(--border)"
+                  : "2px dashed var(--border)",
+                background: dragOver ? "var(--brand-50)" : "var(--background)",
+              }}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const file = e.dataTransfer.files[0];
                 if (file) handleFile(file);
               }}
-            />
-            {preview ? (
-              <div className="relative aspect-square">
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-full object-contain"
-                  style={{ background: "var(--surface)" }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFile(file);
+                }}
+              />
+              {preview ? (
+                <div className="relative w-full h-full">
+                  <img
+                    src={preview}
+                    alt="Foto principal"
+                    className="w-full h-full object-contain"
+                    style={{ background: "var(--surface)" }}
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-sm font-semibold">Trocar foto</span>
+                  </div>
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-semibold" style={{ background: "var(--brand-500)", color: "white" }}>Principal</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-3 p-6 h-full">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
+                    <IconUpload />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-sm mb-0.5">Foto principal *</p>
+                    <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+                      Visão completa da peça
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Coluna direita: 2 fotos pequenas */}
+            <div className="flex flex-col gap-3 flex-[2]">
+              {/* Close-up do tecido */}
+              <div
+                className="relative rounded-xl overflow-hidden transition-all cursor-pointer group flex-1"
+                style={{
+                  border: dragOverCloseUp
+                    ? "2px dashed var(--brand-500)"
+                    : closeUpPreview
+                    ? "2px solid var(--border)"
+                    : "2px dashed var(--border)",
+                  background: dragOverCloseUp ? "var(--brand-50)" : "var(--background)",
+                }}
+                onDragOver={(e) => { e.preventDefault(); setDragOverCloseUp(true); }}
+                onDragLeave={() => setDragOverCloseUp(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverCloseUp(false);
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleCloseUpFile(file);
+                }}
+                onClick={() => closeUpInputRef.current?.click()}
+              >
+                <input
+                  ref={closeUpInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleCloseUpFile(file);
+                  }}
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">Trocar foto</span>
-                </div>
+                {closeUpPreview ? (
+                  <div className="relative w-full h-full">
+                    <img src={closeUpPreview} alt="Close-up" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-xs font-semibold">Trocar</span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCloseUpFile(null); setCloseUpPreview(null); }}
+                      className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.6)" }}
+                    >
+                      <IconX />
+                    </button>
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>Close-up</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 p-3 h-full">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
+                      <IconSearch />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-semibold">Close-up do tecido</p>
+                      <p className="text-[10px]" style={{ color: "var(--muted)" }}>Melhora a precisão</p>
+                    </div>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="aspect-square flex flex-col items-center justify-center gap-4 p-8">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
-                  <IconUpload />
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold mb-1">Arraste a foto da peça aqui</p>
-                  <p className="text-xs" style={{ color: "var(--muted)" }}>
-                    ou clique para selecionar · JPG, PNG até 10MB
-                  </p>
-                </div>
+
+              {/* Segunda peça / outro ângulo */}
+              <div
+                className="relative rounded-xl overflow-hidden transition-all cursor-pointer group flex-1"
+                style={{
+                  border: dragOverSecond
+                    ? "2px dashed var(--brand-500)"
+                    : secondPreview
+                    ? "2px solid var(--border)"
+                    : "2px dashed var(--border)",
+                  background: dragOverSecond ? "var(--brand-50)" : "var(--background)",
+                }}
+                onDragOver={(e) => { e.preventDefault(); setDragOverSecond(true); }}
+                onDragLeave={() => setDragOverSecond(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverSecond(false);
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleSecondFile(file);
+                }}
+                onClick={() => secondInputRef.current?.click()}
+              >
+                <input
+                  ref={secondInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleSecondFile(file);
+                  }}
+                />
+                {secondPreview ? (
+                  <div className="relative w-full h-full">
+                    <img src={secondPreview} alt="Segunda peça" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-xs font-semibold">Trocar</span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSecondFile(null); setSecondPreview(null); }}
+                      className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.6)" }}
+                    >
+                      <IconX />
+                    </button>
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>2ª peça</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 p-3 h-full">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
+                      <IconPlus />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-semibold">Segunda peça</p>
+                      <p className="text-[10px]" style={{ color: "var(--muted)" }}>Calça do conjunto</p>
+                    </div>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Product Type */}
