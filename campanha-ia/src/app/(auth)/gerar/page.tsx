@@ -425,7 +425,7 @@ export default function GerarCampanha() {
               <select
                 value={material}
                 onChange={(e) => setMaterial(e.target.value)}
-                className="w-full h-11 px-4 pr-10 rounded-xl text-sm outline-none transition-all appearance-none cursor-pointer"
+                className="custom-select w-full h-11 px-4 rounded-xl text-sm outline-none transition-all cursor-pointer"
                 style={{
                   background: "var(--surface)",
                   border: material ? "1px solid var(--brand-300)" : "1px solid var(--border)",
@@ -436,9 +436,6 @@ export default function GerarCampanha() {
                   <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--muted)" }}>
-                <IconChevronDown />
-              </div>
             </div>
           </div>
 

@@ -76,12 +76,27 @@ export default function Historico() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center animate-pulse" style={{ background: "var(--gradient-brand)", color: "white" }}>
-            ⏳
+      <div className="animate-fade-in-up">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="skeleton skeleton-title" style={{ width: '140px' }} />
+            <div className="skeleton skeleton-text" style={{ width: '100px' }} />
           </div>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando campanhas...</p>
+          <div className="skeleton" style={{ width: '140px', height: '40px' }} />
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl p-4" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-4">
+                <div className="skeleton" style={{ width: '56px', height: '56px', borderRadius: '12px' }} />
+                <div className="flex-1">
+                  <div className="skeleton skeleton-title" style={{ width: `${60 + i * 10}%` }} />
+                  <div className="skeleton skeleton-text" style={{ width: `${40 + i * 10}%` }} />
+                </div>
+                <div className="skeleton" style={{ width: '60px', height: '28px', borderRadius: '999px' }} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -128,9 +143,17 @@ export default function Historico() {
 
       {campaigns.length === 0 ? (
         <div className="text-center py-16">
-          <span className="text-5xl mb-4 block">📭</span>
+          {/* SVG illustration instead of emoji */}
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gradient-card)' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand-400)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M9 21V9" />
+              <circle cx="15" cy="15" r="2" />
+            </svg>
+          </div>
           <h2 className="text-xl font-bold mb-2">Nenhuma campanha ainda</h2>
-          <p className="text-sm mb-6" style={{ color: "var(--muted)" }}>
+          <p className="text-sm mb-6 max-w-xs mx-auto" style={{ color: "var(--muted)" }}>
             Gere sua primeira campanha com IA em 60 segundos!
           </p>
           <Link href="/gerar" className="btn-primary inline-flex">

@@ -3,10 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
 
-const IconSparkles = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-);
 const IconPlus = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
 );
@@ -27,12 +26,17 @@ const IconLogOut = () => (
 );
 
 const navItems = [
-  { href: "/gerar", label: "Nova Campanha", icon: <IconPlus /> },
-  { href: "/historico", label: "Histórico", icon: <IconHistory /> },
-  { href: "/modelo", label: "Modelo Virtual", icon: <IconUser /> },
-  { href: "/configuracoes", label: "Configurações", icon: <IconSettings /> },
-  { href: "/plano", label: "Meu Plano", icon: <IconCreditCard /> },
+  { href: "/gerar", label: "Nova Campanha", shortLabel: "Criar", icon: <IconPlus /> },
+  { href: "/historico", label: "Histórico", shortLabel: "Histórico", icon: <IconHistory /> },
+  { href: "/modelo", label: "Modelo Virtual", shortLabel: "Modelo", icon: <IconUser /> },
+  { href: "/configuracoes", label: "Configurações", shortLabel: "Config", icon: <IconSettings /> },
+  { href: "/plano", label: "Meu Plano", shortLabel: "Plano", icon: <IconCreditCard /> },
 ];
+
+interface UsageData {
+  campaigns_generated: number;
+  campaigns_limit: number;
+}
 
 export default function AuthLayout({
   children,
@@ -40,10 +44,28 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [usage, setUsage] = useState<UsageData | null>(null);
+
+  useEffect(() => {
+    fetch("/api/store/usage")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (data?.data) setUsage(data.data); })
+      .catch(() => {});
+  }, []);
+
+  const userName = user?.firstName || user?.fullName || "Minha Loja";
+  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  const campaignsUsed = usage?.campaigns_generated ?? 0;
+  const campaignsLimit = usage?.campaigns_limit ?? 3;
+  const usagePercent = campaignsLimit > 0 ? Math.min((campaignsUsed / campaignsLimit) * 100, 100) : 0;
 
   return (
     <div className="flex min-h-screen" style={{ background: "var(--surface)" }}>
-      {/* Sidebar */}
+      {/* Sidebar — Desktop */}
       <aside
         className="hidden lg:flex flex-col w-64 fixed inset-y-0 left-0 z-30"
         style={{
@@ -81,43 +103,53 @@ export default function AuthLayout({
           })}
         </nav>
 
-        {/* Usage indicator */}
+        {/* Usage indicator — real data */}
         <div className="p-4" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="rounded-xl p-3" style={{ background: "var(--gradient-card)" }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
                 Campanhas usadas
               </span>
-              <span className="text-xs font-bold gradient-text">2/3</span>
+              <span className="text-xs font-bold gradient-text">
+                {usage ? `${campaignsUsed}/${campaignsLimit}` : "..."}
+              </span>
             </div>
             <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
               <div
-                className="h-full rounded-full transition-all"
-                style={{ width: "66%", background: "var(--gradient-brand)" }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${usagePercent}%`,
+                  background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)",
+                }}
               />
             </div>
             <p className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>
-              Plano Grátis · Renova em 28 dias
+              Créditos avulsos · Não expiram
             </p>
           </div>
         </div>
 
-        {/* User */}
+        {/* User — real data from Clerk */}
         <div className="p-4" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
               style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}
             >
-              L
+              {userInitial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Loja Fashion</p>
+              <p className="text-sm font-medium truncate">{userName}</p>
               <p className="text-xs truncate" style={{ color: "var(--muted)" }}>
-                loja@email.com
+                {userEmail}
               </p>
             </div>
-            <button className="p-1.5 rounded-lg transition hover:bg-red-50" style={{ color: "var(--muted)" }}>
+            <button
+              onClick={() => signOut()}
+              className="p-1.5 rounded-lg transition hover:bg-red-50"
+              style={{ color: "var(--muted)" }}
+              aria-label="Sair da conta"
+            >
               <IconLogOut />
             </button>
           </div>
@@ -129,31 +161,45 @@ export default function AuthLayout({
         className="lg:hidden fixed top-0 left-0 right-0 z-30 glass h-14 flex items-center justify-between px-4"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
-        <div className="flex items-center gap-2">
+        <Link href="/gerar" className="flex items-center gap-2">
           <Image src="/logo.png" alt="CriaLook" width={34} height={34} className="rounded-full" />
           <span className="text-base font-bold">
             Cria<span className="gradient-text">Look</span>
           </span>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
-          {navItems.slice(0, 3).map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="p-2 rounded-lg transition"
-                style={{ color: isActive ? "var(--brand-500)" : "var(--muted)" }}
-              >
-                {item.icon}
-              </Link>
-            );
-          })}
+          <span className="text-[10px] font-bold gradient-text">
+            {usage ? `${campaignsUsed}/${campaignsLimit}` : ""}
+          </span>
         </div>
       </header>
 
+      {/* Mobile Bottom Tab Bar — all 5 items */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 glass flex items-center justify-around py-1.5"
+        style={{ borderTop: "1px solid var(--border)" }}
+      >
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg transition-all min-w-[56px]"
+              style={{
+                color: isActive ? "var(--brand-500)" : "var(--muted)",
+              }}
+              aria-label={item.label}
+            >
+              {item.icon}
+              <span className="text-[9px] font-medium leading-tight">{item.shortLabel}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 min-h-screen">
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-16 lg:pb-0 min-h-screen">
         <div className="p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>

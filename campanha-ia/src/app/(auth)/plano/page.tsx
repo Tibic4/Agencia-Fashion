@@ -144,6 +144,32 @@ export default function Plano() {
   nextRenewal.setMonth(nextRenewal.getMonth() + 1, 1);
   const renewalStr = nextRenewal.toLocaleDateString("pt-BR");
 
+  if (dataLoading) {
+    return (
+      <div className="animate-fade-in-up">
+        <div className="mb-8">
+          <div className="skeleton skeleton-title" style={{ width: '160px' }} />
+          <div className="skeleton skeleton-text" style={{ width: '240px' }} />
+        </div>
+        <div className="rounded-2xl p-6 mb-8" style={{ background: 'var(--gradient-card)', border: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
+            <div className="flex-1">
+              <div className="skeleton skeleton-title" style={{ width: '120px' }} />
+              <div className="skeleton skeleton-text" style={{ width: '180px' }} />
+            </div>
+          </div>
+          <div className="skeleton" style={{ height: '12px', width: '100%', borderRadius: '999px' }} />
+        </div>
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton-card skeleton rounded-2xl" style={{ height: '200px' }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in-up">
       <div className="mb-8">

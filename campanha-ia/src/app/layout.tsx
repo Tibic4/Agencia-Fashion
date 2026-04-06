@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans, Playfair_Display } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
 import { PostHogProvider } from "@/lib/analytics/posthog";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
 });
@@ -62,7 +68,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="pt-BR" className={`${inter.variable} h-full antialiased`}>
+      <html lang="pt-BR" className={`${dmSans.variable} ${playfair.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
           <PostHogProvider>
             {children}
