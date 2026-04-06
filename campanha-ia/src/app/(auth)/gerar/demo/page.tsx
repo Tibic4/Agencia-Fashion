@@ -6,6 +6,9 @@ import CreativePreview from "@/components/CreativePreview";
 import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
 import HeadlineABTest from "@/components/HeadlineABTest";
 import MobilePreview from "@/components/MobilePreview";
+import dynamic from "next/dynamic";
+
+const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { ssr: false });
 
 const IconCopy = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -84,6 +87,7 @@ export default function ResultadoCampanha() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [copyingLink, setCopyingLink] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [tryOnImageUrl, setTryOnImageUrl] = useState<string | null>(null);
 
   // Load data from sessionStorage on mount
   useEffect(() => {
@@ -94,6 +98,7 @@ export default function ResultadoCampanha() {
         setCampaignData(parsed.data);
         setIsDemo(parsed.demo === true);
         if (parsed.data?.campaignId) setCampaignId(parsed.data.campaignId);
+        if (parsed.data?.tryOnImageUrl) setTryOnImageUrl(parsed.data.tryOnImageUrl);
       }
       // Load product image from form data
       const formStored = sessionStorage.getItem("campaignFormData");
@@ -452,7 +457,29 @@ export default function ResultadoCampanha() {
             )}
           </div>
 
-          {/* Creative preview with templates */}
+          {/* ═══ Compositor Konva (imagem modelo + overlay texto) ═══ */}
+          {tryOnImageUrl && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-semibold">🎨 Criativo com Modelo IA</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "#dcfce7", color: "#166534" }}>
+                  Pronto para postar
+                </span>
+              </div>
+              <KonvaCompositor
+                modelImageUrl={tryOnImageUrl}
+                productImageUrl={productImageUrl}
+                productName={productName}
+                price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}
+                headline={campaignData?.output?.meta_ads?.titulo || ""}
+                cta={campaignData?.output?.meta_ads?.cta_button || "Compre agora"}
+                storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
+                score={scoreData.nota_geral}
+              />
+            </div>
+          )}
+
+          {/* Criativo com foto do produto (fallback/complementar) */}
           <CreativePreview
             productName={productName}
             price={campaignData?.output?.meta_ads?.texto_principal?.match(/R\$\s*[\d.,]+/)?.[0] || ""}

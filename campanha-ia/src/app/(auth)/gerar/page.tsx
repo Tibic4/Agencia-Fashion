@@ -102,6 +102,7 @@ export default function GerarCampanha() {
   const [error, setError] = useState<string | null>(null);
   const [productType, setProductType] = useState("");
   const [material, setMaterial] = useState("");
+  const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
   const [modelFilter, setModelFilter] = useState<string>("all");
@@ -165,6 +166,7 @@ export default function GerarCampanha() {
       if (tone) formData.append("toneOverride", tone);
       if (productType) formData.append("productType", productType);
       if (material) formData.append("material", material);
+      formData.append("bodyType", bodyType);
       formData.append("useModel", String(useModel));
       formData.append("backgroundType", background);
       // Modelo do banco (aleatória ou selecionada)
@@ -454,7 +456,7 @@ export default function GerarCampanha() {
                   const val = e.target.value.replace(/[^0-9.,]/g, "");
                   setPrice(val);
                 }}
-                placeholder="89,90"
+                placeholder="Ex: 89,90"
                 className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
                 style={{
                   background: "var(--surface)",
@@ -510,6 +512,43 @@ export default function GerarCampanha() {
               />
             </button>
           </div>
+
+          {/* Body Type — Tipo de Corpo */}
+          {useModel && (
+            <div className="animate-fade-in">
+              <label className="block text-sm font-semibold mb-2">Tipo de corpo da modelo</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setBodyType("normal")}
+                  className="p-3 rounded-xl text-center transition-all"
+                  style={{
+                    border: bodyType === "normal"
+                      ? "2px solid var(--brand-500)"
+                      : "1px solid var(--border)",
+                    background: bodyType === "normal" ? "var(--brand-50)" : "var(--surface)",
+                  }}
+                >
+                  <span className="text-2xl">👤</span>
+                  <p className="text-sm font-semibold mt-1">Normal</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos P / M / G</p>
+                </button>
+                <button
+                  onClick={() => setBodyType("plus")}
+                  className="p-3 rounded-xl text-center transition-all"
+                  style={{
+                    border: bodyType === "plus"
+                      ? "2px solid var(--brand-500)"
+                      : "1px solid var(--border)",
+                    background: bodyType === "plus" ? "var(--brand-50)" : "var(--surface)",
+                  }}
+                >
+                  <span className="text-2xl">💃</span>
+                  <p className="text-sm font-semibold mt-1">Plus Size</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos GG / XGG / EGG</p>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Model Bank Selector */}
           {useModel && modelBank.length > 0 && (

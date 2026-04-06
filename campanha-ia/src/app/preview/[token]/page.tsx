@@ -134,7 +134,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
             Foto da roupa → Campanha pronta em 60 segundos.
           </p>
           <Link href="/sign-up" className="btn-primary inline-block">
-            Começar grátis
+            Testar na prática
           </Link>
         </div>
       </main>

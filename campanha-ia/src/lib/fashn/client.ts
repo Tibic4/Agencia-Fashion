@@ -28,6 +28,8 @@ interface FashnJobResult {
 interface FashnProductToModelParams {
   /** URL ou base64 data URI da foto do produto */
   productImage: string;
+  /** Tipo de corpo: normal (P/M/G) ou plus (GG/XGG) */
+  bodyType?: "normal" | "plus";
 }
 
 interface FashnTryOnParams {
@@ -162,13 +164,21 @@ export async function editImage(params: FashnEditParams): Promise<FashnJobResult
   return pollResult(jobId);
 }
 
-/** Prompts de fundo otimizados (anti-manequim) */
+/** Prompts de fundo otimizados (anti-manequim + anti-etiqueta) */
 const BACKGROUND_PROMPTS: Record<string, string> = {
-  branco: "Professional fashion photo in white studio. Smooth fabric, no wrinkles. Remove any mannequin parts, stands, poles, or dark artifacts. Clean natural skin on legs and arms. Soft studio lighting. Full body visible.",
-  estudio: "Professional fashion photo in elegant studio. Smooth fabric. Remove any mannequin artifacts, stands or poles. Natural skin tones throughout body. Soft gradient backdrop. Professional lighting.",
-  lifestyle: "Professional fashion photo in urban outdoor setting. Smooth fabric. Remove any artificial elements, mannequin parts. Natural skin tones. Natural lighting.",
-  personalizado: "Professional fashion photo, smooth fabric without wrinkles. Remove any mannequin artifacts.",
+  branco: "Professional fashion e-commerce photo in clean white studio. CRITICAL: Preserve ALL garment details exactly — embroidery count, fabric texture, elastic bands, ribbed cuffs, folded hems, buttons. Smooth fabric without unnatural wrinkles. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders from the garment — these are NOT part of the design. KEEP functional accessories like belts, necklaces, bracelets. Remove any mannequin parts, stands, poles, or dark artifacts completely. Clean natural skin on legs and arms with consistent skin tone. Soft studio lighting with subtle shadows. Full body visible from head to feet including shoes.",
+  estudio: "Professional fashion photo in elegant studio with soft gradient backdrop. CRITICAL: Preserve ALL garment details exactly — smocking, ruffles, embroidery patterns, elastic gathering, tie straps. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories like belts, necklaces. Remove any mannequin artifacts, stands or poles completely. Natural skin tones throughout body. Professional soft lighting.",
+  lifestyle: "Professional fashion photo in urban outdoor setting with natural environment. CRITICAL: Preserve ALL garment construction details exactly as shown. Smooth fabric. REMOVE any price tags, store labels, hanging stickers, barcodes from the garment. KEEP functional accessories. Remove any artificial elements, mannequin parts completely. Natural skin tones. Natural warm lighting.",
+  personalizado: "Professional fashion photo, smooth fabric without wrinkles. CRITICAL: Preserve ALL original garment details. REMOVE any price tags, store labels, hanging stickers, barcodes. KEEP functional accessories. Remove any mannequin artifacts.",
 };
+
+/** Build body type instruction for Fashn prompts */
+function getBodyTypeInstruction(bodyType?: "normal" | "plus"): string {
+  if (bodyType === "plus") {
+    return "Plus-size/curvy Brazilian woman (GG/XGG sizing, US 14-18). Full curves, wide hips, thick thighs. DO NOT generate slim/thin body.";
+  }
+  return "Slim/standard Brazilian woman (P/M sizing, US 4-8). Slim athletic build. DO NOT generate plus-size body.";
+}
 
 /**
  * Pipeline A+: product-to-model + edit (alisar + fundo).
@@ -179,11 +189,14 @@ export async function generateModelImage(
   productImage: string,
   backgroundType: "branco" | "estudio" | "lifestyle" | "personalizado" = "branco",
   backgroundValue?: string,
+  bodyType?: "normal" | "plus",
 ): Promise<FashnJobResult> {
+  const bodyInstruction = getBodyTypeInstruction(bodyType);
+
   // Passo 1: Gerar modelo vestindo a peça (corpo inteiro, head to feet)
   const jobId = await submitJob("product-to-model", {
     product_image: productImage,
-    prompt: "Full body photo from head to feet of a Brazilian woman, confident smile, standing relaxed, wearing simple black cotton shorts, barefoot, showing full legs and feet, white studio background, fashion ecommerce photography",
+    prompt: `Full body photo from head to feet of a ${bodyInstruction}. Confident natural smile, relaxed standing pose. White studio background, fashion e-commerce photography. CRITICAL: Reproduce the garment EXACTLY as shown — preserve every detail: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems. Do NOT add or remove any decorative design elements. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment design. KEEP functional accessories like belts, necklaces, bracelets, scarves. Must be wearing stylish shoes (NEVER barefoot).`,
     aspect_ratio: "9:16",
   });
   const modelResult = await pollResult(jobId);
@@ -215,6 +228,7 @@ export async function generateWithModelBank(
   const tryonResult = await tryOnProduct({
     productImage,
     modelImage: modelImageUrl,
+    prompt: "Preserve ALL garment details exactly: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems. Do NOT add or remove decorative design elements. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment. KEEP functional accessories like belts, necklaces, bracelets. Garment must fit naturally on the model body.",
   });
 
   if (tryonResult.status !== "completed" || !tryonResult.outputUrl) {
