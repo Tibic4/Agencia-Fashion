@@ -240,7 +240,7 @@ export async function runCampaignPipeline(
             estrategia: JSON.stringify(strategy),
           }),
         }],
-        maxTokens: 3000,
+        maxTokens: 8192,
         temperature: 0.5,
         responseSchema: refinerConfig.structuredOutput ? undefined : undefined, // Refiner tem schema especial
       }),
@@ -319,7 +319,7 @@ export async function runCampaignPipeline(
           estrategia: JSON.stringify(strategy),
         }),
       }],
-      maxTokens: 3000,
+      maxTokens: 8192,
       temperature: 0.5,
     });
     costs.push(buildCostEntry("refiner_retry", retryRefineResponse, retryRefineStart));
@@ -437,9 +437,27 @@ function parseJSON<T>(raw: string, stepName: string): T {
 
   try {
     return JSON.parse(cleaned) as T;
-  } catch (error) {
-    console.error(`[Pipeline:${stepName}] Falha ao parsear JSON:`, cleaned.slice(0, 300));
-    throw new Error(`Pipeline falhou no step ${stepName}: resposta inválida da IA`);
+  } catch {
+    // Tentar reparar JSON truncado — fechar strings, objetos e arrays abertos
+    console.warn(`[Pipeline:${stepName}] JSON truncado, tentando reparar...`);
+    let repaired = cleaned;
+    // Fechar string aberta
+    const quoteCount = (repaired.match(/(?<!\\)"/g) || []).length;
+    if (quoteCount % 2 !== 0) repaired += '"';
+    // Fechar estruturas abertas
+    const opens = (repaired.match(/[{[]/g) || []).length;
+    const closes = (repaired.match(/[}\]]/g) || []).length;
+    for (let i = 0; i < opens - closes; i++) {
+      // Determinar se fechar com } ou ]
+      const lastOpen = Math.max(repaired.lastIndexOf("{"), repaired.lastIndexOf("["));
+      repaired += repaired[lastOpen] === "{" ? "}" : "]";
+    }
+    try {
+      return JSON.parse(repaired) as T;
+    } catch {
+      console.error(`[Pipeline:${stepName}] Falha ao parsear JSON mesmo reparado:`, cleaned.slice(0, 300));
+      throw new Error(`Pipeline falhou no step ${stepName}: resposta inválida da IA`);
+    }
   }
 }
 
