@@ -29,6 +29,43 @@ export interface NanoBananaResult {
   imageBase64: string | null;
   outputUrl: string | null;
   error?: string;
+  durationMs?: number;
+}
+
+// Custo estimado por geração Nano Banana (Gemini 3.1 Flash image)
+const NANO_BANANA_COST_USD = 0.03;
+
+/**
+ * Loga custo de uma chamada Nano Banana no banco (async, fire-and-forget)
+ */
+async function logNanoBananaCost(
+  durationMs: number,
+  success: boolean,
+  storeId?: string,
+  campaignId?: string,
+) {
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createAdminClient();
+    const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+    const costBrl = NANO_BANANA_COST_USD * exchangeRate;
+
+    await supabase.from("api_cost_logs").insert({
+      store_id: storeId || null,
+      campaign_id: campaignId || null,
+      provider: "google",
+      model_used: "gemini-3.1-flash-image-preview",
+      action: "virtual_try_on",
+      input_tokens: 0,
+      output_tokens: 0,
+      tokens_used: 0,
+      cost_usd: NANO_BANANA_COST_USD,
+      cost_brl: costBrl,
+      response_time_ms: durationMs,
+    });
+  } catch (e) {
+    console.warn("[NanoBanana] Erro ao salvar custo:", e);
+  }
 }
 
 export interface NanoBananaTryOnParams {
@@ -56,6 +93,10 @@ export interface NanoBananaTryOnParams {
   customBackgroundBase64?: string;
   /** MIME type da foto de cenário personalizado */
   customBackgroundMimeType?: string;
+  /** Store ID para tracking de custo */
+  storeId?: string;
+  /** Campaign ID para tracking de custo */
+  campaignId?: string;
 }
 
 // ═══════════════════════════════════════
@@ -157,6 +198,8 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
     return { status: "failed", imageBase64: null, outputUrl: null, error: "GOOGLE_AI_API_KEY não configurada" };
   }
 
+  const start = Date.now();
+
   try {
     const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
 
@@ -234,31 +277,40 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       } as any,
     });
 
+    const durationMs = Date.now() - start;
+
     // Extrair imagem do response
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
         if (part.inlineData?.data) {
+          logNanoBananaCost(durationMs, true, params.storeId, params.campaignId).catch(() => {});
           return {
             status: "completed",
             imageBase64: part.inlineData.data,
             outputUrl: null,
+            durationMs,
           };
         }
       }
     }
 
+    logNanoBananaCost(durationMs, false, params.storeId, params.campaignId).catch(() => {});
     return {
       status: "failed",
       imageBase64: null,
       outputUrl: null,
       error: "Nano Banana não retornou imagem",
+      durationMs,
     };
   } catch (error: any) {
+    const durationMs = Date.now() - start;
+    logNanoBananaCost(durationMs, false, params.storeId, params.campaignId).catch(() => {});
     return {
       status: "failed",
       imageBase64: null,
       outputUrl: null,
       error: `Nano Banana error: ${error.message}`,
+      durationMs,
     };
   }
 }

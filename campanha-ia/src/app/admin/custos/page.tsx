@@ -11,7 +11,7 @@ async function getCosts() {
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
   const [{ data: thisMonthCosts }, { data: lastMonthCosts }, { data: budgetSetting }] = await Promise.all([
-    supabase.from("api_cost_logs").select("provider, model_used, action, cost_brl, cost_usd, tokens_used, created_at").gte("created_at", thisMonth).order("created_at", { ascending: false }),
+    supabase.from("api_cost_logs").select("provider, model_used, action, cost_brl, cost_usd, tokens_used, created_at").gte("created_at", thisMonth).order("created_at", { ascending: false }).limit(500),
     supabase.from("api_cost_logs").select("provider, cost_brl").gte("created_at", lastMonth).lte("created_at", lastMonthEnd),
     supabase.from("admin_settings").select("value").eq("key", "api_budget_monthly_brl").single(),
   ]);
@@ -95,6 +95,7 @@ async function getCosts() {
 
 const providerColors: Record<string, string> = {
   anthropic: "from-violet-500 to-purple-500",
+  google: "from-blue-500 to-indigo-500",
   "fashn.ai": "from-pink-500 to-rose-500",
   fashn: "from-pink-500 to-rose-500",
   "fal.ai": "from-orange-500 to-amber-500",
@@ -110,6 +111,7 @@ const stepLabels: Record<string, string> = {
   refiner: "🔄 Refiner",
   scorer: "📊 Scorer",
   virtual_try_on: "👗 Virtual Try-On",
+  edit_image: "✂️ Edit/Refine",
   copywriter_retry: "✍️ Copywriter (retry)",
   background_removal: "🎨 Remoção de Fundo",
 };
