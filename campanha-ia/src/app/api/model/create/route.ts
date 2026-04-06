@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/model/create
  * Salva as configurações da modelo no banco.
- * Opcionalmente envia fotos de referência para Fashn.ai para criar modelo treinada.
+ * Gera preview de corpo inteiro descalça (mesmo padrão do banco stock).
+ * Opcionalmente envia fotos de referência para Fashn.ai para modelo treinada.
  *
  * Body (FormData):
  *   - skinTone: string
@@ -97,7 +98,40 @@ export async function POST(request: NextRequest) {
       name,
     });
 
-    // Se tem fotos, tentar criar modelo no Fashn.ai
+    // ── Gerar preview corpo inteiro descalça (mesmo padrão stock) ──
+    let previewUrl: string | null = null;
+    if (process.env.FASHN_API_KEY) {
+      try {
+        const { generateCustomModelPreview } = await import("@/lib/fashn/client");
+        console.log(`[Model] 🎨 Gerando preview corpo inteiro para "${name}"...`);
+        const previewResult = await generateCustomModelPreview({
+          skinTone,
+          hairStyle,
+          bodyType,
+          style,
+          ageRange,
+          name,
+          storeId: store.id,
+        });
+
+        if (previewResult.status === "completed" && previewResult.outputUrl) {
+          previewUrl = previewResult.outputUrl;
+          // Salvar URL do preview no modelo
+          await supabase
+            .from("store_models")
+            .update({ photo_url: previewUrl, preview_url: previewUrl })
+            .eq("id", model.id);
+          console.log(`[Model] ✅ Preview gerado com sucesso: ${previewUrl.slice(0, 60)}...`);
+        } else {
+          console.warn(`[Model] ⚠️ Preview falhou: ${previewResult.error || "status=" + previewResult.status}`);
+        }
+      } catch (previewErr) {
+        console.warn("[Model] Preview generation falhou:", previewErr);
+        // Não é erro fatal — modelo salvo no banco, preview é bônus
+      }
+    }
+
+    // Se tem fotos de referência, tentar criar modelo treinado no Fashn.ai
     let fashnModelId: string | null = null;
     if (photoUrls.length >= 1 && process.env.FASHN_API_KEY) {
       try {
@@ -115,7 +149,6 @@ export async function POST(request: NextRequest) {
           .eq("id", model.id);
       } catch (fashnErr) {
         console.warn("[Model] Fashn.ai model create falhou:", fashnErr);
-        // Não é erro fatal — modelo salvo no banco, Fashn é opcional
       }
     }
 
@@ -124,6 +157,7 @@ export async function POST(request: NextRequest) {
       data: {
         id: model.id,
         fashnModelId,
+        previewUrl,
         photoCount: photoUrls.length,
       },
     });
@@ -133,3 +167,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+

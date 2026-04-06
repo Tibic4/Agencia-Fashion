@@ -318,6 +318,61 @@ export async function createModel(params: FashnModelCreateParams): Promise<{ id:
 }
 
 /**
+ * Gerar preview de modelo personalizada — mesmo padrão do banco stock.
+ * Corpo inteiro, descalça, camiseta branca + short preto, fundo branco.
+ * Custo: 1 crédito (~$0.075)
+ */
+export async function generateCustomModelPreview(params: {
+  skinTone: string;
+  hairStyle: string;
+  bodyType: string;
+  style: string;
+  ageRange: string;
+  name: string;
+  storeId?: string;
+}): Promise<FashnJobResult> {
+  const skinMap: Record<string, string> = {
+    branca: "light/fair skin",
+    morena_clara: "light brown/olive skin",
+    morena: "medium brown skin",
+    negra: "dark brown/black skin",
+  };
+  const hairMap: Record<string, string> = {
+    liso: "straight hair",
+    ondulado: "wavy hair",
+    cacheado: "curly hair",
+    crespo: "coily/afro-textured hair",
+    curto: "short hair",
+  };
+  const bodyMap: Record<string, string> = {
+    magra: "slim/athletic build (US 2-6)",
+    media: "average build (US 8-12)",
+    plus_size: "plus-size/curvy body (US 14-20, wide hips, full curves)",
+  };
+  const ageMap: Record<string, string> = {
+    jovem_18_25: "young woman aged 18-25",
+    adulta_26_35: "adult woman aged 26-35",
+    madura_36_50: "mature woman aged 36-50",
+  };
+
+  const skinDesc = skinMap[params.skinTone] || "medium skin";  
+  const hairDesc = hairMap[params.hairStyle] || "wavy hair";
+  const bodyDesc = bodyMap[params.bodyType] || "average build";
+  const ageDesc = ageMap[params.ageRange] || "adult woman aged 26-35";
+
+  const prompt = `Full body photo from head to bare feet of a Brazilian ${ageDesc} with ${skinDesc}, ${hairDesc}, ${bodyDesc}. Wearing a plain white crew-neck t-shirt and plain black shorts. Confident natural smile, relaxed standing pose. Clean white studio background, professional fashion e-commerce photography. High resolution, sharp focus. Barefoot, NO shoes. Full body VISIBLE from head to toes. NO cropping at knees or ankles. NO accessories, NO jewelry. Natural pose, hands relaxed at sides.`;
+
+  const start = Date.now();
+  const jobId = await submitJob("product-to-model", {
+    prompt,
+    aspect_ratio: "9:16",
+  });
+  const result = await pollResult(jobId);
+  logFashnCost("custom_model_preview", "product-to-model", Date.now() - start, result.status === "completed", params.storeId).catch(() => {});
+  return result;
+}
+
+/**
  * Verificar se a API está acessível.
  */
 export async function checkFashnHealth(): Promise<boolean> {
