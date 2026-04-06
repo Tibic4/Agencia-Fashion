@@ -2,8 +2,50 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPaymentStatus } from "@/lib/payments/mercadopago";
 import { updateStorePlan, addCreditsToStore } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createHmac } from "crypto";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Valida assinatura HMAC do webhook Mercado Pago.
+ * Header x-signature: ts=<timestamp>,v1=<hmac>
+ * Header x-request-id: <request-id>
+ */
+function validateWebhookSignature(
+  request: NextRequest,
+  dataId: string,
+): boolean {
+  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  if (!secret) {
+    console.warn("[Webhook:MercadoPago] ⚠️ MERCADOPAGO_WEBHOOK_SECRET não configurado — pulando validação");
+    return true; // Aceitar se não configurou secret (compatibilidade)
+  }
+
+  const xSignature = request.headers.get("x-signature") || "";
+  const xRequestId = request.headers.get("x-request-id") || "";
+
+  // Extrair ts e v1 do header
+  const parts = Object.fromEntries(
+    xSignature.split(",").map((part) => {
+      const [key, ...val] = part.trim().split("=");
+      return [key, val.join("=")];
+    })
+  );
+
+  const ts = parts["ts"];
+  const v1 = parts["v1"];
+
+  if (!ts || !v1) {
+    console.warn("[Webhook:MercadoPago] ⚠️ Header x-signature incompleto");
+    return false;
+  }
+
+  // Montar template: id:{data.id};request-id:{x-request-id};ts:{ts};
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+  const hmac = createHmac("sha256", secret).update(manifest).digest("hex");
+
+  return hmac === v1;
+}
 
 /**
  * POST /api/webhooks/mercadopago
@@ -19,6 +61,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     console.log("[Webhook:MercadoPago] Recebido:", JSON.stringify(body, null, 2));
+
+    // ── Validar assinatura HMAC ──
+    const dataId = body.data?.id ? String(body.data.id) : "";
+    if (!validateWebhookSignature(request, dataId)) {
+      console.error("[Webhook:MercadoPago] ❌ Assinatura inválida — rejeitando");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
 
     // Verificar tipo de notificação
     if (body.type === "payment" && body.data?.id) {
