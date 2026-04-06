@@ -83,6 +83,7 @@ export default function FloatingWhatsApp() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Fale conosco pelo WhatsApp"
+        title="Fale conosco no WhatsApp"
         className={`wa-btn ${pulse ? "wa-heartbeat" : ""}`}
       >
         {pulse && <span className="wa-ring" />}
