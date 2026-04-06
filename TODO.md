@@ -23,3 +23,4 @@
 - [ ] SEO — verificar indexação Google
 - [ ] Landing page — testar conversão
 - [ ] WhatsApp flutuante — configurar número real
+ssh root@191.252.159.29
