@@ -1,7 +1,7 @@
 # Pipeline CriaLook — Passo a Passo
 
 > Resumo executivo: cada campanha faz **5 chamadas LLM + 2 chamadas Fashn.ai**.
-> Custo total por campanha: **~R$ 1,11** (Pipeline A+) ou **~R$ 1,11** (com Banco de Modelos).
+> Custo total por campanha: **~R$ 1,12** (Pipeline A+) ou **~R$ 1,55** (com Banco de Modelos).
 > Custo de criar modelo personalizada: **R$ 0,44** (1 crédito Fashn.ai).
 > Fonte: [help.fashn.ai/plans-and-pricing/api-pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
 
@@ -54,13 +54,15 @@
 **Entrada:** Foto do produto + tipo de corpo (normal/plus)
 **Saída:** Imagem da modelo vestindo a roupa (fundo branco)
 
-| Caminho | Quando usa | Chamada | Créditos | Custo USD |
-|---------|-----------|---------|----------|----------|
-| **Pipeline A+** | Sem modelo do banco | `product-to-model` | 1 | $0.075 |
-| **Banco de Modelos** | Com modelo selecionada | `tryon-max` | 1 | $0.075 |
+| Caminho | Quando usa | Chamada | Créditos | Custo USD | Custo R$ |
+|---------|-----------|---------|----------|----------|----------|
+| **Pipeline A+** | Sem modelo do banco | `product-to-model` | 1 | $0.075 | R$ 0,44 |
+| **Banco de Modelos** | Com modelo selecionada | `tryon-max` | **2** | **$0.15** | **R$ 0,87** |
 
-> ⚠️ Ambos custam **o mesmo** na config padrão (Fast/1K = 1 crédito).
-> Custo sobe se mudar resolução: 2K=2 créd, 4K Quality=5 créd ($0.375 = R$ 2,18).
+> ⚠️ **ATENÇÃO:** `tryon-max` NÃO custa o mesmo que `product-to-model`!
+> Quando `generation_mode` é omitido, **tryon-max usa 'quality' automaticamente** (2 créditos).
+> `product-to-model` usa 'fast' automaticamente (1 crédito).
+> Ref: [docs.fashn.ai/api-reference/tryon-max](https://docs.fashn.ai/api-reference/tryon-max)
 
 ---
 
@@ -71,7 +73,7 @@
 - 🏷️ Remove etiquetas de preço, tags, adesivos e artefatos de manequim
 **Entrada:** Imagem do passo 6 + prompt do cenário
 **Saída:** Imagem final polida com fundo profissional
-**Custo:** 1 crédito = $0.075 (Fast/1K default)
+**Custo:** 1 crédito = $0.075 = R$ 0,44 (Fast/1K default)
 
 ---
 
@@ -79,45 +81,46 @@
 
 ### LLM (texto) — câmbio R$ 5,80/USD
 
-| Step | Provider | Modelo | Tokens ~in | Tokens ~out | Custo R$ |
-|------|----------|--------|-----------|------------|----------|
-| Vision | Google | Gemini 2.5 Flash | ~1.500 | ~500 | R$ 0,01 |
-| Strategy | Google | Gemini 2.5 Pro | ~2.000 | ~800 | R$ 0,08 |
-| Copywriter | Anthropic | Claude Sonnet 4 | ~3.000 | ~2.000 | R$ 0,12 |
-| Refiner | Google | Gemini 2.5 Flash | ~3.000 | ~1.500 | R$ 0,02 |
-| Scorer | Google | Gemini 2.5 Flash | ~2.500 | ~500 | R$ 0,01 |
-| **Subtotal LLM** | | | | | **R$ 0,24** |
+> ✅ Todos os preços verificados contra documentação oficial (Abr/2026):
+> - [docs.anthropic.com/en/docs/about-claude/pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+> - [ai.google.dev/pricing](https://ai.google.dev/pricing)
+
+| Step | Provider | Modelo | Preço Input/MTok | Preço Output/MTok | Tokens ~in | Tokens ~out | Custo R$ |
+|------|----------|--------|-----------------|------------------|-----------|------------|----------|
+| Vision | Google | Gemini 2.5 Flash | $0.30 | $2.50 | ~1.500 | ~500 | R$ 0,01 |
+| Strategy | Google | Gemini 2.5 Pro | $1.25 | $10.00 | ~2.000 | ~800 | R$ 0,08 |
+| Copywriter | Anthropic | Claude Sonnet 4 | $3.00 | $15.00 | ~3.000 | ~2.000 | R$ 0,12 |
+| Refiner | Google | Gemini 2.5 Flash | $0.30 | $2.50 | ~3.000 | ~1.500 | R$ 0,02 |
+| Scorer | Google | Gemini 2.5 Flash | $0.30 | $2.50 | ~2.500 | ~500 | R$ 0,01 |
+| **Subtotal LLM** | | | | | | | **R$ 0,24** |
 
 ### Fashn.ai (imagem) — $0.075/crédito, câmbio R$ 5,80/USD
 
 > Fonte oficial: [Fashn API Pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
-> Nosso pipeline usa padrão Fast/1K (1 crédito por chamada).
+> Docs por endpoint: [docs.fashn.ai](https://docs.fashn.ai/)
 
-| Operação | Créditos | Custo USD | Custo R$ |
-|----------|----------|-----------|----------|
-| product-to-model (Pipeline A+) | 1 | $0.075 | R$ 0,44 |
-| tryon-max (Banco Modelos) | 1 | $0.075 | R$ 0,44 |
-| edit (cenário) | 1 | $0.075 | R$ 0,44 |
-| model-create (criar modelo personalizada) | 1 | $0.075 | R$ 0,44 |
-| **Subtotal Fashn (por campanha)** | **2** | **$0.15** | **R$ 0,87** |
-
-> 📝 `product-to-model` e `tryon-max` custam o mesmo no Fast/1K.
-> O custo R$ 2,18 que aparece em alguns docs é para Quality/4K (5 créditos).
+| Operação | Créditos | Custo USD | Custo R$ | Notas |
+|----------|----------|-----------|----------|-------|
+| product-to-model (Pipeline A+) | 1 | $0.075 | R$ 0,44 | fast/1K auto |
+| **tryon-max (Banco Modelos)** | **2** | **$0.15** | **R$ 0,87** | **quality auto!** |
+| edit (cenário) | 1 | $0.075 | R$ 0,44 | fast/1K auto |
+| model-create (criar modelo) | 1 | $0.075 | R$ 0,44 | avulso |
 
 ### TOTAL por Campanha
 
-| Caminho | LLM | Fashn (2 chamadas) | **TOTAL** |
-|---------|-----|-------------------|-----------|
-| Pipeline A+ (sem banco) | R$ 0,24 | R$ 0,87 | **R$ 1,11** |
-| Com Banco de Modelos | R$ 0,24 | R$ 0,87 | **R$ 1,11** |
+| Caminho | LLM | Fashn (créditos) | **TOTAL** |
+|---------|-----|-----------------|-----------|
+| **Pipeline A+** (sem banco) | R$ 0,24 | R$ 0,88 (1+1 = 2 créd) | **R$ 1,12** |
+| **Com Banco de Modelos** | R$ 0,24 | R$ 1,31 (2+1 = 3 créd) | **R$ 1,55** |
 
+> ⚠️ O fluxo "Banco de Modelos" é **~39% mais caro** que o Pipeline A+.
 > Custo de **criar modelo personalizada** (passo extra, fora do pipeline): +R$ 0,44
 
 ---
 
 ## Cenários Disponíveis (Fashn.ai edit)
 
-Todos usam a **mesma chamada** (edit, $0.02) — só muda o prompt:
+Todos usam a **mesma chamada** (edit, $0.075 = R$ 0,44) — só muda o prompt:
 
 | Cenário | Descrição do prompt |
 |---------|-------------------|
