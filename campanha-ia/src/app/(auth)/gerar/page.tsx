@@ -174,8 +174,31 @@ export default function GerarCampanha() {
     fetch("/api/model/list")
       .then(res => res.json())
       .then(data => {
-        setCustomModels(data.models || []);
+        const loaded = data.models || [];
+        setCustomModels(loaded);
         setUserPlan(data.plan || "free");
+
+        // Auto-generate preview for models without photo (once per session)
+        for (const m of loaded) {
+          const key = `preview_attempted_${m.id}`;
+          if (!m.photo_url && !sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, "1");
+            fetch("/api/model/regenerate-preview", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ modelId: m.id }),
+            })
+              .then(r => r.json())
+              .then(d => {
+                if (d.success && d.preview_url) {
+                  setCustomModels(prev =>
+                    prev.map(cm => cm.id === m.id ? { ...cm, photo_url: d.preview_url } : cm)
+                  );
+                }
+              })
+              .catch(() => {});
+          }
+        }
       })
       .catch(() => {});
   }, []);
@@ -992,8 +1015,9 @@ export default function GerarCampanha() {
                       <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #FFF8E1, #FFE082)" }}>
-                        <span className="text-2xl">👩</span>
-                        <span className="text-[10px] font-medium mt-1" style={{ color: "#8B6914" }}>{model.name}</span>
+                        <div className="w-8 h-8 rounded-full border-2 border-transparent animate-spin mb-1"
+                          style={{ borderTopColor: "#D4A017", borderRightColor: "#F5C842" }} />
+                        <span className="text-[10px] font-medium" style={{ color: "#8B6914" }}>Gerando...</span>
                       </div>
                     )}
                     {/* Badge ⭐ */}
