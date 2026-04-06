@@ -174,31 +174,8 @@ export default function GerarCampanha() {
     fetch("/api/model/list")
       .then(res => res.json())
       .then(data => {
-        const loaded = data.models || [];
-        setCustomModels(loaded);
+        setCustomModels(data.models || []);
         setUserPlan(data.plan || "free");
-
-        // Auto-generate preview for models without photo (once per session)
-        for (const m of loaded) {
-          const key = `preview_attempted_${m.id}`;
-          if (!m.photo_url && !sessionStorage.getItem(key)) {
-            sessionStorage.setItem(key, "1");
-            fetch("/api/model/regenerate-preview", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ modelId: m.id }),
-            })
-              .then(r => r.json())
-              .then(d => {
-                if (d.success && d.preview_url) {
-                  setCustomModels(prev =>
-                    prev.map(cm => cm.id === m.id ? { ...cm, photo_url: d.preview_url } : cm)
-                  );
-                }
-              })
-              .catch(() => {});
-          }
-        }
       })
       .catch(() => {});
   }, []);
