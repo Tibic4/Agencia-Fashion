@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, createStoreModel, listStoreModels, getStorePlanName, getModelLimitForPlan } from "@/lib/db";
+import { getStoreByClerkId, createStoreModel, listStoreModels, getStorePlanName, getModelLimitForPlan, consumeCredit, getStoreCredits } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 120;
@@ -41,16 +41,24 @@ export async function POST(request: NextRequest) {
     const modelLimit = getModelLimitForPlan(planName);
 
     if (existingModels.length >= modelLimit) {
-      return NextResponse.json(
-        {
-          error: `Limite de modelos atingido (${existingModels.length}/${modelLimit}). Faça upgrade do plano para criar mais modelos.`,
-          code: "QUOTA_EXCEEDED",
-          current: existingModels.length,
-          limit: modelLimit,
-          plan: planName,
-        },
-        { status: 403 }
-      );
+      // Plano esgotou — tentar crédito avulso de modelos
+      const creditUsed = await consumeCredit(store.id, "models");
+      if (creditUsed) {
+        console.log(`[Model] 💳 Crédito avulso de modelo consumido (plano: ${existingModels.length}/${modelLimit})`);
+      } else {
+        const credits = await getStoreCredits(store.id);
+        return NextResponse.json(
+          {
+            error: `Limite de modelos atingido (${existingModels.length}/${modelLimit}). Compre créditos avulsos ou faça upgrade.`,
+            code: "QUOTA_EXCEEDED",
+            current: existingModels.length,
+            limit: modelLimit,
+            plan: planName,
+            creditsAvailable: credits.models,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const formData = await request.formData();
