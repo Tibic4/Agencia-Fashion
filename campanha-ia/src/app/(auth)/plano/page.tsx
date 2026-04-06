@@ -119,8 +119,11 @@ export default function Plano() {
       });
       const data = await response.json();
 
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      if (data.data?.checkoutUrl) {
+        window.location.href = data.data.checkoutUrl;
+      } else if (data.demo || data.data?.demo) {
+        setStatusMsg("🎭 Modo demo — checkout simulado. Configure MERCADOPAGO_ACCESS_TOKEN no .env.local");
+        setCreditLoading(null);
       } else {
         setStatusMsg(data.error || "Erro ao criar checkout de créditos.");
         setCreditLoading(null);
