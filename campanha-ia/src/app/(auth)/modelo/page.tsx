@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import ModelPlaceholder from "@/components/ModelPlaceholder";
 
 /* ═══════════════════════════════════════
    Plan model limits (01_ARQUITETURA_GERAL.md)
@@ -106,7 +107,47 @@ export default function ModeloVirtual() {
     loadModels();
   }, []);
 
+  // ── Polling inteligente para previews pendentes ──
+  useEffect(() => {
+    const pendingIds = models
+      .filter(m => !m.photo_url)
+      .map(m => m.id);
+    if (pendingIds.length === 0) return;
 
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/model/preview-status?ids=${pendingIds.join(",")}`);
+        if (!res.ok) return;
+        const { statuses } = await res.json();
+
+        setModels(prev => prev.map(m => {
+          const status = statuses?.[m.id];
+          if (status?.url && !m.photo_url) {
+            return { ...m, photo_url: status.url };
+          }
+          return m;
+        }));
+      } catch {
+        // Silencioso
+      }
+    }, 5000);
+
+    const timeout = setTimeout(() => clearInterval(interval), 3 * 60 * 1000);
+    return () => { clearInterval(interval); clearTimeout(timeout); };
+  }, [models.filter(m => !m.photo_url).map(m => m.id).join(",")]);
+
+  // ── Retry manual de preview ──
+  const handleRetryPreview = useCallback(async (modelId: string) => {
+    try {
+      await fetch("/api/model/regenerate-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ modelId }),
+      });
+    } catch {
+      // Silencioso
+    }
+  }, []);
 
   async function handleCreate() {
     setLoading(true);
@@ -286,12 +327,21 @@ export default function ModeloVirtual() {
                 style={{ background: "var(--gradient-brand-soft)" }}
               >
                 {model.photo_url ? (
-                  <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
+                  <img
+                    src={model.photo_url}
+                    alt={model.name}
+                    className="w-full h-full object-cover"
+                    style={{ animation: "fadeIn 0.5s ease-in" }}
+                  />
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 p-4">
-                    <div className="text-5xl">👩</div>
-                    <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>{model.name}</span>
-                  </div>
+                  <ModelPlaceholder
+                    skinTone={model.skin_tone}
+                    bodyType={model.body_type}
+                    name={model.name}
+                    isGenerating={new Date(model.created_at).getTime() > Date.now() - 5 * 60 * 1000}
+                    showRetry={new Date(model.created_at).getTime() <= Date.now() - 5 * 60 * 1000}
+                    onRetry={() => handleRetryPreview(model.id)}
+                  />
                 )}
                 {model.is_active && (
                   <div

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QuotaExceededModal from "@/components/QuotaExceededModal";
+import ModelPlaceholder from "@/components/ModelPlaceholder";
 
 const IconUpload = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -150,7 +151,7 @@ export default function GerarCampanha() {
     });
   }
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
-  const [customModels, setCustomModels] = useState<{ id: string; name: string; body_type: string; photo_url?: string | null; is_active: boolean }[]>([]);
+  const [customModels, setCustomModels] = useState<{ id: string; name: string; body_type: string; skin_tone?: string; photo_url?: string | null; is_active: boolean }[]>([]);
   const [userPlan, setUserPlan] = useState("free");
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
   const [modelFilter, setModelFilter] = useState<string>("all");
@@ -179,6 +180,40 @@ export default function GerarCampanha() {
       })
       .catch(() => {});
   }, []);
+
+  // ── Polling inteligente: atualiza previews pendentes a cada 5s ──
+  useEffect(() => {
+    const pendingIds = customModels
+      .filter(m => !m.photo_url)
+      .map(m => m.id);
+    if (pendingIds.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/model/preview-status?ids=${pendingIds.join(",")}`);
+        if (!res.ok) return;
+        const { statuses } = await res.json();
+
+        setCustomModels(prev => prev.map(m => {
+          const status = statuses?.[m.id];
+          if (status?.url && !m.photo_url) {
+            return { ...m, photo_url: status.url };
+          }
+          return m;
+        }));
+      } catch {
+        // Silencioso — retry no próximo ciclo
+      }
+    }, 5000);
+
+    // Parar polling após 3 minutos (timeout de segurança)
+    const timeout = setTimeout(() => clearInterval(interval), 3 * 60 * 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [customModels.filter(m => !m.photo_url).map(m => m.id).join(",")]);
 
   const generationSteps = [
     { label: "Analisando produto...", progress: 15 },
@@ -989,13 +1024,19 @@ export default function GerarCampanha() {
                     title={`⭐ ${model.name} (sua modelo)`}
                   >
                     {model.photo_url ? (
-                      <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
+                      <img
+                        src={model.photo_url}
+                        alt={model.name}
+                        className="w-full h-full object-cover"
+                        style={{ animation: "fadeIn 0.5s ease-in" }}
+                      />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #FFF8E1, #FFE082)" }}>
-                        <div className="w-8 h-8 rounded-full border-2 border-transparent animate-spin mb-1"
-                          style={{ borderTopColor: "#D4A017", borderRightColor: "#F5C842" }} />
-                        <span className="text-[10px] font-medium" style={{ color: "#8B6914" }}>Gerando...</span>
-                      </div>
+                      <ModelPlaceholder
+                        skinTone={model.skin_tone}
+                        bodyType={model.body_type}
+                        name={model.name}
+                        isGenerating={true}
+                      />
                     )}
                     {/* Badge ⭐ */}
                     <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
