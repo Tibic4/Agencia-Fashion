@@ -73,7 +73,6 @@ export default function ModeloVirtual() {
   const [userPlan, setUserPlan] = useState("free");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   // ── Create form state ──
   const [skin, setSkin] = useState("morena_clara");
@@ -95,18 +94,8 @@ export default function ModeloVirtual() {
         const res = await fetch("/api/model/list");
         if (res.ok) {
           const data = await res.json();
-          const loadedModels: StoreModel[] = data.models || [];
-          setModels(loadedModels);
+          setModels(data.models || []);
           setUserPlan(data.plan || "free");
-
-          // Auto-generate preview for models without photo (once per session)
-          for (const m of loadedModels) {
-            const key = `preview_attempted_${m.id}`;
-            if (!m.photo_url && !sessionStorage.getItem(key)) {
-              sessionStorage.setItem(key, "1");
-              autoGeneratePreview(m.id);
-            }
-          }
         }
       } catch {
         // If API doesn't exist yet, use empty list
@@ -115,32 +104,9 @@ export default function ModeloVirtual() {
       }
     }
     loadModels();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Auto-gera preview para modelos sem foto (fire-and-forget) */
-  async function autoGeneratePreview(modelId: string) {
-    setRegeneratingId(modelId);
-    try {
-      const res = await fetch("/api/model/regenerate-preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelId }),
-      });
-      const data = await res.json();
-      if (data.success && data.preview_url) {
-        setModels((prev) =>
-          prev.map((m) =>
-            m.id === modelId ? { ...m, photo_url: data.preview_url } : m
-          )
-        );
-      }
-    } catch {
-      // Silent fail
-    } finally {
-      setRegeneratingId(null);
-    }
-  }
+
 
   async function handleCreate() {
     setLoading(true);
@@ -322,23 +288,9 @@ export default function ModeloVirtual() {
                 {model.photo_url ? (
                   <img src={model.photo_url} alt={model.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-3 p-4">
-                    {regeneratingId === model.id ? (
-                      <>
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-full border-3 border-transparent animate-spin"
-                            style={{ borderTopColor: "var(--brand-500)", borderRightColor: "var(--brand-300)" }} />
-                          <span className="absolute inset-0 flex items-center justify-center text-2xl">✨</span>
-                        </div>
-                        <p className="text-xs font-medium" style={{ color: "var(--brand-500)" }}>Gerando foto...</p>
-                        <p className="text-[10px] text-center" style={{ color: "var(--muted)" }}>A IA está criando a foto da modelo</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-5xl animate-pulse">👩</div>
-                        <p className="text-[10px] text-center" style={{ color: "var(--muted)" }}>Aguardando preview...</p>
-                      </>
-                    )}
+                  <div className="flex flex-col items-center justify-center gap-2 p-4">
+                    <div className="text-5xl">👩</div>
+                    <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>{model.name}</span>
                   </div>
                 )}
                 {model.is_active && (
