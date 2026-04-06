@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createCheckoutPreference, type PlanId } from "@/lib/payments/mercadopago";
+import { createSubscription, type PlanId } from "@/lib/payments/mercadopago";
 import { getStoreByClerkId } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
  * 
  * Body: { planId: "starter" | "pro" | "business" | "agencia" }
  * 
- * Cria uma preferência de checkout no Mercado Pago e retorna a URL de pagamento.
- * Usa Clerk para obter userId e email reais da sessão.
+ * Cria uma assinatura recorrente (PreApproval) no Mercado Pago.
+ * O cliente é redirecionado para o checkout do MP para autorizar o cartão.
+ * Cobranças mensais automáticas são feitas pelo MP.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -55,17 +56,20 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const result = await createCheckoutPreference({
+    // Criar assinatura recorrente via PreApproval
+    const result = await createSubscription({
       planId: planId as PlanId,
-      userId: store.id, // Usar store.id como referência no external_reference
+      storeId: store.id,
       userEmail,
     });
+
+    console.log(`[API:checkout] ✅ Assinatura criada: ${result.subscriptionId} — Plano: ${planId}`);
 
     return NextResponse.json({
       success: true,
       demo: false,
       data: {
-        preferenceId: result.preferenceId,
+        subscriptionId: result.subscriptionId,
         checkoutUrl: result.initPoint,
         sandboxUrl: result.sandboxInitPoint,
       },

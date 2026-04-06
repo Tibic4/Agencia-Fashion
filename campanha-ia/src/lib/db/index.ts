@@ -194,29 +194,21 @@ export async function getStorePlanName(storeId: string): Promise<string> {
   return plans.name || "free";
 }
 
-/** Limites de modelos por plano (01_ARQUITETURA_GERAL.md) */
+/** Limites de modelos por plano (CUSTOS_PLANOS.md) */
 export function getModelLimitForPlan(planName: string): number {
   const limits: Record<string, number> = {
     gratis: 0,
     starter: 1,
-    pro: 2,
-    business: 3,
-    agencia: 5,
+    pro: 3,
+    business: 5,
+    agencia: 10,
   };
   return limits[planName] ?? 0;
 }
 
-/** Limites de regenerações por campanha (sincronizado com plano/page.tsx) */
+/** Regenerações removidas — todos os planos retornam 0 */
 export function getRegenLimitForPlan(planName: string): number {
-  const limits: Record<string, number> = {
-    gratis: 0,
-    free: 0,
-    starter: 2,
-    pro: 3,
-    business: 3,
-    agencia: 3,
-  };
-  return limits[planName] ?? 0;
+  return 0;
 }
 
 /** Dias de histórico por plano (0 = ilimitado) */
@@ -242,9 +234,9 @@ export function hasAllChannels(planName: string): boolean {
   return !["gratis", "free"].includes(planName);
 }
 
-/** Verifica se o plano tem acesso ao link de prévia */
-export function hasPreviewLink(planName: string): boolean {
-  return ["pro", "business", "agencia"].includes(planName);
+/** Link de prévia removido — nenhum plano tem mais */
+export function hasPreviewLink(_planName: string): boolean {
+  return false;
 }
 
 /** Verifica se o plano tem marca branca */
