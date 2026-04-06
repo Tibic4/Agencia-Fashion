@@ -179,21 +179,6 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
 // ═══════════════════════════════════════
 
 /**
- * Gerar modelo vestindo a peça (a partir da foto flat-lay do produto).
- * Não precisa de foto de modelo — a IA gera automaticamente.
- * Custo: ~R$ 0,15
- */
-export async function productToModel(params: FashnProductToModelParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
-  const start = Date.now();
-  const jobId = await submitJob("product-to-model", {
-    product_image: params.productImage,
-  });
-  const result = await pollResult(jobId);
-  logFashnCost("virtual_try_on", "product-to-model", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
-  return result;
-}
-
-/**
  * Vestir uma peça em um modelo (Virtual Try-On).
  * Requer foto de modelo com corpo visível.
  * Custo: ~R$ 0,87 (2 créditos — quality mode auto)
@@ -212,7 +197,7 @@ export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string
 
 /**
  * Editar/refinar imagem gerada (alisar roupa, mudar fundo, etc).
- * Custo: ~R$ 0,10
+ * Custo: ~R$ 0,44 (1 crédito — fast mode auto em 1K)
  */
 export async function editImage(params: FashnEditParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
   const start = Date.now();
@@ -237,47 +222,6 @@ const BACKGROUND_PROMPTS: Record<string, string> = {
   gradiente: "Professional fashion photo with elegant smooth gradient backdrop transitioning from soft rose pink to warm peach gold. Abstract premium brand aesthetic feel. CRITICAL: Preserve ALL garment details exactly. Smooth fabric. REMOVE any price tags, store labels, barcodes. KEEP functional accessories. Remove mannequin artifacts. Soft even studio lighting.",
   personalizado: "Professional fashion photo, smooth fabric without wrinkles. CRITICAL: Preserve ALL original garment details. REMOVE any price tags, store labels, hanging stickers, barcodes. KEEP functional accessories. Remove any mannequin artifacts.",
 };
-
-/** Build body type instruction for Fashn prompts */
-function getBodyTypeInstruction(bodyType?: "normal" | "plus"): string {
-  if (bodyType === "plus") {
-    return "Plus-size/curvy Brazilian woman (GG/XGG sizing, US 14-18). Full curves, wide hips, thick thighs. DO NOT generate slim/thin body.";
-  }
-  return "Slim/standard Brazilian woman (P/M sizing, US 4-8). Slim athletic build. DO NOT generate plus-size body.";
-}
-
-/**
- * Pipeline A+: product-to-model + edit (alisar + fundo).
- * Usado quando NÃO há modelo do banco selecionada.
- * Custo Fashn: ~R$ 0,88 (2 créditos: 1 p2m + 1 edit)
- */
-export async function generateModelImage(
-  productImage: string,
-  backgroundType: string = "branco",
-  backgroundValue?: string,
-  bodyType?: "normal" | "plus",
-): Promise<FashnJobResult> {
-  const bodyInstruction = getBodyTypeInstruction(bodyType);
-
-  // Passo 1: Gerar modelo vestindo a peça (corpo inteiro, head to feet)
-  const jobId = await submitJob("product-to-model", {
-    product_image: productImage,
-    prompt: `Full body photo from head to feet of a ${bodyInstruction}. Confident natural smile, relaxed standing pose. Clean white studio background, professional fashion e-commerce photography. High resolution, sharp focus. CRITICAL: Reproduce the garment EXACTLY as shown — preserve every detail: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems. Do NOT add or remove any decorative design elements. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment design. KEEP functional accessories like belts, necklaces, bracelets, scarves. Barefoot, no shoes. Full body VISIBLE from head to toes. NO cropping at knees or ankles.`,
-    aspect_ratio: "9:16",
-  });
-  const modelResult = await pollResult(jobId);
-
-  if (modelResult.status !== "completed" || !modelResult.outputUrl) {
-    return modelResult;
-  }
-
-  // Passo 2: Refinar (alisar roupa + aplicar fundo)
-  const prompt = backgroundType === "personalizado" && backgroundValue
-    ? backgroundValue
-    : BACKGROUND_PROMPTS[backgroundType];
-
-  return editImage({ image: modelResult.outputUrl, prompt });
-}
 
 /**
  * Pipeline com Banco de Modelos: try-on + edit.
