@@ -255,7 +255,7 @@ export async function generateModelImage(
   // Passo 1: Gerar modelo vestindo a peça (corpo inteiro, head to feet)
   const jobId = await submitJob("product-to-model", {
     product_image: productImage,
-    prompt: `Full body photo from head to feet of a ${bodyInstruction}. Confident natural smile, relaxed standing pose. White studio background, fashion e-commerce photography. CRITICAL: Reproduce the garment EXACTLY as shown — preserve every detail: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems. Do NOT add or remove any decorative design elements. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment design. KEEP functional accessories like belts, necklaces, bracelets, scarves. Must be wearing stylish shoes (NEVER barefoot).`,
+    prompt: `Full body photo from head to feet of a ${bodyInstruction}. Confident natural smile, relaxed standing pose. Clean white studio background, professional fashion e-commerce photography. High resolution, sharp focus. CRITICAL: Reproduce the garment EXACTLY as shown — preserve every detail: embroidery count and spacing, fabric texture, elastic bands, smocking, ruffles, buttons, folded hems. Do NOT add or remove any decorative design elements. REMOVE any price tags, store labels, hanging stickers, barcodes, or plastic tag holders — these are store artifacts, NOT part of the garment design. KEEP functional accessories like belts, necklaces, bracelets, scarves. Barefoot, no shoes. Full body VISIBLE from head to toes. NO cropping at knees or ankles.`,
     aspect_ratio: "9:16",
   });
   const modelResult = await pollResult(jobId);
