@@ -180,6 +180,55 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ── MINI-VISION: extrair dados VTO ultra-rápido para instruir Fashn/NanoBanana ──
+    // Roda ANTES do try-on (cost: ~R$ 0.002, ~200ms) para fornecer dados de tecido ao Fashn
+    let vtoData: { fabricDescriptor?: string; garmentStructure?: string; colorHex?: string; criticalDetails?: string[] } | undefined;
+    if (process.env.GOOGLE_AI_API_KEY) {
+      try {
+        const { GeminiProvider } = await import("@/lib/ai/providers/gemini");
+        const miniVision = new GeminiProvider(process.env.AI_MODEL_GEMINI_FLASH || "gemini-2.5-flash");
+        const miniResult = await miniVision.generateWithVision({
+          system: `You are a fashion garment analyst. Analyze the product photo and return ONLY a JSON object with these 4 fields:
+- "fabricDescriptor": concise English description of the visible fabric texture for photographic reproduction (e.g., "ribbed knit with visible vertical channels, matte finish, medium weight")
+- "garmentStructure": English description of garment silhouette and structure (e.g., "structured shoulders, elastic waistband, A-line silhouette from waist down")
+- "colorHex": estimated hex color code of the main fabric color (e.g., "#F5C6D0")
+- "criticalDetails": array of English strings describing details that MUST be preserved in virtual try-on (e.g., ["gold buttons on front placket, 5 total", "ribbed cuffs 3cm wide"])
+Respond with ONLY the JSON object, no markdown.`,
+          messages: [{ role: "user", content: "Analyze this garment photo for virtual try-on fidelity." }],
+          imageBase64,
+          mediaType,
+          temperature: 0.1,
+          maxTokens: 300,
+        });
+        try {
+          const cleaned = miniResult.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          vtoData = JSON.parse(cleaned);
+          console.log(`[MiniVision] 🔍 VTO data extraído: fabric=${vtoData?.fabricDescriptor?.substring(0, 40)}...`);
+          // Registrar custo do mini-vision (~$0.0004)
+          if (store) {
+            try {
+              const { createAdminClient } = await import("@/lib/supabase/admin");
+              const supabase = createAdminClient();
+              const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+              await supabase.from("api_cost_logs").insert({
+                store_id: store.id,
+                campaign_id: campaignRecord?.id || null,
+                provider: "google",
+                model_used: "gemini-2.5-flash",
+                action: "mini_vision_vto",
+                cost_usd: 0.0004,
+                cost_brl: 0.0004 * exchangeRate,
+              });
+            } catch { /* ignore cost log failure */ }
+          }
+        } catch {
+          console.warn("[MiniVision] Falha ao parsear JSON, try-on seguirá sem VTO data");
+        }
+      } catch (e) {
+        console.warn("[MiniVision] Falha (não fatal):", e);
+      }
+    }
+
     // ── VIRTUAL TRY-ON (Banco de Modelos → Fashn try-on) ──
     let tryOnImageUrl: string | null = null;
     let tryOnProvider: string | null = null;
@@ -217,6 +266,8 @@ export async function POST(request: NextRequest) {
                 productUrl,
                 bankModel.image_url,
                 backgroundType as any,
+                undefined, // backgroundValue
+                vtoData, // ← VTO data do mini-vision
               );
               if (result.status === "completed" && result.outputUrl) {
                 tryOnImageUrl = result.outputUrl;
@@ -254,6 +305,7 @@ export async function POST(request: NextRequest) {
                 const result = await tryOnProduct({
                   productImage: productUrl,
                   modelImage: modelImageUrl,
+                  visionData: vtoData, // ← VTO data do mini-vision
                 });
                 if (result.status === "completed" && result.outputUrl) {
                   tryOnImageUrl = result.outputUrl;
@@ -283,6 +335,7 @@ export async function POST(request: NextRequest) {
                   modelImageBase64: modelBuf.toString("base64"),
                   modelMimeType: "image/png",
                   bodyType: bodyType || "normal",
+                  visionData: vtoData, // ← VTO data do mini-vision
                 });
                 if (result.status === "completed" && result.imageBase64) {
                   // Salvar a imagem base64 como URL (data URI)
