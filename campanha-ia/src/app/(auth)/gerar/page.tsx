@@ -57,7 +57,7 @@ const tones = [
 const backgrounds = [
   { value: "branco",     label: "Branco",       thumb: "/bg/branco.png" },
   { value: "estudio",    label: "Estúdio",       thumb: "/bg/estudio.png" },
-  { value: "lifestyle",  label: "Lifestyle",    thumb: "/bg/lifestyle.png",  ai: true },
+  { value: "lifestyle",  label: "Lifestyle",    thumb: "/bg/lifestyle.png" },
   { value: "urbano",     label: "Urbano",       thumb: "/bg/urbano.png" },
   { value: "natureza",   label: "Natureza",     thumb: "/bg/natureza.png" },
   { value: "interior",   label: "Interior",     thumb: "/bg/interior.png" },
