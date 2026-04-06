@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     const toneOverride = formData.get("toneOverride") as string | null;
     const productType = formData.get("productType") as string | null;
     const material = formData.get("material") as string | null;
+    const material2 = formData.get("material2") as string | null;
     const modelBankId = formData.get("modelBankId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
 
@@ -364,6 +365,16 @@ export async function POST(request: NextRequest) {
     }
 
     // ── PRODUCTION: pipeline real ──
+    // Compor material para conjunto (duas peças com materiais diferentes)
+    let materialHint: string | undefined = material || undefined;
+    if (productType?.startsWith("conjunto:") && material2) {
+      const types = productType.replace("conjunto:", "").split("+");
+      const parts: string[] = [];
+      if (material) parts.push(`Peça 1 (${types[0] || "peça 1"}): ${material}`);
+      parts.push(`Peça 2 (${types[1] || "peça 2"}): ${material2}`);
+      materialHint = parts.join(" | ");
+    }
+
     try {
       const result = await runCampaignPipeline(
         {
@@ -378,7 +389,7 @@ export async function POST(request: NextRequest) {
           storeSegment: store?.segment_primary || undefined,
           bodyType: bodyType || "normal",
           productType: productType || undefined,
-          material: material || undefined,
+          material: materialHint,
           backgroundType: backgroundType || undefined,
           storeId: store?.id,
           campaignId: campaignRecord?.id,

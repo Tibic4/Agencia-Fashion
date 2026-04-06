@@ -133,6 +133,8 @@ export default function GerarCampanha() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [material, setMaterial] = useState("");
   const [customMaterial, setCustomMaterial] = useState("");
+  const [material2, setMaterial2] = useState("");
+  const [customMaterial2, setCustomMaterial2] = useState("");
   const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
   const [priceMode, setPriceMode] = useState<"conjunto" | "separado">("conjunto");
   const [price2, setPrice2] = useState("");
@@ -247,6 +249,10 @@ export default function GerarCampanha() {
       if (productType) formData.append("productType", productType);
       const materialFinal = material === "outro" ? customMaterial : material;
       if (materialFinal) formData.append("material", materialFinal);
+      if (isConjunto) {
+        const material2Final = material2 === "outro" ? customMaterial2 : material2;
+        if (material2Final) formData.append("material2", material2Final);
+      }
       if (isConjunto && priceMode === "separado" && price2) {
         formData.append("price2", price2);
         formData.append("priceMode", "separado");
@@ -648,43 +654,126 @@ export default function GerarCampanha() {
             )}
           </div>
 
-          {/* Material / Tecido — chips visuais */}
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Material / Tecido
-            </label>
-            <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
-              Opcional — a IA detecta pela foto, mas informar melhora a precisão
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {materials.map((m) => (
-                <button
-                  key={m.value}
-                  onClick={() => setMaterial(material === m.value ? "" : m.value)}
-                  className="px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    background: material === m.value ? "var(--brand-100)" : "var(--surface)",
-                    color: material === m.value ? "var(--brand-700)" : "var(--muted)",
-                    border: material === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                  }}
-                >
-                  {m.label}
-                </button>
-              ))}
+          {/* Material / Tecido — chips visuais (dual para conjunto) */}
+          {isConjunto ? (
+            <div className="space-y-4">
+              {/* Material Peça 1 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold" style={{ background: "var(--brand-500)", color: "white" }}>1</span>
+                  Material — {productTypes.find(p => p.value === selectedTypes[0])?.label}
+                </label>
+                <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
+                  Opcional — a IA detecta pela foto
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {materials.map((m) => (
+                    <button
+                      key={m.value}
+                      onClick={() => setMaterial(material === m.value ? "" : m.value)}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                      style={{
+                        background: material === m.value ? "var(--brand-100)" : "var(--surface)",
+                        color: material === m.value ? "var(--brand-700)" : "var(--muted)",
+                        border: material === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {material === "outro" && (
+                  <input
+                    type="text"
+                    value={customMaterial}
+                    onChange={(e) => setCustomMaterial(e.target.value)}
+                    placeholder="Ex: crepe georgette, tricoline..."
+                    maxLength={40}
+                    className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
+                    style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
+                    autoFocus
+                  />
+                )}
+              </div>
+              {/* Divisor visual */}
+              <div style={{ height: "1px", background: "var(--border)" }} />
+              {/* Material Peça 2 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold" style={{ background: "var(--brand-500)", color: "white" }}>2</span>
+                  Material — {productTypes.find(p => p.value === selectedTypes[1])?.label}
+                </label>
+                <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
+                  Opcional — a IA detecta pela foto
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {materials.map((m) => (
+                    <button
+                      key={`m2-${m.value}`}
+                      onClick={() => setMaterial2(material2 === m.value ? "" : m.value)}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                      style={{
+                        background: material2 === m.value ? "var(--brand-100)" : "var(--surface)",
+                        color: material2 === m.value ? "var(--brand-700)" : "var(--muted)",
+                        border: material2 === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {material2 === "outro" && (
+                  <input
+                    type="text"
+                    value={customMaterial2}
+                    onChange={(e) => setCustomMaterial2(e.target.value)}
+                    placeholder="Ex: crepe georgette, tricoline..."
+                    maxLength={40}
+                    className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
+                    style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
+                    autoFocus
+                  />
+                )}
+              </div>
             </div>
-            {material === "outro" && (
-              <input
-                type="text"
-                value={customMaterial}
-                onChange={(e) => setCustomMaterial(e.target.value)}
-                placeholder="Ex: crepe georgette, tricoline..."
-                maxLength={40}
-                className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
-                style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
-                autoFocus
-              />
-            )}
-          </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold mb-1">
+                Material / Tecido
+              </label>
+              <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
+                Opcional — a IA detecta pela foto, mas informar melhora a precisão
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {materials.map((m) => (
+                  <button
+                    key={m.value}
+                    onClick={() => setMaterial(material === m.value ? "" : m.value)}
+                    className="px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{
+                      background: material === m.value ? "var(--brand-100)" : "var(--surface)",
+                      color: material === m.value ? "var(--brand-700)" : "var(--muted)",
+                      border: material === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {material === "outro" && (
+                <input
+                  type="text"
+                  value={customMaterial}
+                  onChange={(e) => setCustomMaterial(e.target.value)}
+                  placeholder="Ex: crepe georgette, tricoline..."
+                  maxLength={40}
+                  className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
+                  style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
+                  autoFocus
+                />
+              )}
+            </div>
+          )}
 
           {/* Price — adaptável a conjunto */}
           <div>
