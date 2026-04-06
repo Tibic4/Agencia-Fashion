@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/admin/showcase — lista todos (admin)
+ * GET /api/admin/showcase — lista todos (admin only)
  */
 export async function GET() {
-  const session = await auth();
-  if (!session.userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  }
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -23,12 +25,14 @@ export async function GET() {
 }
 
 /**
- * POST /api/admin/showcase — criar novo item com upload de fotos
+ * POST /api/admin/showcase — criar novo item com upload de fotos (admin only)
  * Body: FormData com before_photo, after_photo, caption?
  */
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session.userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  }
 
   try {
     const formData = await request.formData();
@@ -88,11 +92,13 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE /api/admin/showcase?id=xxx — remover item
+ * DELETE /api/admin/showcase?id=xxx — remover item (admin only)
  */
 export async function DELETE(request: NextRequest) {
-  const session = await auth();
-  if (!session.userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+  }
 
   const id = request.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });

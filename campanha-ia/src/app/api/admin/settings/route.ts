@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
-
-// Check admin
-async function isAdmin() {
-  const session = await auth();
-  if (!session.userId) return false;
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("stores")
-    .select("role")
-    .eq("clerk_user_id", session.userId)
-    .single();
-  return data?.role === "admin" || data?.role === "super_admin";
-}
 
 /**
  * GET /api/admin/settings
@@ -23,7 +10,8 @@ async function isAdmin() {
  */
 export async function GET() {
   try {
-    if (!(await isAdmin())) {
+    const admin = await requireAdmin();
+    if (!admin.isAdmin) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
@@ -55,7 +43,8 @@ export async function GET() {
  */
 export async function PUT(req: NextRequest) {
   try {
-    if (!(await isAdmin())) {
+    const admin = await requireAdmin();
+    if (!admin.isAdmin) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 

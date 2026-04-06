@@ -6,7 +6,8 @@ async function getStores() {
   const { data, error } = await supabase
     .from("stores")
     .select("id, clerk_user_id, name, segment_primary, onboarding_completed, created_at, plans!stores_plan_id_fkey(display_name), store_usage!store_usage_store_id_fkey(campaigns_generated, campaigns_limit, period_start, period_end)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   if (error) console.error("Error fetching stores:", error);
   return data ?? [];
