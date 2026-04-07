@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     });
 
     // ── Disparar geração de preview via Inngest (background) ──
-    // Pipeline: Gemini (~5-10s) → Fashn.ai fallback (~30-60s)
+    // Provider: Gemini 3.1 Flash Image (~5-10s)
     // Retry automático com backoff exponencial
     try {
       await inngest.send({

@@ -18,12 +18,12 @@ interface Plan {
 }
 
 const settingMeta: Record<string, { label: string; description: string; type: "toggle" | "text" | "number" }> = {
-  enable_tryon: { label: "Virtual Try-On (Fashn.ai)", description: "Habilitar/desabilitar o try-on globalmente. Se desabilitado, usa fal.ai como fallback.", type: "toggle" },
+  enable_tryon: { label: "Virtual Try-On (Gemini)", description: "Habilitar/desabilitar o try-on globalmente via Gemini 3.1 Flash Image.", type: "toggle" },
   enable_bg_removal: { label: "Remoção de fundo", description: "Habilitar/desabilitar remoção de fundo automática", type: "toggle" },
   maintenance_mode: { label: "Modo manutenção", description: "Bloqueia novas gerações de campanha", type: "toggle" },
   enable_registration: { label: "Abrir cadastros", description: "Permite novos cadastros de lojas", type: "toggle" },
   default_ai_model: { label: "Modelo IA padrão", description: "Modelo Claude usado nas campanhas", type: "text" },
-  fashn_default_model: { label: "Modelo Fashn padrão", description: "Modelo de try-on padrão do Fashn.ai", type: "text" },
+
   monthly_cost_alert_brl: { label: "Alerta de custo mensal (R$)", description: "Valor para alerta de custo API", type: "number" },
   max_image_size_mb: { label: "Tamanho máx. imagem (MB)", description: "Limite em MB para upload", type: "number" },
   default_plan_id: { label: "Plano padrão", description: "ID do plano atribuído a novos usuários", type: "text" },

@@ -38,9 +38,9 @@ export async function GET() {
     ? { status: "ok" }
     : { status: "warning", detail: "MERCADOPAGO_ACCESS_TOKEN not set" };
 
-  checks.fashn = process.env.FASHN_API_KEY
+  checks.googleAi = process.env.GOOGLE_AI_API_KEY
     ? { status: "ok" }
-    : { status: "warning", detail: "Optional: FASHN_API_KEY not set" };
+    : { status: "warning", detail: "GOOGLE_AI_API_KEY not set (VTO disabled)" };
 
   checks.fal = process.env.FAL_KEY
     ? { status: "ok" }

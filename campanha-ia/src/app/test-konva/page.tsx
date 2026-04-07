@@ -10,7 +10,7 @@ const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { 
  * Replaces the old hardcoded-only page.
  */
 export default function TestKonvaPage() {
-  const [imageUrl, setImageUrl] = useState("/test-images/fashn-step1-model.png");
+  const [imageUrl, setImageUrl] = useState("/test-images/model-preview.png");
   const [productName, setProductName] = useState("Moletom Oliva + Short Jeans");
   const [price, setPrice] = useState("R$ 119,90");
   const [headline, setHeadline] = useState("Conforto + estilo? Esse conjunto tem os dois ✨");
