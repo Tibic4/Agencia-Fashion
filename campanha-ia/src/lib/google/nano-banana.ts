@@ -87,6 +87,157 @@ async function logNanoBananaCost(
   }
 }
 
+// ═══════════════════════════════════════
+// QA Visual Agent — compara VTO gerado vs produto original
+// ═══════════════════════════════════════
+
+interface QAVisualResult {
+  approved: boolean;
+  corrections: string[];
+  /** Se reprovado, prompt de correção para a 2ª chamada */
+  refinementPrompt?: string;
+}
+
+/**
+ * Agente de QA Visual: analisa a imagem VTO gerada e compara com o produto original.
+ * Usa Gemini Flash (texto) — custo ~$0.001, ~2-3s.
+ * 
+ * Retorna approved=true se a imagem está fiel, ou corrections[] com problemas encontrados.
+ */
+async function qaVisualCheck(
+  generatedImageBase64: string,
+  productImageBase64: string,
+  productMimeType: string,
+  closeUpBase64?: string,
+  visionData?: {
+    fabricDescriptor?: string;
+    garmentStructure?: string;
+    colorHex?: string;
+    criticalDetails?: string[];
+  },
+): Promise<QAVisualResult> {
+  try {
+    const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
+
+    const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
+
+    // Imagem 1: Produto original
+    parts.push({
+      inlineData: { mimeType: productMimeType || "image/jpeg", data: productImageBase64 },
+    });
+
+    // Imagem 2: Close-up do tecido (se disponível)
+    if (closeUpBase64) {
+      parts.push({
+        inlineData: { mimeType: "image/jpeg", data: closeUpBase64 },
+      });
+    }
+
+    // Imagem 3: Imagem VTO gerada
+    parts.push({
+      inlineData: { mimeType: "image/png", data: generatedImageBase64 },
+    });
+
+    // Prompt do QA Agent
+    const fabricRef = visionData?.fabricDescriptor ? `\nExpected fabric: ${visionData.fabricDescriptor}` : "";
+    const colorRef = visionData?.colorHex ? `\nExpected color hex: ${visionData.colorHex}` : "";
+    const structureRef = visionData?.garmentStructure ? `\nExpected structure: ${visionData.garmentStructure}` : "";
+    const detailsRef = visionData?.criticalDetails?.length 
+      ? `\nCritical details to verify: ${visionData.criticalDetails.join("; ")}` : "";
+
+    parts.push({
+      text: `You are a QA inspector for a fashion e-commerce virtual try-on system.
+
+IMAGES PROVIDED:
+- Image 1: ORIGINAL PRODUCT (reference — the source of truth)
+${closeUpBase64 ? "- Image 2: CLOSE-UP of the fabric texture (reference)" : ""}
+- ${closeUpBase64 ? "Image 3" : "Image 2"}: GENERATED virtual try-on image (what we need to verify)
+
+REFERENCE DATA:${fabricRef}${colorRef}${structureRef}${detailsRef}
+
+YOUR TASK: Compare the generated image against the original product and check for these issues:
+1. COLOR ACCURACY — Is the garment color in the generated image the same as the original? (check hue, saturation, brightness)
+2. FABRIC TEXTURE — Does the texture look correct? (smooth vs ribbed vs knit vs woven, etc.)
+3. GARMENT DETAILS — Are all details preserved? (buttons, zippers, embroidery count, prints, logos, seams)
+4. FIT & SILHOUETTE — Does the garment fit naturally? (not too tight, not too loose, correct length)
+5. MISSING ELEMENTS — Is anything from the original missing in the generated image?
+
+RESPOND in this exact JSON format:
+{
+  "approved": true/false,
+  "issues": [
+    {"category": "color|texture|details|fit|missing", "description": "what's wrong", "severity": "minor|major"}
+  ]
+}
+
+Rules:
+- Only flag REAL visual differences that a customer would notice
+- Minor issues (very slight color shift, tiny detail) → approved: true with issues noted
+- Major issues (wrong color, missing print, wrong texture, missing piece) → approved: false
+- If the image looks good overall, approve it even with minor imperfections
+- Be strict about COLOR and FABRIC TEXTURE — these are the most important`
+    });
+
+    console.log(`[QA-Agent] 🔍 Analisando fidelidade do VTO...`);
+    const qaStart = Date.now();
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts }],
+      config: {
+        temperature: 0.2,
+        maxOutputTokens: 1024,
+      } as any,
+    });
+
+    const qaMs = Date.now() - qaStart;
+    const qaText = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    console.log(`[QA-Agent] ⏱️ Análise em ${qaMs}ms`);
+
+    // Parse QA response
+    try {
+      const jsonMatch = qaText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.warn("[QA-Agent] ⚠️ Resposta sem JSON, aprovando por padrão");
+        return { approved: true, corrections: [] };
+      }
+
+      const qa = JSON.parse(jsonMatch[0]);
+      const majorIssues = (qa.issues || []).filter((i: any) => i.severity === "major");
+
+      if (qa.approved || majorIssues.length === 0) {
+        const minorCount = (qa.issues || []).length - majorIssues.length;
+        console.log(`[QA-Agent] ✅ Aprovado (${minorCount} issues menores)`);
+        return { approved: true, corrections: [] };
+      }
+
+      // Construir prompt de correção baseado nos problemas
+      const corrections = majorIssues.map((i: any) => `${i.category}: ${i.description}`);
+      const refinementPrompt = majorIssues.map((i: any) => {
+        switch (i.category) {
+          case "color": return `FIX COLOR: ${i.description}. Match the EXACT color from the original product photo.`;
+          case "texture": return `FIX TEXTURE: ${i.description}. The fabric must match the original texture precisely.`;
+          case "details": return `FIX DETAILS: ${i.description}. Preserve ALL original garment details exactly.`;
+          case "fit": return `FIX FIT: ${i.description}. Adjust the garment fit to look natural.`;
+          case "missing": return `FIX MISSING: ${i.description}. Include this element from the original.`;
+          default: return `FIX: ${i.description}`;
+        }
+      }).join("\n");
+
+      console.log(`[QA-Agent] ❌ Reprovado — ${majorIssues.length} problema(s) grave(s):`);
+      corrections.forEach((c: string) => console.log(`  └─ ${c}`));
+
+      return { approved: false, corrections, refinementPrompt };
+    } catch {
+      console.warn("[QA-Agent] ⚠️ Erro ao parsear resposta QA, aprovando por padrão");
+      return { approved: true, corrections: [] };
+    }
+  } catch (err) {
+    console.warn("[QA-Agent] ❌ Falha no QA (não fatal):", err instanceof Error ? err.message : err);
+    return { approved: true, corrections: [] }; // fail-open: se QA falhar, aceita a imagem
+  }
+}
+
 export interface NanoBananaTryOnParams {
   /** Base64 da foto do produto (sem o prefixo data:...) */
   productImageBase64: string;
@@ -355,12 +506,106 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       for (const part of response.candidates[0].content.parts) {
         if (part.inlineData?.data) {
           logNanoBananaCost(durationMs, true, params.storeId, params.campaignId, usage).catch(() => {});
-          return {
-            status: "completed",
-            imageBase64: part.inlineData.data,
-            outputUrl: null,
-            durationMs,
-          };
+          
+          // ── QA Visual Agent: verificar fidelidade da imagem ──
+          console.log(`[NanoBanana] 🔍 Iniciando QA Visual Agent...`);
+          const qaResult = await qaVisualCheck(
+            part.inlineData.data,
+            params.productImageBase64,
+            params.productMimeType || "image/jpeg",
+            params.closeUpBase64,
+            params.visionData,
+          );
+
+          if (qaResult.approved) {
+            // ✅ QA aprovado — retornar imagem da 1ª geração
+            console.log(`[NanoBanana] ✅ QA aprovado — usando 1ª geração (${durationMs}ms)`);
+            return {
+              status: "completed",
+              imageBase64: part.inlineData.data,
+              outputUrl: null,
+              durationMs,
+            };
+          }
+
+          // ❌ QA reprovado — tentar 2ª geração com prompt de correção
+          console.log(`[NanoBanana] 🔄 QA reprovado — gerando 2ª tentativa com correções...`);
+          try {
+            const retryStart = Date.now();
+
+            // Adicionar correções do QA ao prompt original
+            const correctedPrompt = buildTryOnPrompt({
+              description: params.productDescription,
+              background: params.background,
+              bodyType: params.bodyType,
+              hasCloseUp: !!params.closeUpBase64,
+              hasSecondPiece: !!params.secondPieceBase64,
+              hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
+              visionData: params.visionData,
+            });
+
+            const refinementSuffix = `\n\n⚠️ CRITICAL CORRECTIONS FROM QA REVIEW (you MUST fix these issues):\n${qaResult.refinementPrompt}\n\nThe PREVIOUS attempt had these exact problems. You MUST correct them in this generation. Pay extra attention to the issues listed above.`;
+
+            // Reusar as mesmas parts mas com prompt corrigido
+            const retryParts = parts.slice(0, -1); // remove o prompt antigo
+            retryParts.push({ text: correctedPrompt + refinementSuffix });
+
+            const retryResponse = await ai.models.generateContent({
+              model: MODEL,
+              contents: [{ role: "user", parts: retryParts }],
+              config: {
+                responseModalities: ["TEXT", "IMAGE"],
+                imageConfig: {
+                  aspectRatio,
+                  imageSize: "2K",
+                },
+              } as any,
+            });
+
+            const retryDuration = Date.now() - retryStart;
+            const totalDuration = Date.now() - start;
+
+            // Extrair usageMetadata da 2ª chamada
+            const retryUsage = (retryResponse as any).usageMetadata;
+            const retryTokens = retryUsage ? {
+              inputTokens: retryUsage.promptTokenCount || retryUsage.inputTokens || 0,
+              outputTokens: retryUsage.candidatesTokenCount || retryUsage.outputTokens || 0,
+            } : undefined;
+
+            logNanoBananaCost(retryDuration, true, params.storeId, params.campaignId, retryTokens).catch(() => {});
+
+            if (retryResponse.candidates?.[0]?.content?.parts) {
+              for (const retryPart of retryResponse.candidates[0].content.parts) {
+                if (retryPart.inlineData?.data) {
+                  console.log(`[NanoBanana] ✅ 2ª geração OK (${retryDuration}ms, total ${totalDuration}ms)`);
+                  return {
+                    status: "completed",
+                    imageBase64: retryPart.inlineData.data,
+                    outputUrl: null,
+                    durationMs: totalDuration,
+                  };
+                }
+              }
+            }
+
+            // 2ª geração não produziu imagem — usar a 1ª mesmo
+            console.warn("[NanoBanana] ⚠️ 2ª geração sem imagem — usando 1ª geração");
+            return {
+              status: "completed",
+              imageBase64: part.inlineData.data,
+              outputUrl: null,
+              durationMs: totalDuration,
+            };
+          } catch (retryErr) {
+            // Erro na 2ª geração — usar a 1ª geração como fallback
+            console.warn("[NanoBanana] ⚠️ Erro na 2ª geração:", retryErr instanceof Error ? retryErr.message : retryErr);
+            return {
+              status: "completed",
+              imageBase64: part.inlineData.data,
+              outputUrl: null,
+              durationMs: Date.now() - start,
+            };
+          }
         }
       }
     }
