@@ -203,12 +203,12 @@ export async function runCampaignPipeline(
       messages: [{
         role: "user",
         content: buildStrategyPrompt({
-          produto: vision.produto.nome_generico,
+          produto: vision.produto?.nome_generico || "Produto de moda",
           preco: input.price,
           objetivo: input.objective,
-          atributos: JSON.stringify(vision.atributos_visuais),
-          segmento: vision.segmento,
-          mood: vision.mood,
+          atributos: JSON.stringify(vision.atributos_visuais || {}),
+          segmento: vision.segmento || "feminino",
+          mood: Array.isArray(vision.mood) ? vision.mood : [String(vision.mood || "moda")],
           publicoAlvo: input.targetAudience,
           tomOverride: input.toneOverride,
           storeSegment: input.storeSegment,
@@ -469,8 +469,16 @@ function parseAndValidate<T>(raw: string, schema: z.ZodSchema<T>, stepName: stri
 
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    console.warn(`[Pipeline:${stepName}] ⚠️ Schema validation warnings:`, result.error.issues.slice(0, 3));
-    // Não falhar — retornar o parsed mesmo assim (campos extras são OK)
+    console.warn(`[Pipeline:${stepName}] ⚠️ Schema validation failed, applying defaults:`, result.error.issues.slice(0, 3));
+    // Tentar forçar defaults via schema.parse com catch
+    try {
+      // Se parsed é um objeto, mesclar com defaults do schema
+      if (parsed && typeof parsed === 'object') {
+        return schema.parse(parsed) as T;
+      }
+    } catch {
+      console.warn(`[Pipeline:${stepName}] ⚠️ Schema.parse also failed, using raw parsed data`);
+    }
     return parsed as T;
   }
 
