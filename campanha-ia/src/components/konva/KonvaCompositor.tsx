@@ -47,6 +47,7 @@ export default function KonvaCompositor({
   const gradientImg = useGradientOverlay(t, CANVAS_H);
   const {
     positions,
+    fontSizes,
     selectedId,
     setSelectedId,
     hiddenElements,
@@ -57,6 +58,7 @@ export default function KonvaCompositor({
     handleReset,
     handleUndo,
     handleRedo,
+    updateFontSize,
     canUndo,
     canRedo,
   } = useDragPositions(CANVAS_H);
@@ -316,6 +318,9 @@ export default function KonvaCompositor({
             onCustomSelect={handleSelectCustom}
             onCustomTransformEnd={updateTransform}
             snapGuides={snapGuides}
+            fontSizes={fontSizes}
+            onFontSizeChange={updateFontSize}
+            onToggleVisibility={toggleVisibility}
           />
         </div>
 

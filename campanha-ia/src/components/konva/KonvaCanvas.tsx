@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useEffect, useRef } from "react";
-import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer, Line } from "react-konva";
+import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer, Line, Circle } from "react-konva";
 import Konva from "konva";
 import type {
   TemplateStyle,
@@ -14,6 +14,7 @@ import type {
 import DraggableElement from "./DraggableElement";
 import { CANVAS_W, LAYOUT, truncateText, formatPrice } from "./constants";
 import type { SnapGuide } from "./hooks/useSnapGuides";
+import type { FontSizes } from "./hooks/useDragPositions";
 
 interface KonvaCanvasProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -45,6 +46,10 @@ interface KonvaCanvasProps {
   onCustomTransformEnd?: (id: string, x: number, y: number, w: number, h: number, rotation: number) => void;
   /* Snap guides */
   snapGuides?: SnapGuide[];
+  /* Font size overrides & element controls */
+  fontSizes?: FontSizes;
+  onFontSizeChange?: (key: ElementKey, size: number) => void;
+  onToggleVisibility?: (key: ElementKey) => void;
 }
 
 /**
@@ -79,9 +84,14 @@ export default function KonvaCanvas({
   onCustomSelect,
   onCustomTransformEnd,
   snapGuides = [],
+  fontSizes = {},
+  onFontSizeChange,
+  onToggleVisibility,
 }: KonvaCanvasProps) {
   const fontLoadedRef = useRef(false);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const textTransformerRef = useRef<Konva.Transformer>(null);
+  const textGroupRefs = useRef<Map<string, Konva.Group>>(new Map());
   const customGroupRefs = useRef<Map<string, Konva.Group>>(new Map());
   const modelImgRef = useRef<Konva.Image>(null);
   const gradientRef = useRef<Konva.Image>(null);
@@ -197,6 +207,54 @@ export default function KonvaCanvas({
 
   const textW = CANVAS_W - LAYOUT.TEXT_PADDING;
   const headlineW = CANVAS_W - LAYOUT.HEADLINE_PADDING;
+
+  // Attach text Transformer to selected text element
+  useEffect(() => {
+    const tr = textTransformerRef.current;
+    if (!tr) return;
+    if (selectedId && textGroupRefs.current.has(selectedId)) {
+      const node = textGroupRefs.current.get(selectedId)!;
+      tr.nodes([node]);
+      tr.getLayer()?.batchDraw();
+    } else {
+      tr.nodes([]);
+      tr.getLayer()?.batchDraw();
+    }
+  }, [selectedId]);
+
+  // Default font sizes per element
+  const defaultFontSizeMap: Record<string, number> = useMemo(() => ({
+    badge: 20,
+    productName: productFontSize,
+    headline: 26,
+    price: 68,
+    cta: 26,
+    score: 16,
+    watermark: 16,
+  }), [productFontSize]);
+
+  const getFontSize = useCallback((key: ElementKey) =>
+    fontSizes[key] ?? defaultFontSizeMap[key] ?? 26
+  , [fontSizes, defaultFontSizeMap]);
+
+  // Handle text transform end: convert scale → fontSize
+  const handleTextTransformEnd = useCallback((key: ElementKey, e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target;
+    const scaleY = node.scaleY();
+    node.scaleX(1);
+    node.scaleY(1);
+    const currentSize = getFontSize(key);
+    const newSize = Math.round(currentSize * scaleY);
+    onFontSizeChange?.(key, newSize);
+  }, [getFontSize, onFontSizeChange]);
+
+  // X button position for selected element
+  const deleteButtonPos = useMemo(() => {
+    if (!selectedId) return null;
+    const pos = positions[selectedId as ElementKey];
+    if (!pos) return null;
+    return { x: pos.x + 40, y: pos.y - 40 };
+  }, [selectedId, positions]);
 
   return (
     <div
@@ -368,12 +426,17 @@ export default function KonvaCanvas({
               {/* 4. Store badge */}
               {!hiddenElements.has("badge") && (
               <DraggableElement
+                ref={(node: import("konva/lib/Group").Group | null) => {
+                  if (node) textGroupRefs.current.set("badge", node);
+                  else textGroupRefs.current.delete("badge");
+                }}
                 elementKey="badge"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
                 canvasH={canvasH}
+                onTransformEnd={handleTextTransformEnd}
               >
                 <Rect
                   offsetX={badgeWidth / 2}
@@ -385,7 +448,7 @@ export default function KonvaCanvas({
                 />
                 <Text
                   text={`✨ ${storeName}`}
-                  fontSize={20}
+                  fontSize={getFontSize("badge")}
                   fontFamily="Inter, system-ui, sans-serif"
                   fontStyle="600"
                   fill={t.badgeText}
@@ -401,16 +464,21 @@ export default function KonvaCanvas({
               {/* 5. Product name */}
               {!hiddenElements.has("productName") && (
               <DraggableElement
+                ref={(node: import("konva/lib/Group").Group | null) => {
+                  if (node) textGroupRefs.current.set("productName", node);
+                  else textGroupRefs.current.delete("productName");
+                }}
                 elementKey="productName"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
                 canvasH={canvasH}
+                onTransformEnd={handleTextTransformEnd}
               >
                 <Text
                   text={productName}
-                  fontSize={productFontSize}
+                  fontSize={getFontSize("productName")}
                   fontFamily="Inter, system-ui, sans-serif"
                   fontStyle="800"
                   fill={t.textColor}
@@ -425,16 +493,21 @@ export default function KonvaCanvas({
               {/* 6. Headline */}
               {headline && !hiddenElements.has("headline") && (
                 <DraggableElement
+                  ref={(node: import("konva/lib/Group").Group | null) => {
+                    if (node) textGroupRefs.current.set("headline", node);
+                    else textGroupRefs.current.delete("headline");
+                  }}
                   elementKey="headline"
                   positions={positions}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
                   selectedId={selectedId}
                   canvasH={canvasH}
+                  onTransformEnd={handleTextTransformEnd}
                 >
                   <Text
                     text={truncateText(headline, 55)}
-                    fontSize={26}
+                    fontSize={getFontSize("headline")}
                     fontFamily="Inter, system-ui, sans-serif"
                     fontStyle="500"
                     fill={t.headlineColor}
@@ -449,16 +522,21 @@ export default function KonvaCanvas({
               {/* 7. Price */}
               {hasPrice && !hiddenElements.has("price") && (
               <DraggableElement
+                ref={(node: import("konva/lib/Group").Group | null) => {
+                  if (node) textGroupRefs.current.set("price", node);
+                  else textGroupRefs.current.delete("price");
+                }}
                 elementKey="price"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
                 canvasH={canvasH}
+                onTransformEnd={handleTextTransformEnd}
               >
                 <Text
                   text={displayPrice}
-                  fontSize={68}
+                  fontSize={getFontSize("price")}
                   fontFamily="Inter, system-ui, sans-serif"
                   fontStyle="900"
                   fill={t.priceColor}
@@ -473,12 +551,17 @@ export default function KonvaCanvas({
               {/* 8. CTA Button */}
               {!hiddenElements.has("cta") && (
               <DraggableElement
+                ref={(node: import("konva/lib/Group").Group | null) => {
+                  if (node) textGroupRefs.current.set("cta", node);
+                  else textGroupRefs.current.delete("cta");
+                }}
                 elementKey="cta"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
                 canvasH={canvasH}
+                onTransformEnd={handleTextTransformEnd}
               >
                 <Rect
                   offsetX={LAYOUT.CTA_WIDTH / 2}
@@ -493,7 +576,7 @@ export default function KonvaCanvas({
                 />
                 <Text
                   text={`${cta} 💕`}
-                  fontSize={26}
+                  fontSize={getFontSize("cta")}
                   fontFamily="Inter, system-ui, sans-serif"
                   fontStyle="bold"
                   fill={t.ctaText}
@@ -509,12 +592,17 @@ export default function KonvaCanvas({
               {/* 9. Score badge */}
               {score && score > 0 && !hiddenElements.has("score") && (
                 <DraggableElement
+                  ref={(node: import("konva/lib/Group").Group | null) => {
+                    if (node) textGroupRefs.current.set("score", node);
+                    else textGroupRefs.current.delete("score");
+                  }}
                   elementKey="score"
                   positions={positions}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
                   selectedId={selectedId}
                   canvasH={canvasH}
+                  onTransformEnd={handleTextTransformEnd}
                 >
                   <Rect
                     offsetX={LAYOUT.SCORE_WIDTH / 2}
@@ -526,7 +614,7 @@ export default function KonvaCanvas({
                   />
                   <Text
                     text={`⭐ ${score}/100`}
-                    fontSize={16}
+                    fontSize={getFontSize("score")}
                     fontFamily="system-ui, sans-serif"
                     fontStyle="600"
                     fill="rgba(255,255,255,0.9)"
@@ -542,16 +630,21 @@ export default function KonvaCanvas({
               {/* 10. Watermark */}
               {!hiddenElements.has("watermark") && (
               <DraggableElement
+                ref={(node: import("konva/lib/Group").Group | null) => {
+                  if (node) textGroupRefs.current.set("watermark", node);
+                  else textGroupRefs.current.delete("watermark");
+                }}
                 elementKey="watermark"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
                 canvasH={canvasH}
+                onTransformEnd={handleTextTransformEnd}
               >
                 <Text
                   text="Feito com CriaLook"
-                  fontSize={16}
+                  fontSize={getFontSize("watermark")}
                   fontFamily="system-ui, sans-serif"
                   fontStyle="500"
                   fill={t.textColor}
@@ -562,6 +655,53 @@ export default function KonvaCanvas({
                   perfectDrawEnabled={false}
                 />
               </DraggableElement>
+              )}
+
+              {/* Text Transformer — resize handles for text elements */}
+              <Transformer
+                ref={textTransformerRef}
+                anchorSize={10}
+                anchorStroke="#8b5cf6"
+                anchorFill="#fff"
+                borderStroke="#8b5cf6"
+                borderDash={[4, 3]}
+                rotateEnabled={false}
+                enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right"]}
+                keepRatio={true}
+                boundBoxFunc={(oldBox, newBox) => {
+                  if (newBox.width < 20 || newBox.height < 12) return oldBox;
+                  return newBox;
+                }}
+              />
+
+              {/* X Delete button — appears when element is selected */}
+              {selectedId && deleteButtonPos && onToggleVisibility && (
+                <Group
+                  x={deleteButtonPos.x}
+                  y={deleteButtonPos.y}
+                  onClick={() => onToggleVisibility(selectedId as ElementKey)}
+                  onTap={() => onToggleVisibility(selectedId as ElementKey)}
+                >
+                  <Circle
+                    radius={16}
+                    fill="#ef4444"
+                    shadowColor="rgba(0,0,0,0.3)"
+                    shadowBlur={6}
+                    shadowOffsetY={2}
+                  />
+                  <Text
+                    text="✕"
+                    fontSize={18}
+                    fontStyle="bold"
+                    fill="white"
+                    align="center"
+                    verticalAlign="middle"
+                    width={32}
+                    height={32}
+                    offsetX={16}
+                    offsetY={16}
+                  />
+                </Group>
               )}
 
               {/* P2-9: Snap alignment guides */}

@@ -216,11 +216,13 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
     }
 
     if (data.status === "failed") {
+      const errorMsg = data.error?.message || data.error || data.message || JSON.stringify(data);
+      console.error(`[Fashn] ❌ Job ${jobId} FAILED:`, errorMsg);
       return {
         id: jobId,
         status: "failed",
         outputUrl: null,
-        error: data.error?.message || "Job failed",
+        error: typeof errorMsg === 'string' ? errorMsg : "Job failed",
       };
     }
   }

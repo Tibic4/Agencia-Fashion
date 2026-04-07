@@ -5,8 +5,11 @@ import type { ElementPositions, ElementKey, KonvaDragEvent } from "../types";
 import { getDefaultPositions } from "../constants";
 import { useUndoRedo } from "./useUndoRedo";
 
+export type FontSizes = Partial<Record<ElementKey, number>>;
+
 interface UseDragPositionsResult {
   positions: ElementPositions;
+  fontSizes: FontSizes;
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   hiddenElements: Set<ElementKey>;
@@ -17,6 +20,7 @@ interface UseDragPositionsResult {
   handleReset: () => void;
   handleUndo: () => void;
   handleRedo: () => void;
+  updateFontSize: (key: ElementKey, size: number) => void;
   canUndo: boolean;
   canRedo: boolean;
   getDragStyle: (key: string) => {
@@ -28,10 +32,11 @@ interface UseDragPositionsResult {
 }
 
 /**
- * Manages positions, selection, visibility, and undo/redo of draggable canvas elements.
+ * Manages positions, font sizes, selection, visibility, and undo/redo of draggable canvas elements.
  */
 export function useDragPositions(canvasH: number): UseDragPositionsResult {
   const [positions, setPositions] = useState<ElementPositions>(() => getDefaultPositions(canvasH));
+  const [fontSizes, setFontSizes] = useState<FontSizes>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hiddenElements, setHiddenElements] = useState<Set<ElementKey>>(new Set());
   const { pushState, undo, redo, canUndo, canRedo } = useUndoRedo(getDefaultPositions(canvasH));
@@ -39,6 +44,7 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
   // Reset positions on format/canvas height change
   useEffect(() => {
     setPositions(getDefaultPositions(canvasH));
+    setFontSizes({});
   }, [canvasH]);
 
   const handleDragEnd = useCallback((key: ElementKey, e: KonvaDragEvent) => {
@@ -63,6 +69,7 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
 
   const handleReset = useCallback(() => {
     setPositions(getDefaultPositions(canvasH));
+    setFontSizes({});
     setSelectedId(null);
     setHiddenElements(new Set());
   }, [canvasH]);
@@ -78,6 +85,10 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
       }
       return next;
     });
+  }, []);
+
+  const updateFontSize = useCallback((key: ElementKey, size: number) => {
+    setFontSizes((prev) => ({ ...prev, [key]: Math.round(Math.max(12, Math.min(120, size))) }));
   }, []);
 
   const handleUndo = useCallback(() => {
@@ -102,6 +113,7 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
 
   return {
     positions,
+    fontSizes,
     selectedId,
     setSelectedId,
     hiddenElements,
@@ -112,6 +124,7 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
     handleReset,
     handleUndo,
     handleRedo,
+    updateFontSize,
     canUndo,
     canRedo,
     getDragStyle,
