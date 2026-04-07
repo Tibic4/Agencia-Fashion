@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { data: models, error } = await supabase
       .from("store_models")
-      .select("id, photo_url, preview_url, created_at")
+      .select("id, photo_url, created_at")
       .eq("store_id", store.id)
       .in("id", modelIds);
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const statuses: Record<string, { url: string | null; status: string }> = {};
 
     for (const model of models || []) {
-      const url = model.photo_url || model.preview_url || null;
+      const url = model.photo_url || null;
       const createdAt = new Date(model.created_at).getTime();
       const ageMs = Date.now() - createdAt;
 

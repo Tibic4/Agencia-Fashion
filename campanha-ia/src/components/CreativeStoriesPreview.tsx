@@ -229,14 +229,17 @@ export default function CreativeStoriesPreview({
           right: 16,
           transform: "translateY(-50%)",
           textAlign: "center",
-          fontSize: slideGancho.length > 30 ? 22 : 28,
+          fontSize: slideGancho.length > 40 ? 18 : slideGancho.length > 25 ? 22 : 28,
           fontWeight: 900,
           color: t.textColor,
           lineHeight: 1.25,
           letterSpacing: "-0.5px",
+          overflow: "hidden",
+          wordBreak: "break-word" as const,
+          maxHeight: 160,
         }}
       >
-        {slideGancho.length > 50 ? slideGancho.slice(0, 50) + "…" : slideGancho}
+        {slideGancho.length > 45 ? slideGancho.slice(0, 45) + "…" : slideGancho}
       </div>
 
       {/* "Arraste para cima" hint */}
@@ -383,13 +386,16 @@ export default function CreativeStoriesPreview({
           left: 16,
           right: 16,
           textAlign: "center",
-          fontSize: 12,
+          fontSize: productText.length > 50 ? 10 : 12,
           fontWeight: 600,
           color: t.textColor,
           lineHeight: 1.35,
+          overflow: "hidden",
+          wordBreak: "break-word" as const,
+          maxHeight: 40,
         }}
       >
-        {productText.length > 60 ? productText.slice(0, 60) + "…" : productText}
+        {productText.length > 55 ? productText.slice(0, 55) + "…" : productText}
       </div>
 
       {/* Price badge — only if price exists */}
@@ -505,14 +511,17 @@ export default function CreativeStoriesPreview({
           right: 16,
           transform: "translateY(-50%)",
           textAlign: "center",
-          fontSize: slideCTA.length > 25 ? 20 : 26,
+          fontSize: slideCTA.length > 30 ? 18 : slideCTA.length > 20 ? 22 : 26,
           fontWeight: 900,
           color: t.textColor,
           lineHeight: 1.25,
           letterSpacing: "-0.3px",
+          overflow: "hidden",
+          wordBreak: "break-word" as const,
+          maxHeight: 120,
         }}
       >
-        {slideCTA.length > 40 ? slideCTA.slice(0, 40) + "…" : slideCTA}
+        {slideCTA.length > 35 ? slideCTA.slice(0, 35) + "…" : slideCTA}
       </div>
 
       {/* CTA button */}
@@ -524,13 +533,17 @@ export default function CreativeStoriesPreview({
           transform: "translateX(-50%)",
           background: t.ctaBg,
           color: t.ctaText,
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 700,
-          padding: "12px 36px",
+          padding: "10px 24px",
           borderRadius: 28,
           boxShadow: `0 8px 30px ${t.accent}40`,
           letterSpacing: "0.3px",
           whiteSpace: "nowrap",
+          maxWidth: 220,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          textAlign: "center",
         }}
       >
         Manda no WhatsApp 💬

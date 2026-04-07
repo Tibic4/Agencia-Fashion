@@ -249,7 +249,7 @@ export const generateModelPreviewJob = inngest.createFunction(
 
       await supabase
         .from("store_models")
-        .update({ photo_url: previewUrl, preview_url: previewUrl })
+        .update({ photo_url: previewUrl })
         .eq("id", data.modelId);
 
       console.log(`[Inngest:ModelPreview] 💾 Preview salvo (${geminiUrl ? "Gemini" : "Fashn"}) para model ${data.modelId}`);
