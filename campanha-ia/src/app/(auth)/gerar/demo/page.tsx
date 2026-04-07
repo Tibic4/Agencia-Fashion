@@ -502,17 +502,17 @@ export default function ResultadoCampanha() {
                 textAlign: "center",
               }}
             >
-              {productImageUrl ? (
+              {(tryOnImageUrl || productImageUrl) ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={productImageUrl}
+                  src={tryOnImageUrl || productImageUrl!}
                   alt={productName}
                   style={{
-                    width: 120,
-                    height: 120,
+                    width: "100%",
+                    height: "70%",
                     objectFit: "cover",
-                    borderRadius: 12,
-                    marginBottom: 10,
+                    borderRadius: 8,
+                    marginBottom: 8,
                     boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
                   }}
                 />

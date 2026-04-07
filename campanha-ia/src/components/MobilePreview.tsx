@@ -17,10 +17,9 @@ export default function MobilePreview({
 
   const isFeed = activeFormat === "feed";
 
-  // Phone dimensions scaled for preview
+  // Phone dimensions scaled for preview — responsive
   const phoneWidth = isFeed ? 280 : 230;
   const phoneHeight = isFeed ? 520 : 480;
-  const contentWidth = isFeed ? 256 : 210;
   const contentHeight = isFeed ? 256 : 374;
 
   return (
@@ -205,10 +204,8 @@ export default function MobilePreview({
               >
                 <div
                   style={{
-                    width: contentWidth,
+                    width: "100%",
                     height: contentHeight,
-                    transform: "scale(1)",
-                    transformOrigin: "center center",
                     overflow: "hidden",
                   }}
                 >
