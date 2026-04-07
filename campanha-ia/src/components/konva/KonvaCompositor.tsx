@@ -282,6 +282,12 @@ export default function KonvaCompositor({
           onRedo={handleRedo}
           canUndo={canUndo}
           canRedo={canRedo}
+          selectedId={selectedId}
+          fontSizes={fontSizes}
+          elementOrder={elementOrder}
+          onFontSizeChange={updateFontSize}
+          onMoveElementUp={moveElementUp}
+          onMoveElementDown={moveElementDown}
         />
 
         <div
@@ -328,8 +334,6 @@ export default function KonvaCompositor({
             elementOrder={elementOrder}
             onFontSizeChange={updateFontSize}
             onWidthChange={updateWidthOverride}
-            onMoveElementUp={moveElementUp}
-            onMoveElementDown={moveElementDown}
             onToggleVisibility={toggleVisibility}
           />
         </div>

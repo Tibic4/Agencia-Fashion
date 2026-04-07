@@ -96,9 +96,6 @@ async function getCosts() {
 const providerColors: Record<string, string> = {
   anthropic: "from-violet-500 to-purple-500",
   google: "from-blue-500 to-indigo-500",
-  "fal.ai": "from-orange-500 to-amber-500",
-  stability: "from-blue-500 to-cyan-500",
-  openai: "from-emerald-500 to-teal-500",
   unknown: "from-gray-500 to-gray-600",
 };
 
@@ -108,10 +105,11 @@ const stepLabels: Record<string, string> = {
   copywriter: "✍️ Copywriter",
   refiner: "🔄 Refiner",
   scorer: "📊 Scorer",
-  virtual_try_on: "👗 Virtual Try-On",
-  edit_image: "✂️ Edit/Refine",
+  mini_vision_vto: "🔍 Mini-Vision VTO",
+  nano_banana: "👗 Virtual Try-On (Gemini)",
+  qa_visual_agent: "🔎 QA Visual Agent",
+  model_preview: "🧍 Preview de Modelo",
   copywriter_retry: "✍️ Copywriter (retry)",
-  background_removal: "🎨 Remoção de Fundo",
 };
 
 const alertStyles: Record<string, { bg: string; border: string; text: string }> = {
