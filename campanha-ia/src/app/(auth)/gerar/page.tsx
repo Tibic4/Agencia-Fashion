@@ -217,13 +217,17 @@ export default function GerarCampanha() {
   }, [customModels.filter(m => !m.photo_url).map(m => m.id).join(",")]);
 
   const generationSteps = [
-    { label: "Analisando produto...", progress: 15 },
-    { label: "Criando estratégia...", progress: 30 },
-    { label: "Escrevendo textos...", progress: 50 },
-    { label: "Refinando copy...", progress: 65 },
-    { label: "Processando imagem...", progress: 80 },
-    { label: "Montando criativo...", progress: 92 },
-    { label: "Pronto!", progress: 100 },
+    { label: "Analisando produto...", progress: 10 },
+    { label: "Identificando cores e tecido...", progress: 20 },
+    { label: "Criando estratégia de venda...", progress: 30 },
+    { label: "Escrevendo textos para Instagram...", progress: 40 },
+    { label: "Criando roteiro de Stories...", progress: 50 },
+    { label: "Adaptando para WhatsApp...", progress: 58 },
+    { label: "Refinando copy e hashtags...", progress: 66 },
+    { label: "Processando imagem com IA...", progress: 75 },
+    { label: "Montando criativo final...", progress: 85 },
+    { label: "Avaliando qualidade (score)...", progress: 93 },
+    { label: "Pronto! ✨", progress: 100 },
   ];
 
 
@@ -269,7 +273,7 @@ export default function GerarCampanha() {
         }
         return prev + 1;
       });
-    }, 2000);
+    }, 2500);
 
     try {
       // Build FormData
