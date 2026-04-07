@@ -77,9 +77,13 @@ export interface ModelPricing {
 }
 
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Gemini
+  // Gemini Legacy
   "gemini-2.5-flash": { inputPerMTok: 0.30, outputPerMTok: 2.50 },
   "gemini-2.5-pro": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
+  // Gemini 3 (preços oficiais abril/2026)
+  "gemini-3-flash-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
+  "gemini-3.1-pro-preview": { inputPerMTok: 2.00, outputPerMTok: 12.00 },
+  "gemini-3.1-flash-image-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
   // Claude
   "claude-sonnet-4-20250514": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-haiku-4-20250514": { inputPerMTok: 1.00, outputPerMTok: 5.00 },

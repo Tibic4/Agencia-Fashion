@@ -73,6 +73,8 @@ export interface PipelineInput {
   material?: string;
   /** Cenário/fundo escolhido (branco, estudio, urbano, personalizado:...) */
   backgroundType?: string;
+  /** AbortSignal para cancelar pipeline quando cliente desconecta */
+  signal?: AbortSignal;
 }
 
 export interface PipelineResult {
@@ -80,6 +82,7 @@ export interface PipelineResult {
   strategy: Strategy;
   output: Omit<CampaignOutput, "id" | "campaign_id">;
   score: Omit<CampaignScore, "id" | "campaign_id">;
+  needsRefinement: boolean;
   durationMs: number;
   costBreakdown: CostEntry[];
 }
@@ -103,12 +106,22 @@ async function withRetry<T>(
   fn: () => Promise<T>,
   stepName: string,
   maxRetries = 2,
+  signal?: AbortSignal,
 ): Promise<{ result: T; attempts: number }> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Verificar abort antes de cada tentativa
+    if (signal?.aborted) {
+      console.warn(`[Pipeline:${stepName}] ⚠️ Abortado pelo cliente (disconnect)`);
+      throw new DOMException("Pipeline abortado: cliente desconectou", "AbortError");
+    }
     try {
       const result = await fn();
       return { result, attempts: attempt + 1 };
     } catch (error: unknown) {
+      // Se foi abort, propagar imediatamente
+      if (error instanceof DOMException && error.name === "AbortError") throw error;
+      if (signal?.aborted) throw new DOMException("Pipeline abortado: cliente desconectou", "AbortError");
+
       const errMsg = error instanceof Error ? error.message : String(error);
       const isRetryable = errMsg.includes("429") || errMsg.includes("500") || errMsg.includes("503") || errMsg.includes("overloaded");
 
@@ -167,6 +180,8 @@ export async function runCampaignPipeline(
       responseSchema: visionConfig.structuredOutput ? VisionOutputSchema : undefined,
     }),
     "Vision",
+    2,
+    input.signal,
   );
   costs.push(buildCostEntry("vision", visionResponse, visionStart));
   const vision = parseAndValidate<VisionAnalysis>(visionResponse.text, VisionOutputSchema, "Vision");
@@ -198,6 +213,8 @@ export async function runCampaignPipeline(
       responseSchema: stratConfig.structuredOutput ? StrategyOutputSchema : undefined,
     }),
     "Strategy",
+    2,
+    input.signal,
   );
   costs.push(buildCostEntry("strategy", strategyResponse, stratStart));
   const strategy = parseAndValidate<Strategy>(strategyResponse.text, StrategyOutputSchema, "Strategy");
@@ -228,6 +245,8 @@ export async function runCampaignPipeline(
       responseSchema: copyConfig.structuredOutput ? CopyOutputSchema : undefined,
     }),
     "Copywriter",
+    2,
+    input.signal,
   );
   costs.push(buildCostEntry("copywriter", copyResponse, copyStart));
   const copyTexts = parseJSON<any>(copyResponse.text, "Copywriter");
@@ -253,6 +272,8 @@ export async function runCampaignPipeline(
       responseSchema: refinerConfig.structuredOutput ? undefined : undefined, // Refiner tem schema especial
     }),
     "Refiner",
+    2,
+    input.signal,
   );
 
   costs.push(buildCostEntry("refiner", refinerResult.result, refinerStart));
@@ -283,6 +304,8 @@ export async function runCampaignPipeline(
       responseSchema: scorerConfig.structuredOutput ? ScoreOutputSchema : undefined,
     }),
     "Scorer",
+    2,
+    input.signal,
   );
 
   costs.push(buildCostEntry("scorer", scorerResult.result, scorerStart));
@@ -290,54 +313,10 @@ export async function runCampaignPipeline(
     scorerResult.result.text, ScoreOutputSchema, "Scorer"
   );
 
-  // ── AUTO-RETRY: Se score < 40, re-executar Copywriter + Refiner ──
-  if (score.nota_geral < 40) {
-    console.warn(`[Pipeline] ⚠️ Score ${score.nota_geral} < 40 — re-executando Copywriter+Refiner`);
-    onProgress?.("copywriter", "Score baixo, melhorando textos...", 80);
-
-    const retryStart = Date.now();
-    const retryResponse = await copyConfig.provider.generate({
-      system: COPYWRITER_SYSTEM,
-      messages: [{
-        role: "user",
-        content: buildCopywriterPrompt({
-          produto: vision.produto.nome_generico,
-          preco: input.price,
-          loja: input.storeName,
-          estrategia: JSON.stringify(strategy),
-          segmento: vision.segmento,
-          atributos: JSON.stringify(vision.atributos_visuais),
-          storeSegment: input.storeSegment,
-          bodyType: input.bodyType,
-        }),
-      }],
-      maxTokens: 3000,
-      temperature: 0.9,
-      responseSchema: copyConfig.structuredOutput ? CopyOutputSchema : undefined,
-    });
-    costs.push(buildCostEntry("copywriter_retry", retryResponse, retryStart));
-    const retryTexts = parseJSON<any>(retryResponse.text, "Copywriter-Retry");
-    finalTexts = { ...finalTexts, ...retryTexts };
-
-    // Re-executar Refiner nos textos novos
-    const retryRefineStart = Date.now();
-    const retryRefineResponse = await refinerConfig.provider.generate({
-      system: REFINER_SYSTEM,
-      messages: [{
-        role: "user",
-        content: buildRefinerPrompt({
-          textos: JSON.stringify(finalTexts),
-          estrategia: JSON.stringify(strategy),
-        }),
-      }],
-      maxTokens: 8192,
-      temperature: 0.5,
-    });
-    costs.push(buildCostEntry("refiner_retry", retryRefineResponse, retryRefineStart));
-    const retryRefined = parseJSON<any>(retryRefineResponse.text, "Refiner-Retry");
-    if (retryRefined.textos_refinados) {
-      finalTexts = { ...finalTexts, ...retryRefined.textos_refinados };
-    }
+  // ── Flag de refinamento: se score < 55, sinalizar para o frontend ──
+  const needsRefinement = score.nota_geral < 55;
+  if (needsRefinement) {
+    console.log(`[Pipeline] ⚠️ Score ${score.nota_geral} < 55 — sinalizando needsRefinement para o frontend`);
   }
 
   // ── STEP 6: Compose output ──────────────────
@@ -384,6 +363,7 @@ export async function runCampaignPipeline(
     strategy,
     output,
     score,
+    needsRefinement,
     durationMs,
     costBreakdown: costs,
   };

@@ -9,6 +9,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import type { LLMProvider, LLMRequest, LLMVisionRequest, LLMResponse } from "./types";
 
 let client: GoogleGenAI | null = null;
@@ -24,27 +25,13 @@ function getClient(): GoogleGenAI {
   return client;
 }
 
-/**
- * Converte Zod schema para JSON Schema compatível com Gemini responseSchema.
- * Gemini aceita JSON Schema draft-07.
- */
-function zodToJsonSchema(schema: import("zod").ZodSchema): Record<string, unknown> {
-  // Zod v4 tem .toJSONSchema() nativo
-  if ("toJSONSchema" in schema && typeof schema.toJSONSchema === "function") {
-    return schema.toJSONSchema() as Record<string, unknown>;
-  }
-
-  // Fallback: retornar undefined para não usar responseSchema
-  // (o modelo ainda responderá JSON pelo prompt)
-  console.warn("[GeminiProvider] Zod schema sem toJSONSchema — fallback para prompt-based JSON");
-  return undefined as unknown as Record<string, unknown>;
-}
+// zodToJsonSchema agora vem do pacote externo "zod-to-json-schema"
 
 export class GeminiProvider implements LLMProvider {
   readonly name = "google" as const;
   private model: string;
 
-  constructor(model: string = "gemini-2.5-flash") {
+  constructor(model: string = "gemini-3-flash-preview") {
     this.model = model;
   }
 
@@ -55,11 +42,9 @@ export class GeminiProvider implements LLMProvider {
     const config: Record<string, unknown> = {};
 
     if (request.responseSchema) {
-      const jsonSchema = zodToJsonSchema(request.responseSchema);
-      if (jsonSchema) {
-        config.responseMimeType = "application/json";
-        config.responseSchema = jsonSchema;
-      }
+      const jsonSchema = zodToJsonSchema(request.responseSchema as any);
+      config.responseMimeType = "application/json";
+      config.responseJsonSchema = jsonSchema;
     }
 
     if (request.temperature !== undefined) {
@@ -144,11 +129,9 @@ export class GeminiProvider implements LLMProvider {
     const config: Record<string, unknown> = {};
 
     if (request.responseSchema) {
-      const jsonSchema = zodToJsonSchema(request.responseSchema);
-      if (jsonSchema) {
-        config.responseMimeType = "application/json";
-        config.responseSchema = jsonSchema;
-      }
+      const jsonSchema = zodToJsonSchema(request.responseSchema as any);
+      config.responseMimeType = "application/json";
+      config.responseJsonSchema = jsonSchema;
     }
 
     if (request.temperature !== undefined) {
