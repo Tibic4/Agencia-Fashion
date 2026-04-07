@@ -94,6 +94,16 @@ export default function CreativeStoriesPreview({
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState(templateId);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [hiddenEls, setHiddenEls] = useState<Set<string>>(new Set());
+
+  const toggleEl = (key: string) => {
+    setHiddenEls((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const t = templates.find((tpl) => tpl.id === activeTemplate) || templates[0];
 
@@ -200,6 +210,7 @@ export default function CreativeStoriesPreview({
       />
 
       {/* Store badge */}
+      {!hiddenEls.has("storeName") && (
       <div
         style={{
           position: "absolute",
@@ -219,6 +230,7 @@ export default function CreativeStoriesPreview({
       >
         ✨ {storeName}
       </div>
+      )}
 
       {/* Main gancho text — centered */}
       <div
@@ -243,6 +255,7 @@ export default function CreativeStoriesPreview({
       </div>
 
       {/* "Arraste para cima" hint */}
+      {!hiddenEls.has("swipeHint") && (
       <div
         style={{
           position: "absolute",
@@ -275,6 +288,7 @@ export default function CreativeStoriesPreview({
           Arraste
         </div>
       </div>
+      )}
     </div>
   );
 
@@ -308,6 +322,7 @@ export default function CreativeStoriesPreview({
       />
 
       {/* Store badge */}
+      {!hiddenEls.has("storeName") && (
       <div
         style={{
           position: "absolute",
@@ -327,6 +342,7 @@ export default function CreativeStoriesPreview({
       >
         {storeName}
       </div>
+      )}
 
       {/* Product image */}
       {productImageUrl ? (
@@ -379,6 +395,7 @@ export default function CreativeStoriesPreview({
       )}
 
       {/* Product description text */}
+      {!hiddenEls.has("productName") && (
       <div
         style={{
           position: "absolute",
@@ -397,9 +414,10 @@ export default function CreativeStoriesPreview({
       >
         {productText.length > 55 ? productText.slice(0, 55) + "…" : productText}
       </div>
+      )}
 
       {/* Price badge — only if price exists */}
-      {hasPrice && (
+      {hasPrice && !hiddenEls.has("price") && (
       <div
         style={{
           position: "absolute",
@@ -525,6 +543,7 @@ export default function CreativeStoriesPreview({
       </div>
 
       {/* CTA button */}
+      {!hiddenEls.has("ctaButton") && (
       <div
         style={{
           position: "absolute",
@@ -548,8 +567,10 @@ export default function CreativeStoriesPreview({
       >
         Manda no WhatsApp 💬
       </div>
+      )}
 
       {/* Store name / logo area */}
+      {!hiddenEls.has("storeName") && (
       <div
         style={{
           position: "absolute",
@@ -582,6 +603,7 @@ export default function CreativeStoriesPreview({
           Feito com CriaLook
         </div>
       </div>
+      )}
     </div>
   );
 
@@ -704,6 +726,44 @@ export default function CreativeStoriesPreview({
               )}
             </button>
           </div>
+        </div>
+
+        {/* Element visibility toggles */}
+        <div
+          className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto"
+          style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
+        >
+          <span className="text-[10px] font-medium mr-1" style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>
+            👁️ Elementos:
+          </span>
+          {[
+            { key: "storeName", label: "Loja", icon: "🏷️" },
+            { key: "productName", label: "Nome", icon: "📝" },
+            { key: "price", label: "Preço", icon: "💰" },
+            { key: "ctaButton", label: "CTA", icon: "🔘" },
+            { key: "swipeHint", label: "Swipe", icon: "👆" },
+          ].map(({ key, label, icon }) => {
+            const isHidden = hiddenEls.has(key);
+            return (
+              <button
+                key={key}
+                onClick={() => toggleEl(key)}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all"
+                style={{
+                  background: isHidden ? "var(--border)" : "var(--background)",
+                  color: isHidden ? "var(--muted)" : "var(--foreground)",
+                  opacity: isHidden ? 0.5 : 1,
+                  border: "1px solid var(--border)",
+                  textDecoration: isHidden ? "line-through" : "none",
+                  whiteSpace: "nowrap",
+                }}
+                title={isHidden ? `Mostrar ${label}` : `Esconder ${label}`}
+              >
+                <span>{icon}</span>
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Preview area — shows all 3 slides side by side, highlights active */}
