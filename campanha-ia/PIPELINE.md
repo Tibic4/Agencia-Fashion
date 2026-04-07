@@ -1,9 +1,10 @@
 # Pipeline CriaLook — Passo a Passo
 
-> Resumo executivo: cada campanha faz **5 chamadas LLM + 1 chamada Gemini Image**.
-> Custo total por campanha: **~R$ 0,28** (LLM + imagem Gemini).
+> Resumo executivo: cada campanha faz **5 chamadas LLM + 1-2 chamadas Gemini Image + 1 QA Visual**.
+> Custo total por campanha: **~R$ 0,29-0,45** (LLM + imagem Gemini + QA).
 > Custo de criar modelo personalizada: **~R$ 0,01** (Gemini 3.1 Flash Image).
 > Provider de imagem: Gemini 3.1 Flash Image Preview (até 14 referências, 4K max)
+> QA Visual Agent: Gemini 2.5 Flash (verifica fidelidade do VTO automaticamente)
 
 ---
 
@@ -64,14 +65,38 @@
   - Foto(s) do produto (até 3: principal + close-up + 2ª peça)
   - Foto da modelo do banco
   - Prompt com cenário + pose + instruções de fidelidade
-**Saída:** Imagem final da modelo vestindo a roupa no cenário escolhido
+**Saída:** Imagem da modelo vestindo a roupa
 **Modelo:** `gemini-3.1-flash-image-preview`
 **Resolução:** 2K (default) — suporta até 4K
 **Custo:** ~R$ 0,02-0,04
 
 > ✅ O Gemini aceita até **14 imagens de referência** em uma única chamada.
 > As 3 fotos do produto são usadas: principal (silhueta), close-up (textura), 2ª peça (conjunto).
-> Isso garante **fidelidade de material** que era problema com providers que aceitavam apenas 1 foto.
+
+---
+
+### PASSO 6b — QA Visual Agent (Gemini 2.5 Flash)  🔍 automático
+**O que faz:** Compara a imagem VTO gerada contra o produto original para verificar fidelidade.
+**Analisa:** Cor, textura do tecido, detalhes (botões, estampas), caimento, silhueta.
+**Decisão:**
+  - ✅ **Aprovado** (maioria dos casos) → usa a 1ª imagem
+  - ❌ **Reprovado** (problemas graves) → gera 2ª imagem com prompt de correção
+**Modelo:** `gemini-2.5-flash` (texto + visão)
+**Custo:** ~R$ 0,01 (QA) + ~R$ 0,04 (2ª geração se necessário)
+**Tempo extra:** ~2-3s (QA) + ~10-15s (2ª geração se necessário)
+
+**Categorias de verificação:**
+
+| Categoria | O que verifica | Exemplo de problema |
+|-----------|---------------|--------------------|
+| 🎨 Cor | Hue, saturação, brilho | Camisa rosa ficou salmão |
+| 🧵 Textura | Tipo de tecido, trama | Tricô ficou liso como algodão |
+| 🔍 Detalhes | Botões, zípers, estampas | 5 botões viraram 3 |
+| 👗 Caimento | Fit, comprimento, silhueta | Cropped ficou comprido |
+| ❌ Ausência | Elementos faltando | Bordado sumiu |
+
+> ⚡ **Fail-open:** Se o QA falhar, aceita a 1ª imagem (nunca trava o pipeline).
+> Se a 2ª geração falhar, usa a 1ª imagem como fallback.
 
 ---
 
@@ -92,22 +117,27 @@
 | Scorer | Google | Gemini 2.5 Flash | $0.30 | $2.50 | ~2.500 | ~500 | R$ 0,01 |
 | **Subtotal LLM** | | | | | | | **R$ 0,24** |
 
-### Gemini Image (virtual try-on) — token-based pricing
+### Gemini Image (virtual try-on) + QA — token-based pricing
 
 | Operação | Resolução | Custo estimado |
 |----------|-----------|---------------|
 | **VTO + cenário** (vestir + fundo + pose) | 2K | **~R$ 0,02-0,04** |
+| **QA Visual Agent** (verificação de fidelidade) | — | **~R$ 0,01** |
+| **2ª geração** (se QA reprova, ~20% dos casos) | 2K | **~R$ 0,04** |
 | Preview de modelo (criar modelo) | 1K | **~R$ 0,01** |
 
 ### TOTAL por Campanha
 
-| Componente | Custo |
-|-----------|-------|
-| LLM (5 chamadas) | R$ 0,24 |
-| Gemini Image VTO (1 chamada) | R$ 0,04 |
-| **TOTAL** | **~R$ 0,28** |
+| Componente | Custo (QA aprova) | Custo (QA reprova) |
+|-----------|:-:|:-:|
+| LLM (5 chamadas) | R$ 0,24 | R$ 0,24 |
+| Gemini Image VTO (1ª) | R$ 0,04 | R$ 0,04 |
+| QA Visual Agent | R$ 0,01 | R$ 0,01 |
+| 2ª geração VTO | — | R$ 0,04 |
+| **TOTAL** | **~R$ 0,29** | **~R$ 0,33** |
 
 > Custo de **criar modelo personalizada** (passo extra, fora do pipeline): ~R$ 0,01
+> ⚡ QA aprova na maioria dos casos — custo médio: ~R$ 0,30
 
 ---
 
@@ -160,7 +190,12 @@ As poses são sugeridas automaticamente pela Strategy com base no objetivo:
 [4] Gemini Flash Refiner ─┐
 [5] Gemini Flash Scorer  ─┤ (paralelo)
     ↓
-[6] Gemini 3.1 Flash Image → VTO + cenário + pose (1 chamada)
+[6] Gemini 3.1 Flash Image → VTO + cenário + pose (1ª geração)
+    ↓
+[6b] QA Visual Agent 🔍 → compara VTO vs produto original
+    ↓
+    ┌─ ✅ Aprovado → usa imagem
+    └─ ❌ Reprovado → 2ª geração com correções
     ↓
 🎨 Konva Compositor → monta criativo final
    (texto + logo + CTA sobre a imagem)
