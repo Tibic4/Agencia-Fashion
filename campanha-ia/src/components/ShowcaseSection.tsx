@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 
 interface ShowcaseItem {
   id: string;
@@ -91,10 +92,12 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
         onTouchStart={handleStart}
       >
         {/* DEPOIS — full background image */}
-        <img
+        <Image
           src={item.after_photo_url}
           alt="Depois — modelo IA"
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          sizes="(max-width: 768px) 100vw, 768px"
+          className="object-cover"
           draggable={false}
           onError={() => setImgError("after")}
         />
@@ -114,10 +117,12 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
           className="absolute inset-0 overflow-hidden"
           style={{ width: `${sliderPos}%` }}
         >
-          <img
+          <Image
             src={item.before_photo_url}
             alt="Antes — foto original"
-            className="absolute inset-0 h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover"
             style={{
               width: containerWidth > 0 ? `${containerWidth}px` : "100%",
               maxWidth: "none",
