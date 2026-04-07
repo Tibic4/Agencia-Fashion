@@ -1,5 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getCosts() {
   const supabase = createAdminClient();
 
@@ -18,11 +21,18 @@ async function getCosts() {
 
   const budget = parseFloat(budgetSetting?.value || process.env.API_BUDGET_MONTHLY_BRL || "2000");
 
+  // Filter out legacy providers globally from this month's data
+  const filteredThisMonth = (thisMonthCosts ?? []).filter(
+    (row) => !["fashnai", "fal", "stability", "openai"].includes((row.provider || "").toLowerCase())
+  );
+  
+  const filteredLastMonth = (lastMonthCosts ?? []).filter(
+    (row) => !["fashnai", "fal", "stability", "openai"].includes((row.provider || "").toLowerCase())
+  );
   // Group by provider
   const byProvider: Record<string, { calls: number; cost: number; tokens: number }> = {};
-  (thisMonthCosts ?? []).forEach((row) => {
+  filteredThisMonth.forEach((row) => {
     const p = row.provider || "unknown";
-    if (p === "fashnai" || p === "fal" || p === "stability" || p === "openai") return; // legacy
     if (!byProvider[p]) byProvider[p] = { calls: 0, cost: 0, tokens: 0 };
     byProvider[p].calls++;
     byProvider[p].cost += row.cost_brl || 0;
@@ -31,7 +41,7 @@ async function getCosts() {
 
   // Group by pipeline step
   const byStep: Record<string, { calls: number; cost: number }> = {};
-  (thisMonthCosts ?? []).forEach((row) => {
+  filteredThisMonth.forEach((row) => {
     const step = row.action || "unknown";
     if (!byStep[step]) byStep[step] = { calls: 0, cost: 0 };
     byStep[step].calls++;
@@ -40,13 +50,13 @@ async function getCosts() {
 
   // Daily costs (last 7 days)
   const byDay: Record<string, number> = {};
-  (thisMonthCosts ?? []).forEach((row) => {
+  filteredThisMonth.forEach((row) => {
     const day = new Date(row.created_at).toISOString().split("T")[0];
     byDay[day] = (byDay[day] || 0) + (row.cost_brl || 0);
   });
 
-  const totalThisMonth = (thisMonthCosts ?? []).reduce((s, r) => s + (r.cost_brl || 0), 0);
-  const totalLastMonth = (lastMonthCosts ?? []).reduce((s, r) => s + (r.cost_brl || 0), 0);
+  const totalThisMonth = filteredThisMonth.reduce((s, r) => s + (r.cost_brl || 0), 0);
+  const totalLastMonth = filteredLastMonth.reduce((s, r) => s + (r.cost_brl || 0), 0);
   
   // Projeção para final do mês
   const dailyAvg = dayOfMonth > 0 ? totalThisMonth / dayOfMonth : 0;
@@ -90,7 +100,7 @@ async function getCosts() {
     avgCostPerCampaign,
     dayOfMonth,
     daysInMonth,
-    logs: thisMonthCosts ?? [],
+    logs: filteredThisMonth,
   };
 }
 
