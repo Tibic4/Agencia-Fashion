@@ -24,7 +24,7 @@ export default function Privacidade() {
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>2. Finalidade</h2>
             <p>Seus dados são usados exclusivamente para: prestar o serviço de geração de campanhas, personalizar resultados, processar pagamentos e melhorar o produto.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>3. Processamento de Imagens</h2>
-            <p>As fotos enviadas são processadas por APIs de IA terceirizadas (Anthropic, Google Gemini, fal.ai) exclusivamente para geração da campanha. Não usamos suas imagens para treinar modelos.</p>
+            <p>As fotos enviadas são processadas por APIs de IA terceirizadas (Anthropic, Google Gemini) exclusivamente para geração da campanha. Não usamos suas imagens para treinar modelos.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>4. Armazenamento</h2>
             <p>Seus dados são armazenados em servidores seguros (Supabase/AWS). Imagens são retidas conforme o período do seu plano e deletadas após o cancelamento.</p>
             <h2 className="text-lg font-bold mt-6" style={{ color: "var(--foreground)" }}>5. Compartilhamento</h2>

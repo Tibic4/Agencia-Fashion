@@ -20,7 +20,7 @@
 
 ## Vision Bridge (Mini-Vision VTO)
 
-Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,002) que roda **ANTES** do try-on para extrair dados técnicos do produto e instruir o Gemini VTO com precisão.
+Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,004) que roda **ANTES** do try-on para extrair dados técnicos do produto e instruir o Gemini VTO com precisão.
 
 ### Dados Extraídos
 
@@ -177,16 +177,70 @@ Score < 40? → re-executa Copy + Refine
 | Google Gemini | `GOOGLE_AI_API_KEY` | Vision, Strategy, Refiner, Scorer, Mini-Vision VTO, Nano Banana, QA Visual Agent |
 | Anthropic Claude | `ANTHROPIC_API_KEY` | Copywriter |
 
-## Custos por Campanha
+## Custos por Campanha (Auditado — Abril 2026)
 
-| Item | Custo (QA aprova) | Custo (QA reprova) |
-|------|:-:|:-:|
-| Mini-Vision VTO | R$ 0,002 | R$ 0,002 |
-| Pipeline texto (5 steps) | R$ 0,24 | R$ 0,24 |
-| Gemini VTO (1ª geração) | R$ 0,04 | R$ 0,04 |
-| QA Visual Agent | R$ 0,01 | R$ 0,01 |
-| 2ª geração VTO | — | R$ 0,04 |
-| **Total típico** | **~R$ 0,29** | **~R$ 0,33** |
+> **Câmbio:** R$ 5,80/USD | **Fontes:** [Google AI Pricing](https://ai.google.dev/pricing) · [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+
+### Preços Oficiais por Modelo
+
+| Modelo | Input/MTok | Output/MTok |
+|--------|:----------:|:-----------:|
+| Gemini 2.5 Flash | $0.30 | $2.50 |
+| Gemini 2.5 Pro (≤200K ctx) | $1.25 | $10.00 |
+| Claude Sonnet 4 | $3.00 | $15.00 |
+| Gemini 3.1 Flash Image (output imagem) | — | **$60.00** |
+
+### Custo por Etapa
+
+| # | Etapa | Modelo | ~Tok IN | ~Tok OUT | **Custo R$** |
+|---|-------|--------|:-------:|:--------:|:------------:|
+| — | Mini-Vision VTO | Gemini 2.5 Flash | 800 | 200 | **R$ 0,004** |
+| 1 | Vision | Gemini 2.5 Flash | 1.500 | 500 | **R$ 0,010** |
+| 2 | Strategy | Gemini 2.5 Pro | 2.000 | 800 | **R$ 0,061** |
+| 3 | Copywriter | Claude Sonnet 4 | 3.000 | 2.000 | **R$ 0,226** |
+| 4 | Refiner | Gemini 2.5 Flash | 3.000 | 1.500 | **R$ 0,027** |
+| 5 | Scorer | Gemini 2.5 Flash | 2.500 | 500 | **R$ 0,012** |
+| — | QA Visual Agent | Gemini 2.5 Flash | 1.500 | 300 | **R$ 0,007** |
+| — | **Subtotal texto** | | | | **R$ 0,347** |
+
+### Custo de Imagem VTO (Nano Banana 2)
+
+> `gemini-3.1-flash-image-preview` — Output de imagem: **$60/MTok**
+
+| Resolução | Tokens IMG | Custo/img USD | **Custo/img R$** |
+|:---------:|:----------:|:-------------:|:----------------:|
+| 0.5K (512px) | 747 | $0.045 | R$ 0,26 |
+| **1K (1024px)** | **1.120** | **$0.067** | **R$ 0,39** |
+| 2K (2048px) | 1.680 | $0.101 | R$ 0,59 |
+
+### Total por Campanha (resolução 1K)
+
+| Item | QA ✅ Aprova | QA ❌ Reprova |
+|------|:----------:|:-----------:|
+| Subtotal texto (7 etapas) | R$ 0,347 | R$ 0,347 |
+| **Gemini VTO 1ª geração (1K)** | **R$ 0,39** | **R$ 0,39** |
+| 2ª geração VTO (1K) | — | R$ 0,39 |
+| **TOTAL** | **~R$ 0,74** | **~R$ 1,13** |
+
+> **Nota:** Considerando 80% aprovação na 1ª tentativa, o custo médio por campanha é **~R$ 0,82**.
+
+### Criação de Modelo Virtual
+
+| Resolução preview | Tokens IMG | **Custo R$** |
+|:-----------------:|:----------:|:------------:|
+| 1K (1024px) | 1.120 | **R$ 0,39** |
+| 0.5K (512px) | 747 | **R$ 0,26** |
+
+### Projeção Mensal (custo médio R$ 0,82/campanha)
+
+| Volume | Custo API/mês |
+|--------|:------------:|
+| 100 campanhas | R$ 82 |
+| 500 campanhas | R$ 410 |
+| 1.000 campanhas | R$ 820 |
+| 5.000 campanhas | R$ 4.100 |
+
+---
 
 ## Arquivos no Código
 
@@ -216,3 +270,4 @@ O response da API inclui `tryOnDebug` quando o try-on falha, mostrando a razão 
 [NanoBanana] 🔄 QA reprovado — gerando 2ª tentativa com correções...
 [NanoBanana] ✅ 2ª geração OK (12450ms, total 28900ms)
 ```
+
