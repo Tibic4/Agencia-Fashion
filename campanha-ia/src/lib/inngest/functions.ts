@@ -63,7 +63,7 @@ export const generateCampaignJob = inngest.createFunction(
 );
 
 // ═══════════════════════════════════════════════════════════
-// MODEL PREVIEW — Gemini primário + Fashn.ai fallback
+// MODEL PREVIEW — Gemini 3.1 Flash Image (provider único)
 // ═══════════════════════════════════════════════════════════
 
 interface ModelPreviewEvent {
@@ -79,7 +79,7 @@ interface ModelPreviewEvent {
 
 /**
  * Gera preview de modelo via Gemini 3.1 Flash Image.
- * Custo: ~$0.001/imagem (~R$ 0,006) — 70x mais barato que Fashn.
+ * Custo: ~$0.001/imagem (~R$ 0,006)
  * Retorna URL pública no Supabase Storage ou null se falhar.
  */
 async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<string | null> {
@@ -201,7 +201,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
 
 /**
  * Job: Gerar preview de modelo virtual em background.
- * Pipeline: Gemini 3.1 Flash Image (~R$0,006) → Fashn.ai fallback (~R$0,43)
+ * Provider único: Gemini 3.1 Flash Image (~R$0,01)
  * Retry automático: 2 tentativas com backoff exponencial.
  */
 export const generateModelPreviewJob = inngest.createFunction(
@@ -213,36 +213,17 @@ export const generateModelPreviewJob = inngest.createFunction(
   async ({ event, step }) => {
     const data = event.data as ModelPreviewEvent;
 
-    // Step 1: Tentar Gemini (rápido, ~R$0,006)
-    const geminiUrl = await step.run("generate-gemini-preview", async () => {
-      console.log(`[Inngest:ModelPreview] 🎨 Tentando Gemini para "${data.name}" (model: ${data.modelId})...`);
-      return await generatePreviewWithGemini(data);
-    });
-
-    // Step 2: Fallback para Fashn.ai se Gemini falhou
-    const previewUrl = geminiUrl || await step.run("fallback-fashn-preview", async () => {
-      console.log(`[Inngest:ModelPreview] 🔄 Gemini falhou, usando Fashn.ai fallback...`);
-      const { generateCustomModelPreview } = await import("@/lib/fashn/client");
-
-      const result = await generateCustomModelPreview({
-        skinTone: data.skinTone,
-        hairStyle: data.hairStyle,
-        bodyType: data.bodyType,
-        style: data.style,
-        ageRange: data.ageRange,
-        name: data.name,
-        storeId: data.storeId,
-      });
-
-      if (result.status !== "completed" || !result.outputUrl) {
-        throw new Error(`Fashn preview falhou: ${result.error || "status=" + result.status}`);
+    // Step 1: Gerar preview com Gemini
+    const previewUrl = await step.run("generate-gemini-preview", async () => {
+      console.log(`[Inngest:ModelPreview] 🎨 Gerando preview para "${data.name}" (model: ${data.modelId})...`);
+      const url = await generatePreviewWithGemini(data);
+      if (!url) {
+        throw new Error("Gemini preview generation failed");
       }
-
-      console.log(`[Inngest:ModelPreview] ✅ Fashn fallback OK: ${result.outputUrl.slice(0, 60)}...`);
-      return result.outputUrl;
+      return url;
     });
 
-    // Step 3: Salvar URL no banco
+    // Step 2: Salvar URL no banco
     await step.run("save-preview-url", async () => {
       const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
@@ -252,10 +233,10 @@ export const generateModelPreviewJob = inngest.createFunction(
         .update({ preview_url: previewUrl })
         .eq("id", data.modelId);
 
-      console.log(`[Inngest:ModelPreview] 💾 Preview salvo (${geminiUrl ? "Gemini" : "Fashn"}) para model ${data.modelId}`);
+      console.log(`[Inngest:ModelPreview] 💾 Preview salvo (Gemini) para model ${data.modelId}`);
     });
 
-    return { modelId: data.modelId, previewUrl, provider: geminiUrl ? "gemini" : "fashn" };
+    return { modelId: data.modelId, previewUrl, provider: "gemini" };
   }
 );
 

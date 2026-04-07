@@ -96,8 +96,6 @@ async function getCosts() {
 const providerColors: Record<string, string> = {
   anthropic: "from-violet-500 to-purple-500",
   google: "from-blue-500 to-indigo-500",
-  "fashn.ai": "from-pink-500 to-rose-500",
-  fashn: "from-pink-500 to-rose-500",
   "fal.ai": "from-orange-500 to-amber-500",
   stability: "from-blue-500 to-cyan-500",
   openai: "from-emerald-500 to-teal-500",

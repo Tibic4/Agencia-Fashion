@@ -347,27 +347,20 @@ Respond with ONLY the JSON object, no markdown.`,
     }
 
     // ── Função try-on (roda em paralelo com pipeline) ──
+    // Provider ÚNICO: Gemini 3.1 Flash Image (Nano Banana 2)
+    // Aceita até 14 imagens de referência — enviamos: modelo + produto + close-up + 2ª peça
     const runTryOn = async (): Promise<{ url: string | null; provider: string | null; debug?: string }> => {
       if (!store) return { url: null, provider: null };
-      try {
-        // Obter URL assinada do produto (bucket é privado)
-        let productUrl: string | null = null;
-        if (campaignRecord) {
-          try {
-            const { createAdminClient } = await import("@/lib/supabase/admin");
-            const supabase = createAdminClient();
-            const storagePath = campaignRecord.product_photo_storage_path || `campaigns/${store.id}/${campaignRecord.id}.jpg`;
-            const { data, error } = await supabase.storage.from("product-photos").createSignedUrl(storagePath, 600); // 10 min
-            if (error) {
-              console.warn("[TryOn] Erro ao gerar signed URL:", error.message);
-            }
-            productUrl = data?.signedUrl || null;
-          } catch { /* ignore */ }
-        }
+      if (!process.env.GOOGLE_AI_API_KEY) {
+        return { url: null, provider: null, debug: "GOOGLE_AI_API_KEY not configured" };
+      }
 
-        // Prioridade 1: Modelo do banco
-        console.log(`[TryOn] Debug: modelBankId=${modelBankId}, productUrl=${productUrl ? productUrl.substring(0, 80) + '...' : 'null'}, FASHN_KEY=${!!process.env.FASHN_API_KEY}`);
-        if (modelBankId && productUrl && process.env.FASHN_API_KEY) {
+      try {
+        // Buscar modelo do banco ou modelo ativa
+        let modelImageUrl: string | null = null;
+
+        // Prioridade 1: Modelo do banco selecionada pelo usuário
+        if (modelBankId) {
           try {
             const { createAdminClient } = await import("@/lib/supabase/admin");
             const supabase = createAdminClient();
@@ -376,79 +369,65 @@ Respond with ONLY the JSON object, no markdown.`,
               .select("image_url")
               .eq("id", modelBankId)
               .single();
-
-            console.log(`[TryOn] Debug: bankModel.image_url=${bankModel?.image_url ? bankModel.image_url.substring(0, 80) + '...' : 'null'}`);
             if (bankModel?.image_url) {
-              const { generateWithModelBank } = await import("@/lib/fashn/client");
-              console.log(`[TryOn] 🏦 Chamando Fashn.ai generateWithModelBank...`);
-              const result = await generateWithModelBank(
-                productUrl,
-                bankModel.image_url,
-                backgroundType as any,
-                undefined,
-                vtoData,
-              );
-              console.log(`[TryOn] Debug: result.status=${result.status}, outputUrl=${result.outputUrl ? 'yes' : 'no'}, error=${result.error || 'none'}`);
-              if (result.status === "completed" && result.outputUrl) {
-                console.log("[TryOn] ✅ Modelo do banco + try-on sucesso");
-                return { url: result.outputUrl, provider: "fashn.ai-bank" };
-              }
+              modelImageUrl = bankModel.image_url;
+              console.log(`[TryOn] 🏦 Modelo do banco: ${modelImageUrl!.substring(0, 60)}...`);
             }
           } catch (e) {
-            console.warn("[TryOn] ❌ Banco de modelos falhou:", e instanceof Error ? e.message : e);
-          }
-        } else {
-          console.log(`[TryOn] ⚠️ Pré-condições não atendidas para modelo do banco`);
-        }
-
-        // Prioridade 2: Modelo ativa da loja (legado)
-        const activeModel = await getActiveModel(store.id);
-        if (activeModel && productUrl && process.env.FASHN_API_KEY) {
-          try {
-            const { tryOnProduct } = await import("@/lib/fashn/client");
-            console.log("[TryOn] 👤 Chamando try-on com modelo ativa da loja...");
-            const result = await tryOnProduct({
-              productImage: productUrl,
-              modelImage: activeModel.image_url,
-              visionData: vtoData,
-            });
-            if (result.status === "completed" && result.outputUrl) {
-              console.log("[TryOn] ✅ Modelo ativa + try-on sucesso");
-              return { url: result.outputUrl, provider: "fashn.ai-custom" };
-            }
-          } catch (e) {
-            console.warn("[TryOn] Modelo ativa falhou:", e instanceof Error ? e.message : e);
+            console.warn("[TryOn] Erro ao buscar modelo do banco:", e instanceof Error ? e.message : e);
           }
         }
 
-        // Prioridade 3: Nano Banana 2 (fallback)
-        if (process.env.GOOGLE_AI_API_KEY && activeModel) {
-          try {
-            const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
-            console.log("[TryOn] 🍌 Chamando Nano Banana 2 fallback...");
-            const productRes = await fetch(productUrl!);
-            const productBuf = Buffer.from(await productRes.arrayBuffer());
-            const modelRes = await fetch(activeModel.image_url);
-            const modelBuf = Buffer.from(await modelRes.arrayBuffer());
-            const nanoResult = await nanoBananaTryOn({
-              productImageBase64: productBuf.toString("base64"),
-              productMimeType: "image/jpeg",
-              modelImageBase64: modelBuf.toString("base64"),
-              modelMimeType: "image/png",
-              bodyType: bodyType || "normal",
-              visionData: vtoData,
-            });
-            if (nanoResult.status === "completed" && nanoResult.imageBase64) {
-              console.log("[TryOn] ✅ Nano Banana 2 sucesso");
-              return { url: `data:image/png;base64,${nanoResult.imageBase64}`, provider: "nano-banana-2" };
-            }
-          } catch (e) {
-            console.warn("[TryOn] Nano Banana falhou:", e instanceof Error ? e.message : e);
+        // Prioridade 2: Modelo ativa da loja
+        if (!modelImageUrl) {
+          const activeModel = await getActiveModel(store.id);
+          if (activeModel?.image_url) {
+            modelImageUrl = activeModel.image_url;
+            console.log(`[TryOn] 👤 Modelo ativa: ${modelImageUrl!.substring(0, 60)}...`);
           }
         }
 
-        console.log("[TryOn] Nenhum provider disponível, usando foto original");
-        return { url: null, provider: null, debug: "no provider succeeded" };
+        if (!modelImageUrl) {
+          console.log("[TryOn] ⚠️ Nenhuma modelo disponível");
+          return { url: null, provider: null, debug: "no model available" };
+        }
+
+        // Baixar modelo como base64
+        const modelRes = await fetch(modelImageUrl);
+        const modelBuf = Buffer.from(await modelRes.arrayBuffer());
+
+        // Montar chamada Nano Banana com TODAS as fotos disponíveis
+        // Ordem de imagens no prompt:
+        //   1. Modelo (referência visual — rosto, corpo, tom de pele)
+        //   2. Produto principal (outfit completo no manequim)
+        //   3. Close-up do tecido (textura, detalhes — opcional)
+        //   4. Segunda peça do conjunto (opcional)
+        const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
+        console.log(`[TryOn] 🍌 Gemini 3.1 Flash Image — ${1 + extraImages.length} foto(s) do produto + modelo`);
+
+        const nanoResult = await nanoBananaTryOn({
+          productImageBase64: imageBase64,
+          productMimeType: mediaType,
+          closeUpBase64: extraImages[0]?.base64,
+          closeUpMimeType: extraImages[0]?.mediaType,
+          secondPieceBase64: extraImages[1]?.base64,
+          secondPieceMimeType: extraImages[1]?.mediaType,
+          modelImageBase64: modelBuf.toString("base64"),
+          modelMimeType: modelRes.headers.get("content-type")?.startsWith("image/") ? modelRes.headers.get("content-type") as any : "image/png",
+          bodyType: bodyType || "normal",
+          background: backgroundType as any,
+          visionData: vtoData,
+          storeId: store.id,
+          campaignId: campaignRecord?.id,
+        });
+
+        if (nanoResult.status === "completed" && nanoResult.imageBase64) {
+          console.log(`[TryOn] ✅ Gemini VTO sucesso (${nanoResult.durationMs}ms)`);
+          return { url: `data:image/png;base64,${nanoResult.imageBase64}`, provider: "gemini-3.1-flash-image" };
+        }
+
+        console.warn(`[TryOn] ❌ Gemini VTO falhou:`, nanoResult.error);
+        return { url: null, provider: null, debug: nanoResult.error || "Gemini VTO failed" };
       } catch (tryOnErr) {
         const errMsg = tryOnErr instanceof Error ? tryOnErr.message : String(tryOnErr);
         console.warn("[TryOn] Erro geral (não fatal):", errMsg);
@@ -485,23 +464,20 @@ Respond with ONLY the JSON object, no markdown.`,
         ),
       ]);
 
-      // Registrar custo do try-on (não bloqueia response)
+      // Registrar custo do try-on (secundário — Nano Banana já loga internamente)
       if (tryOnResult.url && tryOnResult.provider && store) {
         try {
           const { createAdminClient } = await import("@/lib/supabase/admin");
           const supabase = createAdminClient();
-          const { getExchangeRate, getFashnCostUsd } = await import("@/lib/pricing");
-          const [exchangeRate, fashnCosts] = await Promise.all([getExchangeRate(), getFashnCostUsd()]);
-          const baseCostUsd = tryOnResult.provider === "fashn.ai-bank"
-            ? (fashnCosts["tryon-max"] ?? 0.15) + (fashnCosts["edit"] ?? 0.075)
-            : tryOnResult.provider === "fashn.ai-custom"
-              ? (fashnCosts["tryon-max"] ?? 0.15)
-              : 0.04;
+          const { getExchangeRate } = await import("@/lib/pricing");
+          const exchangeRate = await getExchangeRate();
+          // Custo estimado do Gemini 3.1 Flash Image (VTO)
+          const baseCostUsd = 0.005; // ~$0.005 por chamada
           await supabase.from("api_cost_logs").insert({
             store_id: store.id,
             campaign_id: campaignRecord?.id || null,
-            provider: tryOnResult.provider.includes("fashn") ? "fashn.ai" : "google",
-            model_used: tryOnResult.provider === "nano-banana-2" ? "gemini-imagen" : "fashn-tryon",
+            provider: "google",
+            model_used: "gemini-3.1-flash-image",
             action: "virtual_try_on",
             cost_usd: baseCostUsd,
             cost_brl: baseCostUsd * exchangeRate,

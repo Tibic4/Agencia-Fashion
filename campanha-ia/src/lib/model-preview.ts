@@ -1,6 +1,6 @@
 /**
  * Geração direta de preview de modelo virtual.
- * Pipeline: Gemini 3.1 Flash Image (~R$0,006) → Fashn.ai fallback (~R$0,43)
+ * Provider: Gemini 3.1 Flash Image (~R$0,01)
  * 
  * Chamado fire-and-forget pelo POST /api/model/create.
  * Não bloqueia a resposta — o frontend faz polling.
@@ -67,7 +67,7 @@ function buildPrompt(data: ModelPreviewParams): string {
 }
 
 /**
- * Tenta gerar preview via Gemini 3.1 Flash Image.
+ * Gera preview via Gemini 3.1 Flash Image.
  * Retorna URL pública ou null.
  */
 async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
@@ -125,57 +125,18 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
 }
 
 /**
- * Fallback: gera preview via Fashn.ai.
- */
-async function tryFashn(data: ModelPreviewParams): Promise<string | null> {
-  if (!process.env.FASHN_API_KEY) return null;
-
-  try {
-    console.log(`[Preview:Fashn] 🔄 Fallback para "${data.name}"...`);
-    const { generateCustomModelPreview } = await import("@/lib/fashn/client");
-
-    const result = await generateCustomModelPreview({
-      skinTone: data.skinTone,
-      hairStyle: data.hairStyle,
-      bodyType: data.bodyType,
-      style: data.style,
-      ageRange: data.ageRange,
-      name: data.name,
-      storeId: data.storeId,
-    });
-
-    if (result.status !== "completed" || !result.outputUrl) {
-      console.warn("[Preview:Fashn] ❌ Falhou:", result.error || result.status);
-      return null;
-    }
-
-    console.log(`[Preview:Fashn] ✅ OK: ${result.outputUrl.slice(0, 60)}...`);
-    return result.outputUrl;
-  } catch (err) {
-    console.warn("[Preview:Fashn] ❌ Erro:", err instanceof Error ? err.message : err);
-    return null;
-  }
-}
-
-/**
  * Gera preview da modelo e salva no banco.
- * Pipeline: Gemini (primário) → Fashn.ai (fallback)
+ * Provider único: Gemini 3.1 Flash Image Preview
  * 
  * Chamada fire-and-forget — não bloqueia o request HTTP.
  */
 export async function generatePreviewDirect(data: ModelPreviewParams): Promise<void> {
   console.log(`[Preview] 🚀 Iniciando para "${data.name}" (${data.modelId})...`);
 
-  // Tentar Gemini primeiro
-  let url = await tryGemini(data);
-
-  // Fallback para Fashn.ai
-  if (!url) {
-    url = await tryFashn(data);
-  }
+  const url = await tryGemini(data);
 
   if (!url) {
-    console.error(`[Preview] ❌ Todos os providers falharam para "${data.name}"`);
+    console.error(`[Preview] ❌ Geração de preview falhou para "${data.name}"`);
     return;
   }
 
@@ -190,3 +151,4 @@ export async function generatePreviewDirect(data: ModelPreviewParams): Promise<v
 
   console.log(`[Preview] 💾 Salvo no DB para "${data.name}" (${data.modelId})`);
 }
+

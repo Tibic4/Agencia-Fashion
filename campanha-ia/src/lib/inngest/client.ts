@@ -5,7 +5,7 @@ import { Inngest } from "inngest";
  *
  * Usado para:
  * - Pipeline de IA com retry automático
- * - Processos de try-on que demoram (polling do Fashn.ai)
+ * - Processos de geração de imagem (Gemini 3.1 Flash Image)
  * - Envio de emails transacionais
  */
 export const inngest = new Inngest({

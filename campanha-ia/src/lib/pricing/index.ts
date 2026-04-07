@@ -3,7 +3,6 @@
  *
  * Centraliza:
  * - MODEL_PRICING (LLM tokens) → lido do admin_settings
- * - FASHN_COST_USD (operações fixas) → lido do admin_settings
  * - USD_BRL_EXCHANGE_RATE → atualizado automaticamente via API pública
  *
  * Cache em memória com TTL de 5 min para não bater no banco a cada chamada.
@@ -26,7 +25,6 @@ interface CacheEntry<T> {
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
 
 let modelPricingCache: CacheEntry<Record<string, ModelPricing>> | null = null;
-let fashnCostCache: CacheEntry<Record<string, number>> | null = null;
 let exchangeRateCache: CacheEntry<number> | null = null;
 
 // Fallbacks hardcoded (usados se o banco estiver indisponível)
@@ -35,14 +33,6 @@ const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
   "gemini-2.5-pro": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
   "claude-sonnet-4-20250514": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-haiku-4-20250514": { inputPerMTok: 1.00, outputPerMTok: 5.00 },
-};
-
-const FALLBACK_FASHN_COST: Record<string, number> = {
-  "product-to-model": 0.075,
-  "tryon-max": 0.15,
-  "edit": 0.075,
-  "model-create": 0.075,
-  "background-remove": 0.075,
 };
 
 const FALLBACK_EXCHANGE_RATE = 5.80;
@@ -103,22 +93,6 @@ export async function calculateCostBrlDynamic(
     (usage.outputTokens * modelPrice.outputPerMTok) / 1_000_000;
 
   return costUsd * rate;
-}
-
-// ═══════════════════════════════════════
-// Fashn.ai Costs (fixed per operation)
-// ═══════════════════════════════════════
-
-export async function getFashnCostUsd(): Promise<Record<string, number>> {
-  if (fashnCostCache && Date.now() < fashnCostCache.expiresAt) {
-    return fashnCostCache.data;
-  }
-
-  const raw = await getAdminSetting("fashn_cost_usd");
-  const data = (raw && typeof raw === "object" ? raw : FALLBACK_FASHN_COST) as Record<string, number>;
-
-  fashnCostCache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
-  return data;
 }
 
 // ═══════════════════════════════════════
@@ -183,6 +157,6 @@ export async function refreshExchangeRate(): Promise<{ rate: number; source: str
  */
 export function invalidatePricingCache() {
   modelPricingCache = null;
-  fashnCostCache = null;
   exchangeRateCache = null;
 }
+
