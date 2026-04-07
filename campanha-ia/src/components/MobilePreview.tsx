@@ -40,7 +40,7 @@ export default function MobilePreview({
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setActiveFormat("feed")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px]"
           style={{
             background: activeFormat === "feed" ? "var(--gradient-brand)" : "var(--surface)",
             color: activeFormat === "feed" ? "white" : "var(--muted)",
@@ -51,7 +51,7 @@ export default function MobilePreview({
         </button>
         <button
           onClick={() => setActiveFormat("stories")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px]"
           style={{
             background: activeFormat === "stories" ? "var(--gradient-brand)" : "var(--surface)",
             color: activeFormat === "stories" ? "white" : "var(--muted)",
@@ -74,12 +74,14 @@ export default function MobilePreview({
           <div
             style={{
               width: phoneWidth,
+              maxWidth: "90vw",
               height: phoneHeight,
               background: "#000",
               borderRadius: 36,
               padding: "12px 10px",
               position: "relative",
               boxShadow: "0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px rgba(255,255,255,0.1)",
+              margin: "0 auto",
             }}
           >
             {/* Notch / Dynamic Island */}
