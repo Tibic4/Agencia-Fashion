@@ -118,22 +118,51 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Converter imagem para base64 ──
+    // ── Converter imagem para base64 com downscale (evitar OOM na VPS) ──
     const arrayBuffer = await imageFile.arrayBuffer();
-    const imageBase64 = Buffer.from(arrayBuffer).toString("base64");
-    const mediaType = imageFile.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+    let imageBuffer = Buffer.from(arrayBuffer);
+    let mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" = imageFile.type as any;
 
-    // ── Converter fotos extras (close-up + segunda peça) ──
+    // Sharp downscale: max 1536px, WEBP 80% — Gemini só precisa de 1024-1536px
+    try {
+      const sharp = (await import("sharp")).default;
+      const originalSize = imageBuffer.length;
+      imageBuffer = await sharp(imageBuffer as any)
+        .resize(1536, 1536, { fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer() as any;
+      mediaType = "image/webp";
+      const savings = ((1 - imageBuffer.length / originalSize) * 100).toFixed(0);
+      console.log(`[Generate] 📐 Imagem principal: ${(originalSize / 1024).toFixed(0)}KB → ${(imageBuffer.length / 1024).toFixed(0)}KB (-${savings}%)`);
+    } catch {
+      console.warn("[Generate] ⚠️ Sharp indisponível, usando imagem original");
+    }
+    const imageBase64 = imageBuffer.toString("base64");
+
+    // ── Converter fotos extras com downscale ──
     const extraImages: { base64: string; mediaType?: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }[] = [];
+
+    async function downscaleExtra(file: File): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }> {
+      let buf = Buffer.from(await file.arrayBuffer());
+      let mime: "image/jpeg" | "image/png" | "image/webp" | "image/gif" = file.type as any;
+      try {
+        const sharp = (await import("sharp")).default;
+        buf = await sharp(buf as any)
+          .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 75 })
+          .toBuffer() as any;
+        mime = "image/webp";
+      } catch { /* fallback to original */ }
+      return { base64: buf.toString("base64"), mediaType: mime };
+    }
+
     if (closeUpImage && closeUpImage.size > 0) {
-      const buf = Buffer.from(await closeUpImage.arrayBuffer());
-      extraImages.push({ base64: buf.toString("base64"), mediaType: closeUpImage.type as any });
-      console.log(`[Generate] 📷 Close-up recebido (${(closeUpImage.size / 1024).toFixed(0)}KB)`);
+      extraImages.push(await downscaleExtra(closeUpImage));
+      console.log(`[Generate] 📷 Close-up processado (${(closeUpImage.size / 1024).toFixed(0)}KB → downscaled)`);
     }
     if (secondImage && secondImage.size > 0) {
-      const buf = Buffer.from(await secondImage.arrayBuffer());
-      extraImages.push({ base64: buf.toString("base64"), mediaType: secondImage.type as any });
-      console.log(`[Generate] 📷 Segunda peça recebida (${(secondImage.size / 1024).toFixed(0)}KB)`);
+      extraImages.push(await downscaleExtra(secondImage));
+      console.log(`[Generate] 📷 Segunda peça processada (${(secondImage.size / 1024).toFixed(0)}KB → downscaled)`);
     }
 
     // ── Criar campanha no banco (se tem loja) ──
@@ -472,7 +501,7 @@ Respond with ONLY the JSON object, no markdown.`,
       // Rodar pipeline em background enquanto o stream está aberto
       (async () => {
         try {
-          const [tryOnResult, pipelineResult] = await Promise.all([
+          const [tryOnSettled, pipelineSettled] = await Promise.allSettled([
             runTryOn(),
             runCampaignPipeline(
               {
@@ -491,6 +520,7 @@ Respond with ONLY the JSON object, no markdown.`,
                 backgroundType: backgroundType || undefined,
                 storeId: store?.id,
                 campaignId: campaignRecord?.id,
+                signal: request.signal,
               },
               async (step, label, progress) => {
                 console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
@@ -498,6 +528,21 @@ Respond with ONLY the JSON object, no markdown.`,
               }
             ),
           ]);
+
+          // Extrair resultados com tratamento de falha parcial
+          const tryOnResult = tryOnSettled.status === "fulfilled"
+            ? tryOnSettled.value
+            : { url: null, provider: null, debug: `TryOn failed: ${(tryOnSettled as PromiseRejectedResult).reason?.message || "unknown"}` };
+
+          if (tryOnSettled.status === "rejected") {
+            console.warn(`[Generate] ⚠️ TryOn falhou (partial success): ${(tryOnSettled as PromiseRejectedResult).reason?.message}`);
+          }
+
+          // Pipeline é obrigatório — se falhou, propaga o erro
+          if (pipelineSettled.status === "rejected") {
+            throw pipelineSettled.reason;
+          }
+          const pipelineResult = pipelineSettled.value;
 
           // Registrar custo do try-on
           if (tryOnResult.url && tryOnResult.provider && store) {

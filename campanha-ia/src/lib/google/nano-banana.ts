@@ -61,9 +61,8 @@ async function logNanoBananaCost(
     // Se temos tokens reais, calcular custo real
     if (inputTokens > 0 || outputTokens > 0) {
       const pricing = await getModelPricing();
-      // Gemini imagen usa pricing de flash para tokens de texto, mas output de imagem tem pricing separado
-      // Usar o pricing do modelo ou um fallback razoável
-      const modelPrice = pricing["gemini-2.5-flash"] || { inputPerMTok: 0.30, outputPerMTok: 2.50 };
+      // Usar pricing do modelo real (Nano Banana 2) ou fallback
+      const modelPrice = pricing[MODEL] || pricing["gemini-3.1-flash-image-preview"] || { inputPerMTok: 0.50, outputPerMTok: 3.00 };
       costUsd = (inputTokens * modelPrice.inputPerMTok) / 1_000_000
               + (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
     }
@@ -197,7 +196,7 @@ Rules:
     const qaStart = Date.now();
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: process.env.AI_MODEL_GEMINI_FLASH || "gemini-3-flash-preview",
       contents: [{ role: "user", parts }],
       config: {
         temperature: 0.2,
@@ -579,8 +578,22 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
             };
           }
 
-          // ❌ QA reprovado — tentar 2ª geração com prompt de correção
-          console.log(`[NanoBanana] 🔄 QA reprovado — gerando 2ª tentativa com correções...`);
+          // ❌ QA reprovado — verificar se há tempo para retry
+          const elapsedSoFar = Date.now() - start;
+          const VPS_TIMEOUT_REDLINE_MS = 35_000; // 35s — limite seguro antes do 504 do NGINX
+
+          if (elapsedSoFar > VPS_TIMEOUT_REDLINE_MS) {
+            // ⏱️ Timeout Limiter: sem tempo para retry, entregar V1 com imperfeições
+            console.warn(`[NanoBanana] ⏱️ Timeout Limiter: ${elapsedSoFar}ms > ${VPS_TIMEOUT_REDLINE_MS}ms redline — entregando V1 com imperfeições`);
+            return {
+              status: "completed",
+              imageBase64: part.inlineData.data,
+              outputUrl: null,
+              durationMs: elapsedSoFar,
+            };
+          }
+
+          console.log(`[NanoBanana] 🔄 QA reprovado (${elapsedSoFar}ms elapsed, dentro do limite) — gerando 2ª tentativa com correções...`);
           try {
             const retryStart = Date.now();
 
