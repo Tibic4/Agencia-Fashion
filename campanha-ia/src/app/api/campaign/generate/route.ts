@@ -386,7 +386,7 @@ Respond with ONLY the JSON object, no markdown.`,
                 undefined,
                 vtoData,
               );
-              console.log(`[TryOn] Debug: result.status=${result.status}, outputUrl=${result.outputUrl ? 'yes' : 'no'}`);
+              console.log(`[TryOn] Debug: result.status=${result.status}, outputUrl=${result.outputUrl ? 'yes' : 'no'}, error=${result.error || 'none'}`);
               if (result.status === "completed" && result.outputUrl) {
                 console.log("[TryOn] ✅ Modelo do banco + try-on sucesso");
                 return { url: result.outputUrl, provider: "fashn.ai-bank" };
