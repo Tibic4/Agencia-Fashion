@@ -106,8 +106,9 @@ export default function CreativeStoriesPreview({
     onTemplateChange?.(id);
   };
 
-  const displayPrice = price.includes("R$") ? price : `R$ ${price}`;
-  const productText = slideProduto || `${productName} por apenas ${displayPrice}`;
+  const hasPrice = price && price.trim().length > 0;
+  const displayPrice = hasPrice ? (price.includes("R$") ? price : `R$ ${price}`) : "";
+  const productText = slideProduto || (hasPrice ? `${productName} por apenas ${displayPrice}` : productName);
 
   /* ── Download single slide ── */
   const downloadSlide = async (slideIndex: number) => {
@@ -235,7 +236,7 @@ export default function CreativeStoriesPreview({
           letterSpacing: "-0.5px",
         }}
       >
-        {slideGancho}
+        {slideGancho.length > 50 ? slideGancho.slice(0, 50) + "…" : slideGancho}
       </div>
 
       {/* "Arraste para cima" hint */}
@@ -391,7 +392,8 @@ export default function CreativeStoriesPreview({
         {productText.length > 60 ? productText.slice(0, 60) + "…" : productText}
       </div>
 
-      {/* Price badge */}
+      {/* Price badge — only if price exists */}
+      {hasPrice && (
       <div
         style={{
           position: "absolute",
@@ -418,21 +420,20 @@ export default function CreativeStoriesPreview({
           >
             {displayPrice}
           </div>
-          {price && (
-            <div
-              style={{
-                fontSize: 8,
-                fontWeight: 500,
-                color: t.textColor,
-                opacity: 0.5,
-                marginTop: 2,
-              }}
-            >
-              à vista no PIX
-            </div>
-          )}
+          <div
+            style={{
+              fontSize: 8,
+              fontWeight: 500,
+              color: t.textColor,
+              opacity: 0.5,
+              marginTop: 2,
+            }}
+          >
+            à vista no PIX
+          </div>
         </div>
       </div>
+      )}
 
       {/* Swipe hint */}
       <div
@@ -511,7 +512,7 @@ export default function CreativeStoriesPreview({
           letterSpacing: "-0.3px",
         }}
       >
-        {slideCTA}
+        {slideCTA.length > 40 ? slideCTA.slice(0, 40) + "…" : slideCTA}
       </div>
 
       {/* CTA button */}

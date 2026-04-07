@@ -385,7 +385,8 @@ async function logCostsAsync(storeId: string, campaignId: string | undefined, co
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const supabase = createAdminClient();
-    const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+    const { getExchangeRate } = await import("@/lib/pricing");
+    const exchangeRate = await getExchangeRate();
 
     const rows = costs.map((c) => ({
       store_id: storeId,
@@ -397,6 +398,7 @@ async function logCostsAsync(storeId: string, campaignId: string | undefined, co
       output_tokens: c.outputTokens,
       cost_usd: c.estimatedCostBrl / exchangeRate,
       cost_brl: c.estimatedCostBrl,
+      exchange_rate: exchangeRate,
       response_time_ms: c.durationMs,
     }));
 

@@ -67,6 +67,9 @@ export interface LLMProvider {
 // ═══════════════════════════════════════
 // Pricing (USD per million tokens)
 // ═══════════════════════════════════════
+// NOTA: Preços dinâmicos vivem em admin_settings (via @/lib/pricing).
+// O fallback abaixo é usado pelo pipeline síncrono (calculateCostBrl).
+// Para custo dinâmico assíncrono, use calculateCostBrlDynamic de @/lib/pricing.
 
 export interface ModelPricing {
   inputPerMTok: number;
@@ -84,6 +87,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
 
 /**
  * Calcula custo real em BRL baseado em tokens consumidos.
+ * Versão SÍNCRONA (usa fallback hardcoded). Para preços dinâmicos do banco,
+ * use calculateCostBrlDynamic() de @/lib/pricing.
  */
 export function calculateCostBrl(
   model: string,

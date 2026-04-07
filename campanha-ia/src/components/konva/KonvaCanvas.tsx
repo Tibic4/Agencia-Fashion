@@ -132,7 +132,8 @@ export default function KonvaCanvas({
     tr.getLayer()?.batchDraw();
   }, [selectedCustomId]);
 
-  const displayPrice = useMemo(() => formatPrice(price), [price]);
+  const hasPrice = useMemo(() => price && price.trim().length > 0, [price]);
+  const displayPrice = useMemo(() => hasPrice ? formatPrice(price) : "", [price, hasPrice]);
   const S = previewScale;
 
   // Image crop (object-fit: cover)
@@ -446,7 +447,7 @@ export default function KonvaCanvas({
               )}
 
               {/* 7. Price */}
-              {!hiddenElements.has("price") && (
+              {hasPrice && !hiddenElements.has("price") && (
               <DraggableElement
                 elementKey="price"
                 positions={positions}
