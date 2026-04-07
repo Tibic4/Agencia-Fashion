@@ -1,18 +1,29 @@
-"use client";
+import { createAdminClient } from "@/lib/supabase/admin";
+import ShowcaseSection from "@/components/ShowcaseSection";
 
-import dynamic from "next/dynamic";
+/**
+ * Busca itens da vitrine no servidor (SSR/ISR).
+ * Dados já chegam no HTML — sem cascata JS → fetch → render.
+ */
+async function getShowcaseItems() {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("showcase_items")
+      .select("id, before_photo_url, after_photo_url, caption, sort_order")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
 
-const ShowcaseSection = dynamic(() => import("@/components/ShowcaseSection"), {
-  ssr: false,
-  loading: () => (
-    <section className="section" style={{ background: "var(--surface)" }}>
-      <div className="container text-center py-20">
-        <div className="w-10 h-10 border-3 border-[var(--brand-200)] border-t-[var(--brand-500)] rounded-full animate-spin mx-auto" />
-      </div>
-    </section>
-  ),
-});
+    if (error) throw error;
+    return data || [];
+  } catch {
+    return [];
+  }
+}
 
-export default function ShowcaseSectionLoader() {
-  return <ShowcaseSection />;
+export default async function ShowcaseSectionSSR() {
+  const items = await getShowcaseItems();
+  if (items.length === 0) return null;
+  return <ShowcaseSection items={items} />;
 }
