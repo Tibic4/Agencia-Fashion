@@ -1,0 +1,19 @@
+Score: 53
+LCP: 9.6 s
+FCP: 2.7 s
+CLS: 0
+TBT: 630 ms
+
+Opportunities:
+- Reduce unused JavaScript (900ms)
+
+Diagnostics:
+- First Contentful Paint
+- Largest Contentful Paint
+- Speed Index
+- Total Blocking Time
+- Max Potential First Input Delay
+- Time to Interactive
+- LCP breakdown
+- LCP request discovery
+- Network dependency tree
