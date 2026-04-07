@@ -19,6 +19,7 @@ interface KonvaStoriesCompositorProps {
   slideProduto?: string;
   slideCTA?: string;
   productImageUrl?: string | null;
+  modelImageUrl?: string | null;   // VTO model image
   storeName?: string;
   templateId?: string;
   onTemplateChange?: (id: string) => void;
@@ -86,6 +87,7 @@ export default function KonvaStoriesCompositor({
   slideProduto,
   slideCTA = "Corre que é só hoje! 🔥",
   productImageUrl,
+  modelImageUrl,
   storeName = "CriaLook",
   templateId = "elegant_dark",
   onTemplateChange,
@@ -397,6 +399,86 @@ export default function KonvaStoriesCompositor({
           })}
         </div>
 
+        {/* Selected element control bar */}
+        {selectedIds[activeSlide] && (() => {
+          const selId = selectedIds[activeSlide]!;
+          const elDef = currentElements.find((e) => e.key === selId);
+          const selLabel = elDef?.label ?? selId;
+          const selIcon = elDef?.icon ?? "📦";
+          const curFont = (fontSizes[activeSlide] as Record<string, number>)[selId] ?? 40;
+          return (
+            <div
+              className="flex items-center gap-2 px-3 py-2 overflow-x-auto"
+              style={{
+                borderBottom: "1px solid var(--border)",
+                background: "linear-gradient(to right, rgba(139,92,246,0.06), rgba(139,92,246,0.02))",
+              }}
+            >
+              {/* Element name */}
+              <span
+                className="text-[11px] font-semibold px-2 py-0.5 rounded-md shrink-0"
+                style={{
+                  background: "var(--brand-100)",
+                  color: "var(--brand-600)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {selIcon} {selLabel}
+              </span>
+
+              {/* Font size controls */}
+              <div
+                className="flex items-center gap-0.5 rounded-lg overflow-hidden shrink-0"
+                style={{ border: "1px solid var(--border)", background: "var(--background)" }}
+              >
+                <button
+                  onClick={() => handleFontSizeChange(activeSlide, selId, curFont - 2)}
+                  className="px-2.5 py-1 text-sm font-bold hover:opacity-70 transition-opacity"
+                  style={{ color: "var(--foreground)" }}
+                  title="Diminuir fonte"
+                >
+                  A−
+                </button>
+                <span
+                  className="px-2 py-1 text-[10px] font-medium"
+                  style={{
+                    color: "var(--muted)",
+                    borderLeft: "1px solid var(--border)",
+                    borderRight: "1px solid var(--border)",
+                    minWidth: "32px",
+                    textAlign: "center",
+                  }}
+                >
+                  {curFont}px
+                </span>
+                <button
+                  onClick={() => handleFontSizeChange(activeSlide, selId, curFont + 2)}
+                  className="px-2.5 py-1 text-sm font-bold hover:opacity-70 transition-opacity"
+                  style={{ color: "var(--foreground)" }}
+                  title="Aumentar fonte"
+                >
+                  A+
+                </button>
+              </div>
+
+              {/* Delete (hide) */}
+              <button
+                onClick={() => handleToggleVisibility(activeSlide, selId)}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80 shrink-0"
+                style={{
+                  background: "#fef2f2",
+                  color: "#dc2626",
+                  border: "1px solid #fecaca",
+                  whiteSpace: "nowrap",
+                }}
+                title="Esconder elemento"
+              >
+                ✕ Esconder
+              </button>
+            </div>
+          );
+        })()}
+
         {/* Preview area — horizontal scroll on mobile */}
         <div
           className="flex items-start gap-3 p-3 sm:p-4 overflow-x-auto snap-x snap-mandatory sm:justify-center"
@@ -429,6 +511,7 @@ export default function KonvaStoriesCompositor({
                 storeName={storeName}
                 slideText={slideTexts[i]}
                 productImageUrl={productImageUrl}
+                modelImageUrl={modelImageUrl}
                 positions={positions[i]}
                 fontSizes={fontSizes[i]}
                 selectedId={selectedIds[i]}
@@ -466,7 +549,7 @@ export default function KonvaStoriesCompositor({
             color: "var(--muted)",
           }}
         >
-          ✋ Arraste textos · 🔲 Puxe os cantos para redimensionar · ✕ Exclua com o botão vermelho · ↩ Reset restaura tudo
+          ✋ Arraste textos · 🔲 Puxe os cantos para redimensionar · ↩ Reset restaura tudo
         </div>
       </div>
     </div>

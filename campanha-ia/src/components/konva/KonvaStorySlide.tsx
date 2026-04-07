@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useMemo, useCallback, useEffect } from "react";
-import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer, Circle, Line } from "react-konva";
+import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer, Circle } from "react-konva";
 import Konva from "konva";
-import type { TemplateStyle, ElementKey, KonvaDragEvent } from "./types";
+import type { TemplateStyle } from "./types";
 import { CANVAS_W, STORY_H, truncateText, formatPrice } from "./constants";
 import { useImageLoader } from "./hooks/useImageLoader";
 import { useGradientOverlay } from "./hooks/useGradientOverlay";
@@ -35,6 +35,7 @@ interface KonvaStorySlideProps {
   storeName: string;
   slideText: string;          // Main text for this slide
   productImageUrl?: string | null;
+  modelImageUrl?: string | null;   // VTO model image (priority over product)
 
   /* Interactivity */
   positions: StoryPositions;
@@ -86,7 +87,6 @@ function DraggableGroup({
   isSelected,
   onDragEnd,
   onSelect,
-  onTransformEnd,
   groupRef,
   children,
 }: {
@@ -95,7 +95,6 @@ function DraggableGroup({
   isSelected: boolean;
   onDragEnd: (key: string, x: number, y: number) => void;
   onSelect: (key: string) => void;
-  onTransformEnd?: (e: Konva.KonvaEventObject<Event>) => void;
   groupRef?: (node: Konva.Group | null) => void;
   children: React.ReactNode;
 }) {
@@ -116,7 +115,6 @@ function DraggableGroup({
         x: Math.max(40, Math.min(p.x, CANVAS_W - 40)),
         y: Math.max(40, Math.min(p.y, STORY_H - 40)),
       })}
-      onTransformEnd={onTransformEnd}
     >
       {children}
     </Group>
@@ -136,6 +134,7 @@ export default function KonvaStorySlide({
   storeName,
   slideText,
   productImageUrl,
+  modelImageUrl,
   positions,
   fontSizes,
   selectedId,
@@ -151,7 +150,9 @@ export default function KonvaStorySlide({
   const textTransformerRef = useRef<Konva.Transformer>(null);
   const textGroupRefs = useRef<Map<string, Konva.Group>>(new Map());
 
-  const { loadedImg } = useImageLoader(slideType === "produto" ? productImageUrl || null : null);
+  // Prefer VTO model image, fallback to product image
+  const bgImageSrc = slideType === "produto" ? (modelImageUrl || productImageUrl || null) : null;
+  const { loadedImg } = useImageLoader(bgImageSrc);
   const gradientImg = useGradientOverlay(t, STORY_H);
 
   const hasPrice = price && price.trim().length > 0;
@@ -177,25 +178,7 @@ export default function KonvaStorySlide({
     }
   }, [selectedId]);
 
-  // Transform end → fontSize
-  const handleTransformEnd = useCallback(
-    (key: string, e: Konva.KonvaEventObject<Event>) => {
-      const node = e.target;
-      const scaleY = node.scaleY();
-      node.scaleX(1);
-      node.scaleY(1);
-      const cur = getFontSize(key, 40);
-      onFontSizeChange?.(key, Math.round(cur * scaleY));
-    },
-    [getFontSize, onFontSizeChange]
-  );
-
-  // X button position
-  const deleteButtonPos = useMemo(() => {
-    if (!selectedId || !positions[selectedId]) return null;
-    const pos = positions[selectedId];
-    return { x: pos.x + 60, y: pos.y - 60 };
-  }, [selectedId, positions]);
+  // Native Transformer handles resizing — no manual scale reset needed
 
   // Stage click deselect
   const handleStageClick = useCallback(
@@ -314,7 +297,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "storeBadge"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("storeBadge", e)}
                   groupRef={setGroupRef("storeBadge")}
                 >
                   <Rect
@@ -347,7 +329,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "mainText"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("mainText", e)}
                   groupRef={setGroupRef("mainText")}
                 >
                   <Text
@@ -412,7 +393,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "storeBadge"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("storeBadge", e)}
                   groupRef={setGroupRef("storeBadge")}
                 >
                   <Rect
@@ -477,7 +457,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "productText"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("productText", e)}
                   groupRef={setGroupRef("productText")}
                 >
                   <Text
@@ -502,7 +481,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "priceBadge"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("priceBadge", e)}
                   groupRef={setGroupRef("priceBadge")}
                 >
                   <Rect
@@ -541,7 +519,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "ctaText"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("ctaText", e)}
                   groupRef={setGroupRef("ctaText")}
                 >
                   <Text
@@ -566,7 +543,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "ctaButton"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("ctaButton", e)}
                   groupRef={setGroupRef("ctaButton")}
                 >
                   <Rect
@@ -602,7 +578,6 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "storeName"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  onTransformEnd={(e) => handleTransformEnd("storeName", e)}
                   groupRef={setGroupRef("storeName")}
                 >
                   <Text
@@ -645,52 +620,26 @@ export default function KonvaStorySlide({
             </>
           )}
 
-          {/* Text Transformer — resize handles */}
+          {/* Text Transformer — native resize handles (no distortion) */}
           <Transformer
             ref={textTransformerRef}
-            anchorSize={12}
+            anchorSize={14}
             anchorStroke="#8b5cf6"
             anchorFill="#fff"
             borderStroke="#8b5cf6"
             borderDash={[4, 3]}
             rotateEnabled={false}
-            enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right"]}
-            keepRatio={true}
+            enabledAnchors={[
+              "top-left", "top-center", "top-right",
+              "middle-left", "middle-right",
+              "bottom-left", "bottom-center", "bottom-right",
+            ]}
+            keepRatio={false}
             boundBoxFunc={(oldBox, newBox) => {
               if (newBox.width < 20 || newBox.height < 12) return oldBox;
               return newBox;
             }}
           />
-
-          {/* X Delete button */}
-          {selectedId && deleteButtonPos && onToggleVisibility && (
-            <Group
-              x={deleteButtonPos.x}
-              y={deleteButtonPos.y}
-              onClick={() => onToggleVisibility(selectedId)}
-              onTap={() => onToggleVisibility(selectedId)}
-            >
-              <Circle
-                radius={22}
-                fill="#ef4444"
-                shadowColor="rgba(0,0,0,0.3)"
-                shadowBlur={6}
-                shadowOffsetY={2}
-              />
-              <Text
-                text="✕"
-                fontSize={22}
-                fontStyle="bold"
-                fill="white"
-                align="center"
-                verticalAlign="middle"
-                width={44}
-                height={44}
-                offsetX={22}
-                offsetY={22}
-              />
-            </Group>
-          )}
         </Layer>
       </Stage>
     </div>
