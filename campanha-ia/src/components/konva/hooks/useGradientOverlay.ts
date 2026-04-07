@@ -5,23 +5,23 @@ import type { TemplateStyle } from "../types";
 import { CANVAS_W } from "../constants";
 
 /**
- * Generates gradient overlay images for templates with caching.
- * Instead of recreating the offscreen canvas + base64 roundtrip on every
- * template switch, it caches each generated gradient by key.
+ * P1-5: Generates gradient overlay canvases for templates with caching.
+ * Uses HTMLCanvasElement directly as the image source instead of the
+ * expensive toDataURL() → base64 → Image roundtrip.
  */
 export function useGradientOverlay(
   template: TemplateStyle,
   canvasH: number
-): HTMLImageElement | null {
-  const [gradientImg, setGradientImg] = useState<HTMLImageElement | null>(null);
-  const cache = useRef<Map<string, HTMLImageElement>>(new Map());
+): HTMLCanvasElement | HTMLImageElement | null {
+  const [gradientSrc, setGradientSrc] = useState<HTMLCanvasElement | HTMLImageElement | null>(null);
+  const cache = useRef<Map<string, HTMLCanvasElement>>(new Map());
 
   useEffect(() => {
     const key = `${template.id}-${canvasH}`;
 
     // Return from cache if available
     if (cache.current.has(key)) {
-      setGradientImg(cache.current.get(key)!);
+      setGradientSrc(cache.current.get(key)!);
       return;
     }
 
@@ -44,13 +44,11 @@ export function useGradientOverlay(
     }
     // else: transparent canvas = no gradient
 
-    const img = new window.Image();
-    img.src = canvas.toDataURL();
-    img.onload = () => {
-      cache.current.set(key, img);
-      setGradientImg(img);
-    };
+    // P1-5: Use the canvas element directly — Konva accepts CanvasImageSource.
+    // Avoids the CPU-blocking PNG encode → base64 → decode roundtrip (~5-15ms saved).
+    cache.current.set(key, canvas);
+    setGradientSrc(canvas);
   }, [template, canvasH]);
 
-  return gradientImg;
+  return gradientSrc;
 }

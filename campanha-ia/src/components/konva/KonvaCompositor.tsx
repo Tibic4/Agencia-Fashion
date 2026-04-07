@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useImperativeHandle, forwardRef } from "react";
 import Konva from "konva";
 import type { KonvaCompositorProps } from "./types";
 import { templateStyles } from "./templates";
@@ -11,16 +11,27 @@ import { useDragPositions } from "./hooks/useDragPositions";
 import { useCanvasZoom } from "./hooks/useCanvasZoom";
 import { useCustomElements } from "./hooks/useCustomElements";
 import { useSnapGuides } from "./hooks/useSnapGuides";
+import { exportStageAsDataURL, exportStageAsBlob } from "./utils/exportStage";
 import TemplateSelector from "./TemplateSelector";
 import KonvaToolbar from "./KonvaToolbar";
 import KonvaCanvas from "./KonvaCanvas";
 import ImportPanel from "./ImportPanel";
 
 /**
+ * P2-3: Typed handle interface for parent component access.
+ * Replaces the old monkey-patching of `__exportAsBlob` on stage ref.
+ */
+export interface KonvaCompositorHandle {
+  exportAsBlob: () => Promise<Blob | null>;
+}
+
+/**
  * Orchestrator component — composes hooks + sub-components.
  * Supports format toggle (feed/story), undo/redo, and blob export.
+ *
+ * P2-3: Uses forwardRef + useImperativeHandle for typed API access.
  */
-export default function KonvaCompositor({
+const KonvaCompositor = forwardRef<KonvaCompositorHandle, KonvaCompositorProps>(function KonvaCompositor({
   modelImageUrl,
   productImageUrl,
   productName,
@@ -31,7 +42,7 @@ export default function KonvaCompositor({
   score,
   format: initialFormat = "feed",
   enableCustomElements = false,
-}: KonvaCompositorProps) {
+}, ref) {
   const stageRef = useRef<Konva.Stage>(null);
   const [activeTemplate, setActiveTemplate] = useState("elegant_dark");
   const [format, setFormat] = useState<"feed" | "story">(initialFormat);
@@ -86,7 +97,7 @@ export default function KonvaCompositor({
     updateTransform,
     reorderElement,
   } = useCustomElements(CANVAS_H);
-  const { guides: snapGuides } = useSnapGuides();
+  const { handleSnapCheck, clearGuides: handleSnapClear } = useSnapGuides();
 
   // ═══════════════════════════════════════
   //  Keyboard shortcuts (Ctrl+Z / Ctrl+Y)
@@ -155,29 +166,12 @@ export default function KonvaCompositor({
         const stage = stageRef.current;
         if (!stage) return;
 
-        const savedScaleX = stage.scaleX();
-        const savedScaleY = stage.scaleY();
-        const savedWidth = stage.width();
-        const savedHeight = stage.height();
-
-        stage.scale({ x: 1, y: 1 });
-        stage.width(CANVAS_W);
-        stage.height(CANVAS_H);
-        stage.batchDraw();
-
-        const uri = stage.toDataURL({
-          pixelRatio: 2,
-          mimeType: "image/png",
-          x: 0,
-          y: 0,
+        // P0-4: Use consolidated export utility — replaces duplicated scale/restore block
+        const uri = exportStageAsDataURL(stage, {
           width: CANVAS_W,
           height: CANVAS_H,
+          pixelRatio: 2,
         });
-
-        stage.scale({ x: savedScaleX, y: savedScaleY });
-        stage.width(savedWidth);
-        stage.height(savedHeight);
-        stage.batchDraw();
 
         const link = document.createElement("a");
         const safeName = productName
@@ -198,50 +192,21 @@ export default function KonvaCompositor({
     requestAnimationFrame(performExport);
   }, [pendingDownload, selectedId, productName, activeTemplate, CANVAS_H]);
 
-  // ═══════════════════════════════════════
-  //  P1-5: Export as Blob for API integration
-  // ═══════════════════════════════════════
-  const exportAsBlob = useCallback(async (): Promise<Blob | null> => {
+  // P0-4: Export as Blob for API integration — uses consolidated utility
+  const exportAsBlobFn = useCallback(async (): Promise<Blob | null> => {
     const stage = stageRef.current;
     if (!stage) return null;
-
-    const savedScaleX = stage.scaleX();
-    const savedScaleY = stage.scaleY();
-    const savedWidth = stage.width();
-    const savedHeight = stage.height();
-
-    stage.scale({ x: 1, y: 1 });
-    stage.width(CANVAS_W);
-    stage.height(CANVAS_H);
-    stage.batchDraw();
-
-    const dataUrl = stage.toDataURL({
-      pixelRatio: 2,
-      mimeType: "image/png",
-      x: 0,
-      y: 0,
+    return exportStageAsBlob(stage, {
       width: CANVAS_W,
       height: CANVAS_H,
+      pixelRatio: 2,
     });
-
-    stage.scale({ x: savedScaleX, y: savedScaleY });
-    stage.width(savedWidth);
-    stage.height(savedHeight);
-    stage.batchDraw();
-
-    // Convert data URL to Blob
-    const res = await fetch(dataUrl);
-    return res.blob();
   }, [CANVAS_H]);
 
-  // Expose exportAsBlob on ref for parent components
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stage = stageRef.current as any;
-    if (stage) {
-      stage.__exportAsBlob = exportAsBlob;
-    }
-  }, [exportAsBlob]);
+  // P2-3: Typed imperative handle — replaces monkey-patching `__exportAsBlob`
+  useImperativeHandle(ref, () => ({
+    exportAsBlob: exportAsBlobFn,
+  }), [exportAsBlobFn]);
 
   return (
     <div>
@@ -328,7 +293,8 @@ export default function KonvaCompositor({
             onCustomDragEnd={updatePosition}
             onCustomSelect={handleSelectCustom}
             onCustomTransformEnd={updateTransform}
-            snapGuides={snapGuides}
+            onSnapCheck={handleSnapCheck}
+            onSnapClear={handleSnapClear}
             fontSizes={fontSizes}
             widthOverrides={widthOverrides}
             elementOrder={elementOrder}
@@ -352,4 +318,6 @@ export default function KonvaCompositor({
       </div>
     </div>
   );
-}
+});
+
+export default KonvaCompositor;
