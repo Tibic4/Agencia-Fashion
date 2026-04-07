@@ -444,7 +444,10 @@ Respond with ONLY the JSON object, no markdown.`,
           console.log("[TryOn] Nenhum provider disponível, usando foto original");
         }
       } catch (tryOnErr) {
-        console.warn("[TryOn] Erro geral (não fatal):", tryOnErr);
+        const errMsg = tryOnErr instanceof Error ? tryOnErr.message : String(tryOnErr);
+        console.warn("[TryOn] Erro geral (não fatal):", errMsg);
+        // Salvar razão do erro para debug no response
+        (globalThis as any).__tryOnDebug = errMsg;
       }
     }
 
@@ -482,6 +485,8 @@ Respond with ONLY the JSON object, no markdown.`,
           output: mockResult.output,
           score: mockResult.score,
           durationMs: mockResult.durationMs,
+          tryOnImageUrl: tryOnImageUrl || null,
+          tryOnProvider: tryOnProvider || null,
         },
       });
     }
@@ -552,6 +557,7 @@ Respond with ONLY the JSON object, no markdown.`,
           durationMs: result.durationMs,
           tryOnImageUrl: tryOnImageUrl || null,
           tryOnProvider: tryOnProvider || null,
+          tryOnDebug: tryOnImageUrl ? undefined : ((globalThis as any).__tryOnDebug || "no provider succeeded"),
         },
       });
     } catch (pipelineError: unknown) {
