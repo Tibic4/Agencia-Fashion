@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     // ── Disparar geração de preview em background via Inngest ──
     // Fire-and-forget: retorna imediatamente, preview gera em ~20-60s
     // Retry automático: 2 tentativas com backoff exponencial
-    if (process.env.FASHN_API_KEY) {
+    if (process.env.GOOGLE_AI_API_KEY || process.env.FASHN_API_KEY) {
       try {
         await inngest.send({
           name: "model/preview.requested",
