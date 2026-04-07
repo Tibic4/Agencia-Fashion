@@ -67,7 +67,7 @@ export default function Configuracoes() {
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl" style={{ background: "var(--brand-100)" }}>
                   👗
                 </div>
-                <button className="btn-secondary text-xs !py-2">Trocar logo</button>
+                <button className="btn-secondary text-xs !py-2.5 min-h-[44px]">Trocar logo</button>
               </div>
             </div>
           </div>
@@ -78,7 +78,7 @@ export default function Configuracoes() {
           <h2 className="text-lg font-semibold mb-5">Segmento</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {["Moda feminina", "Moda masculina", "Infantil", "Plus size", "Fitness", "Acessórios"].map((seg) => (
-              <button key={seg} className="p-3 rounded-xl text-sm font-medium text-center transition-all"
+              <button key={seg} className="p-3 rounded-xl text-sm font-medium text-center transition-all min-h-[44px]"
                 style={{
                   background: seg === "Moda feminina" ? "var(--gradient-brand)" : "var(--surface)",
                   color: seg === "Moda feminina" ? "white" : "var(--muted)",
@@ -99,7 +99,7 @@ export default function Configuracoes() {
               { label: "Incluir hashtags", desc: "Gerar hashtags automaticamente para Instagram", enabled: true },
               { label: "Tom informal", desc: "Textos mais próximos e casuais", enabled: false },
             ].map((pref) => (
-              <div key={pref.label} className="flex items-center justify-between py-2">
+              <div key={pref.label} className="flex items-center justify-between py-3 min-h-[48px]">
                 <div>
                   <p className="text-sm font-medium">{pref.label}</p>
                   <p className="text-xs" style={{ color: "var(--muted)" }}>{pref.desc}</p>

@@ -119,7 +119,7 @@ export default function QuotaExceededModal({
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
+          className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
           style={{
             background: "rgba(255,255,255,0.08)",
             color: "rgba(255,255,255,0.5)",
@@ -206,7 +206,7 @@ export default function QuotaExceededModal({
         <div className="flex mx-6 mt-4 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
           <button
             onClick={() => setTab("credits")}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
             style={{
               background: tab === "credits"
                 ? "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15))"
@@ -223,7 +223,7 @@ export default function QuotaExceededModal({
           </button>
           <button
             onClick={() => setTab("upgrade")}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
             style={{
               background: tab === "upgrade"
                 ? "linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.15))"
@@ -359,7 +359,7 @@ export default function QuotaExceededModal({
                   {/* CTA button for popular */}
                   {pkg.popular && (
                     <div
-                      className="mt-3 py-2.5 rounded-xl text-center text-sm font-bold transition-all"
+                      className="mt-3 py-3 rounded-xl text-center text-sm font-bold transition-all min-h-[44px]"
                       style={{
                         background: "linear-gradient(135deg, #10B981, #06B6D4)",
                         color: "white",

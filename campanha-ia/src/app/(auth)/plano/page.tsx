@@ -213,7 +213,7 @@ export default function Plano() {
 
       {/* Current plan */}
       <div className="rounded-2xl p-6 mb-8" style={{ background: "var(--gradient-card)", border: "1px solid var(--border)" }}>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <span className="text-3xl">{currentPlanName === "Avulso" ? "💳" : plans.find((p) => p.name === currentPlanName)?.badge || "⭐"}</span>
             <div>
@@ -227,7 +227,7 @@ export default function Plano() {
             <button
               onClick={handleCancelSubscription}
               disabled={cancelLoading}
-              className="text-xs px-4 py-2 rounded-full transition-all hover:opacity-80 disabled:opacity-50"
+              className="text-xs px-4 py-2.5 rounded-full transition-all hover:opacity-80 disabled:opacity-50 min-h-[44px]"
               style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--muted)" }}
             >
               {cancelLoading ? "Cancelando..." : "Cancelar assinatura"}
@@ -299,7 +299,7 @@ export default function Plano() {
             <button
               onClick={() => handleCheckout(plan.id)}
               disabled={loading === plan.id}
-              className="w-full mt-4 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-60"
+              className="w-full mt-4 py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px]"
               style={{
                 background: plan.highlight ? "white" : "var(--gradient-brand)",
                 color: plan.highlight ? "var(--brand-600)" : "white",
@@ -317,7 +317,7 @@ export default function Plano() {
           <button key={extra.label}
             onClick={() => handleCreditCheckout(extra.packageId)}
             disabled={creditLoading === extra.packageId}
-            className="p-4 rounded-xl text-left transition-all hover:-translate-y-1 hover:shadow-lg disabled:opacity-60"
+            className="p-4 rounded-xl text-left transition-all hover:-translate-y-1 hover:shadow-lg disabled:opacity-60 min-h-[72px]"
             style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
             <p className="text-sm font-semibold">{extra.label}</p>
             <p className="text-lg font-black gradient-text mt-1">{extra.price}</p>

@@ -239,7 +239,7 @@ export default function ModeloVirtual() {
   const renderModelsList = () => (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Modelos <span className="gradient-text">Virtuais</span>
@@ -251,7 +251,7 @@ export default function ModeloVirtual() {
         </div>
         {canCreate ? (
           <button
-            className="btn-primary !py-2.5 text-sm"
+            className="btn-primary !py-2.5 text-sm min-h-[44px]"
             onClick={() => setShowCreateForm(true)}
           >
             + Nova modelo
@@ -376,7 +376,7 @@ export default function ModeloVirtual() {
                   {!model.is_active && (
                     <button
                       onClick={() => handleSetActive(model.id)}
-                      className="flex-1 text-xs font-medium py-2 rounded-lg transition-all"
+                      className="flex-1 text-xs font-medium py-2.5 rounded-lg transition-all min-h-[44px]"
                       style={{
                         background: "var(--brand-100)",
                         color: "var(--brand-700)",
@@ -389,7 +389,7 @@ export default function ModeloVirtual() {
                   <button
                     onClick={() => handleDelete(model.id)}
                     disabled={deletingId === model.id}
-                    className="text-xs font-medium py-2 px-3 rounded-lg transition-all"
+                    className="text-xs font-medium py-2.5 px-4 rounded-lg transition-all min-h-[44px]"
                     style={{
                       background: "var(--surface)",
                       color: "var(--error)",
@@ -433,7 +433,7 @@ export default function ModeloVirtual() {
       <div className="mb-8">
         <button
           onClick={() => { setShowCreateForm(false); resetForm(); }}
-          className="flex items-center gap-1 text-sm font-medium mb-4 transition hover:opacity-70 cursor-pointer"
+          className="flex items-center gap-1 text-sm font-medium mb-4 transition hover:opacity-70 cursor-pointer min-h-[44px]"
           style={{ color: "var(--muted)" }}
         >
           ← Voltar para modelos
