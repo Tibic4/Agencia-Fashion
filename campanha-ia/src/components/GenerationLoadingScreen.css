@@ -1,0 +1,690 @@
+/* ═══════════════════════════════════════
+   Generation Loading Screen — Premium
+   ═══════════════════════════════════════ */
+
+/* ── Main Container ── */
+.gen-loading {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 75vh;
+  padding: 24px 16px;
+  overflow: hidden;
+}
+
+/* ── Animated Background ── */
+.gen-loading-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.gen-loading-bg::before,
+.gen-loading-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: bg-pulse 6s ease-in-out infinite alternate;
+}
+
+.gen-loading-bg::before {
+  top: -20%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: var(--brand-400);
+  opacity: 0.06;
+}
+
+.gen-loading-bg::after {
+  bottom: -20%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: var(--accent-400);
+  opacity: 0.05;
+  animation-delay: -3s;
+}
+
+@keyframes bg-pulse {
+  0% { transform: scale(1); opacity: 0.04; }
+  100% { transform: scale(1.15); opacity: 0.08; }
+}
+
+/* ── Content wrapper ── */
+.gen-loading-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+/* ── Dynamic Icon ── */
+.gen-icon-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 28px;
+}
+
+.gen-icon-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  background: var(--gradient-brand);
+  color: white;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  box-shadow:
+    0 8px 30px rgba(236, 72, 153, 0.3),
+    0 0 60px rgba(236, 72, 153, 0.15);
+}
+
+.gen-icon-stage[data-active="false"] {
+  opacity: 0;
+  transform: scale(0.8) rotate(-10deg);
+}
+
+.gen-icon-stage[data-active="true"] {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  animation: icon-float 3s ease-in-out infinite;
+}
+
+@keyframes icon-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.03); }
+}
+
+/* Icon ring decoration */
+.gen-icon-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 28px;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(168,85,247,0.2)) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: ring-spin 8s linear infinite;
+}
+
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Title / Subtitle ── */
+.gen-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.gen-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  min-height: 20px;
+  transition: opacity 0.3s ease;
+}
+
+/* ── Progress Bar ── */
+.gen-progress-wrapper {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.gen-progress-track {
+  height: 10px;
+  border-radius: 99px;
+  background: var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.gen-progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(
+    90deg,
+    var(--brand-500) 0%,
+    var(--brand-400) 25%,
+    #f97316 50%,
+    var(--brand-400) 75%,
+    var(--brand-500) 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s ease-in-out infinite;
+  transition: width 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.gen-progress-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  opacity: 0.3;
+  filter: blur(6px);
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.gen-progress-glow {
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--gradient-brand);
+  filter: blur(12px);
+  opacity: 0.4;
+  transition: width 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.gen-progress-percent {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--brand-500), var(--accent-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Fashion Facts (injected) ── */
+.fashion-facts-wrapper {
+  margin: 20px 0 24px;
+}
+
+.fashion-fact-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 110px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fashion-fact-emoji {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.fashion-fact-category {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+
+.fashion-fact-text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--foreground);
+  max-width: 340px;
+  margin: 0;
+  text-align: center;
+}
+
+.fashion-fact-source {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.fashion-fact-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.fashion-fact-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+/* ── Steps List ── */
+.gen-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.gen-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  padding: 6px 0;
+  transition: all 0.4s ease;
+  transform: translateX(0);
+  opacity: 0.25;
+}
+
+.gen-step[data-state="done"] {
+  opacity: 1;
+  color: var(--success);
+}
+
+.gen-step[data-state="active"] {
+  opacity: 1;
+  color: var(--brand-500);
+  font-weight: 600;
+}
+
+.gen-step[data-state="pending"] {
+  opacity: 0.25;
+  color: var(--muted);
+}
+
+/* Step enter animation */
+.gen-step-enter {
+  animation: step-slide-in 0.4s ease-out forwards;
+}
+
+@keyframes step-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Step indicator */
+.gen-step-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.gen-step-icon[data-state="done"] {
+  background: var(--success);
+  color: white;
+  animation: check-bounce 0.4s ease;
+}
+
+.gen-step-icon[data-state="active"] {
+  background: var(--brand-500);
+  color: white;
+  animation: active-pulse 2s ease-in-out infinite;
+}
+
+.gen-step-icon[data-state="pending"] {
+  background: var(--border);
+  color: var(--muted);
+}
+
+@keyframes check-bounce {
+  0% { transform: scale(0.6); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes active-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(236, 72, 153, 0); }
+}
+
+/* ── Result Button ── */
+.gen-result-btn {
+  margin-top: 28px;
+  animation: result-appear 0.6s ease-out forwards;
+}
+
+@keyframes result-appear {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Floating Particles ── */
+.gen-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.gen-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation: particle-float linear infinite;
+}
+
+.gen-particle:nth-child(1) {
+  width: 6px; height: 6px;
+  background: var(--brand-400);
+  left: 10%; top: 80%;
+  opacity: 0.15;
+  animation-duration: 18s;
+  animation-delay: 0s;
+}
+.gen-particle:nth-child(2) {
+  width: 4px; height: 4px;
+  background: var(--accent-400);
+  left: 85%; top: 70%;
+  opacity: 0.12;
+  animation-duration: 22s;
+  animation-delay: -5s;
+}
+.gen-particle:nth-child(3) {
+  width: 8px; height: 8px;
+  background: var(--brand-300);
+  left: 25%; top: 90%;
+  opacity: 0.1;
+  animation-duration: 20s;
+  animation-delay: -3s;
+}
+.gen-particle:nth-child(4) {
+  width: 5px; height: 5px;
+  background: var(--accent-300);
+  left: 70%; top: 85%;
+  opacity: 0.13;
+  animation-duration: 25s;
+  animation-delay: -8s;
+}
+.gen-particle:nth-child(5) {
+  width: 7px; height: 7px;
+  background: var(--brand-500);
+  left: 50%; top: 75%;
+  opacity: 0.08;
+  animation-duration: 16s;
+  animation-delay: -2s;
+}
+.gen-particle:nth-child(6) {
+  width: 4px; height: 4px;
+  background: var(--accent-500);
+  left: 40%; top: 95%;
+  opacity: 0.14;
+  animation-duration: 21s;
+  animation-delay: -7s;
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--particle-opacity, 0.12);
+  }
+  50% {
+    transform: translateY(-45vh) translateX(30px) scale(1.2);
+  }
+  90% {
+    opacity: var(--particle-opacity, 0.12);
+  }
+  100% {
+    transform: translateY(-90vh) translateX(-20px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* ── Confetti (step = done) ── */
+.gen-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.gen-confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confetti-fall 2.5s ease-out forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(-10px) rotate(45deg) scale(1);
+  }
+  100% {
+    transform: translateY(120px) rotate(720deg) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* ── Mobile Responsive ── */
+@media (max-width: 480px) {
+  .gen-loading {
+    min-height: 80vh;
+    padding: 20px 16px;
+  }
+
+  .gen-loading-content {
+    max-width: 100%;
+  }
+
+  .gen-icon-container {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+  }
+
+  .gen-icon-stage {
+    border-radius: 18px;
+  }
+
+  .gen-icon-stage svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .gen-icon-ring {
+    inset: -6px;
+    border-radius: 22px;
+  }
+
+  .gen-title {
+    font-size: 19px;
+  }
+
+  .gen-subtitle {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .gen-progress-track {
+    height: 8px;
+  }
+
+  .gen-progress-percent {
+    font-size: 12px;
+  }
+
+  .fashion-fact-card {
+    padding: 14px 16px;
+    min-height: 100px;
+    border-radius: 14px;
+  }
+
+  .fashion-fact-emoji {
+    font-size: 22px;
+  }
+
+  .fashion-fact-category {
+    font-size: 9px;
+  }
+
+  .fashion-fact-text {
+    font-size: 13px;
+    max-width: 280px;
+  }
+
+  .fashion-fact-source {
+    font-size: 10px;
+  }
+
+  .fashion-facts-wrapper {
+    margin: 16px 0 20px;
+  }
+
+  .gen-steps {
+    gap: 4px;
+  }
+
+  .gen-step {
+    font-size: 12px;
+    gap: 10px;
+    padding: 4px 0;
+  }
+
+  .gen-step-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .gen-loading-bg::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .gen-loading-bg::after {
+    width: 350px;
+    height: 350px;
+  }
+}
+
+/* Small height screens — compact layout */
+@media (max-height: 700px) {
+  .gen-loading {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .gen-icon-container {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 16px;
+  }
+
+  .gen-title {
+    font-size: 18px;
+  }
+
+  .fashion-fact-card {
+    min-height: 90px;
+    padding: 12px 14px;
+  }
+
+  .gen-steps {
+    gap: 2px;
+  }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .gen-icon-stage[data-active="true"],
+  .gen-icon-ring,
+  .gen-particle,
+  .gen-confetti-piece {
+    animation: none;
+  }
+
+  .gen-icon-stage[data-active="true"] {
+    transform: scale(1);
+  }
+
+  .gen-progress-fill {
+    animation: none;
+  }
+
+  .gen-step-icon[data-state="active"] {
+    animation: none;
+  }
+
+  .gen-step-icon[data-state="done"] {
+    animation: none;
+  }
+
+  .gen-loading-bg::before,
+  .gen-loading-bg::after {
+    animation: none;
+  }
+
+  .gen-result-btn {
+    animation: none;
+    opacity: 1;
+  }
+
+  .gen-step-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Dark mode adjustments ── */
+@media (prefers-color-scheme: dark) {
+  .fashion-fact-card {
+    background: var(--surface);
+    border-color: var(--border);
+  }
+
+  .gen-progress-track {
+    background: var(--gray-800);
+  }
+
+  .gen-step-icon[data-state="pending"] {
+    background: var(--gray-700);
+  }
+}

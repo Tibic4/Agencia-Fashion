@@ -48,6 +48,8 @@ export default function KonvaCompositor({
   const {
     positions,
     fontSizes,
+    widthOverrides,
+    elementOrder,
     selectedId,
     setSelectedId,
     hiddenElements,
@@ -59,6 +61,9 @@ export default function KonvaCompositor({
     handleUndo,
     handleRedo,
     updateFontSize,
+    updateWidthOverride,
+    moveElementUp,
+    moveElementDown,
     canUndo,
     canRedo,
   } = useDragPositions(CANVAS_H);
@@ -319,7 +324,12 @@ export default function KonvaCompositor({
             onCustomTransformEnd={updateTransform}
             snapGuides={snapGuides}
             fontSizes={fontSizes}
+            widthOverrides={widthOverrides}
+            elementOrder={elementOrder}
             onFontSizeChange={updateFontSize}
+            onWidthChange={updateWidthOverride}
+            onMoveElementUp={moveElementUp}
+            onMoveElementDown={moveElementDown}
             onToggleVisibility={toggleVisibility}
           />
         </div>
