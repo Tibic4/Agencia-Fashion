@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { storeName, segment, city, state, instagram, model } = body;
+    const { storeName, segment, city, state, instagram, model, brandColor } = body;
 
     if (!storeName || !segment) {
       return NextResponse.json(
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       city: city || undefined,
       state: state || undefined,
       instagramHandle: instagram || undefined,
+      brandColor: brandColor || undefined,
     });
 
     // 2. Criar modelo virtual (se não pulou)

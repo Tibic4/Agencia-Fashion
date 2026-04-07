@@ -118,6 +118,7 @@ export default function GerarCampanha() {
   const [tone, setTone] = useState("");
   const [background, setBackground] = useState("branco");
   const [customBg, setCustomBg] = useState("");
+  const [storeBrandColor, setStoreBrandColor] = useState<string | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
@@ -178,6 +179,14 @@ export default function GerarCampanha() {
       .then(data => {
         setCustomModels(data.models || []);
         setUserPlan(data.plan || "free");
+      })
+      .catch(() => {});
+    // Carregar cor da marca da loja
+    fetch("/api/store")
+      .then(res => res.json())
+      .then(data => {
+        const bc = data?.data?.brand_colors as { primary?: string } | null;
+        if (bc?.primary) setStoreBrandColor(bc.primary);
       })
       .catch(() => {});
   }, []);
@@ -264,16 +273,13 @@ export default function GerarCampanha() {
     setGenerationStep(0);
     setError(null);
 
-    // Animate progress steps while API processes
-    const interval = setInterval(() => {
+    // Fallback interval — advances steps slowly if SSE events are delayed
+    const fallbackInterval = setInterval(() => {
       setGenerationStep((prev) => {
-        if (prev >= generationSteps.length - 2) {
-          // Pause at second-to-last step until API responds
-          return prev;
-        }
+        if (prev >= generationSteps.length - 2) return prev;
         return prev + 1;
       });
-    }, 2500);
+    }, 4000);
 
     try {
       // Build FormData
@@ -301,7 +307,6 @@ export default function GerarCampanha() {
 
       const bgFinal = background === "personalizado" ? `personalizado:${customBg}` : background;
       formData.append("backgroundType", bgFinal);
-      // Modelo do banco (aleatória ou selecionada)
       if (selectedModelId !== "random") {
         formData.append("modelBankId", selectedModelId);
       } else if (modelBank.length > 0) {
@@ -309,18 +314,18 @@ export default function GerarCampanha() {
         formData.append("modelBankId", randomModel.id);
       }
 
-      // Call API
+      // Call API — expects SSE (text/event-stream) response
       const response = await fetch("/api/campaign/generate", {
         method: "POST",
         body: formData,
       });
 
-      clearInterval(interval);
-
-      if (!response.ok) {
+      // Handle non-streaming error responses (quota exceeded, etc.)
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        clearInterval(fallbackInterval);
         const errorData = await response.json().catch(() => ({}));
         if (errorData.code === "QUOTA_EXCEEDED") {
-          clearInterval(interval);
           setIsGenerating(false);
           setQuotaExceeded({
             used: errorData.used || 0,
@@ -332,37 +337,87 @@ export default function GerarCampanha() {
         throw new Error(errorData.error || `Erro ${response.status}`);
       }
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Erro desconhecido");
+      if (!response.ok || !response.body) {
+        clearInterval(fallbackInterval);
+        throw new Error(`Erro ${response.status}`);
       }
 
-      // Store result for the demo page
-      sessionStorage.setItem("campaignResult", JSON.stringify(data));
+      // 🚀 Parse SSE stream for real-time progress
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      // Store form data for regeneration
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(",")[1];
-        sessionStorage.setItem("campaignFormData", JSON.stringify({
-          imageBase64: base64,
-          price,
-          objective,
-          targetAudience: audience,
-          toneOverride: tone,
-        }));
-      };
-      reader.readAsDataURL(selectedFile);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      // Show completion then redirect
-      setGenerationStep(generationSteps.length - 1);
-      setTimeout(() => {
-        router.push("/gerar/demo");
-      }, 1500);
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        let currentEvent = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith("data: ") && currentEvent) {
+            try {
+              const payload = JSON.parse(line.slice(6));
+
+              if (currentEvent === "progress") {
+                // Map SSE progress (0-100) to generationSteps index
+                const progress = payload.progress || 0;
+                const stepIndex = Math.min(
+                  Math.floor((progress / 100) * (generationSteps.length - 1)),
+                  generationSteps.length - 2
+                );
+                setGenerationStep(stepIndex);
+              } else if (currentEvent === "done") {
+                clearInterval(fallbackInterval);
+
+                // Store result for the demo page
+                sessionStorage.setItem("campaignResult", JSON.stringify(payload));
+
+                // Store form data for regeneration
+                const fileReader = new FileReader();
+                fileReader.onload = () => {
+                  const base64 = (fileReader.result as string).split(",")[1];
+                  sessionStorage.setItem("campaignFormData", JSON.stringify({
+                    imageBase64: base64,
+                    price,
+                    objective,
+                    targetAudience: audience,
+                    toneOverride: tone,
+                  }));
+                };
+                fileReader.readAsDataURL(selectedFile);
+
+                // Show completion then redirect
+                setGenerationStep(generationSteps.length - 1);
+                setTimeout(() => {
+                  router.push("/gerar/demo");
+                }, 1500);
+                return;
+              } else if (currentEvent === "error") {
+                clearInterval(fallbackInterval);
+                setIsGenerating(false);
+                setError(payload.error || "Erro ao gerar campanha");
+                return;
+              }
+            } catch {
+              // Ignore malformed JSON
+            }
+            currentEvent = "";
+          }
+        }
+      }
+
+      // If stream ended without done/error event
+      clearInterval(fallbackInterval);
+      setIsGenerating(false);
+      setError("Conexão interrompida. Tente novamente.");
 
     } catch (err: any) {
-      clearInterval(interval);
+      clearInterval(fallbackInterval);
       setIsGenerating(false);
       setError(err.message || "Erro ao gerar campanha");
     }
@@ -1192,29 +1247,50 @@ export default function GerarCampanha() {
           <div>
             <label className="block text-sm font-semibold mb-3">Cenário</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {backgrounds.map((bg) => (
-                <button
-                  key={bg.value}
-                  onClick={() => setBackground(bg.value)}
-                  className="rounded-xl overflow-hidden text-center transition-all"
-                  style={{
-                    border: background === bg.value
-                      ? "2px solid var(--brand-500)"
-                      : "1px solid var(--border)",
-                  }}
-                >
-                  {bg.thumb ? (
-                    <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover" />
-                  ) : (
-                    <div className="w-full aspect-square flex items-center justify-center" style={{ background: "var(--surface)" }}>
-                      <span className="text-lg">✏️</span>
+              {(() => {
+                // Build dynamic backgrounds with "Minha Marca" if store has brand color
+                const allBgs = [...backgrounds];
+                if (storeBrandColor) {
+                  allBgs.splice(1, 0, {
+                    value: "minha_marca",
+                    label: "Minha Marca",
+                    thumb: null,
+                    ai: true,
+                  });
+                }
+                return allBgs.map((bg) => (
+                  <button
+                    key={bg.value}
+                    onClick={() => setBackground(bg.value)}
+                    className="rounded-xl overflow-hidden text-center transition-all"
+                    style={{
+                      border: background === bg.value
+                        ? "2px solid var(--brand-500)"
+                        : "1px solid var(--border)",
+                    }}
+                  >
+                    {bg.value === "minha_marca" && storeBrandColor ? (
+                      <div
+                        className="w-full aspect-square flex items-center justify-center"
+                        style={{
+                          background: `linear-gradient(135deg, ${storeBrandColor}33 0%, ${storeBrandColor} 50%, ${storeBrandColor}CC 100%)`,
+                        }}
+                      >
+                        <span className="text-lg">🎨</span>
+                      </div>
+                    ) : bg.thumb ? (
+                      <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover" />
+                    ) : (
+                      <div className="w-full aspect-square flex items-center justify-center" style={{ background: "var(--surface)" }}>
+                        <span className="text-lg">✏️</span>
+                      </div>
+                    )}
+                    <div className="py-1.5 px-1" style={{ background: "var(--surface)" }}>
+                      <p className="text-xs font-medium">{bg.label}</p>
                     </div>
-                  )}
-                  <div className="py-1.5 px-1" style={{ background: "var(--surface)" }}>
-                    <p className="text-xs font-medium">{bg.label}</p>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ));
+              })()}
             </div>
             {background === "personalizado" && (
               <input

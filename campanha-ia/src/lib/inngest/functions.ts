@@ -75,6 +75,8 @@ interface ModelPreviewEvent {
   style: string;
   ageRange: string;
   name: string;
+  /** URL do crop facial no Supabase Storage (leve — evita limite do Inngest) */
+  faceRefUrl?: string | null;
 }
 
 /**
@@ -85,6 +87,7 @@ interface ModelPreviewEvent {
 async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<string | null> {
   try {
     const { GoogleGenAI } = await import("@google/genai");
+    const { buildGeminiParts } = await import("@/lib/model-prompts");
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       console.warn("[Gemini:Preview] GOOGLE_AI_API_KEY não configurada");
@@ -93,73 +96,44 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // ── Descritores otimizados para Gemini Image Generation ──
-    const skinDesc: Record<string, string> = {
-      branca: "fair/light complexion, warm undertones",
-      morena_clara: "light olive/honey-toned complexion",
-      morena: "warm medium-brown complexion",
-      negra: "rich dark-brown complexion, deep skin tone",
-    };
-    const hairDesc: Record<string, string> = {
-      liso: "sleek straight black hair, shoulder-length",
-      ondulado: "soft wavy dark hair, flowing past shoulders",
-      cacheado: "voluminous curly hair, natural bouncy texture",
-      crespo: "beautiful afro-textured coily hair, natural volume",
-      curto: "stylish short-cropped hair",
-    };
-    const bodyDesc: Record<string, string> = {
-      magra: "slim athletic silhouette",
-      media: "naturally proportioned average build",
-      plus_size: "confident plus-size curvy figure, full hips and natural curves",
-    };
-    const ageDesc: Record<string, string> = {
-      jovem_18_25: "a youthful 20-year-old",
-      adulta_26_35: "a 30-year-old",
-      madura_36_50: "an elegant 40-year-old",
-    };
-    const poseDesc: Record<string, string> = {
-      casual_natural: "Standing relaxed with a warm, approachable smile. Arms naturally at her sides, weight slightly on one leg.",
-      elegante: "Poised and confident with one hand gently resting on her hip. Chin slightly lifted, subtle sophisticated smile.",
-      esportivo: "Dynamic stance with energy and movement. Bright expression, slight forward lean suggesting motion.",
-      urbano: "Cool asymmetric stance with street-style attitude. One shoulder slightly forward, confident gaze.",
-    };
+    // ── Baixar foto facial se tiver URL ──
+    let faceBase64: string | null = null;
+    let faceMime = "image/jpeg";
+    if (data.faceRefUrl) {
+      try {
+        const imgRes = await fetch(data.faceRefUrl);
+        if (imgRes.ok) {
+          const buf = Buffer.from(await imgRes.arrayBuffer());
+          faceBase64 = buf.toString("base64");
+          faceMime = imgRes.headers.get("content-type") || "image/jpeg";
+          console.log(`[Gemini:Preview] 📷 Face ref baixada (${(buf.length / 1024).toFixed(0)}KB)`);
+        }
+      } catch (e) {
+        console.warn("[Gemini:Preview] ⚠️ Falha ao baixar face ref:", e);
+      }
+    }
 
-    const skin = skinDesc[data.skinTone] || "warm medium complexion";
-    const hair = hairDesc[data.hairStyle] || "soft wavy dark hair";
-    const body = bodyDesc[data.bodyType] || "average build";
-    const age = ageDesc[data.ageRange] || "a 30-year-old";
-    const pose = poseDesc[data.style] || "Standing relaxed with a natural, friendly expression.";
+    // ── Montar parts via builder centralizado ──
+    const mode = faceBase64 ? "multimodal (face ref)" : "text-only";
+    const parts = buildGeminiParts(
+      { skinTone: data.skinTone, hairStyle: data.hairStyle, bodyType: data.bodyType, style: data.style, ageRange: data.ageRange },
+      faceBase64,
+      faceMime,
+    );
 
-    // Prompt otimizado para Gemini — estilo descritivo, direção fotográfica
-    const prompt = [
-      `Generate a photorealistic full-body studio photograph of ${age} Brazilian woman.`,
-      ``,
-      `Subject: ${skin}, ${hair}, ${body}.`,
-      `Outfit: Plain white crew-neck t-shirt and simple black shorts. Barefoot.`,
-      ``,
-      `Pose: ${pose}`,
-      ``,
-      `Photography direction: Professional e-commerce fashion photography. Clean seamless white background.`,
-      `Soft diffused studio lighting from above and front, creating gentle shadows.`,
-      `Camera at eye level, 85mm portrait lens, full body framing from top of head to toes.`,
-      `Sharp focus, high resolution, natural skin texture visible.`,
-      ``,
-      `Important: Show the complete figure from head to bare feet. The entire body must be visible within the frame.`,
-    ].join("\n");
-
-    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3.1-flash-image-preview...`);
+    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3.1-flash-image-preview — modo: ${mode}...`);
 
     const response = await ai.models.generateContent({
       model: "gemini-3.1-flash-image-preview",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: [{ role: "user", parts }],
       config: {
         responseModalities: ["IMAGE", "TEXT"],
       } as any,
     });
 
     // Extrair imagem da resposta
-    const parts = response.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+    const responseParts = response.candidates?.[0]?.content?.parts || [];
+    const imagePart = responseParts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
 
     if (!imagePart || !(imagePart as any).inlineData?.data) {
       console.warn("[Gemini:Preview] ⚠️ Nenhuma imagem na resposta");

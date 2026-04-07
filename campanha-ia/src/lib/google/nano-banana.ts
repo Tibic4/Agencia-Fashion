@@ -18,11 +18,16 @@ const MODEL = "gemini-3.1-flash-image-preview";
 // ═══════════════════════════════════════
 
 export type BackgroundStyle = 
-  | "estudio"        // Fundo branco profissional (padrão)
-  | "boutique"       // Ambiente de loja/boutique elegante
-  | "urbano"         // Cenário urbano/rua da cidade
-  | "natureza"       // Ambiente ao ar livre com natureza
-  | "personalizado"; // Cliente envia foto do cenário
+  | "branco"          // Fundo branco puro e-commerce
+  | "estudio"         // Fundo branco profissional (padrão)
+  | "lifestyle"       // Ambiente lifestyle com luz natural
+  | "boutique"        // Ambiente de loja/boutique elegante
+  | "urbano"          // Cenário urbano/rua da cidade
+  | "natureza"        // Ambiente ao ar livre com natureza
+  | "interior"        // Interior de loft/apartamento
+  | "gradiente"       // Gradiente suave rosa-dourado
+  | "minha_marca"     // Cor da marca do cliente como fundo gradiente
+  | "personalizado";  // Texto livre do cliente
 
 export interface NanoBananaResult {
   status: "completed" | "failed";
@@ -155,18 +160,27 @@ ${closeUpBase64 ? "- Image 2: CLOSE-UP of the fabric texture (reference)" : ""}
 
 REFERENCE DATA:${fabricRef}${colorRef}${structureRef}${detailsRef}
 
-YOUR TASK: Compare the generated image against the original product and check for these issues:
-1. COLOR ACCURACY — Is the garment color in the generated image the same as the original? (check hue, saturation, brightness)
-2. FABRIC TEXTURE — Does the texture look correct? (smooth vs ribbed vs knit vs woven, etc.)
-3. GARMENT DETAILS — Are all details preserved? (buttons, zippers, embroidery count, prints, logos, seams)
-4. FIT & SILHOUETTE — Does the garment fit naturally? (not too tight, not too loose, correct length)
-5. MISSING ELEMENTS — Is anything from the original missing in the generated image?
+YOUR TASK: Compare the generated image against the original product using CHAIN OF THOUGHT reasoning.
+You MUST analyze step-by-step BEFORE giving your verdict:
+
+STEP 1 — COLOR: Look at both images carefully. What is the EXACT color of the garment in the original? What is the EXACT color in the generated image? Compare hue, saturation, and brightness. Are they the same?
+
+STEP 2 — TEXTURE: What fabric texture do you see in the original (ribbed, smooth, knit, woven, sheer, etc.)? What texture do you see in the generated image? Is it the same type?
+
+STEP 3 — DETAILS: Count specific details in both images. How many buttons? What neckline shape? Any embroidery, patterns, prints, or logos? Compare exact counts and positions.
+
+STEP 4 — FIT & SILHOUETTE: How does the garment sit on the body? Is the length correct? Is it too tight or too loose compared to expected fit?
+
+STEP 5 — MISSING ELEMENTS: Is anything from the original completely absent in the generated image? Check for missing accessories, belts, ties, pockets, etc.
+
+After completing ALL 5 steps with detailed observations, and ONLY THEN, provide your final assessment.
 
 RESPOND in this exact JSON format:
 {
+  "reasoning": "Brief summary of your step-by-step analysis (2-4 sentences)",
   "approved": true/false,
   "issues": [
-    {"category": "color|texture|details|fit|missing", "description": "what's wrong", "severity": "minor|major"}
+    {"category": "color|texture|details|fit|missing", "description": "what's wrong specifically", "severity": "minor|major"}
   ]
 }
 
@@ -175,7 +189,8 @@ Rules:
 - Minor issues (very slight color shift, tiny detail) → approved: true with issues noted
 - Major issues (wrong color, missing print, wrong texture, missing piece) → approved: false
 - If the image looks good overall, approve it even with minor imperfections
-- Be strict about COLOR and FABRIC TEXTURE — these are the most important`
+- Be strict about COLOR and FABRIC TEXTURE — these are the most important
+- Your reasoning field MUST show evidence of step-by-step analysis`
     });
 
     console.log(`[QA-Agent] 🔍 Analisando fidelidade do VTO...`);
@@ -204,6 +219,10 @@ Rules:
 
       const qa = JSON.parse(jsonMatch[0]);
       const majorIssues = (qa.issues || []).filter((i: any) => i.severity === "major");
+
+      if (qa.reasoning) {
+        console.log(`[QA-Agent] 🧠 CoT reasoning: ${qa.reasoning.substring(0, 150)}...`);
+      }
 
       if (qa.approved || majorIssues.length === 0) {
         const minorCount = (qa.issues || []).length - majorIssues.length;
@@ -267,6 +286,8 @@ export interface NanoBananaTryOnParams {
   customBackgroundBase64?: string;
   /** MIME type da foto de cenário personalizado */
   customBackgroundMimeType?: string;
+  /** Cor hex da marca do cliente (quando background = "minha_marca") */
+  brandColorHex?: string;
   /** Store ID para tracking de custo */
   storeId?: string;
   /** Campaign ID para tracking de custo */
@@ -284,11 +305,16 @@ export interface NanoBananaTryOnParams {
 // Cenários
 // ═══════════════════════════════════════
 
-const BACKGROUND_PROMPTS: Record<BackgroundStyle, string> = {
+const BACKGROUND_PROMPTS: Record<string, string> = {
+  branco: "Pure clean white background, minimalist fashion e-commerce style, even soft lighting.",
   estudio: "Clean white studio background with professional fashion ecommerce lighting, soft shadows.",
+  lifestyle: "Aspirational lifestyle setting, bright airy café or cozy apartment with natural window light, warm tones, slightly blurred background.",
   boutique: "Elegant fashion boutique interior background with tasteful decor, soft warm lighting, clothing racks subtly blurred in background. The environment should look like a high-end Brazilian fashion store.",
   urbano: "Urban city street background, stylish neighborhood with modern architecture, natural daylight. The model appears to be casually walking on a clean sidewalk.",
   natureza: "Beautiful outdoor setting with soft natural light, lush green vegetation slightly blurred in background, golden hour lighting.",
+  interior: "Modern minimalist loft interior with large windows and abundant natural light, neutral tones, elegant furniture subtly blurred in background.",
+  gradiente: "Smooth soft gradient background transitioning from pastel pink to warm peach-gold, fashion brand aesthetic, studio lighting.",
+  minha_marca: "Smooth elegant gradient studio background using the brand's signature color tones, professional fashion photography lighting, subtle shadows.",
   personalizado: "Use the provided background/store photo as the environment. Place the model naturally in this exact location, matching the lighting and perspective.",
 };
 
@@ -299,6 +325,7 @@ const BACKGROUND_PROMPTS: Record<BackgroundStyle, string> = {
 function buildTryOnPrompt(params: {
   description?: string;
   background?: BackgroundStyle;
+  brandColorHex?: string;
   bodyType?: "normal" | "plus";
   hasCloseUp?: boolean;
   hasSecondPiece?: boolean;
@@ -310,8 +337,23 @@ function buildTryOnPrompt(params: {
     criticalDetails?: string[];
   };
 }): string {
-  const bg = params.background || "estudio";
-  const bgPrompt = BACKGROUND_PROMPTS[bg];
+  const bgRaw = params.background || "estudio";
+  // Handle "personalizado:descrição livre" format from frontend
+  let bg = bgRaw as string;
+  let customBgText = "";
+  if (bg.startsWith("personalizado:")) {
+    customBgText = bg.substring("personalizado:".length).trim();
+    bg = "personalizado";
+  }
+  let bgPrompt = BACKGROUND_PROMPTS[bg] || BACKGROUND_PROMPTS["estudio"];
+  // Inject custom text into personalizado prompt
+  if (bg === "personalizado" && customBgText) {
+    bgPrompt = `Background scene: ${customBgText}. Place the model naturally in this setting with matching lighting and perspective. Professional fashion photography style.`;
+  }
+  // Inject brand color hex into minha_marca prompt
+  if (bg === "minha_marca" && params.brandColorHex) {
+    bgPrompt = `Smooth elegant gradient studio background centered around the brand color ${params.brandColorHex}. Create a subtle gradient from a lighter tint of this color to a darker shade, professional fashion photography lighting, subtle shadows. The background must harmonize with the brand identity.`;
+  }
   const isPlus = params.bodyType === "plus";
 
   const closeUpInstruction = params.hasCloseUp
@@ -373,7 +415,15 @@ PHOTOGRAPHY:
 14. Natural confident pose, one hand slightly on hip or relaxed, looking at camera with a natural smile
 15. Professional fashion photography lighting with subtle shadows
 16. The model should look like a REAL person, not AI-generated
-17. Output ONLY the image, absolutely no text or watermarks`;
+17. Output ONLY the image, absolutely no text or watermarks
+
+PHYSICAL REALISM REQUIREMENTS (CRITICAL):
+18. The fabric texture must be PERFECTLY UNIFORM and physically realistic across the entire garment — no smudged, melted or morphed fabric zones
+19. The model has EXACTLY two arms and two legs in anatomically correct positions with natural proportions
+20. The neckline, collar, and garment opening shapes must EXACTLY MATCH the original product photo
+21. All seams must be straight, continuous, and match the original garment construction
+22. The garment silhouette must maintain physically correct proportions — no stretched, compressed, or warped sections
+23. Fabric folds and draping must follow real-world gravity and body contour physics`;
 
   if (params.description) {
     return `${basePrompt}\n\nProduct details for reference: ${params.description}`;
@@ -456,6 +506,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       text: buildTryOnPrompt({
         description: params.productDescription,
         background: params.background,
+        brandColorHex: params.brandColorHex,
         bodyType: params.bodyType,
         hasCloseUp: !!params.closeUpBase64,
         hasSecondPiece: !!params.secondPieceBase64,
@@ -537,6 +588,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
             const correctedPrompt = buildTryOnPrompt({
               description: params.productDescription,
               background: params.background,
+              brandColorHex: params.brandColorHex,
               bodyType: params.bodyType,
               hasCloseUp: !!params.closeUpBase64,
               hasSecondPiece: !!params.secondPieceBase64,
@@ -544,7 +596,16 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
               visionData: params.visionData,
             });
 
-            const refinementSuffix = `\n\n⚠️ CRITICAL CORRECTIONS FROM QA REVIEW (you MUST fix these issues):\n${qaResult.refinementPrompt}\n\nThe PREVIOUS attempt had these exact problems. You MUST correct them in this generation. Pay extra attention to the issues listed above.`;
+            // Construir prompt de correção PRIORIZADO baseado nos problemas do QA
+            // Ordenar issues por severidade: major primeiro, depois minor
+            const sortedIssues = [...(qaResult.corrections || [])].sort((a, b) => {
+              const aSev = a.includes("COLOR") || a.includes("TEXTURE") ? 0 : 1;
+              const bSev = b.includes("COLOR") || b.includes("TEXTURE") ? 0 : 1;
+              return aSev - bSev;
+            });
+            const primaryIssue = sortedIssues[0] || qaResult.refinementPrompt?.split("\n")[0] || "";
+
+            const refinementSuffix = `\n\n[RETRY FOCUS CRITICAL OVERRIDE — this instruction has MAXIMUM PRIORITY]\n\nThe FIRST generation attempt FAILED quality control. The issues found, in order of severity:\n\n${qaResult.refinementPrompt}\n\nPRIMARY FAILURE (fix this FIRST, above all else): ${primaryIssue}\n\nIf you must trade off between perfecting the background/pose vs. getting the garment fidelity right, ALWAYS prioritize the garment fidelity. Every other instruction is secondary to correcting the issues listed above.\n\n${params.visionData?.colorHex ? `COLOR TARGET: The garment color MUST match approximately ${params.visionData.colorHex}. Do NOT shift the hue.` : ""}`;
 
             // Reusar as mesmas parts mas com prompt corrigido
             const retryParts = parts.slice(0, -1); // remove o prompt antigo
@@ -636,11 +697,16 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
  */
 export function getAvailableBackgrounds(): Array<{ id: BackgroundStyle; label: string; description: string }> {
   return [
-    { id: "estudio", label: "Estúdio Profissional", description: "Fundo branco limpo, iluminação profissional" },
-    { id: "boutique", label: "Boutique", description: "Interior de loja elegante com decoração sutil" },
+    { id: "branco", label: "Branco", description: "Fundo branco puro, estilo e-commerce" },
+    { id: "estudio", label: "Estúdio", description: "Fundo branco com iluminação profissional" },
+    { id: "lifestyle", label: "Lifestyle", description: "Ambiente aspiracional com luz natural" },
+    { id: "boutique", label: "Boutique", description: "Interior de loja elegante" },
     { id: "urbano", label: "Urbano", description: "Cenário de rua com arquitetura moderna" },
-    { id: "natureza", label: "Ao Ar Livre", description: "Ambiente natural com vegetação e luz dourada" },
-    { id: "personalizado", label: "Sua Loja", description: "Envie uma foto da sua loja como fundo" },
+    { id: "natureza", label: "Natureza", description: "Ambiente natural com vegetação e luz dourada" },
+    { id: "interior", label: "Interior", description: "Loft moderno com luz natural" },
+    { id: "gradiente", label: "Gradiente", description: "Gradiente suave rosa-dourado" },
+    { id: "minha_marca", label: "Minha Marca", description: "Fundo com a cor da sua marca" },
+    { id: "personalizado", label: "Personalizado", description: "Descreva o cenário que deseja" },
   ];
 }
 
