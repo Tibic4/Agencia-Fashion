@@ -7,7 +7,7 @@ import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, in
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { PipelineStep } from "@/types";
 
-export const maxDuration = 60;
+export const maxDuration = 180;
 export const dynamic = "force-dynamic";
 
 // v2: Pipeline híbrido precisa de pelo menos uma key. Demo mode se nenhuma key existe.

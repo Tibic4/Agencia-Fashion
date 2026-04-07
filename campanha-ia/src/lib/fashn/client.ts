@@ -237,7 +237,7 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
 /**
  * Vestir uma peça em um modelo (Virtual Try-On).
  * Requer foto de modelo com corpo visível.
- * Custo: ~4 créditos (quality mode, 2k resolution)
+ * Custo: ~2 créditos (quality mode auto, 1k resolution)
  */
 export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
   const start = Date.now();
@@ -252,8 +252,6 @@ export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string
     model_image: params.modelImage,
     product_image: params.productImage,
     prompt: finalPrompt || "Show the full outfit on the model. Keep full body visible from head to feet.",
-    generation_mode: "quality",
-    resolution: "2k",
   });
   const result = await pollResult(jobId);
   logFashnCost("virtual_try_on", "tryon-max", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
@@ -291,9 +289,9 @@ const BACKGROUND_PROMPTS: Record<string, string> = {
 };
 
 /**
- * Pipeline com Banco de Modelos: try-on + reframe + edit.
+ * Pipeline com Banco de Modelos: try-on + edit.
  * Usa uma modelo pré-gerada do banco para vestir a peça.
- * Custo Fashn: ~5-6 créditos (2-3 tryon-max + 1 reframe + 1 edit)
+ * Custo Fashn: ~3 créditos (2 tryon-max + 1 edit)
  */
 export async function generateWithModelBank(
   productImage: string,
@@ -313,23 +311,12 @@ export async function generateWithModelBank(
     return tryonResult;
   }
 
-  // Passo 2: Reframe — expandir para corpo inteiro (4:5 = Instagram Feed)
-  // Corrige cortes na cabeça/pés causados pelo enquadramento do produto
-  const reframeResult = await reframeImage({
-    image: tryonResult.outputUrl,
-    aspectRatio: "4:5",
-  });
-
-  const imageForEdit = (reframeResult.status === "completed" && reframeResult.outputUrl)
-    ? reframeResult.outputUrl
-    : tryonResult.outputUrl; // fallback se reframe falhar
-
-  // Passo 3: Edit — alisar roupa + fundo profissional
+  // Passo 2: Edit — alisar roupa + fundo profissional
   const prompt = backgroundType === "personalizado" && backgroundValue
     ? backgroundValue
     : BACKGROUND_PROMPTS[backgroundType];
 
-  return editImage({ image: imageForEdit, prompt });
+  return editImage({ image: tryonResult.outputUrl, prompt });
 }
 
 /**
