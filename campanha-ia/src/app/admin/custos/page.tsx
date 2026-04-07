@@ -22,6 +22,7 @@ async function getCosts() {
   const byProvider: Record<string, { calls: number; cost: number; tokens: number }> = {};
   (thisMonthCosts ?? []).forEach((row) => {
     const p = row.provider || "unknown";
+    if (p === "fashnai" || p === "fal" || p === "stability" || p === "openai") return; // legacy
     if (!byProvider[p]) byProvider[p] = { calls: 0, cost: 0, tokens: 0 };
     byProvider[p].calls++;
     byProvider[p].cost += row.cost_brl || 0;
@@ -68,9 +69,9 @@ async function getCosts() {
     alertMessage = "⚠️ 80%+ do budget utilizado. Monitore os gastos.";
   }
 
-  // Custo médio por campanha
+  // Custo médio por campanha — usa o step mais confiável como proxy
   const totalCampaignCalls = Object.entries(byStep)
-    .filter(([k]) => k === "vision" || k === "strategy" || k === "copywriter")
+    .filter(([k]) => k === "nano_banana" || k === "vision" || k === "copywriter")
     .reduce((s, [, v]) => Math.max(s, v.calls), 0);
   const avgCostPerCampaign = totalCampaignCalls > 0 ? totalThisMonth / totalCampaignCalls : 0;
 
