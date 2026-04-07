@@ -92,7 +92,6 @@ export default function FloatingWhatsApp() {
             src="/zap-buton.png"
             alt="WhatsApp"
             fill
-            unoptimized
             className="object-contain"
           />
         </div>
