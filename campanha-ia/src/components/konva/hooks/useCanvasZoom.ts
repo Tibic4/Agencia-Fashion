@@ -19,14 +19,16 @@ interface UseCanvasZoomResult {
 }
 
 /**
- * Manages responsive zoom with ResizeObserver (no window resize listener).
+ * Manages responsive zoom with ResizeObserver.
+ * ResizeObserver only auto-fits on initial load; manual zoom is preserved.
  */
 export function useCanvasZoom(): UseCanvasZoomResult {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [previewScale, setPreviewScale] = useState(DEFAULT_PREVIEW_SCALE);
   const [maxAutoScale, setMaxAutoScale] = useState(DEFAULT_PREVIEW_SCALE);
+  const userZoomedRef = useRef(false);
 
-  // Use ResizeObserver instead of window.addEventListener("resize")
+  // Auto-fit on mount and resize (only if user hasn't manually zoomed)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -36,7 +38,10 @@ export function useCanvasZoom(): UseCanvasZoomResult {
       const idealScale = containerW / CANVAS_W;
       const clamped = Math.max(MIN_PREVIEW_SCALE, Math.min(DEFAULT_PREVIEW_SCALE, idealScale));
       setMaxAutoScale(clamped);
-      setPreviewScale(clamped);
+      // Only auto-set scale if the user hasn't manually zoomed
+      if (!userZoomedRef.current) {
+        setPreviewScale(clamped);
+      }
     });
 
     observer.observe(el);
@@ -44,14 +49,17 @@ export function useCanvasZoom(): UseCanvasZoomResult {
   }, []);
 
   const handleZoomIn = useCallback(() => {
-    setPreviewScale((s) => Math.min(MAX_PREVIEW_SCALE, s + ZOOM_STEP));
+    userZoomedRef.current = true;
+    setPreviewScale((s) => Math.min(MAX_PREVIEW_SCALE, +(s + ZOOM_STEP).toFixed(2)));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setPreviewScale((s) => Math.max(MIN_PREVIEW_SCALE, s - ZOOM_STEP));
+    userZoomedRef.current = true;
+    setPreviewScale((s) => Math.max(MIN_PREVIEW_SCALE, +(s - ZOOM_STEP).toFixed(2)));
   }, []);
 
   const handleZoomReset = useCallback(() => {
+    userZoomedRef.current = false;
     setPreviewScale(maxAutoScale);
   }, [maxAutoScale]);
 
