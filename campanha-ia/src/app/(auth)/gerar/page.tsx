@@ -676,7 +676,7 @@ export default function GerarCampanha() {
                     <button
                       key={m.value}
                       onClick={() => setMaterial(material === m.value ? "" : m.value)}
-                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+                      className="px-3.5 py-2 rounded-lg text-sm font-medium transition-all min-h-[36px]"
                       style={{
                         background: material === m.value ? "var(--brand-100)" : "var(--surface)",
                         color: material === m.value ? "var(--brand-700)" : "var(--muted)",
@@ -939,7 +939,7 @@ export default function GerarCampanha() {
                   <button
                     key={f}
                     onClick={() => setModelFilter(f)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                    className="px-3 py-2 rounded-md text-xs font-medium transition-all min-h-[36px]"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
@@ -1049,14 +1049,14 @@ export default function GerarCampanha() {
                             setConfirmDeleteId(null);
                           }}
                           disabled={deletingModelId === model.id}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                          className="px-4 py-2 rounded-lg text-xs font-bold transition-all min-h-[44px]"
                           style={{ background: "#DC2626", color: "white", opacity: deletingModelId === model.id ? 0.6 : 1 }}
                         >
                           {deletingModelId === model.id ? "..." : "Sim"}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                          className="px-4 py-2 rounded-lg text-xs font-bold min-h-[44px]"
                           style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
                         >
                           Não
@@ -1149,7 +1149,7 @@ export default function GerarCampanha() {
           {/* Cenário */}
           <div>
             <label className="block text-sm font-semibold mb-3">Cenário</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {backgrounds.map((bg) => (
                 <button
                   key={bg.value}
@@ -1224,7 +1224,7 @@ export default function GerarCampanha() {
                       <button
                         key={t.value}
                         onClick={() => setTone(tone === t.value ? "" : t.value)}
-                        className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                        className="px-3.5 py-2 rounded-full text-xs font-medium transition-all min-h-[36px]"
                         style={{
                           background: tone === t.value ? "var(--brand-100)" : "var(--surface)",
                           color: tone === t.value ? "var(--brand-700)" : "var(--muted)",

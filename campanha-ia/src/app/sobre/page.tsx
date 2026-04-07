@@ -61,7 +61,7 @@ export default function Sobre() {
             <Link href="/#como-funciona" className="text-sm font-medium" style={{ color: "var(--muted)" }}>Como funciona</Link>
             <Link href="/#precos" className="text-sm font-medium" style={{ color: "var(--muted)" }}>Preços</Link>
           </nav>
-          <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-3 sm:!py-2.5 sm:!px-5">
+          <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-3 sm:!py-2.5 sm:!px-5 min-h-[44px] flex items-center">
             <span className="sm:hidden">Começar</span>
             <span className="hidden sm:inline">Testar na prática</span>
           </Link>
@@ -143,7 +143,7 @@ export default function Sobre() {
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <a
               href="mailto:contato@crialook.com.br"
-              className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5"
+              className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5 min-h-[60px]"
               style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
             >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
@@ -156,7 +156,7 @@ export default function Sobre() {
             </a>
             <a
               href="https://wa.me/553498223001"
-              className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5"
+              className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5 min-h-[60px]"
               style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
             >
               <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#dcfce7", color: "#16a34a" }}>
@@ -177,7 +177,7 @@ export default function Sobre() {
             <p className="text-sm mb-5" style={{ color: "var(--muted)" }}>
               Teste com 3 campanhas por R$ 9,90. Sem compromisso.
             </p>
-            <Link href="/sign-up" className="btn-primary text-sm !py-3 !px-8 animate-pulse-glow inline-flex">
+            <Link href="/sign-up" className="btn-primary text-sm !py-3 !px-8 animate-pulse-glow inline-flex min-h-[48px] items-center">
               <IconZap />
               Criar minha primeira campanha
               <IconArrowRight />
@@ -201,18 +201,18 @@ export default function Sobre() {
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Produto</h4>
-              <div className="space-y-2 text-sm">
-                <Link href="/#como-funciona" className="block hover:text-white transition">Como funciona</Link>
-                <Link href="/#precos" className="block hover:text-white transition">Preços</Link>
-                <Link href="/#beneficios" className="block hover:text-white transition">Benefícios</Link>
+              <div className="space-y-3 text-sm">
+                <Link href="/#como-funciona" className="block hover:text-white transition py-1">Como funciona</Link>
+                <Link href="/#precos" className="block hover:text-white transition py-1">Preços</Link>
+                <Link href="/#beneficios" className="block hover:text-white transition py-1">Benefícios</Link>
               </div>
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Legal & Contato</h4>
-              <div className="space-y-2 text-sm">
-                <Link href="/termos" className="block hover:text-white transition">Termos de Uso</Link>
-                <Link href="/privacidade" className="block hover:text-white transition">Privacidade</Link>
-                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition">contato@crialook.com.br</a>
+              <div className="space-y-3 text-sm">
+                <Link href="/termos" className="block hover:text-white transition py-1">Termos de Uso</Link>
+                <Link href="/privacidade" className="block hover:text-white transition py-1">Privacidade</Link>
+                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition py-1">contato@crialook.com.br</a>
               </div>
             </div>
           </div>

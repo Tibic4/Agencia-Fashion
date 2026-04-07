@@ -75,7 +75,7 @@ export default function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
                   isActive
                     ? "bg-amber-500/10 text-amber-400 border-l-[3px] border-amber-500"
                     : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 border-l-[3px] border-transparent"
@@ -92,7 +92,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-gray-800 space-y-3">
           <Link
             href="/gerar"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 transition"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 transition min-h-[44px]"
           >
             <IconArrowLeft />
             Voltar ao app
@@ -118,12 +118,12 @@ export default function AdminLayout({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/gerar" className="p-2 rounded-lg text-gray-500 hover:text-white transition">
+          <Link href="/gerar" className="p-2 rounded-lg text-gray-500 hover:text-white transition min-h-[44px] min-w-[44px] flex items-center justify-center">
             <IconArrowLeft />
           </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-gray-400 hover:text-white transition"
+            className="p-2 rounded-lg text-gray-400 hover:text-white transition min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             {mobileMenuOpen ? <IconX /> : <IconMenu />}
           </button>
@@ -146,7 +146,7 @@ export default function AdminLayout({
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] ${
                       isActive
                         ? "bg-amber-500/10 text-amber-400"
                         : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/50"
@@ -169,7 +169,7 @@ export default function AdminLayout({
       )}
 
       {/* Mobile Bottom Nav — quick access to top 5 items */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 flex items-center justify-around px-1 py-1.5 safe-area-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 flex items-center justify-around px-1 py-1 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         {adminNav.slice(0, 5).map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== "/admin" && pathname.startsWith(item.href));
@@ -177,7 +177,7 @@ export default function AdminLayout({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition min-w-0 ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition min-w-0 min-h-[48px] justify-center ${
                 isActive ? "text-amber-400" : "text-gray-500"
               }`}
             >

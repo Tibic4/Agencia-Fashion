@@ -239,7 +239,7 @@ export default async function AdminDashboard() {
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white">Campanhas recentes</h2>
-            <a href="/admin/campanhas" className="text-xs text-amber-400 hover:text-amber-300">Ver todas →</a>
+            <a href="/admin/campanhas" className="text-xs text-amber-400 hover:text-amber-300 py-1 px-2 min-h-[44px] flex items-center">Ver todas →</a>
           </div>
           <div className="divide-y divide-gray-800">
             {m.recentCampaigns.length === 0 ? (
@@ -248,7 +248,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               m.recentCampaigns.map((campaign: Record<string, unknown>) => (
-                <div key={campaign.id as string} className="px-6 py-3 flex items-center justify-between hover:bg-gray-800/30 transition">
+                <div key={campaign.id as string} className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-800/30 transition min-h-[52px]">
                   <div>
                     <p className="text-sm text-white">{(campaign.stores as Record<string, string>)?.name || "—"}</p>
                     <p className="text-xs text-gray-500">
@@ -266,7 +266,7 @@ export default async function AdminDashboard() {
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white">Novos clientes</h2>
-            <a href="/admin/clientes" className="text-xs text-amber-400 hover:text-amber-300">Ver todos →</a>
+            <a href="/admin/clientes" className="text-xs text-amber-400 hover:text-amber-300 py-1 px-2 min-h-[44px] flex items-center">Ver todos →</a>
           </div>
           <div className="divide-y divide-gray-800">
             {m.recentStores.length === 0 ? (
@@ -275,7 +275,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               m.recentStores.map((store: Record<string, unknown>) => (
-                <div key={store.id as string} className="px-6 py-3 flex items-center justify-between hover:bg-gray-800/30 transition">
+                <div key={store.id as string} className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-800/30 transition min-h-[52px]">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
                       {(store.name as string)?.charAt(0)?.toUpperCase()}
