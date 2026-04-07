@@ -474,6 +474,7 @@ export default function ResultadoCampanha() {
               slideProduto={campaignData?.output?.instagram_stories?.slide_2}
               slideCTA={campaignData?.output?.instagram_stories?.slide_3}
               productImageUrl={productImageUrl}
+              modelImageUrl={tryOnImageUrl}
               storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
             />
           </div>
