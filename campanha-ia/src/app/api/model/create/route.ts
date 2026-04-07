@@ -74,14 +74,13 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Processar foto de referência facial (opcional) ──
+    let faceRefUrl: string | null = null;
     const facePhoto = formData.get("facePhoto") as File | null;
-    let facePhotoBuffer: Buffer | null = null;
-    let facePhotoMimeType = "image/jpeg";
 
     if (facePhoto && facePhoto.size > 0) {
       console.log(`[Model] 📷 Foto de referência recebida: ${facePhoto.name} (${(facePhoto.size / 1024).toFixed(1)}KB)`);
 
-      // Validar tipo e tamanho (rápido, não bloqueia)
+      // Validar tipo e tamanho
       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
       if (!allowedTypes.includes(facePhoto.type)) {
         return NextResponse.json({ error: "Formato de imagem não suportado. Use JPG, PNG ou WebP." }, { status: 400 });
@@ -90,12 +89,46 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Imagem muito grande. Máximo 5MB." }, { status: 400 });
       }
 
-      const ab = await facePhoto.arrayBuffer();
-      facePhotoBuffer = Buffer.from(new Uint8Array(ab));
-      facePhotoMimeType = facePhoto.type;
+      // Converter para buffer
+      const arrayBuffer = await facePhoto.arrayBuffer();
+      let processedBuffer = Buffer.from(new Uint8Array(arrayBuffer));
+      let processedMime = facePhoto.type;
+
+      // Sharp resize para reduzir tokens
+      try {
+        const sharp = (await import("sharp")).default;
+        processedBuffer = await sharp(processedBuffer as any)
+          .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toBuffer() as any;
+        processedMime = "image/jpeg";
+        console.log(`[Model] ✂️ Imagem processada: ${(processedBuffer.length / 1024).toFixed(1)}KB`);
+      } catch {
+        console.warn("[Model] ⚠️ Sharp não disponível, usando imagem original");
+      }
+
+      // Upload para Supabase Storage
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/admin");
+        const supabase = createAdminClient();
+        const ext = processedMime.includes("png") ? "png" : "jpg";
+        const filePath = `face-refs/${store.id}/${crypto.randomUUID()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("assets")
+          .upload(filePath, processedBuffer, { contentType: processedMime, upsert: true });
+
+        if (!uploadError) {
+          const { data: pub } = supabase.storage.from("assets").getPublicUrl(filePath);
+          faceRefUrl = pub.publicUrl;
+          console.log(`[Model] 💾 Face ref salva: ${faceRefUrl?.slice(0, 60)}...`);
+        }
+      } catch (uploadErr) {
+        console.warn("[Model] ⚠️ Upload da face ref falhou:", uploadErr);
+      }
     }
 
-    // ── Salvar no banco IMEDIATAMENTE (sem bloquear com Sharp/Upload) ──
+    // ── Salvar no banco ──
     const model = await createStoreModel({
       storeId: store.id,
       skinTone,
@@ -106,95 +139,48 @@ export async function POST(request: NextRequest) {
       name,
     });
 
-    // ── Retorno instantâneo (<500ms) — frontend mostra placeholder ──
-    const responsePayload = NextResponse.json({
+    // Salvar face_ref_url no modelo
+    if (faceRefUrl) {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      await supabase
+        .from("store_models")
+        .update({ face_ref_url: faceRefUrl })
+        .eq("id", model.id);
+    }
+
+    // ── Disparar geração de preview via Inngest ──
+    try {
+      await inngest.send({
+        name: "model/preview.requested",
+        data: {
+          modelId: model.id,
+          storeId: store.id,
+          skinTone,
+          hairStyle,
+          bodyType,
+          style: style || "casual_natural",
+          ageRange: ageRange || "adulta_26_35",
+          name,
+          faceRefUrl: faceRefUrl || null,
+        },
+      });
+      const mode = faceRefUrl ? "multimodal 📷" : "text-only";
+      console.log(`[Model] 🚀 Preview disparado via Inngest (${mode}) para "${name}" (model: ${model.id})`);
+    } catch (inngestErr: unknown) {
+      console.warn("[Model] ⚠️ Inngest dispatch falhou:", inngestErr instanceof Error ? inngestErr.message : inngestErr);
+    }
+
+    return NextResponse.json({
       success: true,
       data: {
         id: model.id,
         previewUrl: null,
         previewStatus: "pending",
-        hasFaceRef: !!facePhotoBuffer,
+        hasFaceRef: !!faceRefUrl,
         traits: { skinTone, hairStyle, bodyType, style, ageRange },
       },
     });
-
-    // ── Background: Sharp + Upload + Inngest (fire-and-forget) ──
-    // Não bloqueia a response — executa em paralelo após HTTP 200
-    const modelId = model.id;
-    const storeId = store.id;
-    (async () => {
-      let faceRefUrl: string | null = null;
-
-      // 1. Sharp resize (se disponível) — dentro do background, longe da main thread
-      if (facePhotoBuffer) {
-        let processedBuffer = facePhotoBuffer;
-        let processedMime = facePhotoMimeType;
-        try {
-          const sharp = (await import("sharp")).default;
-          processedBuffer = await sharp(facePhotoBuffer as any)
-            .resize(512, 512, { fit: "inside", withoutEnlargement: true })
-            .jpeg({ quality: 85 })
-            .toBuffer() as any;
-          processedMime = "image/jpeg";
-          console.log(`[Model:BG] ✂️ Imagem processada: ${(processedBuffer.length / 1024).toFixed(1)}KB`);
-        } catch {
-          console.warn("[Model:BG] ⚠️ Sharp indisponível, usando imagem original");
-          processedMime = facePhotoMimeType;
-        }
-
-        // 2. Upload para Supabase Storage
-        try {
-          const { createAdminClient } = await import("@/lib/supabase/admin");
-          const supabase = createAdminClient();
-          const ext = processedMime.includes("png") ? "png" : "jpg";
-          const filePath = `face-refs/${storeId}/${crypto.randomUUID()}.${ext}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from("assets")
-            .upload(filePath, processedBuffer, { contentType: processedMime, upsert: true });
-
-          if (!uploadError) {
-            const { data: pub } = supabase.storage.from("assets").getPublicUrl(filePath);
-            faceRefUrl = pub.publicUrl;
-            console.log(`[Model:BG] 💾 Face ref salva: ${faceRefUrl?.slice(0, 60)}...`);
-
-            // Atualizar modelo com face_ref_url
-            await supabase
-              .from("store_models")
-              .update({ face_ref_url: faceRefUrl })
-              .eq("id", modelId);
-          }
-        } catch (uploadErr) {
-          console.warn("[Model:BG] ⚠️ Upload da face ref falhou:", uploadErr);
-        }
-      }
-
-      // 3. Disparar Inngest (agora com faceRefUrl se disponível)
-      try {
-        await inngest.send({
-          name: "model/preview.requested",
-          data: {
-            modelId,
-            storeId,
-            skinTone,
-            hairStyle,
-            bodyType,
-            style: style || "casual_natural",
-            ageRange: ageRange || "adulta_26_35",
-            name,
-            faceRefUrl: faceRefUrl || null,
-          },
-        });
-        const mode = faceRefUrl ? "multimodal 📷" : "text-only";
-        console.log(`[Model:BG] 🚀 Preview disparado via Inngest (${mode}) para "${name}" (model: ${modelId})`);
-      } catch (inngestErr: unknown) {
-        console.warn("[Model:BG] ⚠️ Inngest dispatch falhou:", inngestErr instanceof Error ? inngestErr.message : inngestErr);
-      }
-    })().catch((bgErr) => {
-      console.error("[Model:BG] ❌ Erro no background:", bgErr);
-    });
-
-    return responsePayload;
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/create] Error:", msg);
