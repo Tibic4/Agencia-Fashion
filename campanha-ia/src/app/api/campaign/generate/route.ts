@@ -300,10 +300,55 @@ Respond with ONLY the JSON object, no markdown.`,
       }
     }
 
-    // ── VIRTUAL TRY-ON (Banco de Modelos → Fashn try-on) ──
-    let tryOnImageUrl: string | null = null;
-    let tryOnProvider: string | null = null;
-    if (store) {
+    // ── DEMO MODE (antes de paralelizar) ──
+    if (IS_DEMO_MODE) {
+      console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock");
+      const mockResult = await runMockPipeline(3000);
+
+      if (campaignRecord) {
+        await savePipelineResult({
+          campaignId: campaignRecord.id,
+          durationMs: mockResult.durationMs,
+          vision: mockResult.vision as unknown as Record<string, unknown>,
+          strategy: mockResult.strategy as unknown as Record<string, unknown>,
+          output: mockResult.output as unknown as Record<string, unknown>,
+          score: mockResult.score as unknown as Record<string, unknown>,
+        });
+        if (needsAvulsoCredit) {
+          await consumeCredit(store!.id, "campaigns");
+        } else {
+          await incrementCampaignsUsed(store!.id);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        demo: true,
+        campaignId: campaignRecord?.id || null,
+        data: {
+          vision: mockResult.vision,
+          strategy: mockResult.strategy,
+          output: mockResult.output,
+          score: mockResult.score,
+          durationMs: mockResult.durationMs,
+        },
+      });
+    }
+
+    // ── PRODUCTION: pipeline real + try-on em PARALELO ──
+    // Compor material para conjunto (duas peças com materiais diferentes)
+    let materialHint: string | undefined = material || undefined;
+    if (productType?.startsWith("conjunto:") && material2) {
+      const types = productType.replace("conjunto:", "").split("+");
+      const parts: string[] = [];
+      if (material) parts.push(`Peça 1 (${types[0] || "peça 1"}): ${material}`);
+      parts.push(`Peça 2 (${types[1] || "peça 2"}): ${material2}`);
+      materialHint = parts.join(" | ");
+    }
+
+    // ── Função try-on (roda em paralelo com pipeline) ──
+    const runTryOn = async (): Promise<{ url: string | null; provider: string | null; debug?: string }> => {
+      if (!store) return { url: null, provider: null };
       try {
         // Obter URL pública do produto
         let productUrl: string | null = null;
@@ -318,7 +363,7 @@ Respond with ONLY the JSON object, no markdown.`,
           } catch { /* ignore */ }
         }
 
-        // Prioridade 1: Modelo do banco (nova funcionalidade)
+        // Prioridade 1: Modelo do banco
         console.log(`[TryOn] Debug: modelBankId=${modelBankId}, productUrl=${productUrl ? productUrl.substring(0, 80) + '...' : 'null'}, FASHN_KEY=${!!process.env.FASHN_API_KEY}`);
         if (modelBankId && productUrl && process.env.FASHN_API_KEY) {
           try {
@@ -338,14 +383,13 @@ Respond with ONLY the JSON object, no markdown.`,
                 productUrl,
                 bankModel.image_url,
                 backgroundType as any,
-                undefined, // backgroundValue
-                vtoData, // ← VTO data do mini-vision
+                undefined,
+                vtoData,
               );
               console.log(`[TryOn] Debug: result.status=${result.status}, outputUrl=${result.outputUrl ? 'yes' : 'no'}`);
               if (result.status === "completed" && result.outputUrl) {
-                tryOnImageUrl = result.outputUrl;
-                tryOnProvider = "fashn.ai-bank";
                 console.log("[TryOn] ✅ Modelo do banco + try-on sucesso");
+                return { url: result.outputUrl, provider: "fashn.ai-bank" };
               }
             }
           } catch (e) {
@@ -356,205 +400,124 @@ Respond with ONLY the JSON object, no markdown.`,
         }
 
         // Prioridade 2: Modelo ativa da loja (legado)
-        if (!tryOnImageUrl) {
-          const model = await getActiveModel(store.id);
-          const modelImageUrl = model?.preview_url || null;
-
-          if (modelImageUrl && productUrl) {
-            let fashnEnabled = true;
-            try {
-              const { createAdminClient } = await import("@/lib/supabase/admin");
-              const supabase = createAdminClient();
-              const { data: setting } = await supabase
-                .from("admin_settings")
-                .select("value")
-                .eq("key", "enable_tryon")
-                .single();
-              fashnEnabled = setting?.value !== "false" && setting?.value !== false;
-            } catch { /* default to enabled */ }
-
-            if (fashnEnabled && process.env.FASHN_API_KEY) {
-              try {
-                const { tryOnProduct } = await import("@/lib/fashn/client");
-                console.log("[TryOn] 👗 Tentando Fashn.ai (modelo ativa da loja)...");
-                const result = await tryOnProduct({
-                  productImage: productUrl,
-                  modelImage: modelImageUrl,
-                  visionData: vtoData, // ← VTO data do mini-vision
-                });
-                if (result.status === "completed" && result.outputUrl) {
-                  tryOnImageUrl = result.outputUrl;
-                  tryOnProvider = "fashn.ai";
-                  console.log("[TryOn] ✅ Fashn.ai sucesso");
-                }
-              } catch (e) {
-                console.warn("[TryOn] Fashn.ai falhou:", e);
-              }
-            }
-
-            // Fallback: Google Nano Banana 2
-            if (!tryOnImageUrl && process.env.GOOGLE_AI_API_KEY) {
-              try {
-                const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
-                console.log("[TryOn] 🍌 Fallback Nano Banana 2...");
-                
-                // Converter URLs para base64 para o Nano Banana
-                const productRes = await fetch(productUrl);
-                const productBuf = Buffer.from(await productRes.arrayBuffer());
-                const modelRes = await fetch(modelImageUrl);
-                const modelBuf = Buffer.from(await modelRes.arrayBuffer());
-
-                const result = await nanoBananaTryOn({
-                  productImageBase64: productBuf.toString("base64"),
-                  productMimeType: "image/jpeg",
-                  modelImageBase64: modelBuf.toString("base64"),
-                  modelMimeType: "image/png",
-                  bodyType: bodyType || "normal",
-                  visionData: vtoData, // ← VTO data do mini-vision
-                });
-                if (result.status === "completed" && result.imageBase64) {
-                  // Salvar a imagem base64 como URL (data URI)
-                  tryOnImageUrl = `data:image/png;base64,${result.imageBase64}`;
-                  tryOnProvider = "nano-banana-2";
-                  console.log("[TryOn] ✅ Nano Banana 2 sucesso");
-                }
-              } catch (e) {
-                console.warn("[TryOn] Nano Banana 2 falhou:", e);
-              }
-            }
-          }
-        }
-
-        // 📊 Registrar custo do try-on
-        if (tryOnProvider && store) {
+        const activeModel = await getActiveModel(store.id);
+        if (activeModel && productUrl && process.env.FASHN_API_KEY) {
           try {
-            const { createAdminClient } = await import("@/lib/supabase/admin");
-            const supabase = createAdminClient();
-            const { getExchangeRate, getFashnCostUsd } = await import("@/lib/pricing");
-            const [exchangeRate, fashnCosts] = await Promise.all([
-              getExchangeRate(),
-              getFashnCostUsd(),
-            ]);
-            const costMap: Record<string, number> = {
-              "fashn.ai-bank": fashnCosts["tryon-max"] || 0.15,
-              "fashn.ai": fashnCosts["tryon-max"] || 0.15,
-              "fal.ai": 0.035,
-              "nano-banana-2": 0.04,
-            };
-            const costUsd = costMap[tryOnProvider] || 0.075;
-            const costBrl = costUsd * exchangeRate;
-            await supabase.from("api_cost_logs").insert({
-              store_id: store.id,
-              campaign_id: campaignRecord?.id || null,
-              provider: tryOnProvider,
-              model_used: tryOnProvider === "fal.ai" ? "idm-vton" : tryOnProvider === "nano-banana-2" ? "gemini-imagen" : "fashn-tryon",
-              action: "virtual_try_on",
-              cost_usd: costUsd,
-              cost_brl: costBrl,
-              exchange_rate: exchangeRate,
+            const { tryOnProduct } = await import("@/lib/fashn/client");
+            console.log("[TryOn] 👤 Chamando try-on com modelo ativa da loja...");
+            const result = await tryOnProduct({
+              productImage: productUrl,
+              modelImage: activeModel.image_url,
+              visionData: vtoData,
             });
-          } catch (costErr) {
-            console.warn("[TryOn] Falha ao registrar custo:", costErr);
+            if (result.status === "completed" && result.outputUrl) {
+              console.log("[TryOn] ✅ Modelo ativa + try-on sucesso");
+              return { url: result.outputUrl, provider: "fashn.ai-custom" };
+            }
+          } catch (e) {
+            console.warn("[TryOn] Modelo ativa falhou:", e instanceof Error ? e.message : e);
           }
         }
 
-        if (!tryOnImageUrl) {
-          console.log("[TryOn] Nenhum provider disponível, usando foto original");
+        // Prioridade 3: Nano Banana 2 (fallback)
+        if (process.env.GOOGLE_AI_API_KEY && activeModel) {
+          try {
+            const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
+            console.log("[TryOn] 🍌 Chamando Nano Banana 2 fallback...");
+            const productRes = await fetch(productUrl!);
+            const productBuf = Buffer.from(await productRes.arrayBuffer());
+            const modelRes = await fetch(activeModel.image_url);
+            const modelBuf = Buffer.from(await modelRes.arrayBuffer());
+            const nanoResult = await nanoBananaTryOn({
+              productImageBase64: productBuf.toString("base64"),
+              productMimeType: "image/jpeg",
+              modelImageBase64: modelBuf.toString("base64"),
+              modelMimeType: "image/png",
+              bodyType: bodyType || "normal",
+              visionData: vtoData,
+            });
+            if (nanoResult.status === "completed" && nanoResult.imageBase64) {
+              console.log("[TryOn] ✅ Nano Banana 2 sucesso");
+              return { url: `data:image/png;base64,${nanoResult.imageBase64}`, provider: "nano-banana-2" };
+            }
+          } catch (e) {
+            console.warn("[TryOn] Nano Banana falhou:", e instanceof Error ? e.message : e);
+          }
         }
+
+        console.log("[TryOn] Nenhum provider disponível, usando foto original");
+        return { url: null, provider: null, debug: "no provider succeeded" };
       } catch (tryOnErr) {
         const errMsg = tryOnErr instanceof Error ? tryOnErr.message : String(tryOnErr);
         console.warn("[TryOn] Erro geral (não fatal):", errMsg);
-        // Salvar razão do erro para debug no response
-        (globalThis as any).__tryOnDebug = errMsg;
+        return { url: null, provider: null, debug: errMsg };
       }
-    }
-
-    // ── DEMO MODE ──
-    if (IS_DEMO_MODE) {
-      console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock");
-      const mockResult = await runMockPipeline(3000);
-
-      // Persistir resultado mock no banco
-      if (campaignRecord) {
-        await savePipelineResult({
-          campaignId: campaignRecord.id,
-          durationMs: mockResult.durationMs,
-          vision: mockResult.vision as unknown as Record<string, unknown>,
-          strategy: mockResult.strategy as unknown as Record<string, unknown>,
-          output: mockResult.output as unknown as Record<string, unknown>,
-          score: mockResult.score as unknown as Record<string, unknown>,
-        });
-        // Descontar uso SOMENTE após sucesso
-        if (needsAvulsoCredit) {
-          await consumeCredit(store!.id, "campaigns");
-          console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (demo)`);
-        } else {
-          await incrementCampaignsUsed(store!.id);
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        demo: true,
-        campaignId: campaignRecord?.id || null,
-        data: {
-          vision: mockResult.vision,
-          strategy: mockResult.strategy,
-          output: mockResult.output,
-          score: mockResult.score,
-          durationMs: mockResult.durationMs,
-          tryOnImageUrl: tryOnImageUrl || null,
-          tryOnProvider: tryOnProvider || null,
-        },
-      });
-    }
-
-    // ── PRODUCTION: pipeline real ──
-    // Compor material para conjunto (duas peças com materiais diferentes)
-    let materialHint: string | undefined = material || undefined;
-    if (productType?.startsWith("conjunto:") && material2) {
-      const types = productType.replace("conjunto:", "").split("+");
-      const parts: string[] = [];
-      if (material) parts.push(`Peça 1 (${types[0] || "peça 1"}): ${material}`);
-      parts.push(`Peça 2 (${types[1] || "peça 2"}): ${material2}`);
-      materialHint = parts.join(" | ");
-    }
+    };
 
     try {
-      const result = await runCampaignPipeline(
-        {
-          imageBase64,
-          mediaType,
-          extraImages: extraImages.length > 0 ? extraImages : undefined,
-          price: priceStr,
-          objective,
-          storeName: store?.name || storeName,
-          targetAudience: targetAudience || undefined,
-          toneOverride: toneOverride || undefined,
-          storeSegment: store?.segment_primary || undefined,
-          bodyType: bodyType || "normal",
-          productType: productType || undefined,
-          material: materialHint,
-          backgroundType: backgroundType || undefined,
-          storeId: store?.id,
-          campaignId: campaignRecord?.id,
-        },
-        (step, label, progress) => {
-          console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
-        }
-      );
+      // 🚀 PARALELO: try-on + pipeline de texto rodam ao mesmo tempo
+      console.log("[Generate] 🚀 Iniciando try-on + pipeline em PARALELO...");
+      const [tryOnResult, pipelineResult] = await Promise.all([
+        runTryOn(),
+        runCampaignPipeline(
+          {
+            imageBase64,
+            mediaType,
+            extraImages: extraImages.length > 0 ? extraImages : undefined,
+            price: priceStr,
+            objective,
+            storeName: store?.name || storeName,
+            targetAudience: targetAudience || undefined,
+            toneOverride: toneOverride || undefined,
+            storeSegment: store?.segment_primary || undefined,
+            bodyType: bodyType || "normal",
+            productType: productType || undefined,
+            material: materialHint,
+            backgroundType: backgroundType || undefined,
+            storeId: store?.id,
+            campaignId: campaignRecord?.id,
+          },
+          (step, label, progress) => {
+            console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
+          }
+        ),
+      ]);
+
+      // Registrar custo do try-on (não bloqueia response)
+      if (tryOnResult.url && tryOnResult.provider && store) {
+        try {
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const supabase = createAdminClient();
+          const { getExchangeRate, getFashnCostUsd } = await import("@/lib/pricing");
+          const [exchangeRate, fashnCosts] = await Promise.all([getExchangeRate(), getFashnCostUsd()]);
+          const baseCostUsd = tryOnResult.provider === "fashn.ai-bank"
+            ? (fashnCosts["tryon-max"] ?? 0.15) + (fashnCosts["edit"] ?? 0.075)
+            : tryOnResult.provider === "fashn.ai-custom"
+              ? (fashnCosts["tryon-max"] ?? 0.15)
+              : 0.04;
+          await supabase.from("api_cost_logs").insert({
+            store_id: store.id,
+            campaign_id: campaignRecord?.id || null,
+            provider: tryOnResult.provider.includes("fashn") ? "fashn.ai" : "google",
+            model_used: tryOnResult.provider === "nano-banana-2" ? "gemini-imagen" : "fashn-tryon",
+            action: "virtual_try_on",
+            cost_usd: baseCostUsd,
+            cost_brl: baseCostUsd * exchangeRate,
+            exchange_rate: exchangeRate,
+          });
+        } catch { /* ignore cost log failure */ }
+      }
 
       // Persistir resultado no banco
       if (campaignRecord) {
         await savePipelineResult({
           campaignId: campaignRecord.id,
-          durationMs: result.durationMs,
-          vision: result.vision as unknown as Record<string, unknown>,
-          strategy: result.strategy as unknown as Record<string, unknown>,
-          output: result.output as unknown as Record<string, unknown>,
-          score: result.score as unknown as Record<string, unknown>,
+          durationMs: pipelineResult.durationMs,
+          vision: pipelineResult.vision as unknown as Record<string, unknown>,
+          strategy: pipelineResult.strategy as unknown as Record<string, unknown>,
+          output: pipelineResult.output as unknown as Record<string, unknown>,
+          score: pipelineResult.score as unknown as Record<string, unknown>,
         });
-        // Descontar uso SOMENTE após sucesso
         if (needsAvulsoCredit) {
           await consumeCredit(store!.id, "campaigns");
           console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (produção)`);
@@ -568,14 +531,14 @@ Respond with ONLY the JSON object, no markdown.`,
         demo: false,
         campaignId: campaignRecord?.id || null,
         data: {
-          vision: result.vision,
-          strategy: result.strategy,
-          output: result.output,
-          score: result.score,
-          durationMs: result.durationMs,
-          tryOnImageUrl: tryOnImageUrl || null,
-          tryOnProvider: tryOnProvider || null,
-          tryOnDebug: tryOnImageUrl ? undefined : ((globalThis as any).__tryOnDebug || "no provider succeeded"),
+          vision: pipelineResult.vision,
+          strategy: pipelineResult.strategy,
+          output: pipelineResult.output,
+          score: pipelineResult.score,
+          durationMs: pipelineResult.durationMs,
+          tryOnImageUrl: tryOnResult.url || null,
+          tryOnProvider: tryOnResult.provider || null,
+          tryOnDebug: tryOnResult.url ? undefined : (tryOnResult.debug || "no provider succeeded"),
         },
       });
     } catch (pipelineError: unknown) {

@@ -63,7 +63,7 @@ export const generateCampaignJob = inngest.createFunction(
 );
 
 // ═══════════════════════════════════════════════════════════
-// MODEL PREVIEW — Geração assíncrona em background
+// MODEL PREVIEW — Gemini primário + Fashn.ai fallback
 // ═══════════════════════════════════════════════════════════
 
 interface ModelPreviewEvent {
@@ -78,10 +78,131 @@ interface ModelPreviewEvent {
 }
 
 /**
+ * Gera preview de modelo via Gemini 3.1 Flash Image.
+ * Custo: ~$0.001/imagem (~R$ 0,006) — 70x mais barato que Fashn.
+ * Retorna URL pública no Supabase Storage ou null se falhar.
+ */
+async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<string | null> {
+  try {
+    const { GoogleGenAI } = await import("@google/genai");
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) {
+      console.warn("[Gemini:Preview] GOOGLE_AI_API_KEY não configurada");
+      return null;
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    // ── Descritores otimizados para Gemini Image Generation ──
+    const skinDesc: Record<string, string> = {
+      branca: "fair/light complexion, warm undertones",
+      morena_clara: "light olive/honey-toned complexion",
+      morena: "warm medium-brown complexion",
+      negra: "rich dark-brown complexion, deep skin tone",
+    };
+    const hairDesc: Record<string, string> = {
+      liso: "sleek straight black hair, shoulder-length",
+      ondulado: "soft wavy dark hair, flowing past shoulders",
+      cacheado: "voluminous curly hair, natural bouncy texture",
+      crespo: "beautiful afro-textured coily hair, natural volume",
+      curto: "stylish short-cropped hair",
+    };
+    const bodyDesc: Record<string, string> = {
+      magra: "slim athletic silhouette",
+      media: "naturally proportioned average build",
+      plus_size: "confident plus-size curvy figure, full hips and natural curves",
+    };
+    const ageDesc: Record<string, string> = {
+      jovem_18_25: "a youthful 20-year-old",
+      adulta_26_35: "a 30-year-old",
+      madura_36_50: "an elegant 40-year-old",
+    };
+    const poseDesc: Record<string, string> = {
+      casual_natural: "Standing relaxed with a warm, approachable smile. Arms naturally at her sides, weight slightly on one leg.",
+      elegante: "Poised and confident with one hand gently resting on her hip. Chin slightly lifted, subtle sophisticated smile.",
+      esportivo: "Dynamic stance with energy and movement. Bright expression, slight forward lean suggesting motion.",
+      urbano: "Cool asymmetric stance with street-style attitude. One shoulder slightly forward, confident gaze.",
+    };
+
+    const skin = skinDesc[data.skinTone] || "warm medium complexion";
+    const hair = hairDesc[data.hairStyle] || "soft wavy dark hair";
+    const body = bodyDesc[data.bodyType] || "average build";
+    const age = ageDesc[data.ageRange] || "a 30-year-old";
+    const pose = poseDesc[data.style] || "Standing relaxed with a natural, friendly expression.";
+
+    // Prompt otimizado para Gemini — estilo descritivo, direção fotográfica
+    const prompt = [
+      `Generate a photorealistic full-body studio photograph of ${age} Brazilian woman.`,
+      ``,
+      `Subject: ${skin}, ${hair}, ${body}.`,
+      `Outfit: Plain white crew-neck t-shirt and simple black shorts. Barefoot.`,
+      ``,
+      `Pose: ${pose}`,
+      ``,
+      `Photography direction: Professional e-commerce fashion photography. Clean seamless white background.`,
+      `Soft diffused studio lighting from above and front, creating gentle shadows.`,
+      `Camera at eye level, 85mm portrait lens, full body framing from top of head to toes.`,
+      `Sharp focus, high resolution, natural skin texture visible.`,
+      ``,
+      `Important: Show the complete figure from head to bare feet. The entire body must be visible within the frame.`,
+    ].join("\n");
+
+    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3.1-flash-image-preview...`);
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-image-preview",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: {
+        responseModalities: ["IMAGE", "TEXT"],
+      } as any,
+    });
+
+    // Extrair imagem da resposta
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+
+    if (!imagePart || !(imagePart as any).inlineData?.data) {
+      console.warn("[Gemini:Preview] ⚠️ Nenhuma imagem na resposta");
+      return null;
+    }
+
+    const imageData = (imagePart as any).inlineData.data;
+    const mimeType = (imagePart as any).inlineData.mimeType || "image/png";
+    const ext = mimeType.includes("jpeg") ? "jpg" : "png";
+
+    // Upload para Supabase Storage
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createAdminClient();
+
+    const buffer = Buffer.from(imageData, "base64");
+    const filePath = `model-previews/${data.storeId}/${data.modelId}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("assets")
+      .upload(filePath, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn("[Gemini:Preview] ⚠️ Upload falhou:", uploadError.message);
+      return null;
+    }
+
+    const { data: publicData } = supabase.storage.from("assets").getPublicUrl(filePath);
+
+    console.log(`[Gemini:Preview] ✅ Imagem gerada e salva: ${publicData.publicUrl.slice(0, 60)}...`);
+    return publicData.publicUrl;
+  } catch (err) {
+    console.warn("[Gemini:Preview] ❌ Falha:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+/**
  * Job: Gerar preview de modelo virtual em background.
- * Disparado imediatamente após POST /api/model/create.
+ * Pipeline: Gemini 3.1 Flash Image (~R$0,006) → Fashn.ai fallback (~R$0,43)
  * Retry automático: 2 tentativas com backoff exponencial.
- * Custo: 1 crédito Fashn.ai (~$0.075 = ~R$ 0,44)
  */
 export const generateModelPreviewJob = inngest.createFunction(
   {
@@ -92,11 +213,16 @@ export const generateModelPreviewJob = inngest.createFunction(
   async ({ event, step }) => {
     const data = event.data as ModelPreviewEvent;
 
-    // Step 1: Gerar preview via Fashn.ai (polling interno ~20-60s)
-    const previewUrl = await step.run("generate-fashn-preview", async () => {
-      const { generateCustomModelPreview } = await import("@/lib/fashn/client");
+    // Step 1: Tentar Gemini (rápido, ~R$0,006)
+    const geminiUrl = await step.run("generate-gemini-preview", async () => {
+      console.log(`[Inngest:ModelPreview] 🎨 Tentando Gemini para "${data.name}" (model: ${data.modelId})...`);
+      return await generatePreviewWithGemini(data);
+    });
 
-      console.log(`[Inngest:ModelPreview] 🎨 Gerando preview para "${data.name}" (model: ${data.modelId})...`);
+    // Step 2: Fallback para Fashn.ai se Gemini falhou
+    const previewUrl = geminiUrl || await step.run("fallback-fashn-preview", async () => {
+      console.log(`[Inngest:ModelPreview] 🔄 Gemini falhou, usando Fashn.ai fallback...`);
+      const { generateCustomModelPreview } = await import("@/lib/fashn/client");
 
       const result = await generateCustomModelPreview({
         skinTone: data.skinTone,
@@ -112,11 +238,11 @@ export const generateModelPreviewJob = inngest.createFunction(
         throw new Error(`Fashn preview falhou: ${result.error || "status=" + result.status}`);
       }
 
-      console.log(`[Inngest:ModelPreview] ✅ Preview gerado: ${result.outputUrl.slice(0, 60)}...`);
+      console.log(`[Inngest:ModelPreview] ✅ Fashn fallback OK: ${result.outputUrl.slice(0, 60)}...`);
       return result.outputUrl;
     });
 
-    // Step 2: Salvar URL no banco
+    // Step 3: Salvar URL no banco
     await step.run("save-preview-url", async () => {
       const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
@@ -126,10 +252,10 @@ export const generateModelPreviewJob = inngest.createFunction(
         .update({ photo_url: previewUrl, preview_url: previewUrl })
         .eq("id", data.modelId);
 
-      console.log(`[Inngest:ModelPreview] 💾 Preview salvo no DB para model ${data.modelId}`);
+      console.log(`[Inngest:ModelPreview] 💾 Preview salvo (${geminiUrl ? "Gemini" : "Fashn"}) para model ${data.modelId}`);
     });
 
-    return { modelId: data.modelId, previewUrl };
+    return { modelId: data.modelId, previewUrl, provider: geminiUrl ? "gemini" : "fashn" };
   }
 );
 
