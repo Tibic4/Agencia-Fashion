@@ -106,7 +106,7 @@ export default function Historico() {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             <span className="gradient-text">Histórico</span>
@@ -115,7 +115,7 @@ export default function Historico() {
             {campaigns.length} campanha{campaigns.length !== 1 ? "s" : ""} gerada{campaigns.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link href="/gerar" className="btn-primary text-sm !py-2.5">
+        <Link href="/gerar" className="btn-primary text-sm !py-2.5 min-h-[44px] flex items-center justify-center">
           + Nova campanha
         </Link>
       </div>
@@ -156,7 +156,7 @@ export default function Historico() {
           <p className="text-sm mb-6 max-w-xs mx-auto" style={{ color: "var(--muted)" }}>
             Gere sua primeira campanha com IA em 60 segundos!
           </p>
-          <Link href="/gerar" className="btn-primary inline-flex">
+          <Link href="/gerar" className="btn-primary inline-flex min-h-[48px] items-center">
             ⚡ Gerar primeira campanha
           </Link>
         </div>
@@ -170,7 +170,7 @@ export default function Historico() {
               <Link
                 key={campaign.id}
                 href={`/gerar/demo?id=${campaign.id}`}
-                className="flex items-center gap-4 p-4 rounded-2xl transition-all hover:-translate-y-0.5 group"
+                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl transition-all hover:-translate-y-0.5 group min-h-[60px]"
                 style={{
                   background: "var(--background)",
                   border: "1px solid var(--border)",
@@ -178,7 +178,7 @@ export default function Historico() {
                 }}
               >
                 {/* Status icon */}
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
                   {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
                 </div>
 

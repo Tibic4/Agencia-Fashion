@@ -93,7 +93,7 @@ export default function AuthLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px]"
                 style={{
                   background: isActive ? "var(--gradient-card)" : "transparent",
                   color: isActive ? "var(--brand-600)" : "var(--muted)",
@@ -168,7 +168,7 @@ export default function AuthLayout({
             </div>
             <button
               onClick={() => signOut()}
-              className="p-1.5 rounded-lg transition hover:bg-red-50"
+              className="p-2 rounded-lg transition hover:bg-red-50 min-h-[44px] min-w-[44px] flex items-center justify-center"
               style={{ color: "var(--muted)" }}
               aria-label="Sair da conta"
             >
@@ -198,7 +198,7 @@ export default function AuthLayout({
 
       {/* Mobile Bottom Tab Bar — all 5 items */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 glass flex items-center justify-around py-1.5"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 glass flex items-center justify-around py-1 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
         style={{ borderTop: "1px solid var(--border)" }}
       >
         {navItems.map((item) => {
@@ -207,7 +207,7 @@ export default function AuthLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg transition-all min-w-[56px]"
+              className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg transition-all min-w-[56px] min-h-[48px] justify-center"
               style={{
                 color: isActive ? "var(--brand-500)" : "var(--muted)",
               }}

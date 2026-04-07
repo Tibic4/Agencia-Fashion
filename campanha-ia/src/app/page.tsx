@@ -456,7 +456,7 @@ export default function Home() {
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
-            <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto overflow-x-auto snap-x snap-mandatory pb-4 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto overflow-x-auto snap-x snap-mandatory pb-4 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
               {plans.map((plan) => (
                 <div
                   key={plan.name}
@@ -498,7 +498,7 @@ export default function Home() {
 
                   <Link
                     href="/sign-up"
-                    className="w-full text-center text-sm font-semibold py-2.5 rounded-full transition-all mb-5"
+                    className="w-full text-center text-sm font-semibold py-3 sm:py-2.5 rounded-full transition-all mb-5 min-h-[44px]"
                     style={{
                       background: plan.popular ? 'white' : 'var(--gradient-brand)',
                       color: plan.popular ? 'var(--brand-600)' : 'white',
@@ -567,19 +567,19 @@ export default function Home() {
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Produto</h4>
-              <div className="space-y-2 text-sm">
-                <a href="#como-funciona" className="block hover:text-white transition">Como funciona</a>
-                <a href="#precos" className="block hover:text-white transition">Preços</a>
-                <a href="#beneficios" className="block hover:text-white transition">Benefícios</a>
+              <div className="space-y-3 text-sm">
+                <a href="#como-funciona" className="block hover:text-white transition py-1">Como funciona</a>
+                <a href="#precos" className="block hover:text-white transition py-1">Preços</a>
+                <a href="#beneficios" className="block hover:text-white transition py-1">Benefícios</a>
               </div>
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white mb-3">Legal & Contato</h4>
-              <div className="space-y-2 text-sm">
-                <Link href="/termos" className="block hover:text-white transition">Termos de Uso</Link>
-                <Link href="/privacidade" className="block hover:text-white transition">Privacidade</Link>
-                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition">contato@crialook.com.br</a>
-                <Link href="/sobre" className="block hover:text-white transition">Sobre nós</Link>
+              <div className="space-y-3 text-sm">
+                <Link href="/termos" className="block hover:text-white transition py-1">Termos de Uso</Link>
+                <Link href="/privacidade" className="block hover:text-white transition py-1">Privacidade</Link>
+                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition py-1">contato@crialook.com.br</a>
+                <Link href="/sobre" className="block hover:text-white transition py-1">Sobre nós</Link>
               </div>
             </div>
           </div>
