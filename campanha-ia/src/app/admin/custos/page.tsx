@@ -231,7 +231,7 @@ export default async function AdminCustos() {
             {Object.entries(byStep).sort(([,a],[,b]) => b.cost - a.cost).map(([step, d]) => (
               <div key={step} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">{stepLabels[step] || step}</span>
+                  <span className="text-sm text-gray-200">{stepLabels[step] || step}</span>
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-semibold text-emerald-400">R$ {d.cost.toFixed(2)}</span>
