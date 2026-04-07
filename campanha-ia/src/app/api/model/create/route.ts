@@ -83,29 +83,26 @@ export async function POST(request: NextRequest) {
       name,
     });
 
-    // ── Disparar geração de preview em background via Inngest ──
-    // Fire-and-forget: retorna imediatamente, preview gera em ~20-60s
-    // Retry automático: 2 tentativas com backoff exponencial
-    if (process.env.GOOGLE_AI_API_KEY || process.env.FASHN_API_KEY) {
-      try {
-        await inngest.send({
-          name: "model/preview.requested",
-          data: {
-            modelId: model.id,
-            storeId: store.id,
-            skinTone,
-            hairStyle,
-            bodyType,
-            style: style || "casual_natural",
-            ageRange: ageRange || "adulta_26_35",
-            name,
-          },
-        });
-        console.log(`[Model] 🚀 Preview disparado via Inngest para "${name}" (model: ${model.id})`);
-      } catch (inngestErr) {
-        // Inngest falhou — log mas não bloqueia a criação do modelo
-        console.warn("[Model] ⚠️ Inngest dispatch falhou (preview será gerado manualmente):", inngestErr);
-      }
+    // ── Disparar geração de preview via Inngest (background) ──
+    // Pipeline: Gemini (~5-10s) → Fashn.ai fallback (~30-60s)
+    // Retry automático com backoff exponencial
+    try {
+      await inngest.send({
+        name: "model/preview.requested",
+        data: {
+          modelId: model.id,
+          storeId: store.id,
+          skinTone,
+          hairStyle,
+          bodyType,
+          style: style || "casual_natural",
+          ageRange: ageRange || "adulta_26_35",
+          name,
+        },
+      });
+      console.log(`[Model] 🚀 Preview disparado via Inngest para "${name}" (model: ${model.id})`);
+    } catch (inngestErr: unknown) {
+      console.warn("[Model] ⚠️ Inngest dispatch falhou:", inngestErr instanceof Error ? inngestErr.message : inngestErr);
     }
 
     // Retorno instantâneo (<1s) — frontend mostra placeholder
