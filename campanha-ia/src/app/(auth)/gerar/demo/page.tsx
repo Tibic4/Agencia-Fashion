@@ -137,6 +137,14 @@ export default function ResultadoCampanha() {
         setIsDemo(parsed.demo === true);
         if (parsed.data?.campaignId) setCampaignId(parsed.data.campaignId);
         if (parsed.data?.tryOnImageUrl) setTryOnImageUrl(parsed.data.tryOnImageUrl);
+        // Debug: mostrar status do try-on no console
+        console.log("[Demo] 🔍 tryOnImageUrl:", parsed.data?.tryOnImageUrl ? "✅ " + parsed.data.tryOnImageUrl.substring(0, 80) : "❌ null");
+        console.log("[Demo] 🔍 tryOnProvider:", parsed.data?.tryOnProvider || "nenhum");
+        if (parsed.data?.tryOnDebug) {
+          console.warn("[Demo] ⚠️ tryOnDebug:", parsed.data.tryOnDebug);
+        }
+      } else {
+        console.warn("[Demo] ⚠️ sessionStorage vazio — dados carregados do Supabase ou página recarregada");
       }
       // Load product image from form data
       const formStored = sessionStorage.getItem("campaignFormData");
