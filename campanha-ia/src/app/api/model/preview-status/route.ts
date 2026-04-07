@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { data: models, error } = await supabase
       .from("store_models")
-      .select("id, photo_url")
+      .select("id, preview_url")
       .eq("store_id", store.id)
       .in("id", modelIds);
 
