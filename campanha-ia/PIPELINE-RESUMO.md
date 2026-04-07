@@ -1,6 +1,6 @@
 # Pipeline de IA — Resumo Técnico
 
-> Arquitetura Híbrida: Gemini + Claude + Fashn.ai + Vision Bridge
+> Arquitetura: Gemini + Claude + QA Visual Agent (Gemini-only, sem Fashn.ai)
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## Vision Bridge (Mini-Vision VTO)
 
-Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,002) que roda **ANTES** do try-on para extrair dados técnicos do produto e instruir o Fashn.ai e Nano Banana com precisão.
+Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,002) que roda **ANTES** do try-on para extrair dados técnicos do produto e instruir o Gemini VTO com precisão.
 
 ### Dados Extraídos
 
@@ -61,37 +61,54 @@ Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,002) que roda **ANTES** do 
 
 ## Virtual Try-On (Imagem)
 
+### Provider Único: Gemini 3.1 Flash Image Preview (Nano Banana 2)
+
+| Modelo | O que faz |
+|--------|-----------|
+| `gemini-3.1-flash-image-preview` | Gera foto de modelo vestindo a peça em um só passo, com VTO data injetado no prompt |
+
+### QA Visual Agent 🔍 (NOVO)
+
+Após a 1ª geração VTO, um agente de QA compara a imagem gerada com o produto original:
+
+```
+[1ª Geração VTO] → Imagem gerada
+        ↓
+[QA Visual Agent] → Gemini 2.5 Flash (texto + visão)
+  Analisa: cor, textura, detalhes, caimento, elementos ausentes
+        ↓
+  ┌─ ✅ Aprovado → retorna imagem (maioria dos casos)
+  └─ ❌ Reprovado (problemas graves) → 2ª geração com prompt de correção
+        ↓
+  [2ª Geração VTO] → Imagem corrigida com instruções específicas
+```
+
+**Categorias de verificação:**
+
+| Categoria | Severidade | Ação |
+|-----------|-----------|------|
+| Cor ligeiramente diferente | minor | ✅ Aprova com nota |
+| Cor totalmente errada | major | ❌ Reprova + corrige |
+| Textura incorreta (ex: tricô→liso) | major | ❌ Reprova + corrige |
+| Detalhes faltando (botões, estampa) | major | ❌ Reprova + corrige |
+| Caimento estranho | minor | ✅ Aprova |
+
+**Fail-open:** Se QA falhar → aceita 1ª imagem. Se 2ª geração falhar → usa 1ª como fallback.
+
 ### Fluxo com Vision Bridge
 
 ```
 [Foto principal + Close-up + 2ª peça]
          ↓
 [Mini-Vision 🔍] → { fabricDescriptor, garmentStructure, colorHex, criticalDetails }
-         ↓                          ↓
-[Fashn.ai tryon-max]        [Nano Banana 2]
-  (sem prompt custom,         (prompt enriquecido
-   Fashn decide sozinho)       com VTO data)
-         ↓                          ↓
-[Fashn.ai edit]              resultado final
-  (BACKGROUND_PROMPTS v2
-   + negative prompts)
          ↓
-  resultado final
+[Nano Banana 2] → Gemini 3.1 Flash Image (com VTO data no prompt)
+         ↓
+[QA Visual Agent 🔍] → Gemini 2.5 Flash (verificação de fidelidade)
+         ↓
+┌─ ✅ OK → resultado final
+└─ ❌ Problemas → [Nano Banana 2 retry] → resultado corrigido
 ```
-
-### Opção A: Fashn.ai (prioridade)
-
-| Etapa | Endpoint | O que faz |
-|-------|----------|-----------|
-| Try-On | `tryon-max` | Veste a peça numa modelo do banco (sem prompt, Fashn decide) |
-| Editar | `edit` | Alisa roupa + aplica fundo profissional (BACKGROUND_PROMPTS v2) |
-| Recorte | `background-remove` | Remove fundo, gera PNG transparente |
-
-### Opção B: Nano Banana 2 (fallback)
-
-| Modelo | O que faz |
-|--------|-----------|
-| `gemini-2.5-flash-preview-image-generation` | Gera foto de modelo vestindo a peça em um só passo, com VTO data injetado no prompt |
 
 ### BACKGROUND_PROMPTS v2
 
@@ -117,10 +134,9 @@ Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,002) que roda **ANTES** do 
 ## Prioridade de Try-On
 
 ```
-1. Modelo do banco (modelBankId) → Fashn tryon-max + edit
-2. Modelo ativa da loja (legado) → Fashn tryon-max
-3. Nano Banana 2 (fallback sem Fashn) → Gemini imagen
-4. Sem try-on → usa foto original do produto
+1. Modelo do banco (modelBankId) → Gemini VTO + QA
+2. Modelo ativa da loja → Gemini VTO + QA
+3. Sem modelo → sem try-on, usa foto original
 ```
 
 ---
@@ -132,7 +148,10 @@ Foto(s) + Preço + Material + Tipo
         ↓
 [Mini-Vision 🔍] → extrai VTO data (3 fotos + material hint)
         ↓
-[Try-On] → Fashn.ai ou Nano Banana (com VTO data)
+[Try-On] → Gemini 3.1 Flash Image (com VTO data)
+        ↓
+[QA Visual 🔍] → verifica fidelidade (cor, textura, detalhes)
+  └─ reprovado? → 2ª geração com correções
         ↓
 [1] Vision (Gemini Flash) → analisa produto + campos VTO
         ↓
@@ -147,24 +166,27 @@ Score < 40? → re-executa Copy + Refine
 📦 Campanha pronta (textos + imagem try-on + score)
 ```
 
+> **Nota:** Try-On + QA rodam em PARALELO com o pipeline de texto (Steps 1-5).
+
 ---
 
 ## APIs Necessárias
 
 | API | Key | Usado para |
 |-----|-----|------------|
-| Google Gemini | `GOOGLE_AI_API_KEY` | Vision, Strategy, Refiner, Scorer, Mini-Vision VTO, Nano Banana |
+| Google Gemini | `GOOGLE_AI_API_KEY` | Vision, Strategy, Refiner, Scorer, Mini-Vision VTO, Nano Banana, QA Visual Agent |
 | Anthropic Claude | `ANTHROPIC_API_KEY` | Copywriter |
-| Fashn.ai | `FASHN_API_KEY` | Virtual Try-On (imagem) + Edit (cenário) |
 
 ## Custos por Campanha
 
-| Item | Custo |
-|------|-------|
-| Mini-Vision VTO | ~R$ 0,002 |
-| Pipeline texto (5 steps) | ~R$ 0,15 |
-| Fashn tryon-max + edit | ~R$ 1,31 |
-| **Total típico** | **~R$ 1,46** |
+| Item | Custo (QA aprova) | Custo (QA reprova) |
+|------|:-:|:-:|
+| Mini-Vision VTO | R$ 0,002 | R$ 0,002 |
+| Pipeline texto (5 steps) | R$ 0,24 | R$ 0,24 |
+| Gemini VTO (1ª geração) | R$ 0,04 | R$ 0,04 |
+| QA Visual Agent | R$ 0,01 | R$ 0,01 |
+| 2ª geração VTO | — | R$ 0,04 |
+| **Total típico** | **~R$ 0,29** | **~R$ 0,33** |
 
 ## Arquivos no Código
 
@@ -175,10 +197,22 @@ Score < 40? → re-executa Copy + Refine
 | `src/lib/ai/prompts.ts` | System prompts (inclui campos VTO) |
 | `src/lib/ai/config.ts` | Tipos de produto + materiais |
 | `src/lib/schemas.ts` | Schemas Zod (inclui 4 campos VTO opcionais) |
-| `src/lib/fashn/client.ts` | Fashn.ai client + BACKGROUND_PROMPTS v2 + buildFashnTryOnPrompt |
-| `src/lib/google/nano-banana.ts` | Nano Banana client (com VTO data injection) |
+| `src/lib/google/nano-banana.ts` | Nano Banana client + QA Visual Agent |
 | `src/app/api/campaign/generate/route.ts` | API endpoint + Mini-Vision + orquestração try-on |
 
 ## Debug
 
 O response da API inclui `tryOnDebug` quando o try-on falha, mostrando a razão do erro sem precisar de logs do servidor.
+
+### Logs do QA Visual Agent
+```
+[NanoBanana] 🔍 Iniciando QA Visual Agent...
+[QA-Agent] 🔍 Analisando fidelidade do VTO...
+[QA-Agent] ⏱️ Análise em 2345ms
+[QA-Agent] ✅ Aprovado (1 issues menores)    ← normal
+[QA-Agent] ❌ Reprovado — 2 problema(s) grave(s):
+  └─ color: garment color shifted from pink to salmon
+  └─ texture: knit texture simplified to smooth
+[NanoBanana] 🔄 QA reprovado — gerando 2ª tentativa com correções...
+[NanoBanana] ✅ 2ª geração OK (12450ms, total 28900ms)
+```
