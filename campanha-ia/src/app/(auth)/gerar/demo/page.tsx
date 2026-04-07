@@ -322,13 +322,13 @@ export default function ResultadoCampanha() {
   return (
     <div className="animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <div>
           <div className="badge badge-brand mb-2 inline-flex text-xs">✅ Campanha gerada</div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-bold tracking-tight">
             {productName} — <span className="gradient-text">Campanha</span>
           </h1>
-          <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+          <p className="text-[11px] sm:text-xs mt-1" style={{ color: "var(--muted)" }}>
             Gerada em {durationSec}s · Score {scoreData.nota_geral}/100 · {visibleChannels.length} canais{isDemo && " · 🎭 Demo"}
             {regenLimit > 0 && ` · 🔄 ${regenUsed}/${regenLimit} regen`}
           </p>
@@ -363,8 +363,8 @@ export default function ResultadoCampanha() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left — Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Channel tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          {/* Channel tabs — touch-friendly */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ WebkitOverflowScrolling: "touch" }}>
             {allChannels.map((ch) => {
               const locked = !ch.freeAccess && !hasAllChannelsAccess;
               return (
@@ -372,7 +372,7 @@ export default function ResultadoCampanha() {
                   key={ch.id}
                   onClick={() => !locked && setActiveChannel(ch.id)}
                   disabled={locked}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
+                  className="flex items-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all min-h-[44px]"
                   style={{
                     background: locked ? "var(--surface)" : activeChannel === ch.id ? "var(--gradient-brand)" : "var(--surface)",
                     color: locked ? "var(--muted)" : activeChannel === ch.id ? "white" : "var(--muted)",
@@ -390,13 +390,13 @@ export default function ResultadoCampanha() {
           </div>
 
           {/* Content card */}
-          <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="rounded-2xl p-4 sm:p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <h3 className="font-semibold">{content.title}</h3>
-              <div className="flex gap-2">
+                <div className="flex gap-2">
                 <button
                   onClick={() => copyText(content.text, activeChannel)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] sm:min-h-0"
                   style={{
                     background: copiedField === activeChannel ? "var(--success)" : "var(--brand-100)",
                     color: copiedField === activeChannel ? "white" : "var(--brand-700)",
@@ -407,7 +407,7 @@ export default function ResultadoCampanha() {
                 <button
                   onClick={handleRegenerate}
                   disabled={regenerating || regenUsed >= regenLimit}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] sm:min-h-0"
                   style={{
                     background: regenerating ? "var(--surface)" : "var(--brand-100)",
                     color: regenerating ? "var(--muted)" : "var(--brand-700)",
@@ -544,7 +544,7 @@ export default function ResultadoCampanha() {
           {/* Download all texts */}
           <button
             onClick={handleDownloadTexts}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80 min-h-[48px]"
             style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--border)" }}
           >
             <IconDownload /> Baixar todos os textos (.txt)
