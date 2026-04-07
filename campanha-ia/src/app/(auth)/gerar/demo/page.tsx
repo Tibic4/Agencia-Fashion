@@ -4,11 +4,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import HeadlineABTest from "@/components/HeadlineABTest";
 import MobilePreview from "@/components/MobilePreview";
-import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
 import { extractPrice } from "@/components/konva/constants";
 import dynamic from "next/dynamic";
 
 const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { ssr: false });
+const KonvaStoriesCompositor = dynamic(() => import("@/components/konva/KonvaStoriesCompositor"), { ssr: false });
 
 /* ═══════════════════════════════════════
    Campaign Data Type (replaces `any`)
@@ -465,9 +465,9 @@ export default function ResultadoCampanha() {
             />
           </div>
 
-          {/* ═══ Stories Preview (CSS — 3 slides) ═══ */}
+          {/* ═══ Stories Preview (Konva — 3 interactive slides) ═══ */}
           <div className="mb-6">
-            <CreativeStoriesPreview
+            <KonvaStoriesCompositor
               productName={productName}
               price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
               slideGancho={campaignData?.output?.instagram_stories?.slide_1}
