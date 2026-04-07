@@ -39,12 +39,13 @@ export async function GET(request: NextRequest) {
 
     const { data: models, error } = await supabase
       .from("store_models")
-      .select("id, photo_url, created_at")
+      .select("id, photo_url")
       .eq("store_id", store.id)
       .in("id", modelIds);
 
     if (error) {
-      return NextResponse.json({ error: "Erro ao consultar modelos" }, { status: 500 });
+      console.error("[API:model/preview-status] Supabase error:", error.message, error.code);
+      return NextResponse.json({ error: "Erro ao consultar modelos", detail: error.message }, { status: 500 });
     }
 
     // Montar mapa de statuses
@@ -52,14 +53,9 @@ export async function GET(request: NextRequest) {
 
     for (const model of models || []) {
       const url = model.photo_url || null;
-      const createdAt = new Date(model.created_at).getTime();
-      const ageMs = Date.now() - createdAt;
 
       if (url) {
         statuses[model.id] = { url, status: "completed" };
-      } else if (ageMs > 5 * 60 * 1000) {
-        // Mais de 5 min sem preview = provavelmente falhou
-        statuses[model.id] = { url: null, status: "failed" };
       } else {
         statuses[model.id] = { url: null, status: "generating" };
       }
