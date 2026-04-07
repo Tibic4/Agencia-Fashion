@@ -355,7 +355,7 @@ export default function KonvaStoriesCompositor({
             </button>
             <button
               onClick={handleReset}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all hover:opacity-80"
+              className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl text-[11px] font-medium transition-all hover:opacity-80 min-h-[44px] sm:min-h-0"
               style={{
                 background: "var(--surface)",
                 color: "var(--muted)",
@@ -370,8 +370,8 @@ export default function KonvaStoriesCompositor({
 
         {/* Element visibility toggles */}
         <div
-          className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto"
-          style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
+          className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto"
+          style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)", WebkitOverflowScrolling: "touch" }}
         >
           <span className="text-[10px] font-medium mr-1 shrink-0" style={{ color: "var(--muted)" }}>
             👁️ Elementos:
@@ -382,7 +382,7 @@ export default function KonvaStoriesCompositor({
               <button
                 key={key}
                 onClick={() => handleToggleVisibility(activeSlide, key)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all shrink-0"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all shrink-0 min-h-[36px]"
                 style={{
                   background: isHidden ? "var(--border)" : "var(--background)",
                   color: isHidden ? "var(--muted)" : "var(--foreground)",
