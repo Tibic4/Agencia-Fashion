@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QuotaExceededModal from "@/components/QuotaExceededModal";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
+import GenerationLoadingScreen from "@/components/GenerationLoadingScreen";
 
 const IconUpload = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -364,54 +365,8 @@ export default function GerarCampanha() {
   };
 
   if (isGenerating) {
-    const step = generationSteps[generationStep];
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
-        <div className="w-full max-w-md text-center">
-          {/* Animated icon */}
-          <div className="w-20 h-20 rounded-3xl mx-auto mb-8 flex items-center justify-center animate-pulse-glow" style={{ background: "var(--gradient-brand)", color: "white" }}>
-            <IconZap />
-          </div>
-
-          <h2 className="text-2xl font-bold mb-2">Gerando sua campanha</h2>
-          <p className="text-sm mb-8" style={{ color: "var(--muted)" }}>{step.label}</p>
-
-          {/* Progress bar */}
-          <div className="h-3 rounded-full overflow-hidden mb-4" style={{ background: "var(--border)" }}>
-            <div
-              className="h-full rounded-full transition-all duration-1000 ease-out"
-              style={{ width: `${step.progress}%`, background: "var(--gradient-brand)" }}
-            />
-          </div>
-
-          {/* Steps list */}
-          <div className="space-y-2 mt-8">
-            {generationSteps.map((s, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 text-sm transition-all"
-                style={{
-                  opacity: i <= generationStep ? 1 : 0.3,
-                  color: i < generationStep ? "var(--success)" :
-                         i === generationStep ? "var(--brand-500)" : "var(--muted)",
-                }}
-              >
-                <span>{i < generationStep ? "✓" : i === generationStep ? "●" : "○"}</span>
-                <span className={i === generationStep ? "font-semibold" : ""}>{s.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {generationStep >= generationSteps.length - 1 && (
-            <Link
-              href="/gerar/demo"
-              className="btn-primary mt-8 inline-flex"
-            >
-              Ver resultado →
-            </Link>
-          )}
-        </div>
-      </div>
+      <GenerationLoadingScreen step={generationStep} steps={generationSteps} />
     );
   }
 

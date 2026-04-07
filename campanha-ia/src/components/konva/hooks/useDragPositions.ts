@@ -6,10 +6,17 @@ import { getDefaultPositions } from "../constants";
 import { useUndoRedo } from "./useUndoRedo";
 
 export type FontSizes = Partial<Record<ElementKey, number>>;
+export type WidthOverrides = Partial<Record<ElementKey, number>>;
+
+const DEFAULT_ORDER: ElementKey[] = [
+  "badge", "productName", "headline", "price", "cta", "score", "watermark",
+];
 
 interface UseDragPositionsResult {
   positions: ElementPositions;
   fontSizes: FontSizes;
+  widthOverrides: WidthOverrides;
+  elementOrder: ElementKey[];
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   hiddenElements: Set<ElementKey>;
@@ -21,6 +28,9 @@ interface UseDragPositionsResult {
   handleUndo: () => void;
   handleRedo: () => void;
   updateFontSize: (key: ElementKey, size: number) => void;
+  updateWidthOverride: (key: ElementKey, width: number) => void;
+  moveElementUp: (key: ElementKey) => void;
+  moveElementDown: (key: ElementKey) => void;
   canUndo: boolean;
   canRedo: boolean;
   getDragStyle: (key: string) => {
@@ -37,6 +47,8 @@ interface UseDragPositionsResult {
 export function useDragPositions(canvasH: number): UseDragPositionsResult {
   const [positions, setPositions] = useState<ElementPositions>(() => getDefaultPositions(canvasH));
   const [fontSizes, setFontSizes] = useState<FontSizes>({});
+  const [widthOverrides, setWidthOverrides] = useState<WidthOverrides>({});
+  const [elementOrder, setElementOrder] = useState<ElementKey[]>([...DEFAULT_ORDER]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hiddenElements, setHiddenElements] = useState<Set<ElementKey>>(new Set());
   const { pushState, undo, redo, canUndo, canRedo } = useUndoRedo(getDefaultPositions(canvasH));
@@ -45,6 +57,7 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
   useEffect(() => {
     setPositions(getDefaultPositions(canvasH));
     setFontSizes({});
+    setWidthOverrides({});
   }, [canvasH]);
 
   const handleDragEnd = useCallback((key: ElementKey, e: KonvaDragEvent) => {
@@ -70,6 +83,8 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
   const handleReset = useCallback(() => {
     setPositions(getDefaultPositions(canvasH));
     setFontSizes({});
+    setWidthOverrides({});
+    setElementOrder([...DEFAULT_ORDER]);
     setSelectedId(null);
     setHiddenElements(new Set());
   }, [canvasH]);
@@ -88,7 +103,31 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
   }, []);
 
   const updateFontSize = useCallback((key: ElementKey, size: number) => {
-    setFontSizes((prev) => ({ ...prev, [key]: Math.round(Math.max(12, Math.min(120, size))) }));
+    setFontSizes((prev) => ({ ...prev, [key]: Math.round(Math.max(12, Math.min(200, size))) }));
+  }, []);
+
+  const updateWidthOverride = useCallback((key: ElementKey, width: number) => {
+    setWidthOverrides((prev) => ({ ...prev, [key]: Math.round(Math.max(100, Math.min(1060, width))) }));
+  }, []);
+
+  const moveElementUp = useCallback((key: ElementKey) => {
+    setElementOrder((prev) => {
+      const idx = prev.indexOf(key);
+      if (idx < 0 || idx >= prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      return next;
+    });
+  }, []);
+
+  const moveElementDown = useCallback((key: ElementKey) => {
+    setElementOrder((prev) => {
+      const idx = prev.indexOf(key);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+      return next;
+    });
   }, []);
 
   const handleUndo = useCallback(() => {
@@ -114,6 +153,8 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
   return {
     positions,
     fontSizes,
+    widthOverrides,
+    elementOrder,
     selectedId,
     setSelectedId,
     hiddenElements,
@@ -125,6 +166,9 @@ export function useDragPositions(canvasH: number): UseDragPositionsResult {
     handleUndo,
     handleRedo,
     updateFontSize,
+    updateWidthOverride,
+    moveElementUp,
+    moveElementDown,
     canUndo,
     canRedo,
     getDragStyle,
