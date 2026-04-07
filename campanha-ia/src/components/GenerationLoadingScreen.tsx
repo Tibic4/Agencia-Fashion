@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import FashionFactsCarousel from "./FashionFactsCarousel";
 import "./GenerationLoadingScreen.css";
@@ -49,14 +49,24 @@ interface GenerationLoadingScreenProps {
 
 /**
  * Map step index to which icon group to show:
- * 0-1 → search, 2-3 → pen, 4-5 → camera, 6 → check
+ * 0-2 → search, 3-6 → pen, 7-9 → camera, 10 → check
  */
 function getIconPhase(stepIdx: number): "search" | "pen" | "camera" | "check" {
-  if (stepIdx <= 1) return "search";
-  if (stepIdx <= 3) return "pen";
-  if (stepIdx <= 5) return "camera";
+  if (stepIdx <= 2) return "search";
+  if (stepIdx <= 6) return "pen";
+  if (stepIdx <= 9) return "camera";
   return "check";
 }
+
+/* ── Waiting messages that cycle when stuck at a step ── */
+const waitMessages = [
+  "Isso pode levar alguns segundos…",
+  "A IA está trabalhando na melhor versão…",
+  "Quase lá! Finalizando detalhes…",
+  "Processamento de imagem em andamento…",
+  "Gerando a imagem com modelo virtual…",
+  "Aplicando ajustes de qualidade…",
+];
 
 /* ─── Confetti colors ─── */
 const confettiColors = [
@@ -69,6 +79,32 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
   const phase = getIconPhase(step);
   const isComplete = step >= steps.length - 1;
 
+  // Track how long we've been on the same step
+  const [stuckTime, setStuckTime] = useState(0);
+  const [waitMsgIndex, setWaitMsgIndex] = useState(0);
+  const [lastStep, setLastStep] = useState(step);
+
+  useEffect(() => {
+    if (step !== lastStep) {
+      setStuckTime(0);
+      setLastStep(step);
+    }
+  }, [step, lastStep]);
+
+  // Cycle waiting messages when stuck for more than 5s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStuckTime(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (stuckTime > 5 && stuckTime % 4 === 0) {
+      setWaitMsgIndex(prev => (prev + 1) % waitMessages.length);
+    }
+  }, [stuckTime]);
+
   // Generate confetti pieces (memoized so they don't re-render)
   const confettiPieces = useMemo(() => {
     return Array.from({ length: 16 }).map((_, i) => ({
@@ -80,6 +116,15 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
       size: 6 + Math.random() * 6,
     }));
   }, []);
+
+  // Show only relevant window of steps (last 3 done + current + next 2)
+  const visibleSteps = steps
+    .map((s, i) => ({ ...s, index: i }))
+    .filter((_, i) => {
+      if (i < step - 2) return false; // hide old steps
+      if (i > step + 2) return false; // hide far future steps
+      return true;
+    });
 
   return (
     <div className="gen-loading animate-fade-in">
@@ -145,6 +190,13 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
           {currentStep.label}
         </p>
 
+        {/* Extra waiting message when stuck */}
+        {stuckTime > 5 && !isComplete && (
+          <p className="gen-wait-msg" key={waitMsgIndex}>
+            {waitMessages[waitMsgIndex]}
+          </p>
+        )}
+
         {/* Progress bar */}
         <div className="gen-progress-wrapper">
           <div className="gen-progress-track">
@@ -165,18 +217,18 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
         {/* Fashion Facts Carousel */}
         <FashionFactsCarousel />
 
-        {/* Steps list */}
+        {/* Steps list — windowed (only nearby steps visible) */}
         <div className="gen-steps">
-          {steps.map((s, i) => {
-            const state = i < step ? "done" : i === step ? "active" : "pending";
+          {visibleSteps.map((s) => {
+            const state = s.index < step ? "done" : s.index === step ? "active" : "pending";
             return (
               <div
-                key={i}
+                key={s.index}
                 className={`gen-step ${state === "active" ? "gen-step-enter" : ""}`}
                 data-state={state}
               >
                 <span className="gen-step-icon" data-state={state}>
-                  {state === "done" ? "✓" : state === "active" ? "●" : (i + 1)}
+                  {state === "done" ? "✓" : state === "active" ? "●" : "·"}
                 </span>
                 <span>{s.label}</span>
               </div>

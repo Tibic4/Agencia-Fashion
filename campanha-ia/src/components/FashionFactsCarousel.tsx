@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface FashionFact {
   emoji: string;
@@ -21,6 +21,8 @@ const fashionFacts: FashionFact[] = [
   { emoji: "🧤", category: "Curiosidade", text: "Até o século XIX, mulheres usavam até 6 pares de luvas por dia em eventos sociais" },
   { emoji: "👒", category: "Curiosidade", text: "O chapéu panamá na verdade é originário do Equador, não do Panamá" },
   { emoji: "🥿", category: "Curiosidade", text: "Sapatilhas ballet viraram moda depois que Audrey Hepburn as usou nos anos 50" },
+  { emoji: "🧥", category: "Curiosidade", text: "O trench coat foi criado durante a Primeira Guerra Mundial para soldados nas trincheiras" },
+  { emoji: "💎", category: "Curiosidade", text: "A primeira Fashion Week aconteceu em 1943 em Nova York, durante a Segunda Guerra" },
 
   // ── Dados de Mercado ──
   { emoji: "📊", category: "Dado", text: "O mercado de moda brasileiro movimenta mais de R$ 190 bilhões por ano", source: "ABIT 2025" },
@@ -33,6 +35,8 @@ const fashionFacts: FashionFact[] = [
   { emoji: "🏪", category: "Dado", text: "O Brasil tem mais de 1,3 milhão de lojas de vestuário", source: "ABIT" },
   { emoji: "♻️", category: "Dado", text: "45% dos consumidores brasileiros preferem marcas com práticas sustentáveis", source: "Nielsen 2025" },
   { emoji: "🔄", category: "Dado", text: "Lojas que postam diariamente vendem em média 2,5x mais que as que postam semanalmente", source: "Meta Business" },
+  { emoji: "🎯", category: "Dado", text: "80% das vendas de moda iniciam por influência de conteúdo em redes sociais", source: "Instagram Trends 2026" },
+  { emoji: "💰", category: "Dado", text: "Lojas com fotos profissionais faturam 67% mais que lojas com fotos amadoras", source: "Shopify Research" },
 
   // ── Dicas para Lojistas ──
   { emoji: "💡", category: "Dica", text: "Fotos com modelo vestindo a roupa vendem 3x mais que fotos flat lay", source: "Shopify 2025" },
@@ -45,6 +49,9 @@ const fashionFacts: FashionFact[] = [
   { emoji: "🎨", category: "Dica", text: "Manter uma paleta de cores consistente no feed aumenta seguidores em 25%" },
   { emoji: "📝", category: "Dica", text: "Incluir medidas na descrição reduz trocas e devoluções em até 35%" },
   { emoji: "🤝", category: "Dica", text: "Responder DMs em até 1 hora aumenta as chances de venda em 7x", source: "Harvard Business Review" },
+  { emoji: "🪄", category: "Dica", text: "Vídeos curtos de 'unboxing' da peça geram 4x mais compartilhamentos" },
+  { emoji: "🧲", category: "Dica", text: "Carrosséis no Instagram têm 3x mais alcance do que posts de imagem única", source: "Socialinsider 2026" },
+  { emoji: "🗓️", category: "Dica", text: "Postar antes de datas comemorativas (3 dias) triplica as vendas sazonais" },
 
   // ── Tendências ──
   { emoji: "🔥", category: "Tendência", text: "Cores terrosas e tons de marrom continuam dominando as coleções em 2026" },
@@ -53,6 +60,8 @@ const fashionFacts: FashionFact[] = [
   { emoji: "🩵", category: "Tendência", text: "Azul celeste e lavanda são as cores que mais crescem nas buscas de moda" },
   { emoji: "👟", category: "Tendência", text: "Tênis e sapatilhas com visual retrô dominam o streetwear feminino" },
   { emoji: "🪡", category: "Tendência", text: "Peças artesanais com crochê e bordado ganharam +180% em buscas" },
+  { emoji: "🫧", category: "Tendência", text: "A estética 'coquette' com laços e renda subiu 450% em pesquisas", source: "Google Trends" },
+  { emoji: "🧸", category: "Tendência", text: "A tendência 'mob wife aesthetic' trouxe de volta peles e animal print" },
 
   // ── Psicologia de Vendas ──
   { emoji: "🧠", category: "Psicologia", text: "A cor do fundo da foto do produto influencia 62% da decisão de compra", source: "Journal of Consumer Research" },
@@ -61,6 +70,8 @@ const fashionFacts: FashionFact[] = [
   { emoji: "🏃‍♀️", category: "Psicologia", text: "Senso de urgência ('últimas peças!') aumenta conversão em 30-35%" },
   { emoji: "⭐", category: "Psicologia", text: "Avaliações com foto do cliente comprovam 65% mais credibilidade" },
   { emoji: "🪞", category: "Psicologia", text: "Clientes que se veem representados na modelo compram 4x mais", source: "McKinsey Fashion" },
+  { emoji: "🎁", category: "Psicologia", text: "A palavra 'grátis' aumenta cliques em 36% vs 'desconto de 50%'", source: "Dan Ariely, Predictably Irrational" },
+  { emoji: "🔢", category: "Psicologia", text: "Preços terminados em 7 (R$89,97) vendem 17% mais que os terminados em 0", source: "MIT Pricing Lab" },
 
   // ── Instagram & Social Tips ──
   { emoji: "📱", category: "Social", text: "Reels com música trending têm 48% mais alcance que posts estáticos", source: "Instagram @creators" },
@@ -69,6 +80,8 @@ const fashionFacts: FashionFact[] = [
   { emoji: "#️⃣", category: "Social", text: "Usar entre 8 e 15 hashtags é o ponto ideal para alcance no Instagram" },
   { emoji: "🛍️", category: "Social", text: "Instagram Shopping aumenta cliques em 130% comparado a link na bio", source: "Meta Business" },
   { emoji: "📲", category: "Social", text: "WhatsApp Business com catálogo gera 45% mais conversões que só texto", source: "Meta" },
+  { emoji: "🎙️", category: "Social", text: "Lives de moda no Instagram convertem 3x mais que posts normais", source: "Hootsuite 2026" },
+  { emoji: "✅", category: "Social", text: "Perfis com bio otimizada recebem 2x mais visitas ao perfil", source: "Later" },
 ];
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -81,26 +94,62 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export default function FashionFactsCarousel() {
-  const [facts] = useState(() => shuffleArray(fashionFacts));
+  const [facts, setFacts] = useState(() => shuffleArray(fashionFacts));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const nextFact = useCallback(() => {
+  // Fetch dynamic facts from DB and merge with static
+  useEffect(() => {
+    fetch("/api/fashion-facts")
+      .then(res => res.json())
+      .then(data => {
+        if (data.facts && data.facts.length > 0) {
+          // Merge: DB facts first, then static (deduplicate by text)
+          const dbFacts: FashionFact[] = data.facts;
+          const staticTexts = new Set(dbFacts.map((f: FashionFact) => f.text));
+          const uniqueStatic = fashionFacts.filter(f => !staticTexts.has(f.text));
+          setFacts(shuffleArray([...dbFacts, ...uniqueStatic]));
+        }
+      })
+      .catch(() => {/* keep static facts */});
+  }, []);
+
+  const goTo = useCallback((direction: 1 | -1) => {
     setIsVisible(false);
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % facts.length);
+      setCurrentIndex((prev) => {
+        const next = prev + direction;
+        if (next < 0) return facts.length - 1;
+        if (next >= facts.length) return 0;
+        return next;
+      });
       setIsVisible(true);
-    }, 300);
+    }, 250);
   }, [facts.length]);
 
+  // Auto-rotate every 4s
   useEffect(() => {
-    const interval = setInterval(nextFact, 5000);
+    const interval = setInterval(() => goTo(1), 4000);
     return () => clearInterval(interval);
-  }, [nextFact]);
+  }, [goTo]);
+
+  // Swipe support for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const diff = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(diff) > 40) {
+      goTo(diff > 0 ? -1 : 1);
+    }
+    setTouchStartX(null);
+  };
 
   const fact = facts[currentIndex];
 
-  // Category color mapping
   const categoryColors: Record<string, string> = {
     Curiosidade: "var(--accent-500)",
     Dado: "var(--info)",
@@ -113,8 +162,14 @@ export default function FashionFactsCarousel() {
   return (
     <div className="fashion-facts-wrapper">
       <div
+        ref={cardRef}
         className="fashion-fact-card"
-        style={{ opacity: isVisible ? 1 : 0, transform: isVisible ? "translateY(0)" : "translateY(8px)" }}
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? "translateY(0)" : "translateY(8px)",
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         <span className="fashion-fact-emoji">{fact.emoji}</span>
         <span
@@ -129,7 +184,7 @@ export default function FashionFactsCarousel() {
         )}
       </div>
 
-      {/* Progress dots */}
+      {/* Progress dots + swipe hint */}
       <div className="fashion-fact-dots">
         {Array.from({ length: Math.min(facts.length, 6) }).map((_, i) => {
           const isActive = currentIndex % 6 === i;
@@ -145,6 +200,9 @@ export default function FashionFactsCarousel() {
           );
         })}
       </div>
+
+      {/* Mobile swipe hint (shows only first few seconds) */}
+      <p className="fashion-fact-swipe-hint">← deslize para mais dicas →</p>
     </div>
   );
 }
