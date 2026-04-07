@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
  *   - style: string
  *   - ageRange: string
  *   - name: string
+ *   - facePhoto: File (opcional) — foto de referência facial
  */
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +73,71 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 });
     }
 
+    // ── Processar foto de referência facial (opcional) ──
+    let faceRefBase64: string | null = null;
+    let faceRefMimeType = "image/jpeg";
+    let faceRefUrl: string | null = null;
+
+    const facePhoto = formData.get("facePhoto") as File | null;
+
+    if (facePhoto && facePhoto.size > 0) {
+      console.log(`[Model] 📷 Foto de referência recebida: ${facePhoto.name} (${(facePhoto.size / 1024).toFixed(1)}KB)`);
+
+      // Validar tipo e tamanho
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(facePhoto.type)) {
+        return NextResponse.json({ error: "Formato de imagem não suportado. Use JPG, PNG ou WebP." }, { status: 400 });
+      }
+      if (facePhoto.size > 5 * 1024 * 1024) {
+        return NextResponse.json({ error: "Imagem muito grande. Máximo 5MB." }, { status: 400 });
+      }
+
+      // Converter para buffer e base64
+      const arrayBuffer = await facePhoto.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      const buffer = Buffer.from(uint8) as Buffer<ArrayBuffer>;
+
+      // Tentar fazer crop facial com sharp (se disponível)
+      let processedBuffer: Buffer<ArrayBuffer> = buffer;
+      try {
+        const sharp = (await import("sharp")).default;
+        // Resize para max 512px mantendo proporção — reduz tokens do Gemini
+        processedBuffer = await sharp(buffer as any)
+          .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toBuffer() as any;
+        faceRefMimeType = "image/jpeg";
+        console.log(`[Model] ✂️ Imagem processada: ${(processedBuffer.length / 1024).toFixed(1)}KB`);
+      } catch {
+        // Se sharp não estiver disponível, usa a imagem original
+        console.warn("[Model] ⚠️ Sharp não disponível, usando imagem original");
+        faceRefMimeType = facePhoto.type;
+      }
+
+      faceRefBase64 = processedBuffer.toString("base64");
+
+      // Upload do crop para Supabase Storage (para persistência)
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/admin");
+        const supabase = createAdminClient();
+        const ext = faceRefMimeType.includes("png") ? "png" : "jpg";
+        const filePath = `face-refs/${store.id}/${crypto.randomUUID()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("assets")
+          .upload(filePath, processedBuffer, { contentType: faceRefMimeType, upsert: true });
+
+        if (!uploadError) {
+          const { data: pub } = supabase.storage.from("assets").getPublicUrl(filePath);
+          faceRefUrl = pub.publicUrl;
+          console.log(`[Model] 💾 Face ref salva: ${faceRefUrl?.slice(0, 60)}...`);
+        }
+      } catch (uploadErr) {
+        console.warn("[Model] ⚠️ Upload da face ref falhou:", uploadErr);
+        // Não bloqueia — a geração ainda pode funcionar com o base64
+      }
+    }
+
     // Salvar no banco (photo_url = null → frontend mostra placeholder)
     const model = await createStoreModel({
       storeId: store.id,
@@ -83,9 +149,17 @@ export async function POST(request: NextRequest) {
       name,
     });
 
+    // Salvar face_ref_url no modelo se disponível
+    if (faceRefUrl) {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      await supabase
+        .from("store_models")
+        .update({ face_ref_url: faceRefUrl })
+        .eq("id", model.id);
+    }
+
     // ── Disparar geração de preview via Inngest (background) ──
-    // Provider: Gemini 3.1 Flash Image (~5-10s)
-    // Retry automático com backoff exponencial
     try {
       await inngest.send({
         name: "model/preview.requested",
@@ -98,9 +172,12 @@ export async function POST(request: NextRequest) {
           style: style || "casual_natural",
           ageRange: ageRange || "adulta_26_35",
           name,
+          // URL leve ao invés de base64 pesado (evita limite de 512KB do Inngest)
+          faceRefUrl: faceRefUrl || null,
         },
       });
-      console.log(`[Model] 🚀 Preview disparado via Inngest para "${name}" (model: ${model.id})`);
+      const mode = faceRefUrl ? "multimodal 📷" : "text-only";
+      console.log(`[Model] 🚀 Preview disparado via Inngest (${mode}) para "${name}" (model: ${model.id})`);
     } catch (inngestErr: unknown) {
       console.warn("[Model] ⚠️ Inngest dispatch falhou:", inngestErr instanceof Error ? inngestErr.message : inngestErr);
     }
@@ -112,6 +189,7 @@ export async function POST(request: NextRequest) {
         id: model.id,
         previewUrl: null,
         previewStatus: "pending",
+        hasFaceRef: !!faceRefUrl,
         traits: { skinTone, hairStyle, bodyType, style, ageRange },
       },
     });
@@ -121,4 +199,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-

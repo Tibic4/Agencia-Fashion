@@ -41,6 +41,7 @@ export async function GET() {
         is_active: m.is_active,
         created_at: m.created_at,
         photo_url: m.preview_url || m.reference_photos?.[0] || null,
+        face_ref_url: m.face_ref_url || null,
       })),
       plan: planName,
       limit,

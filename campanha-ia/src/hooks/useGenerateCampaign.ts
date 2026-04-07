@@ -28,8 +28,8 @@ const STEPS_LABELS: Record<string, { label: string; progress: number }> = {
   vision: { label: "🔍 Analisando produto...", progress: 15 },
   strategy: { label: "🎯 Criando estratégia...", progress: 30 },
   copywriter: { label: "✍️ Escrevendo textos...", progress: 50 },
-  refiner: { label: "✨ Refinando copy...", progress: 65 },
-  scorer: { label: "📊 Avaliando qualidade...", progress: 80 },
+  refiner: { label: "✨ Refinando copy...", progress: 55 },
+  scorer: { label: "📊 Avaliando qualidade...", progress: 70 },
   image_processing: { label: "🖼️ Processando imagem...", progress: 90 },
   composition: { label: "🎨 Montando criativo...", progress: 95 },
   done: { label: "✅ Pronto!", progress: 100 },
@@ -67,24 +67,93 @@ export function useGenerateCampaign() {
       if (params.useModel !== undefined) formData.append("useModel", String(params.useModel));
       if (params.backgroundType) formData.append("backgroundType", params.backgroundType);
 
-      // Simulate progress while waiting (API doesn't stream yet)
-      const progressInterval = simulateProgress(setState);
-
-      // Call API
+      // Call API — agora retorna SSE stream com progresso real
       const response = await fetch("/api/campaign/generate", {
         method: "POST",
         body: formData,
       });
 
-      clearInterval(progressInterval);
-
       if (!response.ok) {
+        // Erros de inicialização (auth, rate limit) ainda vêm como JSON
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `Erro ${response.status}`);
       }
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
 
+      // ── SSE STREAM: progresso real do pipeline ──
+      if (contentType.includes("text/event-stream") && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Parse SSE events from buffer
+          const events = buffer.split("\n\n");
+          buffer = events.pop() || ""; // último item pode ser incompleto
+
+          for (const eventBlock of events) {
+            if (!eventBlock.trim()) continue;
+
+            const lines = eventBlock.split("\n");
+            let eventType = "";
+            let eventData = "";
+
+            for (const line of lines) {
+              if (line.startsWith("event: ")) eventType = line.slice(7);
+              if (line.startsWith("data: ")) eventData = line.slice(6);
+            }
+
+            if (!eventType || !eventData) continue;
+
+            try {
+              const parsed = JSON.parse(eventData);
+
+              if (eventType === "progress") {
+                const stepInfo = STEPS_LABELS[parsed.step] || { label: parsed.label, progress: parsed.progress };
+                setState((prev) => ({
+                  ...prev,
+                  status: "generating",
+                  step: parsed.step,
+                  stepLabel: parsed.label || stepInfo.label,
+                  progress: parsed.progress || stepInfo.progress,
+                }));
+              } else if (eventType === "done") {
+                if (!parsed.success) {
+                  throw new Error(parsed.error || "Erro desconhecido");
+                }
+                setState({
+                  status: "done",
+                  step: "done",
+                  stepLabel: "✅ Pronto!",
+                  progress: 100,
+                  result: parsed.data,
+                  error: null,
+                });
+                return parsed.data;
+              } else if (eventType === "error") {
+                throw new Error(parsed.error || "Erro no pipeline");
+              }
+            } catch (parseError: any) {
+              if (parseError.message && !parseError.message.includes("JSON")) {
+                throw parseError; // Re-throw non-parse errors
+              }
+              console.warn("[SSE] Parse error:", parseError);
+            }
+          }
+        }
+
+        // Stream ended without 'done' event
+        throw new Error("Stream finalizado sem resultado");
+      }
+
+      // ── FALLBACK: resposta JSON clássica (demo mode, erros) ──
+      const data = await response.json();
       if (!data.success) {
         throw new Error(data.error || "Erro desconhecido");
       }
@@ -127,38 +196,4 @@ export function useGenerateCampaign() {
     reset,
     isGenerating: state.status === "uploading" || state.status === "generating",
   };
-}
-
-/**
- * Simula progresso enquanto espera a API responder
- */
-function simulateProgress(
-  setState: React.Dispatch<React.SetStateAction<GenerationState>>
-) {
-  const steps: PipelineStep[] = [
-    "vision",
-    "strategy",
-    "copywriter",
-    "refiner",
-    "scorer",
-    "composition",
-  ];
-  let currentIndex = 0;
-
-  const interval = setInterval(() => {
-    if (currentIndex < steps.length) {
-      const step = steps[currentIndex];
-      const info = STEPS_LABELS[step] || { label: step, progress: 50 };
-      setState((prev) => ({
-        ...prev,
-        status: "generating",
-        step,
-        stepLabel: info.label,
-        progress: info.progress,
-      }));
-      currentIndex++;
-    }
-  }, 4000); // ~4s per step, total ~24s
-
-  return interval;
 }

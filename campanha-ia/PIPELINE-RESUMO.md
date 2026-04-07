@@ -1,6 +1,7 @@
 # Pipeline de IA — Resumo Técnico
 
 > Arquitetura: Gemini + Claude + QA Visual Agent (Gemini-only, sem Fashn.ai)
+> Preços auditados em 07/04/2026 — [Google AI](https://ai.google.dev/pricing) · [Anthropic](https://docs.anthropic.com/en/docs/about-claude/pricing)
 
 ---
 
@@ -11,7 +12,7 @@
 | 1 | **Vision** | Gemini 2.5 Flash | Analisa a foto: identifica cor, tecido, estilo, segmento, mood + gera campos VTO |
 | 2 | **Strategy** | Gemini 2.5 Pro | Cria estratégia de marketing: público, tom, gatilhos, CTAs por plataforma |
 | 3 | **Copywriter** | Claude Sonnet 4 | Escreve textos: headlines, Instagram, WhatsApp, Meta Ads, hashtags |
-| 4 | **Refiner** | Gemini 2.5 Flash | Revisa e corrige inconsistências nos textos (roda em paralelo com Scorer) |
+| 4 | **Refiner** | Gemini 2.5 Flash | Revisa e corrige inconsistências nos textos (roda em sequência antes do Scorer) |
 | 5 | **Scorer** | Gemini 2.5 Flash | Avalia qualidade da campanha (0-100) com notas por dimensão |
 
 > Se o score < 40, o Copywriter + Refiner rodam novamente automaticamente.
@@ -20,7 +21,7 @@
 
 ## Vision Bridge (Mini-Vision VTO)
 
-Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,004) que roda **ANTES** do try-on para extrair dados técnicos do produto e instruir o Gemini VTO com precisão.
+Chamada ultra-rápida ao Gemini Flash (~200ms, ~R$ 0,008) que roda **ANTES** do try-on para extrair dados técnicos do produto e instruir o Gemini VTO com precisão.
 
 ### Dados Extraídos
 
@@ -177,7 +178,7 @@ Score < 40? → re-executa Copy + Refine
 | Google Gemini | `GOOGLE_AI_API_KEY` | Vision, Strategy, Refiner, Scorer, Mini-Vision VTO, Nano Banana, QA Visual Agent |
 | Anthropic Claude | `ANTHROPIC_API_KEY` | Copywriter |
 
-## Custos por Campanha (Auditado — Abril 2026)
+## Custos por Campanha (Auditado — 07/Abril/2026)
 
 > **Câmbio:** R$ 5,80/USD | **Fontes:** [Google AI Pricing](https://ai.google.dev/pricing) · [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
 
@@ -188,57 +189,59 @@ Score < 40? → re-executa Copy + Refine
 | Gemini 2.5 Flash | $0.30 | $2.50 |
 | Gemini 2.5 Pro (≤200K ctx) | $1.25 | $10.00 |
 | Claude Sonnet 4 | $3.00 | $15.00 |
-| Gemini 3.1 Flash Image (output imagem) | — | **$60.00** |
+| Gemini 3.1 Flash Image (texto) | $0.50 | $3.00 |
+| **Gemini 3.1 Flash Image (imagem)** | — | **$60.00/MTok** |
 
-### Custo por Etapa
+### Custo por Etapa (9 chamadas de IA com QA reprovando)
 
-| # | Etapa | Modelo | ~Tok IN | ~Tok OUT | **Custo R$** |
-|---|-------|--------|:-------:|:--------:|:------------:|
-| — | Mini-Vision VTO | Gemini 2.5 Flash | 800 | 200 | **R$ 0,004** |
-| 1 | Vision | Gemini 2.5 Flash | 1.500 | 500 | **R$ 0,010** |
-| 2 | Strategy | Gemini 2.5 Pro | 2.000 | 800 | **R$ 0,061** |
-| 3 | Copywriter | Claude Sonnet 4 | 3.000 | 2.000 | **R$ 0,226** |
-| 4 | Refiner | Gemini 2.5 Flash | 3.000 | 1.500 | **R$ 0,027** |
-| 5 | Scorer | Gemini 2.5 Flash | 2.500 | 500 | **R$ 0,012** |
-| — | QA Visual Agent | Gemini 2.5 Flash | 1.500 | 300 | **R$ 0,007** |
-| — | **Subtotal texto** | | | | **R$ 0,347** |
+| # | Etapa | Modelo | ~Tok IN | ~Tok OUT | Custo USD | **Custo R$** |
+|---|-------|--------|:-------:|:--------:|:---------:|:------------:|
+| 1 | Vision (foto produto) | Gemini 2.5 Flash | 1.500 | 500 | $0.00170 | **R$ 0,010** |
+| 2 | Strategy | Gemini 2.5 Pro | 2.000 | 800 | $0.01050 | **R$ 0,061** |
+| 3 | Copywriter | Claude Sonnet 4 | 3.000 | 2.000 | $0.03900 | **R$ 0,226** |
+| 4 | Refiner | Gemini 2.5 Flash | 3.000 | 1.500 | $0.00465 | **R$ 0,027** |
+| 5 | Scorer | Gemini 2.5 Flash | 2.500 | 500 | $0.00200 | **R$ 0,012** |
+| 6 | Mini-Vision VTO | Gemini 2.5 Flash | 1.200 | 400 | $0.00136 | **R$ 0,008** |
+| 7 | **VTO 1ª geração (img 2K)** | Gemini 3.1 Flash Image | 2.000 | 1 img | **$0.10200** | **R$ 0,592** |
+| 8 | QA Visual Agent (CoT) | Gemini 2.5 Flash | 2.500 | 600 | $0.00225 | **R$ 0,013** |
+| 9 | **VTO 2ª geração (retry)** | Gemini 3.1 Flash Image | 2.500 | 1 img | **$0.10325** | **R$ 0,599** |
 
-### Custo de Imagem VTO (Nano Banana 2)
+### Custo de Imagem VTO (Gemini 3.1 Flash Image Preview)
 
-> `gemini-3.1-flash-image-preview` — Output de imagem: **$60/MTok**
+> Output de imagem: **$60/MTok** (20x mais que texto $3/MTok)
 
 | Resolução | Tokens IMG | Custo/img USD | **Custo/img R$** |
 |:---------:|:----------:|:-------------:|:----------------:|
 | 0.5K (512px) | 747 | $0.045 | R$ 0,26 |
-| **1K (1024px)** | **1.120** | **$0.067** | **R$ 0,39** |
-| 2K (2048px) | 1.680 | $0.101 | R$ 0,59 |
+| 1K (1024px) | 1.120 | $0.067 | R$ 0,39 |
+| **2K (2048px) ← default** | **1.680** | **$0.101** | **R$ 0,59** |
+| 4K (4096px) | 2.520 | $0.151 | R$ 0,88 |
 
-### Total por Campanha (resolução 1K)
+### Total por Campanha (resolução 2K — default)
 
-| Item | QA ✅ Aprova | QA ❌ Reprova |
-|------|:----------:|:-----------:|
-| Subtotal texto (7 etapas) | R$ 0,347 | R$ 0,347 |
-| **Gemini VTO 1ª geração (1K)** | **R$ 0,39** | **R$ 0,39** |
-| 2ª geração VTO (1K) | — | R$ 0,39 |
-| **TOTAL** | **~R$ 0,74** | **~R$ 1,13** |
+| Cenário | Custo Total |
+|---------|:----------:|
+| ✅ QA aprova (sem retry) | **R$ 0,95** |
+| ❌ QA reprova (cenário conservador) | **R$ 1,56** |
+| 📊 Média ponderada (~20% retry) | **R$ 1,07** |
 
-> **Nota:** Considerando 80% aprovação na 1ª tentativa, o custo médio por campanha é **~R$ 0,82**.
+> ⚠️ **76% do custo** vem do VTO (Gemini Image 2K). O pipeline de texto (6 chamadas) custa apenas R$ 0,34.
 
-### Criação de Modelo Virtual
+### Criação de Modelo Virtual (1x por modelo)
 
 | Resolução preview | Tokens IMG | **Custo R$** |
 |:-----------------:|:----------:|:------------:|
-| 1K (1024px) | 1.120 | **R$ 0,39** |
-| 0.5K (512px) | 747 | **R$ 0,26** |
+| **2K (2048px) ← default** | **1.680** | **R$ 0,59** |
+| 1K (1024px) | 1.120 | R$ 0,39 |
 
-### Projeção Mensal (custo médio R$ 0,82/campanha)
+### Projeção Mensal (custo médio R$ 1,07/campanha)
 
 | Volume | Custo API/mês |
 |--------|:------------:|
-| 100 campanhas | R$ 82 |
-| 500 campanhas | R$ 410 |
-| 1.000 campanhas | R$ 820 |
-| 5.000 campanhas | R$ 4.100 |
+| 100 campanhas | R$ 107 |
+| 500 campanhas | R$ 535 |
+| 1.000 campanhas | R$ 1.070 |
+| 5.000 campanhas | R$ 5.350 |
 
 ---
 

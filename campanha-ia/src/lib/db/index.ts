@@ -18,6 +18,7 @@ export interface CreateStoreInput {
   city?: string;
   state?: string;
   instagramHandle?: string;
+  brandColor?: string;
 }
 
 export interface StoreRecord {
@@ -29,6 +30,7 @@ export interface StoreRecord {
   state: string | null;
   instagram_handle: string | null;
   plan_id: string | null;
+  brand_colors: { primary?: string } | null;
   onboarding_completed: boolean;
   created_at: string;
 }
@@ -47,6 +49,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
       city: input.city || null,
       state: input.state || null,
       instagram_handle: input.instagramHandle || null,
+      brand_colors: input.brandColor ? { primary: input.brandColor } : null,
       plan_id: null,
       onboarding_completed: true,
     })
@@ -150,9 +153,44 @@ export async function listStoreModels(storeId: string) {
   return data || [];
 }
 
-/** Deleta um modelo da loja */
+/** Deleta um modelo da loja (com cleanup de Storage) */
 export async function deleteStoreModel(storeId: string, modelId: string) {
   const supabase = createAdminClient();
+
+  // Buscar URLs para limpar do Storage
+  const { data: model } = await supabase
+    .from("store_models")
+    .select("face_ref_url, preview_url")
+    .eq("id", modelId)
+    .eq("store_id", storeId)
+    .single();
+
+  // Limpar arquivos do Storage (fire-and-forget)
+  if (model) {
+    const pathsToDelete: string[] = [];
+    // Extrair path relativo da URL pública do Supabase Storage
+    const extractPath = (url: string, bucket: string) => {
+      const marker = `/storage/v1/object/public/${bucket}/`;
+      const idx = url.indexOf(marker);
+      return idx >= 0 ? url.substring(idx + marker.length) : null;
+    };
+
+    if (model.face_ref_url) {
+      const p = extractPath(model.face_ref_url, "assets");
+      if (p) pathsToDelete.push(p);
+    }
+    if (model.preview_url) {
+      const p = extractPath(model.preview_url, "assets");
+      if (p) pathsToDelete.push(p);
+    }
+
+    if (pathsToDelete.length > 0) {
+      supabase.storage.from("assets").remove(pathsToDelete)
+        .then(() => console.log(`[DB] 🧹 Storage cleanup: ${pathsToDelete.length} arquivo(s) removidos`))
+        .catch(() => { /* ignore cleanup failures */ });
+    }
+  }
+
   const { error } = await supabase
     .from("store_models")
     .delete()

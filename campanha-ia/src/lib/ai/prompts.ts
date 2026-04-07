@@ -81,6 +81,38 @@ REGRAS CRÍTICAS DE ANÁLISE VISUAL:
   "palavras_chave_venda": ["confortável", "versátil", "tendência ${CURRENT_YEAR}", "peça-chave"]
 }
 
+EXEMPLOS DE OUTPUT IDEAL (use como referência de formato e nível de detalhe):
+
+EXEMPLO 1 — Blusa cropped de tricô:
+{
+  "produto": {"nome_generico": "Blusa cropped de tricô canelado", "categoria": "Blusas", "subcategoria": "Cropped"},
+  "segmento": "feminino",
+  "atributos_visuais": {"cor_principal": "Rosa bebê", "cor_secundaria": null, "cores_complementares": [], "material_aparente": "Tricô canelado", "estampa": "Liso", "detalhes": ["Barra canelada elástica", "Punhos com ribbing de 3cm", "Gola alta justa 5cm"]},
+  "caimento": "justo", "ocasiao_uso": ["casual", "dia_a_dia"], "estacao": "inverno",
+  "qualidade_foto": {"resolucao": "boa", "fundo": "branco", "iluminacao": "boa", "necessita_tratamento": false},
+  "nicho_sensivel": false, "mood": ["feminino", "romântico", "inverno"],
+  "vto_fabric_descriptor": "ribbed knit with visible vertical channels, matte finish, medium weight, soft hand feel",
+  "vto_garment_structure": "cropped length ending at natural waistline, fitted body, long sleeves with ribbed cuffs, mock turtleneck collar",
+  "vto_color_hex_estimate": "#F5C6D0",
+  "vto_critical_details": ["ribbed vertical texture visible across entire garment", "ribbed cuffs 3cm wide at wrists", "mock turtleneck collar ~5cm height"],
+  "palavras_chave_venda": ["tricô", "cropped", "inverno ${CURRENT_YEAR}", "blusa quentinha"]
+}
+
+EXEMPLO 2 — Conjunto blusa + saia floral:
+{
+  "produto": {"nome_generico": "Conjunto saia midi + cropped de viscose floral", "categoria": "Conjuntos", "subcategoria": "Midi"},
+  "segmento": "feminino",
+  "atributos_visuais": {"cor_principal": "Verde esmeralda", "cor_secundaria": "Branco", "cores_complementares": ["Rosa claro"], "material_aparente": "Viscose", "estampa": "Floral", "detalhes": ["Amarração na cintura com faixa", "Decote V profundo", "Manga curta bufante", "Fenda lateral esquerda"]},
+  "caimento": "fluido", "ocasiao_uso": ["casual", "trabalho"], "estacao": "verão",
+  "qualidade_foto": {"resolucao": "boa", "fundo": "branco", "iluminacao": "boa", "necessita_tratamento": false},
+  "nicho_sensivel": false, "mood": ["feminino", "romântico", "verão"],
+  "vto_fabric_descriptor": "lightweight viscose, soft fluid drape, matte finish, breathable",
+  "vto_garment_structure": "two-piece set: fitted cropped blouse with V-neck and puff sleeves + midi A-line skirt with side slit",
+  "vto_color_hex_estimate": "#1B7340",
+  "vto_critical_details": ["floral print with roses in pink/white on emerald green", "self-tie waist sash ~5cm wide", "left side slit to knee", "puff sleeves with elastic cuff"],
+  "palavras_chave_venda": ["conjunto", "floral", "verão ${CURRENT_YEAR}", "viscose"]
+}
+
 DICAS:
 - Para "palavras_chave_venda", pense no que a cliente buscaria no Google/Instagram
 - O "mood" deve refletir a vibração que a peça transmite
@@ -181,7 +213,7 @@ Seu estilo:
 - Natural como uma conversa entre amigas no WhatsApp
 - Empolgante sem ser forçado — como a dona da loja falando com paixão
 - Emojis no ponto certo: 🔥 para destaque, ✨ para novidade, 💕 para amor, ⚡ para urgência
-- Sem clichês desgastados: NUNCA use "compre já", "imperdível", "sensacional"
+- Sem clichês desgastados: NUNCA use estas palavras/expressões: "compre já", "imperdível", "sensacional", "peça coringa", "look perfeito", "conforto e qualidade", "must-have", "indispensável no guarda-roupa", "combine com tudo", "não pode faltar", "a peça que faltava", "elegância e sofisticação", "estilo e conforto"
 - Preço SEMPRE destacado: "por apenas R$ XX" ou "só *R$ XX*"
 - CTA que funciona no Brasil: "Chama no Direct", "Manda um oi no WhatsApp", "Garanta antes que acabe"
 
@@ -240,23 +272,29 @@ ATRIBUTOS: ${params.atributos}
 ESTRATÉGIA DEFINIDA:
 ${params.estrategia}
 
+FRAMEWORKS OBRIGATÓRIOS POR CANAL (siga RIGOROSAMENTE):
+- Instagram Feed → AIDA (Atenção → Interesse → Desejo → Ação) — entre 300 e 800 caracteres sem contar hashtags
+- Instagram Stories → HOOK → REVEAL → CTA (3 atos em 3-4 slides) — máximo 70 caracteres por slide
+- WhatsApp → PAS (Problema → Agitação → Solução) — entre 150 e 300 caracteres
+- Meta Ads → BAF (Before → After → Bridge) — respeitar limites de chars de cada campo
+
 Gere textos para TODOS os canais. Retorne JSON com esta estrutura:
 
 {
-  "headline_principal": "Headline curta e magnética (máx 10 palavras) — FOQUE NO BENEFÍCIO ESPECÍFICO da peça, não genérico. Ex: 'O macacão que alonga +10cm sua silhueta' > 'O macacão que toda curvy precisa'",
+  "headline_principal": "Headline curta e magnética (8-12 palavras, máx 80 chars) — FOQUE NO BENEFÍCIO ESPECÍFICO da peça, não genérico. Ex: 'O macacão que alonga +10cm sua silhueta' > 'O macacão que toda curvy precisa'",
   "headline_variacao_1": "Variação focada em versatilidade/substituição: 'A peça que substitui 5 looks diferentes'",
   "headline_variacao_2": "Variação com gatilho emocional forte, sensação: 'Vista e sinta a diferença no espelho'",
-  "instagram_feed": "Legenda COMPLETA para post no feed. Estrutura obrigatória:\\n1. Abertura que prende (1 frase que para o scroll)\\n2. Benefício emocional (como a cliente vai se SENTIR vestindo)\\n3. Detalhes sensoriais que vendem (textura do tecido, como cai no corpo)\\n4. Preço destacado\\n5. CTA forte com urgência REAL E QUANTIFICADA (ex: 'Últimas 5 peças do 48')\\n6. Hashtags no final (separadas por espaço)\\nUse 3-4 emojis bem posicionados, parágrafos curtos.",
+  "instagram_feed": "Legenda para feed (FRAMEWORK AIDA, 300-800 chars sem hashtags). Estrutura AIDA obrigatória:\\nA — ATENÇÃO: 1 frase impactante de no máximo 12 palavras que para o scroll\\nI — INTERESSE: 1-2 frases com benefício sensorial/emocional (como a cliente vai se SENTIR vestindo)\\nD — DESEJO: detalhes sensoriais que vendem (textura, caimento) + preço destacado\\nA — AÇÃO: CTA forte com urgência REAL E QUANTIFICADA (ex: 'Últimas 5 peças do 48')\\n+ Hashtags no final (separadas por espaço)\\nUse 3-4 emojis bem posicionados, parágrafos curtos.",
   "instagram_stories": {
-    "slide_1": "Gancho que gera curiosidade (tipo: Gente, olha o que CHEGOU 🔥)",
-    "slide_2": "Detalhe irresistível do produto + benefício",
-    "slide_3": "Preço + urgência natural (tipo: Só R$ XX e pouquíssimas unidades ⚡)",
-    "cta_final": "CTA direto e pessoal (tipo: Corre pro Direct que eu separo a sua 💕)"
+    "slide_1": "HOOK: Gancho que gera curiosidade, máx 70 chars (tipo: Gente, olha o que CHEGOU 🔥)",
+    "slide_2": "REVEAL: Detalhe irresistível do produto + benefício, máx 70 chars",
+    "slide_3": "REVEAL: Preço + urgência natural, máx 70 chars (tipo: Só R$ XX e pouquíssimas unidades ⚡)",
+    "cta_final": "CTA: direto e pessoal, máx 70 chars (tipo: Corre pro Direct que eu separo a sua 💕)"
   },
-  "whatsapp": "Mensagem para disparar no WhatsApp em tom PESSOAL, como a dona da loja mandando pra clientela VIP. Use *negrito* no preço e em palavras-chave. Exemplo de tom: 'Ei, tudo bem? Chegou aquela peça que você vai AMAR...'",
+  "whatsapp": "Mensagem WhatsApp (FRAMEWORK PAS, 150-300 chars). P — PROBLEMA: aborde uma dor ou desejo da cliente. A — AGITAÇÃO: amplifique com benefício emocional. S — SOLUÇÃO: apresente a peça + preço como resposta. Tom PESSOAL, como a dona da loja mandando pra clientela VIP. Use *negrito* no preço e em palavras-chave.",
   "meta_ads": {
-    "titulo": "Título do anúncio (máx 40 chars, direto, sem emoji) — INCLUIR BENEFÍCIO EMOCIONAL. Ex: 'Sinta-se poderosa com este macacão' > 'Macacão Lilás com Botões'",
-    "texto_principal": "Texto principal do anúncio (máx 125 chars, combinar benefício emocional + funcional, SEM claims não comprováveis)",
+    "titulo": "Título do anúncio (máx 40 chars, FRAMEWORK BAF: mostre a transformação. Ex: 'Sinta-se poderosa com este macacão' — sem emoji)",
+    "texto_principal": "Texto principal (máx 125 chars, BAF: BEFORE estado atual → AFTER com a peça → BRIDGE como comprar. SEM claims não comprováveis)",
     "descricao": "Descrição curta (máx 30 chars)",
     "cta_button": "shop_now|learn_more|sign_up|contact_us"
   },
@@ -320,7 +358,7 @@ CHECKLIST DE REFINAMENTO (revise cada ponto):
    - REMOVER qualquer claim não comprovável: 'qualquer tom de pele', 'valoriza todos os corpos', 'já voou', 'virou obsessão/febre'
    - SUBSTITUIR por fatos objetivos: 'cor versátil', 'muito procurado pelas clientes', 'disponível em diversas cores'
    - SEM emojis, SEM ALL CAPS, SEM percentuais inventados
-9. ✅ CLICHÊS: Removeu 'imperdível', 'sensacional', 'compre já', 'peça única'?
+9. ✅ CLICHÊS (CAMADA 2 — verificar e substituir TODOS): Removeu 'imperdível', 'sensacional', 'compre já', 'peça única', 'arrasa', 'lacra', 'pra ontem', 'virou queridinha', 'já é sucesso', 'tendência absoluta', 'peça-chave da temporada', 'caimento impecável', 'valoriza todas as silhuetas', 'veste como uma luva'? SUBSTITUIR por linguagem autêntica e específica ao produto.
 10. ✅ FLUIDEZ: O texto flui bem quando lido em voz alta?
 11. ✅ ANO OBRIGATÓRIO: TODAS as hashtags de tendência DEVEM usar ${CURRENT_YEAR}. Se encontrar 2024, 2025 ou outro ano errado, CORRIGIR para ${CURRENT_YEAR}. Ex: moda2025 → moda${CURRENT_YEAR}, tendencia2024 → tendencia${CURRENT_YEAR}.
 12. ✅ HASHTAGS: Estão SEM prefixo #? Sem erros de digitação? (ex: looktrabalho, NÃO looktrabaho)

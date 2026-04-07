@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
  * POST /api/model/regenerate-preview
  * Gera (ou regenera) a preview de um modelo customizado.
  * Provider: Gemini 3.1 Flash Image Preview
+ * Suporta modo multimodal se o modelo tem face_ref_url salva.
  * Body: { modelId: string }
  */
 export async function POST(request: NextRequest) {
@@ -43,6 +44,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Modelo não encontrado" }, { status: 404 });
     }
 
+    // Se o modelo tem face_ref_url, buscar a imagem e converter para base64
+    let faceRefBase64: string | null = null;
+    let faceRefMimeType = "image/jpeg";
+
+    if (model.face_ref_url) {
+      try {
+        const res = await fetch(model.face_ref_url);
+        if (res.ok) {
+          const arrayBuffer = await res.arrayBuffer();
+          faceRefBase64 = Buffer.from(arrayBuffer).toString("base64");
+          faceRefMimeType = res.headers.get("content-type") || "image/jpeg";
+          console.log(`[Regen] 📷 Face ref carregada para modelo ${modelId}`);
+        }
+      } catch (fetchErr) {
+        console.warn("[Regen] ⚠️ Falha ao carregar face_ref_url:", fetchErr);
+      }
+    }
+
     // Gerar preview via Gemini 3.1 Flash Image (fire-and-forget)
     generatePreviewDirect({
       modelId,
@@ -53,6 +72,8 @@ export async function POST(request: NextRequest) {
       style: model.style || "casual_natural",
       ageRange: model.age_range || "adulta_26_35",
       name: model.name || "Modelo",
+      faceRefBase64,
+      faceRefMimeType,
     }).catch((err) => {
       console.error("[API:model/regenerate-preview] Preview generation failed:", err);
     });
@@ -60,6 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Preview sendo gerada. Atualize a página em alguns segundos.",
+      mode: faceRefBase64 ? "multimodal" : "text-only",
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
