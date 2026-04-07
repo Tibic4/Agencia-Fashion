@@ -237,14 +237,24 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
 /**
  * Vestir uma peça em um modelo (Virtual Try-On).
  * Requer foto de modelo com corpo visível.
- * Custo: ~R$ 0,87 (2 créditos — quality mode auto)
+ * Custo: ~4 créditos (quality mode, 2k resolution)
  */
 export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
   const start = Date.now();
+
+  // Build smart prompt from VTO vision data + any manual prompt
+  const vtoPrompt = buildFashnTryOnPrompt(params.visionData);
+  const finalPrompt = params.prompt
+    ? `${params.prompt}\n${vtoPrompt}`
+    : vtoPrompt;
+
   const jobId = await submitJob("tryon-max", {
     model_image: params.modelImage,
     product_image: params.productImage,
-    ...(params.prompt ? { prompt: params.prompt } : {}),
+    prompt: finalPrompt,
+    category: "full-body",
+    generation_mode: "quality",
+    resolution: "2k",
   });
   const result = await pollResult(jobId);
   logFashnCost("virtual_try_on", "tryon-max", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
