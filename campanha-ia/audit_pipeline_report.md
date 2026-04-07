@@ -36,9 +36,15 @@ O `Promise.all` possui o mecanismo de **Falha Rápida**. Se a imagem Try-On for 
 - Assumir a estrutura de **Modo Estruturado Zod** da `Vercel AI SDK` ou `Object Mode` do Google AI, cortando pela raiz o ato de interpretar Regex stringificado em backend.
 
 ### Problema E: A Bola de Neve do Auto-Retry do Scorer
-**Diagnóstico:** A configuração `"v2.1"` cria um avaliador (Scorer). Notas menores que 40 invocam o motor inteiro do Copywriter e Refiner mais uma vez. Isso aumenta a esteira em +2 chamadas pesadas (Input de 4k+ tokens). O processador envia o stream e fica esperando. Esse fluxo quadruplica o TTFB (Time To First Byte Final) expondo a arquitetura Proxy (NGINX) da sua VPS ao risco de engolir um gatilho de inatividade `Timeout 504 Gateway Time-out` (frequentemente configurado para 60s padrão num servidor isolado Linux).
+**Diagnóstico:** A configuração `"v2.1"` cria um avaliador (Scorer). Notas menores que 55 invocam o motor inteiro do Copywriter e Refiner mais uma vez (L293-341 do `pipeline.ts`). Isso aumenta a esteira em +2 chamadas pesadas (Input de 4k+ tokens). O processador envia o stream e fica esperando. Esse fluxo quadruplica o TTFB (Time To First Byte Final) expondo a arquitetura Proxy (NGINX) da sua VPS ao risco de engolir um gatilho de inatividade `Timeout 504 Gateway Time-out` (frequentemente configurado para 60s padrão num servidor isolado Linux).
 **A Resolução:**
-- Retries agressivos textuais só devem ocorrer internamente para quebra de Schemas rígidos. Para "melhorias" estéticas em Copy baseadas no "Score Funcional", gere primeiro à revelia pro Front, exiba o botão "Melhorar/Refinar", e trate a requisição secundária isolada e transparente. Não empilhe esperas no Server-Side.
+- Remover o auto-retry inteiro do Scorer. Em vez disso, se `nota_geral < 55`, incluir flag `needsRefinement: true` no resultado. O frontend exibirá o botão "✨ Refinar textos" para o lojista clicar sob demanda — transformando um bug de latência numa feature monetizável no Plano Pro. Não empilhe esperas no Server-Side.
+
+### Problema F: QA Agent Usa Modelo Hardcoded
+**Arquivo:** `src/lib/google/nano-banana.ts` (Linha 200)
+**Diagnóstico:** O QA Visual Agent (`qaVisualCheck`) chama `model: "gemini-2.5-flash"` diretamente no código, ignorando a variável de ambiente `AI_MODEL_GEMINI_FLASH`. Se os defaults forem migrados para `gemini-3-flash-preview` na configuração do pipeline, o QA Agent continua preso no modelo antigo deprecated — gerando inconsistência de velocidade e risco de descontinuação.
+**A Resolução:**
+- Substituir o hardcode por `process.env.AI_MODEL_GEMINI_FLASH || "gemini-3-flash-preview"` para que todas as chamadas de texto sigam o mesmo motor configurável.
 
 ---
 
@@ -48,7 +54,7 @@ O `Promise.all` possui o mecanismo de **Falha Rápida**. Se a imagem Try-On for 
 ### Problema G: O Gargalo do Chain of Thought e Timeouts (Linha 164)
 **Diagnóstico:** Uma imagem demorada vinda da API Google (15s). Ao bater no **QA Visual Agent**, o código impõe um raciocínio detalhado em CoT (*STEP 1, STEP 2...*). E se rejeitada (exibindo major errors), ela refaz a imagem do zero, gastando facilmente ~35 a 45 segundos. Em cima disso, o Proxy da sua VPS tem um timeout severo de espera pro front End. Quando bate a marca dos ~50s ele rasga a conexão e diz falha, independente se a segunda imagem chegou na memória 3ms depois.
 **A Resolução:**
-- Adoção de **Timeout Limiter Interrompível**: `const runTime = Date.now() - start;`. Se ao falhar e tentar de novo, o relógio encostar no Redline da sua VPS (Ex: > 35s executados), interrompa o re-check e aja via Fallback: *"Entregue a imagem VTO V1 com pequenas falhas"*. Preferível manter retenção e não cair pro OOM Error.
+- Adoção de **Timeout Limiter Interrompível**: `const elapsed = Date.now() - start;`. Se ao falhar e tentar de novo, o relógio encostar no Redline da sua VPS (Ex: > 35s executados), interrompa o re-check e aja via Fallback: *"Entregue a imagem VTO V1 com pequenas falhas"*. Preferível manter retenção e não cair pro OOM Error.
 
 ### Problema H: Base64 Strings Massivos Estourando V8 Heap Memory
 **Diagnóstico:** As strings das Fotos da loja e avatares rolam livremente pelo código via *Base64* num Array. Numa VPS genérica rodando Next Server em cluster PM2/Docker, os Limites do NodeJS Heap Memory (1.4GB - 2GB) podem estourar num sabado à tarde caso 10-15 Lojistas subam 4 fotos simultâneas fazendo campanha. A string Base64 se expande enormemente. Isso resulta num `FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed` na VPS física, botando o seu site fora do ar de vez.
@@ -69,10 +75,10 @@ O `Promise.all` possui o mecanismo de **Falha Rápida**. Se a imagem Try-On for 
 **A Resolução:**
 - Transbordo pro Inngest de forma Bruta. A API principal recebe o ID e dá HTTP 200 pro lojista instantaneamente. Toda edição fotográfica, estourar e remontar buffers para a API do Google GenAI precisa ocorrer obrigatoriamente dentro do script Worker do Inngest `generateModelPreviewJob`.
 
-### Problema J: Egress Network Invisível (Inngest API)
-**Diagnóstico:** Na forma em que foi escrito, a VPS posta a referência da face no Storage Supabase e envia a String da URL pro Worker Inngest, que roda `fetch()` contra o storage para remontar a foto em Base64 de novo. Em hospedagem VPS, ciclos de banda L7 adicionais e conexões saíntes TCP atípicas atrasam microsegundos desatentos.
-**A Resolução:**
-- Passe o Buffer já simplificado da fase inicial pro Handler do Inngest (Payload Base64 < 512KB). Evite baixar e subir o próprio arquivo internamente entre instâncias do mesmo ambiente sistêmico se não houver um requisito arquitetônico rígido.
+### Problema J: Egress Network Invisível (Inngest API) — ✅ JÁ MITIGADO
+**Diagnóstico:** Na forma em que foi escrito, a VPS posta a referência da face no Storage Supabase e envia a String da URL pro Worker Inngest, que roda `fetch()` contra o storage para remontar a foto em Base64 de novo.
+**Status Atual:** Após auditoria cruzada do código real, esta abordagem é na verdade **a correta**. O payload do Inngest tem limite rígido de 512KB. Enviar Base64 diretamente estouraria esse limite com fotos de celular (3-5MB → 4-7MB em Base64). O `fetch()` do worker para o Supabase Storage demora ~200ms (mesmo datacenter) — custo irrisório perante os 8-15s da geração de imagem.
+**Conclusão:** Manter como está. Nenhuma ação necessária.
 
 ### Problema K: O Acidente Silencioso e Avatares Zumbis (`functions.ts`)
 **Diagnóstico:** O trecho `if (!url) { throw new Error("..."); }` falha sob stress longo das IAs. E se a API do Gemini Models cair fora do ar, o Inngest tenta 2x e falha em silêncio. Como ele não manda uma mensagem avisando a Database que desistiu da vida, a base fica eternamente gravada como `status: "pending"`. O usuário abre o Painel amanhã e o avatar nunca carrega, eternizando o Loader girando na tela.
@@ -82,13 +88,34 @@ O `Promise.all` possui o mecanismo de **Falha Rápida**. Se a imagem Try-On for 
 ---
 
 ## 5. Migração Obrigatória de Motor (Gemini V3)
-**Contexto de Falha:** Todos os problemas de Parse JSON (Problema D) e de Timeouts severos da VPS (Problema G) estão sendo agravados porque a implementação de IA foi erguida sobre uma biblioteca obsoleta e modelos da geração anterior.
+**Contexto de Falha:** Os problemas de Timeouts severos da VPS (Problema G) estão sendo agravados porque os modelos de **texto** usados no pipeline são da geração `2.5`, que o Google já classificou como **Legacy/Deprecated**.
+
+> [!NOTE]
+> **SDK Correto — Já Migrado ✅**
+> O projeto já utiliza o SDK oficial mais recente (`@google/genai` com `GoogleGenAI`). Nenhuma mudança de pacote NPM é necessária.
 
 > [!WARNING]
-> **Bibliotecas Deprecated (Obsoletas)**  
-> Se o projeto usa pacotes como `@google/generative-ai` e invoca modelos como `gemini-1.5-flash` ou `1.5-pro`, saiba que eles estão depreciados (Legacy). Continuar nesta fundação acarreta em desperdício da máquina e lentidão nas respostas.
+> **Modelos de Texto Deprecated**  
+> Os defaults atuais (`gemini-2.5-flash` e `gemini-2.5-pro`) são modelos Legacy. Devem ser substituídos pelos modelos da geração 3, que oferecem menor latência e maior qualidade cognitiva.
+> O modelo de **imagem** (`gemini-3.1-flash-image-preview`) já é o mais recente e **NÃO deve ser alterado**.
 
 **O Plano Direto de Refatoração:**
-1. **Descarte do SDK Antigo:** Fazer o drop total da Lib depreciada e instalar a oficial mais recente: `npm install @google/genai`.
-2. **Salto de Geração (Hiper Velocidade):** Substituir nos scripts as chamadas legadas pela família de extrema baixa latência: mudar de `gemini-1.5-flash` para `gemini-3-flash-preview`. Isso derrubará o tempo ocioso das conexões.
-3. **Morte Final ao Erro de JSON (Structured Outputs Nativos):** O novo SDK elimina para sempre a necessidade da função perigosa de Regex `parseJSON()`. Ao passar o atributo `responseSchema` direto na requisição, o motor obriga a IA a devolver um JSON perfeito em 100% das vezes. Fim do desperdício de tokens na refação!
+1. **Salto de Geração — Texto (Hiper Velocidade):** Substituir nos defaults do pipeline: `gemini-2.5-flash` → `gemini-3-flash-preview` e `gemini-2.5-pro` → `gemini-3-pro-preview`. Arquivos afetados: `providers/index.ts` (L46-47), `providers/gemini.ts` (L47), `route.ts` (L226, L276, L284), e `nano-banana.ts` (L200 — QA Agent).
+2. **Tabela de Pricing Desatualizada:** Os mapas de custo em `providers/types.ts` (L81-82) e `pricing/index.ts` (L32-33) só possuem entradas para `gemini-2.5-*`. Adicionar entradas para `gemini-3-flash-preview` e `gemini-3-pro-preview` para que os relatórios de custo continuem precisos.
+3. **Morte Final ao Erro de JSON (Structured Outputs Nativos):** O SDK atual já suporta `responseSchema` nativamente. Ao garantir que o Gemini 3 receba o schema Zod convertido, a função perigosa de Regex `parseJSON()` deixa de ser necessária. O motor obriga a IA a devolver JSON perfeito em 100% das vezes.
+
+---
+
+## 6. Problemas Adicionais Descobertos na Auditoria Cruzada
+
+### Problema L: Nano Banana Cost Logger Referencia Modelo Errado
+**Arquivo:** `src/lib/google/nano-banana.ts` (Linha 66)
+**Diagnóstico:** A função `logNanoBananaCost` busca pricing com a key `"gemini-2.5-flash"` para calcular o custo de geração de imagem, porém o modelo real é `gemini-3.1-flash-image-preview` (constante `MODEL` na L14). O cost-log grava valores incorretos no banco, distorcendo os relatórios financeiros do SaaS.
+**A Resolução:**
+- Usar a constante `MODEL` já definida no topo do arquivo, ou criar uma entrada específica na tabela de pricing para o modelo de imagem.
+
+### Problema M: Cache de Providers Nunca Invalida
+**Arquivo:** `src/lib/ai/providers/index.ts` (Linha 29-36)
+**Diagnóstico:** A variável `_providers` é cacheada na primeira chamada e nunca é resetada. Se variáveis de ambiente forem alteradas em runtime (hot-reload, reconfiguração de modelo via painel admin), o sistema continua usando os modelos antigos até o próximo restart do PM2.
+**A Resolução:**
+- Registrar como tech-debt de baixa prioridade. Não bloqueia a implementação atual, mas deve ser endereçado quando o painel admin permitir troca de modelos em tempo real.
