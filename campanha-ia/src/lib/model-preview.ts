@@ -185,7 +185,7 @@ export async function generatePreviewDirect(data: ModelPreviewParams): Promise<v
 
   await supabase
     .from("store_models")
-    .update({ photo_url: url, preview_url: url })
+    .update({ photo_url: url })
     .eq("id", data.modelId);
 
   console.log(`[Preview] 💾 Salvo no DB para "${data.name}" (${data.modelId})`);
