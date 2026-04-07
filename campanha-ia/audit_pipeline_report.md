@@ -78,3 +78,17 @@ O `Promise.all` possui o mecanismo de **Falha Rápida**. Se a imagem Try-On for 
 **Diagnóstico:** O trecho `if (!url) { throw new Error("..."); }` falha sob stress longo das IAs. E se a API do Gemini Models cair fora do ar, o Inngest tenta 2x e falha em silêncio. Como ele não manda uma mensagem avisando a Database que desistiu da vida, a base fica eternamente gravada como `status: "pending"`. O usuário abre o Painel amanhã e o avatar nunca carrega, eternizando o Loader girando na tela.
 **A Resolução:**
 - O processador Inngest deve comportar handlers estritos de "onFailure". Se todos os Fallbacks baterem na trave, uma instrução final corre para a base de dados: `await supabase.from("store_models").update({ preview_status: 'failed' })`. Isso reativa a tela do PWA Front-end avisando o lojista: *"Epa, o gerador de IA caiu. Clique aqui e tente de novo"*.
+
+---
+
+## 5. Migração Obrigatória de Motor (Gemini V3)
+**Contexto de Falha:** Todos os problemas de Parse JSON (Problema D) e de Timeouts severos da VPS (Problema G) estão sendo agravados porque a implementação de IA foi erguida sobre uma biblioteca obsoleta e modelos da geração anterior.
+
+> [!WARNING]
+> **Bibliotecas Deprecated (Obsoletas)**  
+> Se o projeto usa pacotes como `@google/generative-ai` e invoca modelos como `gemini-1.5-flash` ou `1.5-pro`, saiba que eles estão depreciados (Legacy). Continuar nesta fundação acarreta em desperdício da máquina e lentidão nas respostas.
+
+**O Plano Direto de Refatoração:**
+1. **Descarte do SDK Antigo:** Fazer o drop total da Lib depreciada e instalar a oficial mais recente: `npm install @google/genai`.
+2. **Salto de Geração (Hiper Velocidade):** Substituir nos scripts as chamadas legadas pela família de extrema baixa latência: mudar de `gemini-1.5-flash` para `gemini-3-flash-preview`. Isso derrubará o tempo ocioso das conexões.
+3. **Morte Final ao Erro de JSON (Structured Outputs Nativos):** O novo SDK elimina para sempre a necessidade da função perigosa de Regex `parseJSON()`. Ao passar o atributo `responseSchema` direto na requisição, o motor obriga a IA a devolver um JSON perfeito em 100% das vezes. Fim do desperdício de tokens na refação!
