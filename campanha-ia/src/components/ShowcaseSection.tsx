@@ -217,14 +217,24 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
   );
 }
 
-/**
- * ShowcaseSection — recebe items como prop do Server Component (SSR).
- * Isso elimina a cascata: JS hydrate → fetch API → load images.
- */
-export default function ShowcaseSection({ items }: { items: ShowcaseItem[] }) {
+export default function ShowcaseSection() {
+  const [items, setItems] = useState<ShowcaseItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (items.length === 0) return null;
+  useEffect(() => {
+    fetch("/api/showcase")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.data?.length) setItems(d.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
+
+  // Não renderiza nada se não tem itens
+  if (loaded && items.length === 0) return null;
+  if (!loaded) return null;
 
   const goTo = (i: number) => {
     setActiveIndex(Math.max(0, Math.min(items.length - 1, i)));

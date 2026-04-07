@@ -266,11 +266,22 @@ export default function KonvaStorySlide({
       const node = e.target;
       const scaleX = node.scaleX();
       const scaleY = node.scaleY();
+      // Reset scale to 1 — the visual resize is baked into the node dimensions
       node.scaleX(1);
       node.scaleY(1);
-      // The transformer resized the node — we just normalize scale
+      // If this is a text group and font scaling is desired, propagate scale
+      // to fontSize via the callback (matches KonvaCanvas pattern)
+      if (onFontSizeChange && scaleY !== 1) {
+        const parent = node.parent;
+        const id = parent?.name?.() || node.name?.();
+        if (id) {
+          const currentSize = getFontSize(id, 40);
+          const newSize = Math.round(currentSize * Math.max(scaleX, scaleY));
+          onFontSizeChange(id, Math.max(12, Math.min(200, newSize)));
+        }
+      }
     },
-    []
+    [onFontSizeChange, getFontSize]
   );
 
   return (
