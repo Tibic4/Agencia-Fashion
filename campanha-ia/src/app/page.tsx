@@ -1,27 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
+import ShowcaseSectionLoader from "@/components/ShowcaseSectionLoader";
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
    Evita SSR a cada request na VPS de CPU limitada.
    ═══════════════════════════════════════ */
 export const revalidate = 3600;
-
-/* ═══════════════════════════════════════
-   Dynamic imports — componentes abaixo da dobra
-   carregados sob demanda para reduzir TBT/JS bundle
-   ═══════════════════════════════════════ */
-const ShowcaseSection = dynamic(() => import("@/components/ShowcaseSection"), {
-  ssr: false,
-  loading: () => (
-    <section className="section" style={{ background: "var(--surface)" }}>
-      <div className="container text-center py-20">
-        <div className="w-10 h-10 border-3 border-[var(--brand-200)] border-t-[var(--brand-500)] rounded-full animate-spin mx-auto" />
-      </div>
-    </section>
-  ),
-});
 
 /* ═══════════════════════════════════════
    Icons (inline SVGs to avoid deps)
@@ -429,7 +414,7 @@ export default function Home() {
         </section>
 
         {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
-        <ShowcaseSection />
+        <ShowcaseSectionLoader />
 
         {/* ═══ PRICING ═══ */}
         <section id="precos" className="section" style={{ background: 'var(--background)' }}>
