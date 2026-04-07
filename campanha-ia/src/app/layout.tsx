@@ -2,9 +2,21 @@ import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
-import { PostHogProvider } from "@/lib/analytics/posthog";
-import FloatingWhatsApp from "@/components/FloatingWhatsApp";
+import dynamic from "next/dynamic";
 import "./globals.css";
+
+/* ═══════════════════════════════════════
+   Dynamic imports — Scripts não-críticos carregados
+   após a tela já estar interativa (reduz TBT)
+   ═══════════════════════════════════════ */
+const PostHogProvider = dynamic(
+  () => import("@/lib/analytics/posthog").then((m) => m.PostHogProvider),
+  { ssr: false }
+);
+const FloatingWhatsApp = dynamic(
+  () => import("@/components/FloatingWhatsApp"),
+  { ssr: false }
+);
 
 const dmSans = DM_Sans({
   variable: "--font-body",
