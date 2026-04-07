@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import HeadlineABTest from "@/components/HeadlineABTest";
 import MobilePreview from "@/components/MobilePreview";
+import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
 import { extractPrice } from "@/components/konva/constants";
 import dynamic from "next/dynamic";
 
@@ -453,6 +454,19 @@ export default function ResultadoCampanha() {
               cta={campaignData?.output?.meta_ads?.cta_button || "Compre agora"}
               storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
               score={scoreData.nota_geral}
+            />
+          </div>
+
+          {/* ═══ Stories Preview (CSS — 3 slides) ═══ */}
+          <div className="mb-6">
+            <CreativeStoriesPreview
+              productName={productName}
+              price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
+              slideGancho={campaignData?.output?.instagram_stories?.slide_1}
+              slideProduto={campaignData?.output?.instagram_stories?.slide_2}
+              slideCTA={campaignData?.output?.instagram_stories?.slide_3}
+              productImageUrl={productImageUrl}
+              storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
             />
           </div>
 
