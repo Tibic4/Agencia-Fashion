@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { CustomElement, ImportValidation } from "../types";
 import { MIN_IMPORT_SIZE, MAX_IMPORT_SIZE, DEFAULT_ELEMENT_SIZE } from "../types";
 import { CANVAS_W } from "../constants";
@@ -8,10 +8,20 @@ import { CANVAS_W } from "../constants";
 /**
  * Manages custom imported elements (logos, stickers, badges).
  * Handles validation, loading, positioning, and removal.
+ * Cleans up Object URLs on unmount to prevent memory leaks.
  */
 export function useCustomElements(canvasH: number) {
   const [elements, setElements] = useState<CustomElement[]>([]);
   const [selectedCustomId, setSelectedCustomId] = useState<string | null>(null);
+  const elementsRef = useRef(elements);
+  elementsRef.current = elements;
+
+  // P0-2: Cleanup all Object URLs on unmount
+  useEffect(() => {
+    return () => {
+      elementsRef.current.forEach((el) => URL.revokeObjectURL(el.imageUrl));
+    };
+  }, []);
 
   /**
    * Validates an image file before import.
@@ -192,6 +202,19 @@ export function useCustomElements(canvasH: number) {
       return next;
     });
   }, []);
+  /**
+   * Updates position, size, and rotation after Transformer interaction.
+   */
+  const updateTransform = useCallback(
+    (id: string, x: number, y: number, width: number, height: number, rotation: number) => {
+      setElements((prev) =>
+        prev.map((el) =>
+          el.id === id ? { ...el, x, y, width, height, rotation } : el
+        )
+      );
+    },
+    []
+  );
 
   return {
     elements,
@@ -202,6 +225,7 @@ export function useCustomElements(canvasH: number) {
     updatePosition,
     updateSize,
     updateOpacity,
+    updateTransform,
     reorderElement,
     validateImage,
   };

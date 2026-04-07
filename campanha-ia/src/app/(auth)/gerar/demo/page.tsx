@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import CreativePreview from "@/components/CreativePreview";
-import CreativeStoriesPreview from "@/components/CreativeStoriesPreview";
 import HeadlineABTest from "@/components/HeadlineABTest";
 import MobilePreview from "@/components/MobilePreview";
 import { extractPrice } from "@/components/konva/constants";
@@ -438,48 +436,25 @@ export default function ResultadoCampanha() {
             )}
           </div>
 
-          {/* ═══ Compositor Konva (imagem modelo + overlay texto) ═══ */}
-          {tryOnImageUrl && (
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-semibold">🎨 Criativo com Modelo IA</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "#dcfce7", color: "#166534" }}>
-                  Pronto para postar
-                </span>
-              </div>
-              <KonvaCompositor
-                modelImageUrl={tryOnImageUrl}
-                productImageUrl={productImageUrl}
-                productName={productName}
-                price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
-                headline={campaignData?.output?.meta_ads?.titulo || ""}
-                cta={campaignData?.output?.meta_ads?.cta_button || "Compre agora"}
-                storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
-                score={scoreData.nota_geral}
-              />
+          {/* ═══ Compositor Konva (único sistema de criativo) ═══ */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-semibold">🎨 Criativo {tryOnImageUrl ? "com Modelo IA" : "do Produto"}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "#dcfce7", color: "#166534" }}>
+                Pronto para postar
+              </span>
             </div>
-          )}
-
-          {/* Criativo com foto do produto (fallback/complementar) */}
-          <CreativePreview
-            productName={productName}
-            price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
-            headline={campaignData?.output?.meta_ads?.titulo || ""}
-            cta={campaignData?.output?.meta_ads?.cta_button || "Comprar agora"}
-            productImageUrl={productImageUrl}
-            storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
-          />
-
-          {/* Stories 1080×1920 — 3 slides */}
-          <CreativeStoriesPreview
-            productName={productName}
-            price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
-            slideGancho={campaignData?.output?.instagram_stories?.slide_1 || "Olha o que acabou de chegar! 😍"}
-            slideProduto={campaignData?.output?.instagram_stories?.slide_2 || ""}
-            slideCTA={campaignData?.output?.instagram_stories?.slide_3 || "Chama no direct! 💬"}
-            productImageUrl={productImageUrl}
-            storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
-          />
+            <KonvaCompositor
+              modelImageUrl={tryOnImageUrl}
+              productImageUrl={productImageUrl}
+              productName={productName}
+              price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
+              headline={campaignData?.output?.meta_ads?.titulo || ""}
+              cta={campaignData?.output?.meta_ads?.cta_button || "Compre agora"}
+              storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
+              score={scoreData.nota_geral}
+            />
+          </div>
 
           {/* A/B Testing — Headlines */}
           <HeadlineABTest

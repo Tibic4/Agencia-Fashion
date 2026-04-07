@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useEffect, useRef } from "react";
-import { Stage, Layer, Image as KImage, Text, Rect, Group } from "react-konva";
+import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer, Line } from "react-konva";
 import Konva from "konva";
 import type {
   TemplateStyle,
@@ -13,6 +13,7 @@ import type {
 } from "./types";
 import DraggableElement from "./DraggableElement";
 import { CANVAS_W, LAYOUT, truncateText, formatPrice } from "./constants";
+import type { SnapGuide } from "./hooks/useSnapGuides";
 
 interface KonvaCanvasProps {
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -25,6 +26,7 @@ interface KonvaCanvasProps {
   gradientImg: HTMLImageElement | null;
   positions: ElementPositions;
   selectedId: string | null;
+  hiddenElements: Set<ElementKey>;
   productName: string;
   price: string;
   headline?: string;
@@ -40,6 +42,9 @@ interface KonvaCanvasProps {
   selectedCustomId?: string | null;
   onCustomDragEnd?: (id: string, x: number, y: number) => void;
   onCustomSelect?: (id: string | null) => void;
+  onCustomTransformEnd?: (id: string, x: number, y: number, w: number, h: number, rotation: number) => void;
+  /* Snap guides */
+  snapGuides?: SnapGuide[];
 }
 
 /**
@@ -57,6 +62,7 @@ export default function KonvaCanvas({
   gradientImg,
   positions,
   selectedId,
+  hiddenElements,
   productName,
   price,
   headline,
@@ -71,8 +77,12 @@ export default function KonvaCanvas({
   selectedCustomId,
   onCustomDragEnd,
   onCustomSelect,
+  onCustomTransformEnd,
+  snapGuides = [],
 }: KonvaCanvasProps) {
   const fontLoadedRef = useRef(false);
+  const transformerRef = useRef<Konva.Transformer>(null);
+  const customGroupRefs = useRef<Map<string, Konva.Group>>(new Map());
   const modelImgRef = useRef<Konva.Image>(null);
   const gradientRef = useRef<Konva.Image>(null);
 
@@ -105,6 +115,22 @@ export default function KonvaCanvas({
       } catch { /* safe fallback */ }
     }
   }, [gradientImg]);
+
+  // P1-6: Attach Transformer to selected custom element
+  useEffect(() => {
+    const tr = transformerRef.current;
+    if (!tr) return;
+    if (selectedCustomId) {
+      const node = customGroupRefs.current.get(selectedCustomId);
+      if (node) {
+        tr.nodes([node]);
+        tr.getLayer()?.batchDraw();
+        return;
+      }
+    }
+    tr.nodes([]);
+    tr.getLayer()?.batchDraw();
+  }, [selectedCustomId]);
 
   const displayPrice = useMemo(() => formatPrice(price), [price]);
   const S = previewScale;
@@ -225,7 +251,8 @@ export default function KonvaCanvas({
             onClick={handleStageClick}
             onTap={handleStageClick}
           >
-            <Layer>
+            {/* ═══ Static Layer — only redraws on load/template switch ═══ */}
+            <Layer listening={false}>
               {/* 1. Background */}
               <Rect x={0} y={0} width={CANVAS_W} height={canvasH} fill="#f5f5f5" />
 
@@ -239,7 +266,6 @@ export default function KonvaCanvas({
                   width={CANVAS_W}
                   height={canvasH}
                   crop={{ x: crop.cropX, y: crop.cropY, width: crop.cropW, height: crop.cropH }}
-                  listening={false}
                 />
               )}
 
@@ -252,14 +278,24 @@ export default function KonvaCanvas({
                   y={0}
                   width={CANVAS_W}
                   height={canvasH}
-                  listening={false}
                 />
               )}
+            </Layer>
+
+            {/* ═══ Interactive Layer — redraws on drag/selection ═══ */}
+            <Layer>
 
               {/* 3.5 Custom imported elements (between gradient and text) */}
               {customElements.map((el) => (
                 <Group
                   key={el.id}
+                  ref={(node) => {
+                    if (node) {
+                      customGroupRefs.current.set(el.id, node);
+                    } else {
+                      customGroupRefs.current.delete(el.id);
+                    }
+                  }}
                   x={el.x}
                   y={el.y}
                   offsetX={el.width / 2}
@@ -282,6 +318,22 @@ export default function KonvaCanvas({
                   onDragStart={() => {
                     onCustomSelect?.(el.id);
                   }}
+                  onTransformEnd={(e) => {
+                    const node = e.target;
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+                    // Reset scale — apply to width/height instead
+                    node.scaleX(1);
+                    node.scaleY(1);
+                    onCustomTransformEnd?.(
+                      el.id,
+                      node.x(),
+                      node.y(),
+                      Math.max(20, el.width * scaleX),
+                      Math.max(20, el.height * scaleY),
+                      node.rotation()
+                    );
+                  }}
                 >
                   <KImage
                     image={el.loadedImg!}
@@ -289,30 +341,38 @@ export default function KonvaCanvas({
                     height={el.height}
                     cornerRadius={el.circular ? el.width / 2 : 0}
                   />
-                  {/* Selection highlight */}
-                  {selectedCustomId === el.id && (
-                    <Rect
-                      x={-3}
-                      y={-3}
-                      width={el.width + 6}
-                      height={el.height + 6}
-                      stroke="#ec4899"
-                      strokeWidth={2}
-                      dash={[6, 3]}
-                      cornerRadius={el.circular ? (el.width + 6) / 2 : 4}
-                      listening={false}
-                    />
-                  )}
                 </Group>
               ))}
 
+              {/* P1-6: Transformer for selected custom element */}
+              <Transformer
+                ref={transformerRef}
+                anchorSize={10}
+                anchorStroke="#ec4899"
+                anchorFill="#fff"
+                borderStroke="#ec4899"
+                borderDash={[4, 3]}
+                rotateAnchorOffset={24}
+                enabledAnchors={[
+                  "top-left", "top-right",
+                  "bottom-left", "bottom-right",
+                ]}
+                boundBoxFunc={(oldBox, newBox) => {
+                  // Min size guard
+                  if (newBox.width < 20 || newBox.height < 20) return oldBox;
+                  return newBox;
+                }}
+              />
+
               {/* 4. Store badge */}
+              {!hiddenElements.has("badge") && (
               <DraggableElement
                 elementKey="badge"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
+                canvasH={canvasH}
               >
                 <Rect
                   offsetX={badgeWidth / 2}
@@ -332,16 +392,20 @@ export default function KonvaCanvas({
                   width={badgeWidth}
                   offsetX={badgeWidth / 2}
                   offsetY={10}
+                  perfectDrawEnabled={false}
                 />
               </DraggableElement>
+              )}
 
               {/* 5. Product name */}
+              {!hiddenElements.has("productName") && (
               <DraggableElement
                 elementKey="productName"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
+                canvasH={canvasH}
               >
                 <Text
                   text={productName}
@@ -352,17 +416,20 @@ export default function KonvaCanvas({
                   align="center"
                   width={textW}
                   offsetX={textW / 2}
+                  perfectDrawEnabled={false}
                 />
               </DraggableElement>
+              )}
 
               {/* 6. Headline */}
-              {headline && (
+              {headline && !hiddenElements.has("headline") && (
                 <DraggableElement
                   elementKey="headline"
                   positions={positions}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
                   selectedId={selectedId}
+                  canvasH={canvasH}
                 >
                   <Text
                     text={truncateText(headline, 55)}
@@ -373,17 +440,20 @@ export default function KonvaCanvas({
                     align="center"
                     width={headlineW}
                     offsetX={headlineW / 2}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableElement>
               )}
 
               {/* 7. Price */}
+              {!hiddenElements.has("price") && (
               <DraggableElement
                 elementKey="price"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
+                canvasH={canvasH}
               >
                 <Text
                   text={displayPrice}
@@ -394,16 +464,20 @@ export default function KonvaCanvas({
                   align="center"
                   width={priceWidth}
                   offsetX={priceWidth / 2}
+                  perfectDrawEnabled={false}
                 />
               </DraggableElement>
+              )}
 
               {/* 8. CTA Button */}
+              {!hiddenElements.has("cta") && (
               <DraggableElement
                 elementKey="cta"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
+                canvasH={canvasH}
               >
                 <Rect
                   offsetX={LAYOUT.CTA_WIDTH / 2}
@@ -426,17 +500,20 @@ export default function KonvaCanvas({
                   width={LAYOUT.CTA_WIDTH}
                   offsetX={LAYOUT.CTA_WIDTH / 2}
                   offsetY={13}
+                  perfectDrawEnabled={false}
                 />
               </DraggableElement>
+              )}
 
               {/* 9. Score badge */}
-              {score && score > 0 && (
+              {score && score > 0 && !hiddenElements.has("score") && (
                 <DraggableElement
                   elementKey="score"
                   positions={positions}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
                   selectedId={selectedId}
+                  canvasH={canvasH}
                 >
                   <Rect
                     offsetX={LAYOUT.SCORE_WIDTH / 2}
@@ -456,17 +533,20 @@ export default function KonvaCanvas({
                     width={LAYOUT.SCORE_WIDTH}
                     offsetX={LAYOUT.SCORE_WIDTH / 2}
                     offsetY={8}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableElement>
               )}
 
               {/* 10. Watermark */}
+              {!hiddenElements.has("watermark") && (
               <DraggableElement
                 elementKey="watermark"
                 positions={positions}
                 onDragEnd={onDragEnd}
                 onSelect={onSelect}
                 selectedId={selectedId}
+                canvasH={canvasH}
               >
                 <Text
                   text="Feito com CriaLook"
@@ -478,8 +558,35 @@ export default function KonvaCanvas({
                   align="center"
                   width={LAYOUT.WATERMARK_WIDTH}
                   offsetX={LAYOUT.WATERMARK_WIDTH / 2}
+                  perfectDrawEnabled={false}
                 />
               </DraggableElement>
+              )}
+
+              {/* P2-9: Snap alignment guides */}
+              {snapGuides.map((guide, i) =>
+                guide.orientation === "vertical" ? (
+                  <Line
+                    key={`snap-v-${i}`}
+                    points={[guide.position, 0, guide.position, canvasH]}
+                    stroke="#06b6d4"
+                    strokeWidth={1}
+                    dash={[8, 4]}
+                    opacity={0.6}
+                    listening={false}
+                  />
+                ) : (
+                  <Line
+                    key={`snap-h-${i}`}
+                    points={[0, guide.position, CANVAS_W, guide.position]}
+                    stroke="#06b6d4"
+                    strokeWidth={1}
+                    dash={[8, 4]}
+                    opacity={0.6}
+                    listening={false}
+                  />
+                )
+              )}
             </Layer>
           </Stage>
         </div>

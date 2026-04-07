@@ -236,13 +236,10 @@ async function pollResult(jobId: string, maxSeconds = 120): Promise<FashnJobResu
  */
 export async function tryOnProduct(params: FashnTryOnParams & { storeId?: string; campaignId?: string }): Promise<FashnJobResult> {
   const start = Date.now();
-  // Construir prompt dinâmico usando VTO data do Vision (se disponível)
-  const prompt = params.prompt || buildFashnTryOnPrompt(params.visionData);
   const jobId = await submitJob("tryon-max", {
     model_image: params.modelImage,
     product_image: params.productImage,
-    prompt,
-    generation_mode: "quality", // Forçar quality explícito (2 créditos, mesmo custo do default auto)
+    ...(params.prompt ? { prompt: params.prompt } : {}),
   });
   const result = await pollResult(jobId);
   logFashnCost("virtual_try_on", "tryon-max", Date.now() - start, result.status === "completed", params.storeId, params.campaignId).catch(() => {});
