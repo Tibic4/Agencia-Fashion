@@ -9,7 +9,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { zodToJsonSchema } from "zod-to-json-schema";
+// responseSchema aceita Zod schemas direto via SDK cast
 import type { LLMProvider, LLMRequest, LLMVisionRequest, LLMResponse } from "./types";
 
 let client: GoogleGenAI | null = null;
@@ -31,7 +31,7 @@ export class GeminiProvider implements LLMProvider {
   readonly name = "google" as const;
   private model: string;
 
-  constructor(model: string = "gemini-3-flash-preview") {
+  constructor(model: string = "gemini-2.5-flash") {
     this.model = model;
   }
 
@@ -42,9 +42,8 @@ export class GeminiProvider implements LLMProvider {
     const config: Record<string, unknown> = {};
 
     if (request.responseSchema) {
-      const jsonSchema = zodToJsonSchema(request.responseSchema as any);
       config.responseMimeType = "application/json";
-      config.responseJsonSchema = jsonSchema;
+      config.responseSchema = request.responseSchema as any;
     }
 
     if (request.temperature !== undefined) {
@@ -129,9 +128,8 @@ export class GeminiProvider implements LLMProvider {
     const config: Record<string, unknown> = {};
 
     if (request.responseSchema) {
-      const jsonSchema = zodToJsonSchema(request.responseSchema as any);
       config.responseMimeType = "application/json";
-      config.responseJsonSchema = jsonSchema;
+      config.responseSchema = request.responseSchema as any;
     }
 
     if (request.temperature !== undefined) {

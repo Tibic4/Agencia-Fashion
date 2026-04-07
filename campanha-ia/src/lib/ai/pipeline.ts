@@ -186,6 +186,12 @@ export async function runCampaignPipeline(
   costs.push(buildCostEntry("vision", visionResponse, visionStart));
   const vision = parseAndValidate<VisionAnalysis>(visionResponse.text, VisionOutputSchema, "Vision");
 
+  // Null safety: se Vision falhar, abortar com erro claro
+  if (!vision?.produto?.nome_generico) {
+    console.error("[Pipeline] ❌ Vision retornou dados inválidos:", JSON.stringify(vision).slice(0, 200));
+    throw new Error("Pipeline falhou: Vision não conseguiu analisar a imagem. Tente outra foto com melhor iluminação.");
+  }
+
   // ── STEP 2: Strategy ────────────────────────
   onProgress?.("strategy", "Criando estratégia...", 25);
   const stratStart = Date.now();
