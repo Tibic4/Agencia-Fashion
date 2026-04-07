@@ -3,6 +3,7 @@
 import { Group } from "react-konva";
 import type { ReactNode } from "react";
 import type { ElementKey, ElementPositions, KonvaDragEvent } from "./types";
+import { CANVAS_W } from "./constants";
 
 interface DraggableElementProps {
   elementKey: ElementKey;
@@ -10,12 +11,13 @@ interface DraggableElementProps {
   onDragEnd: (key: ElementKey, e: KonvaDragEvent) => void;
   onSelect: (key: ElementKey) => void;
   selectedId: string | null;
+  canvasH: number;
   children: ReactNode;
 }
 
 /**
  * Reusable wrapper that adds drag + select behavior to any canvas element.
- * Eliminates the repeated draggable/onClick/onTap/getDragStyle pattern.
+ * dragBoundFunc prevents elements from being dragged outside the canvas.
  */
 export default function DraggableElement({
   elementKey,
@@ -23,9 +25,11 @@ export default function DraggableElement({
   onDragEnd,
   onSelect,
   selectedId,
+  canvasH,
   children,
 }: DraggableElementProps) {
   const isSelected = selectedId === elementKey;
+  const MARGIN = 40; // keep at least 40px visible inside canvas
 
   return (
     <Group
@@ -39,6 +43,10 @@ export default function DraggableElement({
       shadowBlur={isSelected ? 12 : 0}
       shadowOffsetX={0}
       shadowOffsetY={0}
+      dragBoundFunc={(pos) => ({
+        x: Math.max(MARGIN, Math.min(pos.x, CANVAS_W - MARGIN)),
+        y: Math.max(MARGIN, Math.min(pos.y, canvasH - MARGIN)),
+      })}
     >
       {children}
     </Group>

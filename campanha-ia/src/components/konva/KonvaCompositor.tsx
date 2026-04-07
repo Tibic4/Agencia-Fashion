@@ -10,6 +10,7 @@ import { useGradientOverlay } from "./hooks/useGradientOverlay";
 import { useDragPositions } from "./hooks/useDragPositions";
 import { useCanvasZoom } from "./hooks/useCanvasZoom";
 import { useCustomElements } from "./hooks/useCustomElements";
+import { useSnapGuides } from "./hooks/useSnapGuides";
 import TemplateSelector from "./TemplateSelector";
 import KonvaToolbar from "./KonvaToolbar";
 import KonvaCanvas from "./KonvaCanvas";
@@ -17,7 +18,7 @@ import ImportPanel from "./ImportPanel";
 
 /**
  * Orchestrator component — composes hooks + sub-components.
- * Now supports custom element imports (logos, stickers, badges).
+ * Supports format toggle (feed/story), undo/redo, and blob export.
  */
 export default function KonvaCompositor({
   modelImageUrl,
@@ -28,11 +29,12 @@ export default function KonvaCompositor({
   cta = "Compre agora",
   storeName = "CriaLook",
   score,
-  format = "feed",
+  format: initialFormat = "feed",
   enableCustomElements = false,
 }: KonvaCompositorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const [activeTemplate, setActiveTemplate] = useState("elegant_dark");
+  const [format, setFormat] = useState<"feed" | "story">(initialFormat);
   const [downloading, setDownloading] = useState(false);
   const [pendingDownload, setPendingDownload] = useState(false);
 
@@ -47,10 +49,16 @@ export default function KonvaCompositor({
     positions,
     selectedId,
     setSelectedId,
+    hiddenElements,
+    toggleVisibility,
     handleDragEnd,
     handleSelect,
     handleDeselect,
     handleReset,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
   } = useDragPositions(CANVAS_H);
   const {
     previewScale,
@@ -68,8 +76,28 @@ export default function KonvaCompositor({
     removeElement,
     updatePosition,
     updateOpacity,
+    updateTransform,
     reorderElement,
   } = useCustomElements(CANVAS_H);
+  const { guides: snapGuides } = useSnapGuides();
+
+  // ═══════════════════════════════════════
+  //  Keyboard shortcuts (Ctrl+Z / Ctrl+Y)
+  // ═══════════════════════════════════════
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleUndo, handleRedo]);
 
   // ═══════════════════════════════════════
   //  Deselect coordination (text ↔ custom)
@@ -94,6 +122,13 @@ export default function KonvaCompositor({
     },
     [setSelectedId, setSelectedCustomId]
   );
+
+  // ═══════════════════════════════════════
+  //  Format toggle (Feed ↔ Story)
+  // ═══════════════════════════════════════
+  const handleFormatToggle = useCallback(() => {
+    setFormat((f) => (f === "feed" ? "story" : "feed"));
+  }, []);
 
   // ═══════════════════════════════════════
   //  Download — reactive approach (no setTimeout hack)
@@ -156,6 +191,51 @@ export default function KonvaCompositor({
     requestAnimationFrame(performExport);
   }, [pendingDownload, selectedId, productName, activeTemplate, CANVAS_H]);
 
+  // ═══════════════════════════════════════
+  //  P1-5: Export as Blob for API integration
+  // ═══════════════════════════════════════
+  const exportAsBlob = useCallback(async (): Promise<Blob | null> => {
+    const stage = stageRef.current;
+    if (!stage) return null;
+
+    const savedScaleX = stage.scaleX();
+    const savedScaleY = stage.scaleY();
+    const savedWidth = stage.width();
+    const savedHeight = stage.height();
+
+    stage.scale({ x: 1, y: 1 });
+    stage.width(CANVAS_W);
+    stage.height(CANVAS_H);
+    stage.batchDraw();
+
+    const dataUrl = stage.toDataURL({
+      pixelRatio: 2,
+      mimeType: "image/png",
+      x: 0,
+      y: 0,
+      width: CANVAS_W,
+      height: CANVAS_H,
+    });
+
+    stage.scale({ x: savedScaleX, y: savedScaleY });
+    stage.width(savedWidth);
+    stage.height(savedHeight);
+    stage.batchDraw();
+
+    // Convert data URL to Blob
+    const res = await fetch(dataUrl);
+    return res.blob();
+  }, [CANVAS_H]);
+
+  // Expose exportAsBlob on ref for parent components
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stage = stageRef.current as any;
+    if (stage) {
+      stage.__exportAsBlob = exportAsBlob;
+    }
+  }, [exportAsBlob]);
+
   return (
     <div>
       {/* Template selector */}
@@ -183,11 +263,18 @@ export default function KonvaCompositor({
           previewScale={previewScale}
           zoomPercent={zoomPercent}
           downloading={downloading}
+          hiddenElements={hiddenElements}
+          onToggleVisibility={toggleVisibility}
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onZoomReset={handleZoomReset}
           onReset={handleReset}
           onDownload={handleDownloadClick}
+          onFormatToggle={handleFormatToggle}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
 
         <div
@@ -197,6 +284,7 @@ export default function KonvaCompositor({
             background: "var(--surface)",
             cursor: selectedId || selectedCustomId ? "move" : "default",
             overflow: "auto",
+            touchAction: "none", // P2-7: prevents browser gesture conflicts with pinch-to-zoom
           }}
         >
           <KonvaCanvas
@@ -210,6 +298,7 @@ export default function KonvaCompositor({
             gradientImg={gradientImg}
             positions={positions}
             selectedId={selectedId}
+            hiddenElements={hiddenElements}
             productName={productName}
             price={price}
             headline={headline}
@@ -225,6 +314,8 @@ export default function KonvaCompositor({
             selectedCustomId={selectedCustomId}
             onCustomDragEnd={updatePosition}
             onCustomSelect={handleSelectCustom}
+            onCustomTransformEnd={updateTransform}
+            snapGuides={snapGuides}
           />
         </div>
 
@@ -236,7 +327,7 @@ export default function KonvaCompositor({
             color: "var(--muted)",
           }}
         >
-          ✋ Arraste textos para reposicionar · 🔍 Use −/+ para zoom · ↩ Resetar restaura o layout
+          ✋ Arraste textos para reposicionar · 🔍 Use −/+ para zoom · ↩ Resetar restaura o layout · ⌨ Ctrl+Z/Y desfazer/refazer
           {enableCustomElements && " · 📎 Importe logos e stickers"}
         </div>
       </div>
