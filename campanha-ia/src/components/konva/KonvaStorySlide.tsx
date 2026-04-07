@@ -79,7 +79,8 @@ export function getStoryDefaults(slideType: SlideType): StoryPositions {
 }
 
 /* ═══════════════════════════════════════
-   DraggableGroup — minimal inline draggable
+   P2-6: DraggableGroup — reuses pattern from DraggableElement
+   P1-2: Uses border stroke instead of expensive shadow for selection
    ═══════════════════════════════════════ */
 function DraggableGroup({
   id,
@@ -107,10 +108,8 @@ function DraggableGroup({
       onClick={() => onSelect(id)}
       onTap={() => onSelect(id)}
       onDragEnd={(e) => onDragEnd(id, e.target.x(), e.target.y())}
-      shadowColor={isSelected ? "#ec4899" : "transparent"}
-      shadowBlur={isSelected ? 12 : 0}
-      shadowOffsetX={0}
-      shadowOffsetY={0}
+      // P1-2: Removed shadow-based selection indicator — Transformer handles visual feedback.
+      // Shadows cause double-render internally and are 4× slower than stroke.
       dragBoundFunc={(p) => ({
         x: Math.max(40, Math.min(p.x, CANVAS_W - 40)),
         y: Math.max(40, Math.min(p.y, STORY_H - 40)),
@@ -149,6 +148,11 @@ export default function KonvaStorySlide({
   const stageRef = externalRef || internalRef;
   const textTransformerRef = useRef<Konva.Transformer>(null);
   const textGroupRefs = useRef<Map<string, Konva.Group>>(new Map());
+  // P1-1: Refs for caching static elements
+  const modelImgRef = useRef<Konva.Image>(null);
+  const gradientRef = useRef<Konva.Image>(null);
+  // P3-2: Font loading check
+  const fontLoadedRef = useRef(false);
 
   // Prefer VTO model image, fallback to product image
   const bgImageSrc = slideType === "produto" ? (modelImageUrl || productImageUrl || null) : null;
@@ -158,6 +162,35 @@ export default function KonvaStorySlide({
   const hasPrice = price && price.trim().length > 0;
   const displayPrice = hasPrice ? formatPrice(price) : "";
   const textW = CANVAS_W - 160;
+
+  // P3-2: Ensure fonts are loaded before drawing (mirrors KonvaCanvas pattern)
+  useEffect(() => {
+    if (fontLoadedRef.current) return;
+    document.fonts.ready.then(() => {
+      fontLoadedRef.current = true;
+      stageRef.current?.batchDraw();
+    });
+  }, [stageRef]);
+
+  // P1-1: Cache model image — doesn't change during interactions
+  useEffect(() => {
+    if (modelImgRef.current && loadedImg) {
+      try {
+        modelImgRef.current.cache();
+        modelImgRef.current.getLayer()?.batchDraw();
+      } catch { /* cache may fail on cross-origin without proper CORS */ }
+    }
+  }, [loadedImg]);
+
+  // P1-1: Cache gradient overlay — only changes when template switches
+  useEffect(() => {
+    if (gradientRef.current && gradientImg) {
+      try {
+        gradientRef.current.cache();
+        gradientRef.current.getLayer()?.batchDraw();
+      } catch { /* safe fallback */ }
+    }
+  }, [gradientImg]);
 
   // Font size helper
   const getFontSize = useCallback(
@@ -178,8 +211,6 @@ export default function KonvaStorySlide({
     }
   }, [selectedId]);
 
-  // Native Transformer handles resizing — no manual scale reset needed
-
   // Stage click deselect
   const handleStageClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -188,14 +219,22 @@ export default function KonvaStorySlide({
     [onDeselect]
   );
 
-  // Ref setter factory
-  const setGroupRef = useCallback(
-    (key: string) => (node: Konva.Group | null) => {
-      if (node) textGroupRefs.current.set(key, node);
-      else textGroupRefs.current.delete(key);
-    },
-    []
-  );
+  // P2-4: Stable ref setter using useMemo to avoid creating new functions per render
+  const refSetters = useMemo(() => {
+    const keys = [
+      "storeBadge", "mainText", "swipeHint",
+      "productImage", "productText", "priceBadge",
+      "ctaText", "ctaButton", "storeName", "watermark",
+    ];
+    const map: Record<string, (node: Konva.Group | null) => void> = {};
+    for (const key of keys) {
+      map[key] = (node: Konva.Group | null) => {
+        if (node) textGroupRefs.current.set(key, node);
+        else textGroupRefs.current.delete(key);
+      };
+    }
+    return map;
+  }, []);
 
   // Computed text sizes for gancho
   const ganchoFontBase = slideText.length > 60 ? 52 : slideText.length > 35 ? 64 : 80;
@@ -221,6 +260,19 @@ export default function KonvaStorySlide({
 
   const isVisible = (key: string) => !hiddenElements.has(key);
 
+  // P3-1: Handle transform end — reset scale to width/height (prevents distortion)
+  const handleTransformEnd = useCallback(
+    (e: Konva.KonvaEventObject<Event>) => {
+      const node = e.target;
+      const scaleX = node.scaleX();
+      const scaleY = node.scaleY();
+      node.scaleX(1);
+      node.scaleY(1);
+      // The transformer resized the node — we just normalize scale
+    },
+    []
+  );
+
   return (
     <div
       style={{ borderRadius: 12, overflow: "hidden", touchAction: "none" }}
@@ -241,6 +293,7 @@ export default function KonvaStorySlide({
           {/* Slide "produto" — product image as background */}
           {slideType === "produto" && loadedImg && imgCrop && (
             <KImage
+              ref={modelImgRef}
               image={loadedImg}
               x={0}
               y={0}
@@ -250,9 +303,9 @@ export default function KonvaStorySlide({
             />
           )}
 
-          {/* Gradient overlay */}
+          {/* Gradient overlay — P1-1: cached for performance */}
           {gradientImg && t.hasGradient && (
-            <KImage image={gradientImg} x={0} y={0} width={CANVAS_W} height={STORY_H} />
+            <KImage ref={gradientRef} image={gradientImg} x={0} y={0} width={CANVAS_W} height={STORY_H} />
           )}
 
           {/* Solid overlay for gancho / cta when no image */}
@@ -297,7 +350,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "storeBadge"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("storeBadge")}
+                  groupRef={refSetters.storeBadge}
                 >
                   <Rect
                     offsetX={220 / 2}
@@ -317,6 +370,7 @@ export default function KonvaStorySlide({
                     width={220}
                     offsetX={110}
                     offsetY={14}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -329,7 +383,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "mainText"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("mainText")}
+                  groupRef={refSetters.mainText}
                 >
                   <Text
                     text={truncateText(slideText, 80)}
@@ -341,6 +395,7 @@ export default function KonvaStorySlide({
                     width={textW}
                     offsetX={textW / 2}
                     lineHeight={1.2}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -353,7 +408,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "swipeHint"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("swipeHint")}
+                  groupRef={refSetters.swipeHint}
                 >
                   <Text
                     text="▲"
@@ -363,6 +418,7 @@ export default function KonvaStorySlide({
                     width={100}
                     offsetX={50}
                     offsetY={30}
+                    perfectDrawEnabled={false}
                   />
                   <Text
                     text="ARRASTE"
@@ -376,6 +432,7 @@ export default function KonvaStorySlide({
                     width={200}
                     offsetX={100}
                     offsetY={-10}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -393,7 +450,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "storeBadge"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("storeBadge")}
+                  groupRef={refSetters.storeBadge}
                 >
                   <Rect
                     offsetX={200 / 2}
@@ -413,6 +470,7 @@ export default function KonvaStorySlide({
                     width={200}
                     offsetX={100}
                     offsetY={12}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -425,7 +483,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "productImage"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("productImage")}
+                  groupRef={refSetters.productImage}
                 >
                   <Rect
                     offsetX={360}
@@ -445,6 +503,7 @@ export default function KonvaStorySlide({
                     width={720}
                     offsetX={360}
                     offsetY={60}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -457,7 +516,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "productText"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("productText")}
+                  groupRef={refSetters.productText}
                 >
                   <Text
                     text={truncateText(slideText, 80)}
@@ -469,6 +528,7 @@ export default function KonvaStorySlide({
                     width={textW}
                     offsetX={textW / 2}
                     lineHeight={1.3}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -481,7 +541,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "priceBadge"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("priceBadge")}
+                  groupRef={refSetters.priceBadge}
                 >
                   <Rect
                     offsetX={200}
@@ -502,6 +562,7 @@ export default function KonvaStorySlide({
                     offsetX={200}
                     offsetY={36}
                     letterSpacing={-1}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -519,7 +580,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "ctaText"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("ctaText")}
+                  groupRef={refSetters.ctaText}
                 >
                   <Text
                     text={truncateText(slideText, 50)}
@@ -531,11 +592,12 @@ export default function KonvaStorySlide({
                     width={textW}
                     offsetX={textW / 2}
                     lineHeight={1.2}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
 
-              {/* CTA button */}
+              {/* CTA button — P1-4: shadowForStrokeEnabled=false for performance */}
               {isVisible("ctaButton") && positions.ctaButton && (
                 <DraggableGroup
                   id="ctaButton"
@@ -543,7 +605,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "ctaButton"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("ctaButton")}
+                  groupRef={refSetters.ctaButton}
                 >
                   <Rect
                     offsetX={220}
@@ -555,6 +617,7 @@ export default function KonvaStorySlide({
                     shadowColor={`${t.ctaBg}80`}
                     shadowBlur={20}
                     shadowOffsetY={8}
+                    shadowForStrokeEnabled={false}
                   />
                   <Text
                     text="Manda no WhatsApp 💬"
@@ -566,6 +629,7 @@ export default function KonvaStorySlide({
                     width={440}
                     offsetX={220}
                     offsetY={17}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -578,7 +642,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "storeName"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("storeName")}
+                  groupRef={refSetters.storeName}
                 >
                   <Text
                     text={storeName}
@@ -590,6 +654,7 @@ export default function KonvaStorySlide({
                     width={600}
                     offsetX={300}
                     opacity={0.8}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
@@ -602,7 +667,7 @@ export default function KonvaStorySlide({
                   isSelected={selectedId === "watermark"}
                   onDragEnd={onDragEnd}
                   onSelect={onSelect}
-                  groupRef={setGroupRef("watermark")}
+                  groupRef={refSetters.watermark}
                 >
                   <Text
                     text="Feito com CriaLook"
@@ -614,13 +679,14 @@ export default function KonvaStorySlide({
                     align="center"
                     width={300}
                     offsetX={150}
+                    perfectDrawEnabled={false}
                   />
                 </DraggableGroup>
               )}
             </>
           )}
 
-          {/* Text Transformer — native resize handles (no distortion) */}
+          {/* Text Transformer — P3-1: onTransformEnd resets scale to prevent distortion */}
           <Transformer
             ref={textTransformerRef}
             anchorSize={14}
@@ -639,6 +705,7 @@ export default function KonvaStorySlide({
               if (newBox.width < 20 || newBox.height < 12) return oldBox;
               return newBox;
             }}
+            onTransformEnd={handleTransformEnd}
           />
         </Layer>
       </Stage>

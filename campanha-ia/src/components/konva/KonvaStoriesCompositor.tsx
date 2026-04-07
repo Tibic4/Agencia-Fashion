@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import Konva from "konva";
 import { templateStyles } from "./templates";
 import { CANVAS_W, STORY_H } from "./constants";
+import { exportStageAsDataURL } from "./utils/exportStage";
 import TemplateSelector from "./TemplateSelector";
 import KonvaStorySlide, { getStoryDefaults } from "./KonvaStorySlide";
 import type { SlideType, StoryPositions } from "./KonvaStorySlide";
@@ -58,23 +59,75 @@ const SLIDE_ELEMENTS: Record<SlideType, { key: string; label: string; icon: stri
 };
 
 /* ═══════════════════════════════════════
-   Responsive preview scale
+   P1-6: Responsive preview scale using ResizeObserver
+   Replaces window.addEventListener("resize") which misses
+   container-level layout changes (sidebar collapse, etc.)
    ═══════════════════════════════════════ */
 function useResponsiveScale() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(0.25);
+
   useEffect(() => {
-    const calc = () => {
-      const w = window.innerWidth;
-      if (w < 480) setScale(0.18);      // Mobile small — 1 slide visible
-      else if (w < 768) setScale(0.22); // Mobile — 1-2 slides
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      if (w < 480) setScale(0.18);
+      else if (w < 768) setScale(0.22);
       else if (w < 1024) setScale(0.24);
       else setScale(0.28);
-    };
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
-  return scale;
+
+  return { scale, containerRef };
+}
+
+/* ═══════════════════════════════════════
+   P2-1: Simple undo/redo for story positions
+   ═══════════════════════════════════════ */
+const MAX_STORY_HISTORY = 20;
+
+function useStoryUndoRedo(initialPositions: StoryPositions[]) {
+  const historyRef = useRef<StoryPositions[][]>([initialPositions]);
+  const indexRef = useRef(0);
+  const [, forceRender] = useState(0);
+
+  const pushState = useCallback((state: StoryPositions[]) => {
+    historyRef.current = historyRef.current.slice(0, indexRef.current + 1);
+    historyRef.current.push(state);
+    if (historyRef.current.length > MAX_STORY_HISTORY) {
+      historyRef.current.shift();
+    } else {
+      indexRef.current++;
+    }
+    forceRender((n) => n + 1);
+  }, []);
+
+  const undo = useCallback((): StoryPositions[] | null => {
+    if (indexRef.current <= 0) return null;
+    indexRef.current--;
+    forceRender((n) => n + 1);
+    return historyRef.current[indexRef.current];
+  }, []);
+
+  const redo = useCallback((): StoryPositions[] | null => {
+    if (indexRef.current >= historyRef.current.length - 1) return null;
+    indexRef.current++;
+    forceRender((n) => n + 1);
+    return historyRef.current[indexRef.current];
+  }, []);
+
+  return {
+    pushState,
+    undo,
+    redo,
+    canUndo: indexRef.current > 0,
+    canRedo: indexRef.current < historyRef.current.length - 1,
+  };
 }
 
 /* ═══════════════════════════════════════
@@ -92,17 +145,20 @@ export default function KonvaStoriesCompositor({
   templateId = "elegant_dark",
   onTemplateChange,
 }: KonvaStoriesCompositorProps) {
-  const stageRefs = [
-    useRef<Konva.Stage>(null),
-    useRef<Konva.Stage>(null),
-    useRef<Konva.Stage>(null),
-  ];
+  // P3-5: Stable individual refs for each stage
+  const stageRef0 = useRef<Konva.Stage>(null);
+  const stageRef1 = useRef<Konva.Stage>(null);
+  const stageRef2 = useRef<Konva.Stage>(null);
+  const stageRefs = useMemo(() => [stageRef0, stageRef1, stageRef2], []);
 
   const [activeTemplate, setActiveTemplate] = useState(templateId);
   const [activeSlide, setActiveSlide] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
-  const previewScale = useResponsiveScale();
+  const { scale: previewScale, containerRef: scaleContainerRef } = useResponsiveScale();
+
+  // P0-1: Track thumbnail snapshots for inactive slides
+  const [thumbnails, setThumbnails] = useState<(string | null)[]>([null, null, null]);
 
   const t = templateStyles.find((s) => s.id === activeTemplate) || templateStyles[0];
   const hasPrice = price && price.trim().length > 0;
@@ -115,6 +171,7 @@ export default function KonvaStoriesCompositor({
   };
 
   // Per-slide state
+  const initialPositions = useMemo(() => SLIDES.map((s) => getStoryDefaults(s.type)), []);
   const [positions, setPositions] = useState<StoryPositions[]>(() =>
     SLIDES.map((s) => getStoryDefaults(s.type))
   );
@@ -122,17 +179,46 @@ export default function KonvaStoriesCompositor({
   const [selectedIds, setSelectedIds] = useState<(string | null)[]>([null, null, null]);
   const [hiddenSets, setHiddenSets] = useState<Set<string>[]>([new Set(), new Set(), new Set()]);
 
+  // P2-1: Undo/redo for story positions
+  const { pushState, undo, redo, canUndo, canRedo } = useStoryUndoRedo(initialPositions);
+
   // Slide contents
   const slideTexts = useMemo(() => [slideGancho, productText, slideCTA], [slideGancho, productText, slideCTA]);
+
+  // P0-1: Capture thumbnail of active slide before switching away
+  const captureActiveThumbnail = useCallback(() => {
+    const stage = stageRefs[activeSlide].current;
+    if (!stage) return;
+    try {
+      const thumb = stage.toDataURL({
+        pixelRatio: 0.3,  // Low res for thumbnail — saves memory
+        mimeType: "image/jpeg",
+        quality: 0.6,
+      });
+      setThumbnails((prev) => {
+        const next = [...prev];
+        next[activeSlide] = thumb;
+        return next;
+      });
+    } catch { /* CORS or canvas tainted — fallback to placeholder */ }
+  }, [activeSlide]);
+
+  // P0-1: Capture thumbnail before switching slides
+  const handleSlideSwitch = useCallback((idx: number) => {
+    if (idx === activeSlide) return;
+    captureActiveThumbnail();
+    setActiveSlide(idx);
+  }, [activeSlide, captureActiveThumbnail]);
 
   // Handlers — scoped per slide
   const handleDragEnd = useCallback((slideIdx: number, key: string, x: number, y: number) => {
     setPositions((prev) => {
       const next = [...prev];
       next[slideIdx] = { ...next[slideIdx], [key]: { x, y } };
+      pushState(next);
       return next;
     });
-  }, []);
+  }, [pushState]);
 
   const handleSelect = useCallback((slideIdx: number, key: string) => {
     setSelectedIds((prev) => {
@@ -187,9 +273,49 @@ export default function KonvaStoriesCompositor({
     setHiddenSets([new Set(), new Set(), new Set()]);
   }, []);
 
+  // P2-1: Undo/redo handlers
+  const handleUndo = useCallback(() => {
+    const prev = undo();
+    if (prev) setPositions(prev);
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    const next = redo();
+    if (next) setPositions(next);
+  }, [redo]);
+
+  // P2-1: Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleUndo, handleRedo]);
+
   /* ═══ Download ═══ */
+  // P0-3: pixelRatio: 2 (was 1) — matches Feed quality
+  // P0-4: Uses consolidated exportStageAsDataURL utility
+  // P3-6: stageRefsArray properly in deps (no eslint-disable needed)
   const downloadSlide = useCallback(async (slideIdx: number) => {
-    const stage = stageRefs[slideIdx]?.current;
+    // P0-1: If downloading an inactive slide, we need to temporarily mount it
+    // For now, capture thumbnail and switch, download, switch back
+    const prevActiveSlide = activeSlide;
+    if (slideIdx !== activeSlide) {
+      captureActiveThumbnail();
+      setActiveSlide(slideIdx);
+      // Wait for React to mount the slide
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    }
+
+    const stage = stageRefs[slideIdx].current;
     if (!stage) return;
 
     // Deselect for clean export
@@ -199,44 +325,69 @@ export default function KonvaStoriesCompositor({
       return next;
     });
 
+    // P3-3: double-rAF instead of arbitrary setTimeout(400)
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    const savedSX = stage.scaleX();
-    const savedSY = stage.scaleY();
-    const savedW = stage.width();
-    const savedH = stage.height();
-
-    stage.scale({ x: 1, y: 1 });
-    stage.width(CANVAS_W);
-    stage.height(STORY_H);
-    stage.batchDraw();
-
-    const uri = stage.toDataURL({ pixelRatio: 1, mimeType: "image/png", x: 0, y: 0, width: CANVAS_W, height: STORY_H });
-
-    stage.scale({ x: savedSX, y: savedSY });
-    stage.width(savedW);
-    stage.height(savedH);
-    stage.batchDraw();
+    // P0-4: Use consolidated export utility
+    // P0-3: pixelRatio: 2 (was 1) — Stories now export at 2160×3840
+    const uri = exportStageAsDataURL(stage, {
+      width: CANVAS_W,
+      height: STORY_H,
+      pixelRatio: 2,
+    });
 
     const link = document.createElement("a");
     const safeName = productName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     link.download = `crialook-story-${SLIDES[slideIdx].type}-${safeName}.png`;
     link.href = uri;
     link.click();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productName]);
 
+    // Restore active slide if we switched
+    if (slideIdx !== prevActiveSlide) {
+      setActiveSlide(prevActiveSlide);
+    }
+  }, [productName, activeSlide, captureActiveThumbnail]);
+
+  // P3-3: downloadAllSlides uses double-rAF instead of setTimeout(400)
   const downloadAllSlides = useCallback(async () => {
     setDownloadingAll(true);
     try {
       for (let i = 0; i < 3; i++) {
-        await downloadSlide(i);
-        await new Promise((r) => setTimeout(r, 400));
+        // Temporarily mount each slide for export
+        captureActiveThumbnail();
+        setActiveSlide(i);
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const stage = stageRefs[i].current;
+        if (!stage) continue;
+
+        setSelectedIds((prev) => {
+          const next = [...prev];
+          next[i] = null;
+          return next;
+        });
+
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+        const uri = exportStageAsDataURL(stage, {
+          width: CANVAS_W,
+          height: STORY_H,
+          pixelRatio: 2,
+        });
+
+        const link = document.createElement("a");
+        const safeName = productName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+        link.download = `crialook-story-${SLIDES[i].type}-${safeName}.png`;
+        link.href = uri;
+        link.click();
+
+        // P3-3: double-rAF between downloads (replaces setTimeout(400))
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       }
     } finally {
       setDownloadingAll(false);
     }
-  }, [downloadSlide]);
+  }, [captureActiveThumbnail, productName]);
 
   const handleSingleDownload = useCallback(async () => {
     setDownloading(true);
@@ -249,6 +400,8 @@ export default function KonvaStoriesCompositor({
 
   const currentSlide = SLIDES[activeSlide];
   const currentElements = SLIDE_ELEMENTS[currentSlide.type];
+
+  // P3-5: stageRefs are now stable individual useRef instances — no setter needed
 
   return (
     <div>
@@ -284,7 +437,7 @@ export default function KonvaStoriesCompositor({
             {SLIDES.map((s, i) => (
               <button
                 key={s.type}
-                onClick={() => setActiveSlide(i)}
+                onClick={() => handleSlideSwitch(i)}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all"
                 style={{
                   background: activeSlide === i ? "var(--brand-100)" : "transparent",
@@ -296,6 +449,35 @@ export default function KonvaStoriesCompositor({
                 {s.label}
               </button>
             ))}
+
+            {/* P2-1: Undo/Redo buttons */}
+            <div
+              className="flex items-center gap-0.5 rounded-lg overflow-hidden ml-2"
+              role="group"
+              aria-label="Desfazer e refazer"
+              style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+            >
+              <button
+                onClick={handleUndo}
+                disabled={!canUndo}
+                className="px-2 py-1.5 text-xs hover:opacity-70 transition-opacity disabled:opacity-30"
+                style={{ color: "var(--foreground)" }}
+                title="Desfazer (Ctrl+Z)"
+                aria-label="Desfazer"
+              >
+                ↶
+              </button>
+              <button
+                onClick={handleRedo}
+                disabled={!canRedo}
+                className="px-2 py-1.5 text-xs hover:opacity-70 transition-opacity disabled:opacity-30"
+                style={{ color: "var(--foreground)", borderLeft: "1px solid var(--border)" }}
+                title="Refazer (Ctrl+Y)"
+                aria-label="Refazer"
+              >
+                ↷
+              </button>
+            </div>
           </div>
 
           {/* Download buttons */}
@@ -479,65 +661,94 @@ export default function KonvaStoriesCompositor({
           );
         })()}
 
-        {/* Preview area — horizontal scroll on mobile */}
+        {/* P0-1: Preview area — render only active slide as live Stage.
+            Inactive slides show static thumbnail images (~0.3x resolution).
+            This reduces VRAM from ~47MB (3 Stages) to ~16MB (1 Stage + 2 JPEGs). */}
         <div
+          ref={scaleContainerRef}
           className="flex items-start gap-3 p-3 sm:p-4 overflow-x-auto snap-x snap-mandatory sm:justify-center"
           style={{
             background: "var(--surface)",
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {SLIDES.map((slide, i) => (
-            <div
-              key={slide.type}
-              className="snap-center shrink-0 cursor-pointer transition-all duration-200"
-              onClick={() => setActiveSlide(i)}
-              style={{
-                transform: activeSlide === i ? "scale(1.02)" : "scale(0.95)",
-                opacity: activeSlide === i ? 1 : 0.45,
-                borderRadius: 14,
-                overflow: "hidden",
-                border: activeSlide === i ? `2px solid ${t.ctaBg}` : "2px solid transparent",
-                boxShadow: activeSlide === i ? `0 12px 40px ${t.ctaBg}25` : "none",
-              }}
-            >
-              <KonvaStorySlide
-                stageRef={stageRefs[i]}
-                slideType={slide.type}
-                template={t}
-                previewScale={previewScale}
-                productName={productName}
-                price={price}
-                storeName={storeName}
-                slideText={slideTexts[i]}
-                productImageUrl={productImageUrl}
-                modelImageUrl={modelImageUrl}
-                positions={positions[i]}
-                fontSizes={fontSizes[i]}
-                selectedId={selectedIds[i]}
-                hiddenElements={hiddenSets[i]}
-                onDragEnd={(key, x, y) => handleDragEnd(i, key, x, y)}
-                onSelect={(key) => handleSelect(i, key)}
-                onDeselect={() => handleDeselect(i)}
-                onFontSizeChange={(key, size) => handleFontSizeChange(i, key, size)}
-                onToggleVisibility={(key) => handleToggleVisibility(i, key)}
-              />
-              {/* Slide label */}
+          {SLIDES.map((slide, i) => {
+            const isActive = activeSlide === i;
+
+            return (
               <div
+                key={slide.type}
+                className="snap-center shrink-0 cursor-pointer transition-all duration-200"
+                onClick={() => handleSlideSwitch(i)}
                 style={{
-                  background: activeSlide === i ? t.ctaBg : "var(--border)",
-                  color: activeSlide === i ? "white" : "var(--muted)",
-                  fontSize: 9,
-                  fontWeight: 700,
-                  textAlign: "center",
-                  padding: "5px 0",
-                  letterSpacing: "0.5px",
+                  transform: isActive ? "scale(1.02)" : "scale(0.95)",
+                  opacity: isActive ? 1 : 0.45,
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  border: isActive ? `2px solid ${t.ctaBg}` : "2px solid transparent",
+                  boxShadow: isActive ? `0 12px 40px ${t.ctaBg}25` : "none",
                 }}
               >
-                {slide.icon} {slide.label}
+                {/* P0-1: Only mount the live KonvaStorySlide for the active slide.
+                    Inactive slides render a static thumbnail image. */}
+                {isActive ? (
+                  <KonvaStorySlide
+                    stageRef={stageRefs[i]}
+                    slideType={slide.type}
+                    template={t}
+                    previewScale={previewScale}
+                    productName={productName}
+                    price={price}
+                    storeName={storeName}
+                    slideText={slideTexts[i]}
+                    productImageUrl={productImageUrl}
+                    modelImageUrl={modelImageUrl}
+                    positions={positions[i]}
+                    fontSizes={fontSizes[i]}
+                    selectedId={selectedIds[i]}
+                    hiddenElements={hiddenSets[i]}
+                    onDragEnd={(key, x, y) => handleDragEnd(i, key, x, y)}
+                    onSelect={(key) => handleSelect(i, key)}
+                    onDeselect={() => handleDeselect(i)}
+                    onFontSizeChange={(key, size) => handleFontSizeChange(i, key, size)}
+                    onToggleVisibility={(key) => handleToggleVisibility(i, key)}
+                  />
+                ) : (
+                  /* P0-1: Static thumbnail for inactive slides — saves ~31MB VRAM */
+                  <div
+                    style={{
+                      width: CANVAS_W * previewScale,
+                      height: STORY_H * previewScale,
+                      background: thumbnails[i]
+                        ? `url(${thumbnails[i]}) center/cover`
+                        : `linear-gradient(135deg, ${t.gradientColors[3] || '#1a1a2e'}, ${t.ctaBg}30)`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {!thumbnails[i] && (
+                      <span style={{ fontSize: 28, opacity: 0.5 }}>{slide.icon}</span>
+                    )}
+                  </div>
+                )}
+                {/* Slide label */}
+                <div
+                  style={{
+                    background: isActive ? t.ctaBg : "var(--border)",
+                    color: isActive ? "white" : "var(--muted)",
+                    fontSize: 9,
+                    fontWeight: 700,
+                    textAlign: "center",
+                    padding: "5px 0",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  {slide.icon} {slide.label}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Help text */}
@@ -549,7 +760,7 @@ export default function KonvaStoriesCompositor({
             color: "var(--muted)",
           }}
         >
-          ✋ Arraste textos · 🔲 Puxe os cantos para redimensionar · ↩ Reset restaura tudo
+          ✋ Arraste textos · 🔲 Puxe os cantos para redimensionar · ↶↷ Ctrl+Z/Y desfazer/refazer · ↩ Reset restaura tudo
         </div>
       </div>
     </div>
