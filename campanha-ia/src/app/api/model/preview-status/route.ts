@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     const statuses: Record<string, { url: string | null; status: string }> = {};
 
     for (const model of models || []) {
-      const url = model.photo_url || null;
+      const url = model.preview_url || null;
 
       if (url) {
         statuses[model.id] = { url, status: "completed" };
