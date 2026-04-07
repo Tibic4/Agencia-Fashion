@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useEffect, useRef } from "react";
-import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer, Line, Circle } from "react-konva";
+import { Stage, Layer, Image as KImage, Text, Rect, Group, Transformer } from "react-konva";
 import Konva from "konva";
 import type {
   TemplateStyle,
@@ -13,7 +13,6 @@ import type {
 } from "./types";
 import DraggableElement from "./DraggableElement";
 import { CANVAS_W, LAYOUT, truncateText, formatPrice } from "./constants";
-import type { SnapGuide } from "./hooks/useSnapGuides";
 import type { FontSizes, WidthOverrides } from "./hooks/useDragPositions";
 
 interface KonvaCanvasProps {
@@ -24,7 +23,7 @@ interface KonvaCanvasProps {
   loadedImg: HTMLImageElement | null;
   imgError: boolean;
   imgLoading: boolean;
-  gradientImg: HTMLImageElement | null;
+  gradientImg: HTMLCanvasElement | HTMLImageElement | null;
   positions: ElementPositions;
   selectedId: string | null;
   hiddenElements: Set<ElementKey>;
@@ -44,8 +43,9 @@ interface KonvaCanvasProps {
   onCustomDragEnd?: (id: string, x: number, y: number) => void;
   onCustomSelect?: (id: string | null) => void;
   onCustomTransformEnd?: (id: string, x: number, y: number, w: number, h: number, rotation: number) => void;
-  /* Snap guides */
-  snapGuides?: SnapGuide[];
+  /* P0-2: Snap guide handlers (imperative — no React state) */
+  onSnapCheck?: (x: number, y: number, canvasH: number, layer: Konva.Layer | null) => { x: number; y: number };
+  onSnapClear?: (layer: Konva.Layer | null) => void;
   /* Font size overrides & element controls */
   fontSizes?: FontSizes;
   widthOverrides?: WidthOverrides;
@@ -86,7 +86,8 @@ export default function KonvaCanvas({
   onCustomDragEnd,
   onCustomSelect,
   onCustomTransformEnd,
-  snapGuides = [],
+  onSnapCheck,
+  onSnapClear,
   fontSizes = {},
   widthOverrides = {},
   elementOrder = ["badge", "productName", "headline", "price", "cta", "score", "watermark"],
@@ -443,6 +444,8 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
                         <Rect
                           offsetX={getWidth("badge") / 2}
@@ -482,6 +485,8 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
                         <Text
                           text={productName}
@@ -512,6 +517,8 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
                         <Text
                           text={truncateText(headline, 55)}
@@ -542,6 +549,8 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
                         <Text
                           text={displayPrice}
@@ -572,7 +581,10 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
+                        {/* P1-2: shadowForStrokeEnabled=false prevents double-render */}
                         <Rect
                           offsetX={getWidth("cta") / 2}
                           offsetY={LAYOUT.CTA_HEIGHT / 2}
@@ -583,6 +595,7 @@ export default function KonvaCanvas({
                           shadowColor={`${t.ctaBg}80`}
                           shadowBlur={16}
                           shadowOffsetY={6}
+                          shadowForStrokeEnabled={false}
                         />
                         <Text
                           text={`${cta} 💕`}
@@ -614,6 +627,8 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
                         <Rect
                           offsetX={getWidth("score") / 2}
@@ -653,6 +668,8 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
+                        onSnapCheck={onSnapCheck}
+                        onSnapClear={onSnapClear}
                       >
                         <Text
                           text="Feito com CriaLook"
@@ -694,30 +711,8 @@ export default function KonvaCanvas({
                 }}
               />
 
-              {/* P2-9: Snap alignment guides */}
-              {snapGuides.map((guide, i) =>
-                guide.orientation === "vertical" ? (
-                  <Line
-                    key={`snap-v-${i}`}
-                    points={[guide.position, 0, guide.position, canvasH]}
-                    stroke="#06b6d4"
-                    strokeWidth={1}
-                    dash={[8, 4]}
-                    opacity={0.6}
-                    listening={false}
-                  />
-                ) : (
-                  <Line
-                    key={`snap-h-${i}`}
-                    points={[0, guide.position, CANVAS_W, guide.position]}
-                    stroke="#06b6d4"
-                    strokeWidth={1}
-                    dash={[8, 4]}
-                    opacity={0.6}
-                    listening={false}
-                  />
-                )
-              )}
+              {/* P0-2: Snap guides are now drawn imperatively on the Layer */}
+              {/* via onSnapCheck/onSnapClear — no React state re-renders */}
             </Layer>
           </Stage>
         </div>
