@@ -67,6 +67,17 @@ const bodyTypes = [
   { value: "plus_size", label: "Plus Size", emoji: "💃" },
 ];
 
+const brandColors = [
+  { value: "#EC4899", label: "Rosa" },
+  { value: "#1A1A1A", label: "Preto" },
+  { value: "#D4A853", label: "Dourado" },
+  { value: "#C9A88C", label: "Nude" },
+  { value: "#8B5CF6", label: "Roxo" },
+  { value: "#3B82F6", label: "Azul" },
+  { value: "#10B981", label: "Verde" },
+  { value: "#DC2626", label: "Vermelho" },
+];
+
 const howItWorksSteps = [
   {
     icon: <IconCamera />,
@@ -99,6 +110,8 @@ export default function Onboarding() {
   const [skin, setSkin] = useState("morena_clara");
   const [hair, setHair] = useState("ondulado");
   const [body, setBody] = useState("media");
+  const [brandColor, setBrandColor] = useState("");
+  const [showCustomColor, setShowCustomColor] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -144,6 +157,7 @@ export default function Onboarding() {
             segment,
             city: city || undefined,
             instagram: instagram || undefined,
+            brandColor: brandColor || undefined,
             model: skippedModel ? { skip: true } : { skin, hair, body },
           }),
         });
@@ -162,7 +176,7 @@ export default function Onboarding() {
         setSaving(false);
       }
     },
-    [storeName, segment, city, instagram, skin, hair, body]
+    [storeName, segment, city, instagram, skin, hair, body, brandColor]
   );
 
   // Animation class for step transition
@@ -386,6 +400,7 @@ export default function Onboarding() {
           background: var(--surface);
           position: relative;
           overflow: hidden;
+          min-height: 44px;
         }
         .onb-segment-btn[data-active="true"] {
           border-color: var(--brand-300);
@@ -466,6 +481,8 @@ export default function Onboarding() {
         .onb-skin-circle {
           width: 48px;
           height: 48px;
+          min-width: 44px;
+          min-height: 44px;
           border-radius: 50%;
           transition: all 0.25s ease;
           border: 3px solid transparent;
@@ -493,7 +510,7 @@ export default function Onboarding() {
           justify-content: center;
         }
         .onb-pill {
-          padding: 8px 16px;
+          padding: 10px 16px;
           border-radius: 999px;
           font-size: 13px;
           font-weight: 600;
@@ -502,6 +519,9 @@ export default function Onboarding() {
           border: 1px solid var(--border);
           background: var(--surface);
           color: var(--muted);
+          min-height: 44px;
+          display: flex;
+          align-items: center;
         }
         .onb-pill[data-active="true"] {
           background: var(--gradient-brand);
@@ -552,7 +572,8 @@ export default function Onboarding() {
           width: 100%;
           text-align: center;
           font-size: 12px;
-          padding: 10px;
+          padding: 12px;
+          min-height: 44px;
           color: var(--muted);
           cursor: pointer;
           transition: color 0.2s;
@@ -647,6 +668,7 @@ export default function Onboarding() {
           }
           .onb-segment-btn {
             padding: 10px;
+            min-height: 44px;
           }
           .onb-segment-emoji {
             font-size: 18px;
@@ -661,12 +683,13 @@ export default function Onboarding() {
             gap: 12px;
           }
           .onb-skin-circle {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
           }
           .onb-pill {
-            padding: 7px 14px;
+            padding: 10px 14px;
             font-size: 12px;
+            min-height: 44px;
           }
           .onb-how-card {
             padding: 12px 14px;
@@ -893,6 +916,57 @@ export default function Onboarding() {
                         className="onb-input"
                       />
                     </div>
+                  </div>
+
+                  {/* Brand color picker */}
+                  <div>
+                    <label className="onb-label">🎨 Cor da sua marca <span style={{ fontWeight: 400, color: "var(--muted)" }}>(opcional)</span></label>
+                    <p style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "10px" }}>Usaremos nos fundos das suas campanhas</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
+                      {brandColors.map((bc) => (
+                        <button
+                          key={bc.value}
+                          onClick={() => { setBrandColor(bc.value); setShowCustomColor(false); }}
+                          className="onb-skin-btn"
+                          data-active={brandColor === bc.value}
+                          title={bc.label}
+                        >
+                          <div
+                            className="onb-skin-circle"
+                            style={{ background: bc.value, width: "44px", height: "44px" }}
+                          />
+                          <span className="onb-skin-label">{bc.label}</span>
+                        </button>
+                      ))}
+                      {/* Custom color button */}
+                      <button
+                        onClick={() => { setShowCustomColor(!showCustomColor); if (!showCustomColor && !brandColors.find(c => c.value === brandColor)) { /* keep custom */ } }}
+                        className="onb-skin-btn"
+                        data-active={showCustomColor || (brandColor && !brandColors.find(c => c.value === brandColor))}
+                        title="Outra cor"
+                      >
+                        <div
+                          className="onb-skin-circle"
+                          style={{
+                            background: (brandColor && !brandColors.find(c => c.value === brandColor)) ? brandColor : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
+                            width: "44px",
+                            height: "44px",
+                          }}
+                        />
+                        <span className="onb-skin-label">Outra</span>
+                      </button>
+                    </div>
+                    {showCustomColor && (
+                      <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
+                        <input
+                          type="color"
+                          value={brandColor || "#EC4899"}
+                          onChange={(e) => setBrandColor(e.target.value)}
+                          style={{ width: "44px", height: "44px", border: "none", borderRadius: "12px", cursor: "pointer", padding: 0 }}
+                        />
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--foreground)" }}>{brandColor || "#EC4899"}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Buttons */}

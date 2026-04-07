@@ -378,11 +378,12 @@ Respond with ONLY the JSON object, no markdown.`,
           }
         }
 
-        // Prioridade 2: Modelo ativa da loja
+        // Prioridade 2: Modelo ativa da loja (custom usa preview_url, stock usa image_url)
         if (!modelImageUrl) {
           const activeModel = await getActiveModel(store.id);
-          if (activeModel?.image_url) {
-            modelImageUrl = activeModel.image_url;
+          const activeUrl = activeModel?.preview_url || activeModel?.image_url;
+          if (activeUrl) {
+            modelImageUrl = activeUrl;
             console.log(`[TryOn] 👤 Modelo ativa: ${modelImageUrl!.substring(0, 60)}...`);
           }
         }
@@ -405,6 +406,23 @@ Respond with ONLY the JSON object, no markdown.`,
         const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
         console.log(`[TryOn] 🍌 Gemini 3.1 Flash Image — ${1 + extraImages.length} foto(s) do produto + modelo`);
 
+        // Extrair cor da marca da loja (se background = minha_marca)
+        let brandColorHex: string | undefined;
+        if (backgroundType === "minha_marca" && store) {
+          try {
+            const { createAdminClient } = await import("@/lib/supabase/admin");
+            const supabase = createAdminClient();
+            const { data: storeData } = await supabase
+              .from("stores")
+              .select("brand_colors")
+              .eq("id", store.id)
+              .single();
+            const bc = storeData?.brand_colors as Record<string, string> | null;
+            brandColorHex = bc?.primary || undefined;
+            if (brandColorHex) console.log(`[TryOn] 🎨 Cor da marca: ${brandColorHex}`);
+          } catch { /* ignore */ }
+        }
+
         const nanoResult = await nanoBananaTryOn({
           productImageBase64: imageBase64,
           productMimeType: mediaType,
@@ -416,6 +434,7 @@ Respond with ONLY the JSON object, no markdown.`,
           modelMimeType: modelRes.headers.get("content-type")?.startsWith("image/") ? modelRes.headers.get("content-type") as any : "image/png",
           bodyType: bodyType || "normal",
           background: backgroundType as any,
+          brandColorHex,
           visionData: vtoData,
           storeId: store.id,
           campaignId: campaignRecord?.id,
@@ -436,100 +455,149 @@ Respond with ONLY the JSON object, no markdown.`,
     };
 
     try {
-      // 🚀 PARALELO: try-on + pipeline de texto rodam ao mesmo tempo
-      console.log("[Generate] 🚀 Iniciando try-on + pipeline em PARALELO...");
-      const [tryOnResult, pipelineResult] = await Promise.all([
-        runTryOn(),
-        runCampaignPipeline(
-          {
-            imageBase64,
-            mediaType,
-            extraImages: extraImages.length > 0 ? extraImages : undefined,
-            price: priceStr,
-            objective,
-            storeName: store?.name || storeName,
-            targetAudience: targetAudience || undefined,
-            toneOverride: toneOverride || undefined,
-            storeSegment: store?.segment_primary || undefined,
-            bodyType: bodyType || "normal",
-            productType: productType || undefined,
-            material: materialHint,
-            backgroundType: backgroundType || undefined,
-            storeId: store?.id,
-            campaignId: campaignRecord?.id,
-          },
-          (step, label, progress) => {
-            console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
-          }
-        ),
-      ]);
+      // 🚀 SSE STREAMING: enviar progresso real do pipeline ao frontend
+      console.log("[Generate] 🚀 Iniciando pipeline com SSE streaming...");
 
-      // Registrar custo do try-on (secundário — Nano Banana já loga internamente)
-      if (tryOnResult.url && tryOnResult.provider && store) {
+      const encoder = new TextEncoder();
+      const stream = new TransformStream();
+      const writer = stream.writable.getWriter();
+
+      // Helper para enviar eventos SSE
+      const sendSSE = async (event: string, data: any) => {
         try {
-          const { createAdminClient } = await import("@/lib/supabase/admin");
-          const supabase = createAdminClient();
-          const { getExchangeRate } = await import("@/lib/pricing");
-          const exchangeRate = await getExchangeRate();
-          // Custo estimado do Gemini 3.1 Flash Image (VTO)
-          const baseCostUsd = 0.005; // ~$0.005 por chamada
-          await supabase.from("api_cost_logs").insert({
-            store_id: store.id,
-            campaign_id: campaignRecord?.id || null,
-            provider: "google",
-            model_used: "gemini-3.1-flash-image",
-            action: "virtual_try_on",
-            cost_usd: baseCostUsd,
-            cost_brl: baseCostUsd * exchangeRate,
-            exchange_rate: exchangeRate,
+          await writer.write(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        } catch { /* stream may be closed */ }
+      };
+
+      // Rodar pipeline em background enquanto o stream está aberto
+      (async () => {
+        try {
+          const [tryOnResult, pipelineResult] = await Promise.all([
+            runTryOn(),
+            runCampaignPipeline(
+              {
+                imageBase64,
+                mediaType,
+                extraImages: extraImages.length > 0 ? extraImages : undefined,
+                price: priceStr,
+                objective,
+                storeName: store?.name || storeName,
+                targetAudience: targetAudience || undefined,
+                toneOverride: toneOverride || undefined,
+                storeSegment: store?.segment_primary || undefined,
+                bodyType: bodyType || "normal",
+                productType: productType || undefined,
+                material: materialHint,
+                backgroundType: backgroundType || undefined,
+                storeId: store?.id,
+                campaignId: campaignRecord?.id,
+              },
+              async (step, label, progress) => {
+                console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
+                await sendSSE("progress", { step, label, progress });
+              }
+            ),
+          ]);
+
+          // Registrar custo do try-on
+          if (tryOnResult.url && tryOnResult.provider && store) {
+            try {
+              const { createAdminClient } = await import("@/lib/supabase/admin");
+              const supabase = createAdminClient();
+              const { getExchangeRate } = await import("@/lib/pricing");
+              const exchangeRate = await getExchangeRate();
+              const baseCostUsd = 0.005;
+              await supabase.from("api_cost_logs").insert({
+                store_id: store.id,
+                campaign_id: campaignRecord?.id || null,
+                provider: "google",
+                model_used: "gemini-3.1-flash-image",
+                action: "virtual_try_on",
+                cost_usd: baseCostUsd,
+                cost_brl: baseCostUsd * exchangeRate,
+                exchange_rate: exchangeRate,
+              });
+            } catch { /* ignore cost log failure */ }
+          }
+
+          // Persistir resultado no banco
+          if (campaignRecord) {
+            await savePipelineResult({
+              campaignId: campaignRecord.id,
+              durationMs: pipelineResult.durationMs,
+              vision: pipelineResult.vision as unknown as Record<string, unknown>,
+              strategy: pipelineResult.strategy as unknown as Record<string, unknown>,
+              output: pipelineResult.output as unknown as Record<string, unknown>,
+              score: pipelineResult.score as unknown as Record<string, unknown>,
+            });
+            if (needsAvulsoCredit) {
+              await consumeCredit(store!.id, "campaigns");
+              console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (produção)`);
+            } else {
+              await incrementCampaignsUsed(store!.id);
+            }
+          }
+
+          // Enviar resultado final via SSE
+          await sendSSE("done", {
+            success: true,
+            demo: false,
+            campaignId: campaignRecord?.id || null,
+            data: {
+              vision: pipelineResult.vision,
+              strategy: pipelineResult.strategy,
+              output: pipelineResult.output,
+              score: pipelineResult.score,
+              durationMs: pipelineResult.durationMs,
+              tryOnImageUrl: tryOnResult.url || null,
+              tryOnProvider: tryOnResult.provider || null,
+              tryOnDebug: tryOnResult.url ? undefined : (tryOnResult.debug || "no provider succeeded"),
+            },
           });
-        } catch { /* ignore cost log failure */ }
-      }
-
-      // Persistir resultado no banco
-      if (campaignRecord) {
-        await savePipelineResult({
-          campaignId: campaignRecord.id,
-          durationMs: pipelineResult.durationMs,
-          vision: pipelineResult.vision as unknown as Record<string, unknown>,
-          strategy: pipelineResult.strategy as unknown as Record<string, unknown>,
-          output: pipelineResult.output as unknown as Record<string, unknown>,
-          score: pipelineResult.score as unknown as Record<string, unknown>,
-        });
-        if (needsAvulsoCredit) {
-          await consumeCredit(store!.id, "campaigns");
-          console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (produção)`);
-        } else {
-          await incrementCampaignsUsed(store!.id);
+        } catch (pipelineError: unknown) {
+          // Marcar campanha como falha
+          if (campaignRecord) {
+            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline error";
+            await failCampaign(campaignRecord.id, msg);
+          }
+          const errMsg = pipelineError instanceof Error ? pipelineError.message : "Pipeline error";
+          await sendSSE("error", { error: errMsg });
+        } finally {
+          try { await writer.close(); } catch { /* already closed */ }
         }
-      }
+      })();
 
-      return NextResponse.json({
-        success: true,
-        demo: false,
-        campaignId: campaignRecord?.id || null,
-        data: {
-          vision: pipelineResult.vision,
-          strategy: pipelineResult.strategy,
-          output: pipelineResult.output,
-          score: pipelineResult.score,
-          durationMs: pipelineResult.durationMs,
-          tryOnImageUrl: tryOnResult.url || null,
-          tryOnProvider: tryOnResult.provider || null,
-          tryOnDebug: tryOnResult.url ? undefined : (tryOnResult.debug || "no provider succeeded"),
+      return new Response(stream.readable, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          "Connection": "keep-alive",
+          "X-Accel-Buffering": "no",
         },
       });
-    } catch (pipelineError: unknown) {
-      // Marcar campanha como falha
-      if (campaignRecord) {
-        const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline error";
-        await failCampaign(campaignRecord.id, msg);
+    } catch (error: unknown) {
+      const errorObj = error as Record<string, unknown>;
+      console.error("[API:campaign/generate] Error:", errorObj);
+
+      if (String(errorObj.message || "").includes("ANTHROPIC_API_KEY")) {
+        return NextResponse.json({ error: "Chave da API não configurada", code: "API_KEY_MISSING" }, { status: 500 });
       }
-      throw pipelineError;
+      if (errorObj.status === 429) {
+        return NextResponse.json({ error: "Muitas requisições. Tente novamente em alguns segundos", code: "RATE_LIMITED" }, { status: 429 });
+      }
+
+      return NextResponse.json(
+        {
+          error: "Erro ao gerar campanha. Tente novamente.",
+          code: "PIPELINE_ERROR",
+          details: process.env.NODE_ENV === "development" ? String(errorObj.message || "") : undefined,
+        },
+        { status: 500 }
+      );
     }
   } catch (error: unknown) {
     const errorObj = error as Record<string, unknown>;
-    console.error("[API:campaign/generate] Error:", errorObj);
+    console.error("[API:campaign/generate] Top-level error:", errorObj);
 
     if (String(errorObj.message || "").includes("ANTHROPIC_API_KEY")) {
       return NextResponse.json({ error: "Chave da API não configurada", code: "API_KEY_MISSING" }, { status: 500 });

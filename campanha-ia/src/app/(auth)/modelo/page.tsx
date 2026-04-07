@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 
@@ -65,6 +65,7 @@ interface StoreModel {
   is_active: boolean;
   created_at: string;
   photo_url?: string | null;
+  face_ref_url?: string | null;
 }
 
 export default function ModeloVirtual() {
@@ -82,6 +83,10 @@ export default function ModeloVirtual() {
   const [style, setStyle] = useState("casual_natural");
   const [age, setAge] = useState("adulta_26_35");
   const [name, setName] = useState("");
+  const [facePhoto, setFacePhoto] = useState<File | null>(null);
+  const [facePreview, setFacePreview] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -161,6 +166,9 @@ export default function ModeloVirtual() {
       formData.append("style", style);
       formData.append("ageRange", age);
       formData.append("name", name || "Modelo");
+      if (facePhoto) {
+        formData.append("facePhoto", facePhoto);
+      }
 
       const res = await fetch("/api/model/create", {
         method: "POST",
@@ -232,7 +240,31 @@ export default function ModeloVirtual() {
     setBody("media");
     setStyle("casual_natural");
     setAge("adulta_26_35");
+    setFacePhoto(null);
+    setFacePreview(null);
     setError("");
+  }
+
+  function handleFacePhotoSelect(file: File) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Formato não suportado. Use JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Imagem muito grande. Máximo 5MB.");
+      return;
+    }
+    setFacePhoto(file);
+    setFacePreview(URL.createObjectURL(file));
+    setError("");
+  }
+
+  function removeFacePhoto() {
+    setFacePhoto(null);
+    if (facePreview) URL.revokeObjectURL(facePreview);
+    setFacePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   // ── Models list view ──
@@ -569,6 +601,79 @@ export default function ModeloVirtual() {
             />
           </div>
 
+          {/* Face Photo Upload */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              📷 Foto de referência <span style={{ color: "var(--muted)", fontWeight: 400 }}>(opcional)</span>
+            </label>
+            <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
+              Suba uma foto do rosto da sua cliente ideal. A IA usará o rosto como base, mas o corpo seguirá as opções acima.
+            </p>
+
+            {facePreview ? (
+              /* Preview da foto selecionada */
+              <div className="relative rounded-xl overflow-hidden" style={{ border: "2px solid var(--brand-300)", background: "var(--surface)" }}>
+                <img
+                  src={facePreview}
+                  alt="Referência facial"
+                  className="w-full h-48 object-cover"
+                  style={{ objectPosition: "center top" }}
+                />
+                <div className="absolute inset-0 flex items-end justify-center pb-3" style={{ background: "linear-gradient(transparent 50%, rgba(0,0,0,0.5))" }}>
+                  <button
+                    type="button"
+                    onClick={removeFacePhoto}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all min-h-[44px]"
+                    style={{ background: "rgba(255,255,255,0.9)", color: "var(--error)" }}
+                  >
+                    🗑️ Remover foto
+                  </button>
+                </div>
+                <div className="absolute top-3 right-3">
+                  <span className="badge badge-brand text-xs">✅ Foto carregada</span>
+                </div>
+              </div>
+            ) : (
+              /* Dropzone */
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleFacePhotoSelect(file);
+                }}
+                className="flex flex-col items-center justify-center p-6 rounded-xl cursor-pointer transition-all"
+                style={{
+                  border: dragOver ? "2px dashed var(--brand-500)" : "2px dashed var(--border)",
+                  background: dragOver ? "var(--brand-50, rgba(236,72,153,0.05))" : "var(--surface)",
+                  minHeight: "120px",
+                }}
+              >
+                <div className="text-3xl mb-2">📷</div>
+                <p className="text-sm font-medium" style={{ color: dragOver ? "var(--brand-600)" : "var(--muted)" }}>
+                  {dragOver ? "Solte a foto aqui" : "Clique ou arraste uma foto"}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                  JPG, PNG ou WebP · Máx 5MB
+                </p>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFacePhotoSelect(file);
+              }}
+            />
+          </div>
+
 
 
           {/* Error */}
@@ -604,14 +709,28 @@ export default function ModeloVirtual() {
           <div className="rounded-2xl overflow-hidden sticky top-8" style={{ border: "1px solid var(--border)" }}>
             <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
               <h3 className="text-sm font-semibold">Preview</h3>
-              <span className="badge badge-brand text-xs">IA</span>
+              <span className="badge badge-brand text-xs">{facePreview ? "📷 Com foto" : "IA"}</span>
             </div>
             <div className="aspect-[3/4] flex items-center justify-center" style={{ background: "var(--gradient-brand-soft)" }}>
               <div className="text-center p-8">
-                <div className="text-8xl mb-4">👩</div>
-                <p className="font-semibold text-lg">{name || "Sua modelo"}</p>
+                {facePreview ? (
+                  <>
+                    <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden" style={{ border: "3px solid var(--brand-500)" }}>
+                      <img src={facePreview} alt="Referência" className="w-full h-full object-cover" style={{ objectPosition: "center top" }} />
+                    </div>
+                    <p className="font-semibold text-lg">{name || "Sua modelo"}</p>
+                    <p className="text-xs mt-1" style={{ color: "var(--brand-600)" }}>
+                      ✨ Rosto da foto · Corpo personalizado
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-8xl mb-4">👩</div>
+                    <p className="font-semibold text-lg">{name || "Sua modelo"}</p>
+                  </>
+                )}
                 <div className="flex flex-wrap justify-center gap-2 mt-4">
-                  <span className="badge badge-brand text-xs">{skinTones.find(s => s.value === skin)?.label}</span>
+                  {!facePreview && <span className="badge badge-brand text-xs">{skinTones.find(s => s.value === skin)?.label}</span>}
                   <span className="badge badge-brand text-xs">{hairStyles.find(h => h.value === hair)?.label}</span>
                   <span className="badge badge-brand text-xs">{bodyTypes.find(b => b.value === body)?.label}</span>
                   <span className="badge badge-brand text-xs">{styles.find(s => s.value === style)?.label}</span>
@@ -619,7 +738,10 @@ export default function ModeloVirtual() {
                 </div>
 
                 <p className="text-xs mt-6" style={{ color: "var(--muted)" }}>
-                  A modelo será gerada pela IA após clicar em &quot;Criar&quot;
+                  {facePreview
+                    ? "A IA usará o rosto da foto como base para gerar a modelo"
+                    : "A modelo será gerada pela IA após clicar em \"Criar\""
+                  }
                 </p>
               </div>
             </div>

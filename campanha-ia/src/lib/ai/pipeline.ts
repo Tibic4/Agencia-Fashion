@@ -1,9 +1,19 @@
 /**
- * Pipeline de geração de campanha — v2.0 (Híbrido Claude/Gemini)
+ * Pipeline de geração de campanha — v2.1 (Híbrido Claude/Gemini)
  *
- * Melhorias sobre v1:
+ * v2.1 melhorias:
+ * - Refiner → Scorer sequencial (score avalia texto refinado, não bruto)
+ * - Few-Shot Prompting no Vision (2 exemplos completos)
+ * - Frameworks AIDA/PAS/BAF no Copywriter + limites de chars
+ * - Lista negra expandida (2 camadas: Copywriter + Refiner)
+ * - Positive realism constraints no VTO (6 regras)
+ * - Chain of Thought no QA Visual Agent (+25-40% acurácia)
+ * - Feedback loop priorizado com RETRY FOCUS CRITICAL OVERRIDE
+ * - SSE streaming para progresso em tempo real no frontend
+ * - OnProgress aceita callbacks async (void | Promise<void>)
+ *
+ * v2.0 base:
  * - Provider abstraction: Gemini Flash (Vision, Refiner, Scorer) + Claude (Copywriter)
- * - Paralelismo: Refiner ∥ Scorer rodam em paralelo
  * - Structured Output: Gemini usa responseSchema nativo (zero erros de JSON)
  * - Validação Zod: resposta validada contra schemas reais
  * - Custo real: tokens contados pela API, não hardcoded
@@ -84,7 +94,7 @@ interface CostEntry {
   outputTokens: number;
 }
 
-export type OnProgress = (step: PipelineStep, label: string, progress: number) => void;
+export type OnProgress = (step: PipelineStep, label: string, progress: number) => void | Promise<void>;
 
 // ═══════════════════════════════════════
 // Retry com backoff (nível único — providers NÃO fazem retry)
@@ -222,62 +232,63 @@ export async function runCampaignPipeline(
   costs.push(buildCostEntry("copywriter", copyResponse, copyStart));
   const copyTexts = parseJSON<any>(copyResponse.text, "Copywriter");
 
-  // ── STEP 4+5: Refiner ∥ Scorer (PARALELO) ────────
-  onProgress?.("refiner", "Refinando e avaliando...", 60);
-  const parallelStart = Date.now();
+  // ── STEP 4: Refiner (primeiro — refina os textos brutos) ────────
+  onProgress?.("refiner", "Refinando textos...", 55);
+  const refinerStart = Date.now();
   const refinerConfig = providers.refiner;
   const scorerConfig = providers.scorer;
 
-  const [refinerResult, scorerResult] = await Promise.all([
-    // Refiner
-    withRetry(
-      () => refinerConfig.provider.generate({
-        system: REFINER_SYSTEM,
-        messages: [{
-          role: "user",
-          content: buildRefinerPrompt({
-            textos: JSON.stringify(copyTexts),
-            estrategia: JSON.stringify(strategy),
-          }),
-        }],
-        maxTokens: 8192,
-        temperature: 0.5,
-        responseSchema: refinerConfig.structuredOutput ? undefined : undefined, // Refiner tem schema especial
-      }),
-      "Refiner",
-    ),
-    // Scorer
-    withRetry(
-      () => scorerConfig.provider.generate({
-        system: SCORER_SYSTEM,
-        messages: [{
-          role: "user",
-          content: buildScorerPrompt({
-            textos: JSON.stringify(copyTexts),
-            estrategia: JSON.stringify(strategy),
-            produto: vision.produto.nome_generico,
-            preco: input.price,
-          }),
-        }],
-        temperature: 0.3,
-        responseSchema: scorerConfig.structuredOutput ? ScoreOutputSchema : undefined,
-      }),
-      "Scorer",
-    ),
-  ]);
-
-  costs.push(buildCostEntry("refiner", refinerResult.result, parallelStart));
-  costs.push(buildCostEntry("scorer", scorerResult.result, parallelStart));
-
-  const refined = parseJSON<any>(refinerResult.result.text, "Refiner");
-  const score = parseAndValidate<Omit<CampaignScore, "id" | "campaign_id">>(
-    scorerResult.result.text, ScoreOutputSchema, "Scorer"
+  const refinerResult = await withRetry(
+    () => refinerConfig.provider.generate({
+      system: REFINER_SYSTEM,
+      messages: [{
+        role: "user",
+        content: buildRefinerPrompt({
+          textos: JSON.stringify(copyTexts),
+          estrategia: JSON.stringify(strategy),
+        }),
+      }],
+      maxTokens: 8192,
+      temperature: 0.5,
+      responseSchema: refinerConfig.structuredOutput ? undefined : undefined, // Refiner tem schema especial
+    }),
+    "Refiner",
   );
+
+  costs.push(buildCostEntry("refiner", refinerResult.result, refinerStart));
+  const refined = parseJSON<any>(refinerResult.result.text, "Refiner");
 
   // Use refined texts if available, else original
   let finalTexts = refined.textos_refinados
     ? { ...copyTexts, ...refined.textos_refinados }
     : { ...copyTexts };
+
+  // ── STEP 5: Scorer (avalia os textos REFINADOS, não os brutos) ────────
+  onProgress?.("scorer", "Avaliando campanha...", 70);
+  const scorerStart = Date.now();
+
+  const scorerResult = await withRetry(
+    () => scorerConfig.provider.generate({
+      system: SCORER_SYSTEM,
+      messages: [{
+        role: "user",
+        content: buildScorerPrompt({
+          textos: JSON.stringify(finalTexts),
+          estrategia: JSON.stringify(strategy),
+          produto: vision.produto.nome_generico,
+          preco: input.price,
+        }),
+      }],
+      temperature: 0.3,
+      responseSchema: scorerConfig.structuredOutput ? ScoreOutputSchema : undefined,
+    }),
+    "Scorer",
+  );
+
+  costs.push(buildCostEntry("scorer", scorerResult.result, scorerStart));
+  const score = parseAndValidate<Omit<CampaignScore, "id" | "campaign_id">>(
+    scorerResult.result.text, ScoreOutputSchema, "Scorer"
+  );
 
   // ── AUTO-RETRY: Se score < 40, re-executar Copywriter + Refiner ──
   if (score.nota_geral < 40) {
