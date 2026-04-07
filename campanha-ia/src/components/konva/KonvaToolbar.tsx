@@ -2,6 +2,7 @@
 
 import type { TemplateStyle, ElementKey } from "./types";
 import { MIN_PREVIEW_SCALE, MAX_PREVIEW_SCALE } from "./constants";
+import type { FontSizes } from "./hooks/useDragPositions";
 
 const TOGGLEABLE_ELEMENTS: { key: ElementKey; label: string; icon: string }[] = [
   { key: "badge", label: "Loja", icon: "🏷️" },
@@ -32,6 +33,13 @@ interface KonvaToolbarProps {
   onRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  /* Selected element controls */
+  selectedId?: string | null;
+  fontSizes?: FontSizes;
+  elementOrder?: ElementKey[];
+  onFontSizeChange?: (key: ElementKey, size: number) => void;
+  onMoveElementUp?: (key: ElementKey) => void;
+  onMoveElementDown?: (key: ElementKey) => void;
 }
 
 /**
@@ -56,7 +64,22 @@ export default function KonvaToolbar({
   onRedo,
   canUndo,
   canRedo,
+  selectedId,
+  fontSizes = {},
+  elementOrder = [],
+  onFontSizeChange,
+  onMoveElementUp,
+  onMoveElementDown,
 }: KonvaToolbarProps) {
+  // Find the name of selected element for display
+  const selectedLabel = selectedId
+    ? TOGGLEABLE_ELEMENTS.find((e) => e.key === selectedId)?.label ?? selectedId
+    : null;
+  const selectedIcon = selectedId
+    ? TOGGLEABLE_ELEMENTS.find((e) => e.key === selectedId)?.icon ?? "📦"
+    : null;
+  const currentFontSize = selectedId ? (fontSizes[selectedId as ElementKey] ?? 26) : 26;
+  const selectedIndex = selectedId ? elementOrder.indexOf(selectedId as ElementKey) : -1;
   return (
     <div style={{ borderBottom: "1px solid var(--border)", background: "var(--background)" }}>
       {/* Main toolbar row */}
@@ -243,6 +266,106 @@ export default function KonvaToolbar({
           );
         })}
       </div>
+
+      {/* Selected element control bar */}
+      {selectedId && (
+        <div
+          className="flex items-center gap-2 px-3 py-2 overflow-x-auto"
+          style={{
+            borderTop: "1px solid var(--border)",
+            background: "linear-gradient(to right, rgba(139,92,246,0.06), rgba(139,92,246,0.02))",
+          }}
+        >
+          {/* Element name */}
+          <span
+            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+            style={{
+              background: "var(--brand-100)",
+              color: "var(--brand-600)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {selectedIcon} {selectedLabel}
+          </span>
+
+          {/* Font size controls */}
+          {onFontSizeChange && (
+            <div
+              className="flex items-center gap-0.5 rounded-lg overflow-hidden"
+              style={{ border: "1px solid var(--border)", background: "var(--background)" }}
+            >
+              <button
+                onClick={() => onFontSizeChange(selectedId as ElementKey, Math.max(8, currentFontSize - 2))}
+                className="px-2.5 py-1 text-sm font-bold hover:opacity-70 transition-opacity"
+                style={{ color: "var(--foreground)" }}
+                title="Diminuir fonte"
+              >
+                A−
+              </button>
+              <span
+                className="px-2 py-1 text-[10px] font-medium"
+                style={{
+                  color: "var(--muted)",
+                  borderLeft: "1px solid var(--border)",
+                  borderRight: "1px solid var(--border)",
+                  minWidth: "32px",
+                  textAlign: "center",
+                }}
+              >
+                {currentFontSize}px
+              </span>
+              <button
+                onClick={() => onFontSizeChange(selectedId as ElementKey, Math.min(120, currentFontSize + 2))}
+                className="px-2.5 py-1 text-sm font-bold hover:opacity-70 transition-opacity"
+                style={{ color: "var(--foreground)" }}
+                title="Aumentar fonte"
+              >
+                A+
+              </button>
+            </div>
+          )}
+
+          {/* Layer controls */}
+          <div
+            className="flex items-center gap-0.5 rounded-lg overflow-hidden"
+            style={{ border: "1px solid var(--border)", background: "var(--background)" }}
+          >
+            <button
+              onClick={() => onMoveElementDown?.(selectedId as ElementKey)}
+              disabled={selectedIndex <= 0}
+              className="px-2 py-1 text-xs hover:opacity-70 transition-opacity disabled:opacity-30"
+              style={{ color: "var(--foreground)" }}
+              title="Mover para trás"
+            >
+              ⬇
+            </button>
+            <button
+              onClick={() => onMoveElementUp?.(selectedId as ElementKey)}
+              disabled={selectedIndex >= elementOrder.length - 1}
+              className="px-2 py-1 text-xs hover:opacity-70 transition-opacity disabled:opacity-30"
+              style={{ color: "var(--foreground)", borderLeft: "1px solid var(--border)" }}
+              title="Mover para frente"
+            >
+              ⬆
+            </button>
+          </div>
+
+          {/* Delete (hide) */}
+          <button
+            onClick={() => onToggleVisibility(selectedId as ElementKey)}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
+            style={{
+              background: "#fef2f2",
+              color: "#dc2626",
+              border: "1px solid #fecaca",
+              whiteSpace: "nowrap",
+            }}
+            title="Esconder elemento"
+          >
+            ✕ Esconder
+          </button>
+        </div>
+      )}
     </div>
   );
 }

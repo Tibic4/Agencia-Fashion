@@ -52,8 +52,6 @@ interface KonvaCanvasProps {
   elementOrder?: ElementKey[];
   onFontSizeChange?: (key: ElementKey, size: number) => void;
   onWidthChange?: (key: ElementKey, width: number) => void;
-  onMoveElementUp?: (key: ElementKey) => void;
-  onMoveElementDown?: (key: ElementKey) => void;
   onToggleVisibility?: (key: ElementKey) => void;
 }
 
@@ -94,8 +92,6 @@ export default function KonvaCanvas({
   elementOrder = ["badge", "productName", "headline", "price", "cta", "score", "watermark"],
   onFontSizeChange,
   onWidthChange,
-  onMoveElementUp,
-  onMoveElementDown,
   onToggleVisibility,
 }: KonvaCanvasProps) {
   const fontLoadedRef = useRef(false);
@@ -261,31 +257,6 @@ export default function KonvaCanvas({
   const getWidth = useCallback((key: ElementKey) =>
     widthOverrides[key] ?? defaultWidthMap[key] ?? textW
   , [widthOverrides, defaultWidthMap, textW]);
-
-  // Handle text transform end: convert scale → fontSize AND width
-  const handleTextTransformEnd = useCallback((key: ElementKey, e: Konva.KonvaEventObject<Event>) => {
-    const node = e.target;
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
-    node.scaleX(1);
-    node.scaleY(1);
-    // Update font size proportional to vertical scale
-    const currentSize = getFontSize(key);
-    const newSize = Math.round(currentSize * scaleY);
-    onFontSizeChange?.(key, newSize);
-    // Update width proportional to horizontal scale — prevents wrapping breakage
-    const currentWidth = getWidth(key);
-    const newWidth = Math.round(currentWidth * scaleX);
-    onWidthChange?.(key, newWidth);
-  }, [getFontSize, getWidth, onFontSizeChange, onWidthChange]);
-
-  // X button position for selected element
-  const deleteButtonPos = useMemo(() => {
-    if (!selectedId) return null;
-    const pos = positions[selectedId as ElementKey];
-    if (!pos) return null;
-    return { x: pos.x + 40, y: pos.y - 40 };
-  }, [selectedId, positions]);
 
   return (
     <div
@@ -472,7 +443,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Rect
                           offsetX={getWidth("badge") / 2}
@@ -512,7 +482,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Text
                           text={productName}
@@ -543,7 +512,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Text
                           text={truncateText(headline, 55)}
@@ -574,7 +542,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Text
                           text={displayPrice}
@@ -605,7 +572,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Rect
                           offsetX={getWidth("cta") / 2}
@@ -648,7 +614,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Rect
                           offsetX={getWidth("score") / 2}
@@ -688,7 +653,6 @@ export default function KonvaCanvas({
                         onSelect={onSelect}
                         selectedId={selectedId}
                         canvasH={canvasH}
-                        onTransformEnd={handleTextTransformEnd}
                       >
                         <Text
                           text="Feito com CriaLook"
@@ -713,115 +677,22 @@ export default function KonvaCanvas({
               {/* Text Transformer — resize handles for text elements */}
               <Transformer
                 ref={textTransformerRef}
-                anchorSize={10}
+                anchorSize={12}
                 anchorStroke="#8b5cf6"
                 anchorFill="#fff"
                 borderStroke="#8b5cf6"
                 borderDash={[4, 3]}
                 rotateEnabled={false}
-                enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right"]}
-                keepRatio={true}
+                enabledAnchors={[
+                  "top-left", "top-right", "bottom-left", "bottom-right",
+                  "middle-left", "middle-right", "middle-top", "middle-bottom",
+                ]}
+                keepRatio={false}
                 boundBoxFunc={(oldBox, newBox) => {
                   if (newBox.width < 20 || newBox.height < 12) return oldBox;
                   return newBox;
                 }}
               />
-
-              {/* Element control buttons — appears when element is selected */}
-              {selectedId && deleteButtonPos && (
-                <Group
-                  x={deleteButtonPos.x}
-                  y={deleteButtonPos.y}
-                >
-                  {/* X Delete button */}
-                  {onToggleVisibility && (
-                    <Group
-                      onClick={() => onToggleVisibility(selectedId as ElementKey)}
-                      onTap={() => onToggleVisibility(selectedId as ElementKey)}
-                    >
-                      <Circle
-                        radius={16}
-                        fill="#ef4444"
-                        shadowColor="rgba(0,0,0,0.3)"
-                        shadowBlur={6}
-                        shadowOffsetY={2}
-                      />
-                      <Text
-                        text="✕"
-                        fontSize={18}
-                        fontStyle="bold"
-                        fill="white"
-                        align="center"
-                        verticalAlign="middle"
-                        width={32}
-                        height={32}
-                        offsetX={16}
-                        offsetY={16}
-                      />
-                    </Group>
-                  )}
-
-                  {/* ↑ Move Up (bring forward) */}
-                  {onMoveElementUp && (
-                    <Group
-                      x={36}
-                      y={0}
-                      onClick={() => onMoveElementUp(selectedId as ElementKey)}
-                      onTap={() => onMoveElementUp(selectedId as ElementKey)}
-                    >
-                      <Circle
-                        radius={14}
-                        fill="#6366f1"
-                        shadowColor="rgba(0,0,0,0.2)"
-                        shadowBlur={4}
-                        shadowOffsetY={1}
-                      />
-                      <Text
-                        text="↑"
-                        fontSize={16}
-                        fontStyle="bold"
-                        fill="white"
-                        align="center"
-                        verticalAlign="middle"
-                        width={28}
-                        height={28}
-                        offsetX={14}
-                        offsetY={14}
-                      />
-                    </Group>
-                  )}
-
-                  {/* ↓ Move Down (send backward) */}
-                  {onMoveElementDown && (
-                    <Group
-                      x={68}
-                      y={0}
-                      onClick={() => onMoveElementDown(selectedId as ElementKey)}
-                      onTap={() => onMoveElementDown(selectedId as ElementKey)}
-                    >
-                      <Circle
-                        radius={14}
-                        fill="#6366f1"
-                        shadowColor="rgba(0,0,0,0.2)"
-                        shadowBlur={4}
-                        shadowOffsetY={1}
-                      />
-                      <Text
-                        text="↓"
-                        fontSize={16}
-                        fontStyle="bold"
-                        fill="white"
-                        align="center"
-                        verticalAlign="middle"
-                        width={28}
-                        height={28}
-                        offsetX={14}
-                        offsetY={14}
-                      />
-                    </Group>
-                  )}
-                </Group>
-              )}
 
               {/* P2-9: Snap alignment guides */}
               {snapGuides.map((guide, i) =>
