@@ -409,12 +409,54 @@ export default function GerarCampanha() {
         />
       )}
 
-      {/* Error banner */}
+      {/* Error banner — premium with credit reassurance */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
-          <span>⚠️</span>
-          <p className="text-sm font-medium" style={{ color: "#DC2626" }}>{error}</p>
-          <button onClick={() => setError(null)} className="ml-auto text-sm" style={{ color: "#DC2626" }}>✕</button>
+        <div className="mb-6 rounded-2xl overflow-hidden animate-fade-in-up" style={{ border: "1px solid #FECACA" }}>
+          {/* Header */}
+          <div className="flex items-start gap-3 p-4 sm:p-5" style={{ background: "linear-gradient(135deg, #FEF2F2 0%, #FFF1F2 100%)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#FEE2E2" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold" style={{ color: "#991B1B" }}>
+                Ops, algo deu errado na geração
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "#B91C1C" }}>{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 min-h-[44px] min-w-[44px] transition hover:bg-red-100"
+              style={{ color: "#DC2626" }}
+              aria-label="Fechar"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </svg>
+            </button>
+          </div>
+          {/* Reassurance + Retry */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 sm:px-5 py-3" style={{ background: "#FFFBFB", borderTop: "1px solid #FEE2E2" }}>
+            <div className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
+              </svg>
+              <span className="text-xs font-medium" style={{ color: "#15803D" }}>
+                Seus créditos não foram descontados
+              </span>
+            </div>
+            <button
+              onClick={() => { setError(null); handleGenerate(); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105 min-h-[44px]"
+              style={{ background: "linear-gradient(135deg, #EF4444, #EC4899)", color: "white", boxShadow: "0 2px 8px rgba(239,68,68,0.3)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Tentar novamente
+            </button>
+          </div>
         </div>
       )}
 
