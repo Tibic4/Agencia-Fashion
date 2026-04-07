@@ -350,16 +350,18 @@ Respond with ONLY the JSON object, no markdown.`,
     const runTryOn = async (): Promise<{ url: string | null; provider: string | null; debug?: string }> => {
       if (!store) return { url: null, provider: null };
       try {
-        // Obter URL pública do produto
+        // Obter URL assinada do produto (bucket é privado)
         let productUrl: string | null = null;
         if (campaignRecord) {
           try {
             const { createAdminClient } = await import("@/lib/supabase/admin");
             const supabase = createAdminClient();
-            const { data } = supabase.storage.from("product-photos").getPublicUrl(
-              campaignRecord.product_photo_storage_path || `campaigns/${store.id}/${campaignRecord.id}.jpg`
-            );
-            productUrl = data?.publicUrl || null;
+            const storagePath = campaignRecord.product_photo_storage_path || `campaigns/${store.id}/${campaignRecord.id}.jpg`;
+            const { data, error } = await supabase.storage.from("product-photos").createSignedUrl(storagePath, 600); // 10 min
+            if (error) {
+              console.warn("[TryOn] Erro ao gerar signed URL:", error.message);
+            }
+            productUrl = data?.signedUrl || null;
           } catch { /* ignore */ }
         }
 
