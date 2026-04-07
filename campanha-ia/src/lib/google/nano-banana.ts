@@ -32,37 +32,56 @@ export interface NanoBananaResult {
   durationMs?: number;
 }
 
-// Custo estimado por geração Nano Banana (Gemini 3.1 Flash image)
-const NANO_BANANA_COST_USD = 0.03;
-
 /**
  * Loga custo de uma chamada Nano Banana no banco (async, fire-and-forget)
+ * Usa tokens reais do usageMetadata quando disponíveis.
  */
 async function logNanoBananaCost(
   durationMs: number,
   success: boolean,
   storeId?: string,
   campaignId?: string,
+  usage?: { inputTokens: number; outputTokens: number },
 ) {
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const supabase = createAdminClient();
-    const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
-    const costBrl = NANO_BANANA_COST_USD * exchangeRate;
+    const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
+    const exchangeRate = await getExchangeRate();
+
+    let costUsd = 0.03; // fallback estimado
+    const inputTokens = usage?.inputTokens || 0;
+    const outputTokens = usage?.outputTokens || 0;
+
+    // Se temos tokens reais, calcular custo real
+    if (inputTokens > 0 || outputTokens > 0) {
+      const pricing = await getModelPricing();
+      // Gemini imagen usa pricing de flash para tokens de texto, mas output de imagem tem pricing separado
+      // Usar o pricing do modelo ou um fallback razoável
+      const modelPrice = pricing["gemini-2.5-flash"] || { inputPerMTok: 0.30, outputPerMTok: 2.50 };
+      costUsd = (inputTokens * modelPrice.inputPerMTok) / 1_000_000
+              + (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
+    }
+
+    const costBrl = costUsd * exchangeRate;
 
     await supabase.from("api_cost_logs").insert({
       store_id: storeId || null,
       campaign_id: campaignId || null,
       provider: "google",
-      model_used: "gemini-3.1-flash-image-preview",
+      model_used: MODEL,
       action: "virtual_try_on",
-      input_tokens: 0,
-      output_tokens: 0,
-      tokens_used: 0,
-      cost_usd: NANO_BANANA_COST_USD,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      tokens_used: inputTokens + outputTokens,
+      cost_usd: costUsd,
       cost_brl: costBrl,
       response_time_ms: durationMs,
     });
+
+    if (inputTokens > 0) {
+      console.log(`[NanoBanana] 💰 Custo REAL: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens)`);
+    }
   } catch (e) {
     console.warn("[NanoBanana] Erro ao salvar custo:", e);
   }
@@ -298,11 +317,22 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
 
     const durationMs = Date.now() - start;
 
+    // Extrair usageMetadata para custo REAL
+    const usageMetadata = (response as any).usageMetadata;
+    const usage = usageMetadata ? {
+      inputTokens: usageMetadata.promptTokenCount || usageMetadata.inputTokens || 0,
+      outputTokens: usageMetadata.candidatesTokenCount || usageMetadata.outputTokens || 0,
+    } : undefined;
+
+    if (usage) {
+      console.log(`[NanoBanana] 📊 Tokens reais: input=${usage.inputTokens}, output=${usage.outputTokens}`);
+    }
+
     // Extrair imagem do response
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
         if (part.inlineData?.data) {
-          logNanoBananaCost(durationMs, true, params.storeId, params.campaignId).catch(() => {});
+          logNanoBananaCost(durationMs, true, params.storeId, params.campaignId, usage).catch(() => {});
           return {
             status: "completed",
             imageBase64: part.inlineData.data,
@@ -313,7 +343,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       }
     }
 
-    logNanoBananaCost(durationMs, false, params.storeId, params.campaignId).catch(() => {});
+    logNanoBananaCost(durationMs, false, params.storeId, params.campaignId, usage).catch(() => {});
     return {
       status: "failed",
       imageBase64: null,

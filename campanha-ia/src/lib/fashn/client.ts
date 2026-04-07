@@ -25,24 +25,21 @@ interface FashnJobResult {
   error?: string;
 }
 
-// Custos fixos por operação Fashn.ai (em USD)
+// Custos dinâmicos por operação Fashn.ai — lidos de admin_settings
+// Fallback hardcoded usado se banco indisponível
 // Fonte: https://help.fashn.ai/plans-and-pricing/api-pricing
 // On-Demand: $0.075/crédito.
-// IMPORTANTE: quando generation_mode é omitido, o Fashn escolhe automaticamente:
-//   - product-to-model em 1K → 'fast' (1 crédito)
-//   - tryon-max → 'quality' (2 créditos mínimo!)
-//   - edit em 1K → 'fast' (1 crédito)
-// Ref: docs.fashn.ai/api-reference/tryon-max
-const FASHN_COST_USD: Record<string, number> = {
-  "product-to-model": 0.075, // 1 crédito (Fast/1K default)
-  "tryon-max": 0.15,         // 2 créditos (Quality/1K — quality auto quando generation_mode omitido)
-  "edit": 0.075,             // 1 crédito (Fast/1K default)
-  "model-create": 0.075,     // 1 crédito (Fast/1K default)
-  "background-remove": 0.075, // 1 crédito fixo
+const FASHN_COST_FALLBACK: Record<string, number> = {
+  "product-to-model": 0.075,
+  "tryon-max": 0.15,
+  "edit": 0.075,
+  "model-create": 0.075,
+  "background-remove": 0.075,
 };
 
 /**
  * Loga custo de uma chamada Fashn.ai no banco (async, fire-and-forget)
+ * Usa pricing dinâmico de admin_settings quando disponível.
  */
 async function logFashnCost(
   action: string,
@@ -55,8 +52,14 @@ async function logFashnCost(
   try {
     const { createAdminClient } = await import("@/lib/supabase/admin");
     const supabase = createAdminClient();
-    const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
-    const costUsd = FASHN_COST_USD[modelName] || 0;
+    const { getExchangeRate, getFashnCostUsd } = await import("@/lib/pricing");
+
+    const [exchangeRate, fashnCosts] = await Promise.all([
+      getExchangeRate(),
+      getFashnCostUsd(),
+    ]);
+
+    const costUsd = fashnCosts[modelName] ?? FASHN_COST_FALLBACK[modelName] ?? 0;
     const costBrl = costUsd * exchangeRate;
 
     await supabase.from("api_cost_logs").insert({

@@ -263,21 +263,33 @@ Respond with ONLY the JSON object, no markdown.`,
           }
 
           console.log(`[MiniVision] 🔍 VTO data extraído (${extraImages.length} fotos extras): fabric=${vtoData?.fabricDescriptor?.substring(0, 50)}...`);
-          // Registrar custo do mini-vision (~$0.0004)
+          // Registrar custo REAL do mini-vision (tokens da API)
           if (store) {
             try {
               const { createAdminClient } = await import("@/lib/supabase/admin");
               const supabase = createAdminClient();
-              const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+              const { getExchangeRate, calculateCostBrlDynamic } = await import("@/lib/pricing");
+              const exchangeRate = await getExchangeRate();
+              const inputTokens = miniResult.usage?.inputTokens || 0;
+              const outputTokens = miniResult.usage?.outputTokens || 0;
+              const costBrl = await calculateCostBrlDynamic(
+                miniResult.model || "gemini-2.5-flash",
+                { inputTokens, outputTokens },
+              );
+              const costUsd = exchangeRate > 0 ? costBrl / exchangeRate : 0;
               await supabase.from("api_cost_logs").insert({
                 store_id: store.id,
                 campaign_id: campaignRecord?.id || null,
                 provider: "google",
-                model_used: "gemini-2.5-flash",
+                model_used: miniResult.model || "gemini-2.5-flash",
                 action: "mini_vision_vto",
-                cost_usd: 0.0004,
-                cost_brl: 0.0004 * exchangeRate,
+                input_tokens: inputTokens,
+                output_tokens: outputTokens,
+                cost_usd: costUsd,
+                cost_brl: costBrl,
+                response_time_ms: miniResult.usage ? undefined : undefined,
               });
+              console.log(`[MiniVision] 💰 Custo: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens)`);
             } catch { /* ignore cost log failure */ }
           }
         } catch {
@@ -418,14 +430,19 @@ Respond with ONLY the JSON object, no markdown.`,
           try {
             const { createAdminClient } = await import("@/lib/supabase/admin");
             const supabase = createAdminClient();
+            const { getExchangeRate, getFashnCostUsd } = await import("@/lib/pricing");
+            const [exchangeRate, fashnCosts] = await Promise.all([
+              getExchangeRate(),
+              getFashnCostUsd(),
+            ]);
             const costMap: Record<string, number> = {
-              "fashn.ai-bank": 0.15,  // tryon-max: 2 créditos Quality/1K ($0.15) — quality auto
-              "fashn.ai": 0.15,      // tryon-max: 2 créditos Quality/1K ($0.15)
+              "fashn.ai-bank": fashnCosts["tryon-max"] || 0.15,
+              "fashn.ai": fashnCosts["tryon-max"] || 0.15,
               "fal.ai": 0.035,
-              "nano-banana-2": 0.04,  // Gemini imagen ~$0.04/image
+              "nano-banana-2": 0.04,
             };
             const costUsd = costMap[tryOnProvider] || 0.075;
-            const exchangeRate = parseFloat(process.env.USD_BRL_EXCHANGE_RATE || "5.80");
+            const costBrl = costUsd * exchangeRate;
             await supabase.from("api_cost_logs").insert({
               store_id: store.id,
               campaign_id: campaignRecord?.id || null,
@@ -433,7 +450,8 @@ Respond with ONLY the JSON object, no markdown.`,
               model_used: tryOnProvider === "fal.ai" ? "idm-vton" : tryOnProvider === "nano-banana-2" ? "gemini-imagen" : "fashn-tryon",
               action: "virtual_try_on",
               cost_usd: costUsd,
-              cost_brl: costUsd * exchangeRate,
+              cost_brl: costBrl,
+              exchange_rate: exchangeRate,
             });
           } catch (costErr) {
             console.warn("[TryOn] Falha ao registrar custo:", costErr);
