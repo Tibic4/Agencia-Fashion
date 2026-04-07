@@ -42,26 +42,26 @@ export type CampaignInput = z.infer<typeof CampaignInputSchema>;
 // ═══════════════════════════════════════
 export const VisionOutputSchema = z.object({
   produto: z.object({
-    nome_generico: z.string(),
-    categoria: z.string(),
-    subcategoria: z.string(),
-  }),
-  segmento: z.string(),
+    nome_generico: z.string().default("Produto de moda"),
+    categoria: z.string().default("Geral"),
+    subcategoria: z.string().default(""),
+  }).default({ nome_generico: "Produto de moda", categoria: "Geral", subcategoria: "" }),
+  segmento: z.string().default("feminino"),
   atributos_visuais: z.object({
-    cor_principal: z.string(),
-    cor_secundaria: z.string().nullable(),
-    material_aparente: z.string(),
-    estampa: z.string(),
-  }),
+    cor_principal: z.string().default("Não identificada"),
+    cor_secundaria: z.string().nullable().default(null),
+    material_aparente: z.string().default("Não identificado"),
+    estampa: z.string().default("Liso"),
+  }).default({ cor_principal: "Não identificada", cor_secundaria: null, material_aparente: "Não identificado", estampa: "Liso" }),
   qualidade_foto: z.object({
-    resolucao: z.enum(['boa', 'media', 'baixa']),
-    necessita_tratamento: z.boolean(),
-  }),
+    resolucao: z.enum(['boa', 'media', 'baixa']).default('media'),
+    necessita_tratamento: z.boolean().default(false),
+  }).default({ resolucao: 'media', necessita_tratamento: false }),
   nicho_sensivel: z.union([
     z.literal(false),
     z.object({ tipo: z.string(), alerta: z.string() }),
-  ]),
-  mood: z.array(z.string()).min(1).max(5),
+  ]).default(false),
+  mood: z.array(z.string()).min(1).max(5).default(["moda"]),
   // ── VTO Bridge Fields (para instruir Gemini VTO com dados do Vision) ──
   vto_fabric_descriptor: z.string().optional(),
   vto_garment_structure: z.string().optional(),

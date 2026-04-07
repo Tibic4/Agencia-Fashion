@@ -9,7 +9,8 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-// responseSchema aceita Zod schemas direto via SDK cast
+// Não usar responseSchema — Zod schemas são incompatíveis com o formato Gemini.
+// Usar apenas responseMimeType: "application/json" + prompt para definir estrutura.
 import type { LLMProvider, LLMRequest, LLMVisionRequest, LLMResponse } from "./types";
 
 let client: GoogleGenAI | null = null;
@@ -25,7 +26,7 @@ function getClient(): GoogleGenAI {
   return client;
 }
 
-// zodToJsonSchema agora vem do pacote externo "zod-to-json-schema"
+
 
 export class GeminiProvider implements LLMProvider {
   readonly name = "google" as const;
@@ -42,8 +43,8 @@ export class GeminiProvider implements LLMProvider {
     const config: Record<string, unknown> = {};
 
     if (request.responseSchema) {
+      // Só forçar JSON — schema via prompt, validação via Zod no parseAndValidate
       config.responseMimeType = "application/json";
-      config.responseSchema = request.responseSchema as any;
     }
 
     if (request.temperature !== undefined) {
@@ -129,7 +130,6 @@ export class GeminiProvider implements LLMProvider {
 
     if (request.responseSchema) {
       config.responseMimeType = "application/json";
-      config.responseSchema = request.responseSchema as any;
     }
 
     if (request.temperature !== undefined) {
