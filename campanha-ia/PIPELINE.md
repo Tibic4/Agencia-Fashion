@@ -1,13 +1,13 @@
 # Pipeline CriaLook — Passo a Passo
 
-> Resumo executivo: cada campanha faz **5 chamadas LLM + 2 chamadas Fashn.ai**.
-> Custo total por campanha: **~R$ 1,55** (3 créditos Fashn + LLM).
-> Custo de criar modelo personalizada: **R$ 0,44** (1 crédito Fashn.ai).
-> Fonte: [help.fashn.ai/plans-and-pricing/api-pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
+> Resumo executivo: cada campanha faz **5 chamadas LLM + 1 chamada Gemini Image**.
+> Custo total por campanha: **~R$ 0,28** (LLM + imagem Gemini).
+> Custo de criar modelo personalizada: **~R$ 0,01** (Gemini 3.1 Flash Image).
+> Provider de imagem: Gemini 3.1 Flash Image Preview (até 14 referências, 4K max)
 
 ---
 
-## Os 7 Passos
+## Os 6 Passos
 
 ### PASSO 1 — Vision (Gemini 2.5 Flash)
 **O que faz:** Recebe a foto do produto e analisa tudo — cor, tecido, modelagem, detalhes, estampa.
@@ -18,10 +18,19 @@
 ---
 
 ### PASSO 2 — Strategy (Gemini 2.5 Pro)
-**O que faz:** Com base na análise visual, cria a estratégia de venda — ângulo, gatilho, tom, público ideal.
+**O que faz:** Com base na análise visual, cria a estratégia de venda — ângulo, gatilho, tom, público ideal. Inclui sugestão de **pose** para a modelo.
 **Entrada:** Análise do passo 1 + preço + objetivo + público-alvo
-**Saída:** JSON com ângulo de venda, gatilho mental, tom, contra-objeção, CTAs
+**Saída:** JSON com ângulo de venda, gatilho mental, tom, contra-objeção, CTAs, **pose_direction**
 **Custo:** ~R$ 0,08
+
+**Poses sugeridas por objetivo:**
+
+| Objetivo | Pose sugerida |
+|----------|--------------|
+| Venda imediata | Frontal 3/4, mãos relaxadas, olhar direto — foco no produto |
+| Lançamento | Pose dinâmica, uma mão na cintura, olhar confiante |
+| Promoção | Andando naturalmente, sorriso natural, casual |
+| Engajamento | Pose expressiva, interagindo com acessório, olhar para o lado |
 
 ---
 
@@ -49,26 +58,20 @@
 
 ---
 
-### PASSO 6 — Fashn.ai: Gerar Modelo (product-to-model ou try-on)
-**O que faz:** Pega a foto da roupa e veste na modelo do banco (corpo inteiro).
-**Entrada:** Foto do produto + modelo do banco selecionada
-**Saída:** Imagem da modelo vestindo a roupa
-**Chamada:** `tryon-max` (2 créditos — quality mode auto)
-**Custo:** $0.15 = **R$ 0,87**
+### PASSO 6 — Gemini 3.1 Flash Image: Virtual Try-On + Cenário
+**O que faz:** Em uma ÚNICA chamada, veste a roupa na modelo + aplica cenário + define pose.
+**Entrada:**
+  - Foto(s) do produto (até 3: principal + close-up + 2ª peça)
+  - Foto da modelo do banco
+  - Prompt com cenário + pose + instruções de fidelidade
+**Saída:** Imagem final da modelo vestindo a roupa no cenário escolhido
+**Modelo:** `gemini-3.1-flash-image-preview`
+**Resolução:** 2K (default) — suporta até 4K
+**Custo:** ~R$ 0,02-0,04
 
-> ⚠️ Quando `generation_mode` é omitido, **tryon-max usa 'quality' automaticamente** (2 créditos).
-> Ref: [docs.fashn.ai/api-reference/tryon-max](https://docs.fashn.ai/api-reference/tryon-max)
-
----
-
-### PASSO 7 — Fashn.ai: Refinar + Cenário (edit)
-**O que faz:** 3 coisas em 1 chamada:
-- 🎨 Aplica o cenário escolhido (branco, urbano, boutique, etc.)
-- 👗 Alisa o tecido e corrige caimento da roupa
-- 🏷️ Remove etiquetas de preço, tags, adesivos e artefatos de manequim
-**Entrada:** Imagem do passo 6 + prompt do cenário
-**Saída:** Imagem final polida com fundo profissional
-**Custo:** 1 crédito = $0.075 = R$ 0,44 (Fast/1K default)
+> ✅ O Gemini aceita até **14 imagens de referência** em uma única chamada.
+> As 3 fotos do produto são usadas: principal (silhueta), close-up (textura), 2ª peça (conjunto).
+> Isso garante **fidelidade de material** que era problema com providers que aceitavam apenas 1 foto.
 
 ---
 
@@ -89,36 +92,31 @@
 | Scorer | Google | Gemini 2.5 Flash | $0.30 | $2.50 | ~2.500 | ~500 | R$ 0,01 |
 | **Subtotal LLM** | | | | | | | **R$ 0,24** |
 
-### Fashn.ai (imagem) — $0.075/crédito, câmbio R$ 5,80/USD
+### Gemini Image (virtual try-on) — token-based pricing
 
-> Fonte oficial: [Fashn API Pricing](https://help.fashn.ai/plans-and-pricing/api-pricing)
-> Docs por endpoint: [docs.fashn.ai](https://docs.fashn.ai/)
-
-| Operação | Créditos | Custo USD | Custo R$ | Notas |
-|----------|----------|-----------|----------|-------|
-| **tryon-max** (vestir peça na modelo) | **2** | **$0.15** | **R$ 0,87** | quality auto |
-| edit (cenário/refinamento) | 1 | $0.075 | R$ 0,44 | fast/1K auto |
-| model-create (criar modelo) | 1 | $0.075 | R$ 0,44 | avulso |
+| Operação | Resolução | Custo estimado |
+|----------|-----------|---------------|
+| **VTO + cenário** (vestir + fundo + pose) | 2K | **~R$ 0,02-0,04** |
+| Preview de modelo (criar modelo) | 1K | **~R$ 0,01** |
 
 ### TOTAL por Campanha
 
 | Componente | Custo |
 |-----------|-------|
 | LLM (5 chamadas) | R$ 0,24 |
-| Fashn tryon-max (2 créd) | R$ 0,87 |
-| Fashn edit (1 créd) | R$ 0,44 |
-| **TOTAL** | **R$ 1,55** |
+| Gemini Image VTO (1 chamada) | R$ 0,04 |
+| **TOTAL** | **~R$ 0,28** |
 
-> Custo de **criar modelo personalizada** (passo extra, fora do pipeline): +R$ 0,44
+> Custo de **criar modelo personalizada** (passo extra, fora do pipeline): ~R$ 0,01
 
 ---
 
-## Cenários Disponíveis (Fashn.ai edit)
+## Cenários Disponíveis (Gemini Image)
 
-Todos usam a **mesma chamada** (edit, $0.075 = R$ 0,44) — só muda o prompt:
+Todos usam a **mesma chamada** — só muda o prompt de cenário:
 
-| Cenário | Descrição do prompt |
-|---------|-------------------|
+| Cenário | Descrição |
+|---------|----------|
 | ⬜ Branco | Estúdio limpo, fundo branco, e-commerce |
 | 📸 Estúdio | Gradiente suave, iluminação profissional |
 | 🌿 Lifestyle | Ambiente externo, luz natural |
@@ -131,26 +129,54 @@ Todos usam a **mesma chamada** (edit, $0.075 = R$ 0,44) — só muda o prompt:
 
 ---
 
+## Poses Disponíveis (pesquisa de conversão Instagram 2025)
+
+As poses são sugeridas automaticamente pela Strategy com base no objetivo:
+
+| Pose | Descrição | Melhor para |
+|------|-----------|-------------|
+| 🧍 Frontal 3/4 | Leve giro de corpo, uma perna relaxada, olhar direto | E-commerce, venda direta |
+| 🚶 Andando | Passo natural, braços em movimento, sorriso casual | Saias, vestidos, looks fluidos |
+| 💃 Confiante | Mão na cintura, peso em uma perna, queixo levantado | Lançamentos, looks premium |
+| 👀 Olhar lateral | Corpo frontal, rosto virado, conexão sutil | Peças com detalhes nas costas |
+| 🤚 Interagindo | Ajustando gola, mão no bolso, segurando acessório | Engajamento, mostrar detalhes |
+
+> **Tendência 2025:** Poses candid/naturais convertem mais que poses rígidas.
+> Evitar: Poses estáticas perfeitas demais (causam "fadiga de perfeição").
+
+---
+
 ## Fluxo Visual
 
 ```
-📸 Upload da foto
+📸 Upload da(s) foto(s) do produto (até 3)
     ↓
-[1] Gemini Flash Vision → analisa produto
+[1] Gemini Flash Vision → analisa produto (cor, tecido, detalhes)
     ↓
-[2] Gemini Pro Strategy → cria estratégia
+[2] Gemini Pro Strategy → cria estratégia + sugere pose
     ↓
 [3] Claude Sonnet 4 Copywriter → gera textos
     ↓
 [4] Gemini Flash Refiner ─┐
 [5] Gemini Flash Scorer  ─┤ (paralelo)
     ↓
-[6] Fashn.ai → gera modelo vestindo a roupa
-    ↓
-[7] Fashn.ai edit → aplica cenário escolhido
+[6] Gemini 3.1 Flash Image → VTO + cenário + pose (1 chamada)
     ↓
 🎨 Konva Compositor → monta criativo final
    (texto + logo + CTA sobre a imagem)
     ↓
 ✅ Campanha pronta!
 ```
+
+---
+
+## Economia vs Pipeline Anterior (Fashn.ai)
+
+| | Pipeline Fashn (antes) | Pipeline Gemini (agora) |
+|--|:---:|:---:|
+| Chamadas de imagem | 2 (tryon + edit) | **1** |
+| Fotos de entrada | 1 produto | **Até 14** |
+| Resolução máxima | 1K | **4K** |
+| Tempo de geração | 50-150s | **10-30s** |
+| Custo por campanha | R$ 1,55 | **R$ 0,28** |
+| **Economia** | — | **82%** |

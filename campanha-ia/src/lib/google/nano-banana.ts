@@ -96,6 +96,10 @@ export interface NanoBananaTryOnParams {
   closeUpBase64?: string;
   /** MIME type da foto close-up */
   closeUpMimeType?: string;
+  /** Base64 da segunda peça do conjunto (opcional) */
+  secondPieceBase64?: string;
+  /** MIME type da segunda peça */
+  secondPieceMimeType?: string;
   /** Base64 da foto do modelo do banco */
   modelImageBase64: string;
   /** MIME type da foto do modelo */
@@ -146,6 +150,7 @@ function buildTryOnPrompt(params: {
   background?: BackgroundStyle;
   bodyType?: "normal" | "plus";
   hasCloseUp?: boolean;
+  hasSecondPiece?: boolean;
   hasCustomBackground?: boolean;
   visionData?: {
     fabricDescriptor?: string;
@@ -159,7 +164,11 @@ function buildTryOnPrompt(params: {
   const isPlus = params.bodyType === "plus";
 
   const closeUpInstruction = params.hasCloseUp
-    ? "\n- The SECOND image is a CLOSE-UP of the fabric texture. Use it to reproduce the EXACT same texture (ribbed, knit, woven, smooth, etc.) on the generated garment."
+    ? "\n- The THIRD image is a CLOSE-UP of the fabric texture. Examine it carefully to reproduce the EXACT same texture (ribbed, knit, woven, smooth, etc.) on the generated garment. This is the most important reference for material accuracy."
+    : "";
+
+  const secondPieceInstruction = params.hasSecondPiece
+    ? "\n- The FOURTH image is the SECOND PIECE of the set/conjunto (e.g., matching skirt, pants, or top). The model must wear BOTH pieces together as a coordinated set."
     : "";
 
   const customBgInstruction = params.hasCustomBackground
@@ -174,9 +183,9 @@ function buildTryOnPrompt(params: {
 
 TASK: Generate a SINGLE photorealistic image of a real-looking Brazilian woman model wearing the EXACT garment shown in the product photos.
 
-IMAGE INPUTS:
-- The FIRST image is the FULL product on a mannequin — this is the garment to recreate EXACTLY.${closeUpInstruction}${customBgInstruction}
-- The LAST image (before this text) is the REFERENCE MODEL — match her skin tone, hair style, and face.
+IMAGE INPUTS (in order):
+- The FIRST image is the REFERENCE MODEL — match her EXACT face, skin tone, hair style, and body proportions.
+- The SECOND image is the MAIN PRODUCT on a mannequin — this is the garment to recreate EXACTLY.${closeUpInstruction}${secondPieceInstruction}${customBgInstruction}
 
 MODEL BODY TYPE (CRITICAL):
 1. ${bodyTypeInstruction}
@@ -241,9 +250,19 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
     const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
 
     // Montar as parts: imagens + prompt
+    // ORDEM CRÍTICA: Modelo → Produto → Close-up → 2ª Peça → Cenário → Prompt
+    // Cada imagem é claramente identificada no prompt para evitar confusão
     const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
 
-    // 1. Foto do produto (obrigatória)
+    // 1. Modelo de referência (PRIMEIRO — rosto, corpo, tom de pele)
+    parts.push({
+      inlineData: {
+        mimeType: params.modelMimeType || "image/png",
+        data: params.modelImageBase64,
+      },
+    });
+
+    // 2. Foto do produto principal (SEGUNDO — outfit completo no manequim)
     parts.push({
       inlineData: {
         mimeType: params.productMimeType || "image/jpeg",
@@ -251,7 +270,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       },
     });
 
-    // 2. Close-up do tecido (opcional)
+    // 3. Close-up do tecido (TERCEIRO — textura, detalhes — opcional)
     if (params.closeUpBase64) {
       parts.push({
         inlineData: {
@@ -261,7 +280,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       });
     }
 
-    // 3. Cenário personalizado (opcional)
+    // 4. Cenário personalizado (opcional)
     if (params.background === "personalizado" && params.customBackgroundBase64) {
       parts.push({
         inlineData: {
@@ -271,21 +290,24 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       });
     }
 
-    // 4. Modelo de referência (sempre por último antes do prompt)
-    parts.push({
-      inlineData: {
-        mimeType: params.modelMimeType || "image/png",
-        data: params.modelImageBase64,
-      },
-    });
+    // 5. Segunda peça do conjunto (opcional)
+    if (params.secondPieceBase64) {
+      parts.push({
+        inlineData: {
+          mimeType: params.secondPieceMimeType || "image/jpeg",
+          data: params.secondPieceBase64,
+        },
+      });
+    }
 
-    // 5. Prompt
+    // 6. Prompt
     parts.push({
       text: buildTryOnPrompt({
         description: params.productDescription,
         background: params.background,
         bodyType: params.bodyType,
         hasCloseUp: !!params.closeUpBase64,
+        hasSecondPiece: !!params.secondPieceBase64,
         hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
         visionData: params.visionData,
       }),

@@ -62,7 +62,7 @@ export const VisionOutputSchema = z.object({
     z.object({ tipo: z.string(), alerta: z.string() }),
   ]),
   mood: z.array(z.string()).min(1).max(5),
-  // ── VTO Bridge Fields (para instruir Fashn.ai/Nano Banana com dados do Vision) ──
+  // ── VTO Bridge Fields (para instruir Gemini VTO com dados do Vision) ──
   vto_fabric_descriptor: z.string().optional(),
   vto_garment_structure: z.string().optional(),
   vto_color_hex_estimate: z.string().optional(),

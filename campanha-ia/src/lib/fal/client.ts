@@ -1,7 +1,7 @@
 /**
  * fal.ai — Virtual Try-On Fallback (IDM-VTON)
  *
- * Usado como fallback quando Fashn.ai falha ou não está configurado.
+ * Fallback secundário para try-on quando Gemini não está disponível.
  * Mais barato (~R$ 0,15-0,25/imagem) e usa modelo open source IDM-VTON.
  *
  * Docs: https://fal.ai/models/fal-ai/idm-vton

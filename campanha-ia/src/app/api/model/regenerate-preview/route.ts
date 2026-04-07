@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateCustomModelPreview } from "@/lib/fashn/client";
+import { generatePreviewDirect } from "@/lib/model-preview";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/model/regenerate-preview
  * Gera (ou regenera) a preview de um modelo customizado.
+ * Provider: Gemini 3.1 Flash Image Preview
  * Body: { modelId: string }
  */
 export async function POST(request: NextRequest) {
@@ -42,34 +43,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Modelo não encontrado" }, { status: 404 });
     }
 
-    // Gerar preview via Fashn.ai
-    const previewResult = await generateCustomModelPreview({
+    // Gerar preview via Gemini 3.1 Flash Image (fire-and-forget)
+    generatePreviewDirect({
+      modelId,
+      storeId: store.id,
       skinTone: model.skin_tone || "morena",
       hairStyle: model.hair_style || "ondulado",
       bodyType: model.body_type || "media",
       style: model.style || "casual_natural",
       ageRange: model.age_range || "adulta_26_35",
       name: model.name || "Modelo",
-      storeId: store.id,
+    }).catch((err) => {
+      console.error("[API:model/regenerate-preview] Preview generation failed:", err);
     });
 
-    if (previewResult.status === "completed" && previewResult.outputUrl) {
-      // Atualizar preview_url no banco
-      await supabase
-        .from("store_models")
-        .update({ preview_url: previewResult.outputUrl })
-        .eq("id", modelId);
-
-      return NextResponse.json({
-        success: true,
-        preview_url: previewResult.outputUrl,
-      });
-    }
-
-    return NextResponse.json(
-      { error: "Falha ao gerar preview", details: previewResult.error },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "Preview sendo gerada. Atualize a página em alguns segundos.",
+    });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/regenerate-preview] Error:", msg);

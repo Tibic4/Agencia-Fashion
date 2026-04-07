@@ -14,7 +14,7 @@
  * Para forçar tudo Gemini: não setar ANTHROPIC_API_KEY
  */
 
-/** Tipos de produto disponíveis com categoria Fashn correspondente */
+/** Tipos de produto disponíveis com categoria de peça correspondente */
 export const PRODUCT_TYPES = [
   { value: "blusa",     label: "👚 Blusa / Regata / Top",     category: "tops" as const },
   { value: "saia",      label: "👗 Saia",                     category: "bottoms" as const },
@@ -43,10 +43,10 @@ export const MATERIALS = [
 ] as const;
 
 export type ProductType = typeof PRODUCT_TYPES[number]["value"];
-export type FashnCategory = "tops" | "bottoms" | "one-pieces" | "auto";
+export type GarmentCategory = "tops" | "bottoms" | "one-pieces" | "auto";
 
-/** Mapear tipo de produto para categoria Fashn */
-export function getCategory(productType: string): FashnCategory {
+/** Mapear tipo de produto para categoria de peça */
+export function getCategory(productType: string): GarmentCategory {
   const found = PRODUCT_TYPES.find(p => p.value === productType);
   return found?.category || "auto";
 }
