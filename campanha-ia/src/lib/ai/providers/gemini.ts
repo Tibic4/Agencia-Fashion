@@ -31,7 +31,7 @@ export class GeminiProvider implements LLMProvider {
   readonly name = "google" as const;
   private model: string;
 
-  constructor(model: string = "gemini-2.5-flash") {
+  constructor(model: string = "gemini-3-flash-preview") {
     this.model = model;
   }
 
