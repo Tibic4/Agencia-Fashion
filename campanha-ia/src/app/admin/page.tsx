@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDateBR } from "@/lib/admin/format";
 
 async function getMetrics() {
   const supabase = createAdminClient();
@@ -252,7 +253,7 @@ export default async function AdminDashboard() {
                   <div>
                     <p className="text-sm text-white">{(campaign.stores as Record<string, string>)?.name || "—"}</p>
                     <p className="text-xs text-gray-500">
-                      {new Date(campaign.created_at as string).toLocaleDateString("pt-BR")} · R$ {Number(campaign.price).toFixed(2)}
+                      {formatDateBR(campaign.created_at as string)} · R$ {Number(campaign.price).toFixed(2)}
                     </p>
                   </div>
                   <StatusBadge status={campaign.status as string} />

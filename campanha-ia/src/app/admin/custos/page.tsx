@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDateTimeBR } from "@/lib/admin/format";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -111,13 +112,9 @@ const providerColors: Record<string, string> = {
 };
 
 const stepLabels: Record<string, string> = {
-  opus_analyzer: "🧠 Analista Opus (prompts + análise)",
-  gemini_image_gen: "📸 Geração de Imagem (Gemini)",
-  model_preview: "🧍 Preview de Modelo",
-  nano_banana: "👗 Virtual Try-On (legado)",
-  vision: "👁️ Vision (legado)",
-  strategy: "🎯 Estrategista (legado)",
-  copywriter: "✍️ Copywriter (legado)",
+  opus_analyzer: "🧠 Análise da peça (Claude Opus)",
+  gemini_image_gen: "📸 Geração de foto (Gemini)",
+  model_preview: "🧍 Preview de modelo",
 };
 
 const alertStyles: Record<string, { bg: string; border: string; text: string }> = {
@@ -137,7 +134,7 @@ export default async function AdminCustos() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Custos API</h1>
-        <p className="text-gray-400 mt-1">Controle de gastos com APIs externas • Dia {dayOfMonth}/{daysInMonth}</p>
+        <p className="text-gray-400 mt-1">Controle de gastos com APIs externas • Dia {String(dayOfMonth).padStart(2, "0")}/{String(daysInMonth).padStart(2, "0")}</p>
       </div>
 
       {/* Alert */}
@@ -269,7 +266,7 @@ export default async function AdminCustos() {
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-gray-500">
                     <span>{stepLabels[String(log.action || "")] || String(log.action || "—")}</span>
-                    <span>{new Date(String(log.created_at)).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+                    <span>{formatDateTimeBR(String(log.created_at))}</span>
                   </div>
                 </div>
               ))}
@@ -294,7 +291,7 @@ export default async function AdminCustos() {
                       <td className="px-6 py-2.5 text-gray-400 text-xs">{stepLabels[String(log.action || "")] || String(log.action || "—")}</td>
                       <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
                       <td className="px-6 py-2.5 text-emerald-400 font-medium">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
-                      <td className="px-6 py-2.5 text-gray-500 text-xs">{new Date(String(log.created_at)).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                      <td className="px-6 py-2.5 text-gray-500 text-xs">{formatDateTimeBR(String(log.created_at))}</td>
                     </tr>
                   ))}
                 </tbody>
