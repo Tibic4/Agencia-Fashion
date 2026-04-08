@@ -31,6 +31,8 @@ export interface PipelineInput {
   storeName?: string;
   bodyType?: "normal" | "plus";
   backgroundType?: string;
+  /** Cor da marca da loja (hex) */
+  brandColor?: string;
   /** Campos legados — mantidos para não quebrar a route, mas não usados pelo v3 */
   objective?: string;
   targetAudience?: string;
@@ -81,6 +83,7 @@ export async function runCampaignPipeline(
     storeName: input.storeName,
     bodyType: (input.bodyType === "plus" ? "plus" : "normal"),
     backgroundType: input.backgroundType,
+    brandColor: input.brandColor,
   });
 
   await onProgress?.("images", "Gerando 3 fotos em paralelo...", 40);
