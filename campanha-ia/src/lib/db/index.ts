@@ -786,7 +786,7 @@ export interface SavePipelineResultV3Input {
 export async function savePipelineResultV3(input: SavePipelineResultV3Input) {
   const supabase = createAdminClient();
 
-  await supabase
+  const { error } = await supabase
     .from("campaigns")
     .update({
       status: "completed",
@@ -804,6 +804,13 @@ export async function savePipelineResultV3(input: SavePipelineResultV3Input) {
       },
     })
     .eq("id", input.campaignId);
+
+  if (error) {
+    console.error(
+      `[DB] ❌ savePipelineResultV3 FALHOU | campaign=${input.campaignId} | erro: ${error.message}`
+    );
+    throw new Error(`Falha ao salvar resultado: ${error.message}`);
+  }
 
   console.log(
     `[DB] ✅ savePipelineResultV3 | campaign=${input.campaignId} | ${input.successCount}/3 imagens | ${input.durationMs}ms`
