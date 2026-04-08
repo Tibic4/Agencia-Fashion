@@ -64,12 +64,15 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const skinTone = formData.get("skinTone") as string;
     const hairStyle = formData.get("hairStyle") as string;
+    const hairTexture = (formData.get("hairTexture") as string) || null;
+    const hairLength = (formData.get("hairLength") as string) || null;
+    const hairColor = (formData.get("hairColor") as string) || null;
     const bodyType = formData.get("bodyType") as string;
     const style = formData.get("style") as string;
     const ageRange = formData.get("ageRange") as string;
     const name = (formData.get("name") as string) || "Modelo";
 
-    if (!skinTone || !hairStyle || !bodyType) {
+    if (!skinTone || (!hairStyle && !hairTexture) || !bodyType) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 });
     }
 
@@ -98,7 +101,7 @@ export async function POST(request: NextRequest) {
       try {
         const sharp = (await import("sharp")).default;
         processedBuffer = await sharp(processedBuffer as any)
-          .resize(512, 512, { fit: "inside", withoutEnlargement: true })
+          .resize(768, 768, { fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: 85 })
           .toBuffer() as any;
         processedMime = "image/jpeg";
@@ -132,12 +135,23 @@ export async function POST(request: NextRequest) {
     const model = await createStoreModel({
       storeId: store.id,
       skinTone,
-      hairStyle,
+      hairStyle: hairTexture || hairStyle,
       bodyType,
       style,
       ageRange,
       name,
     });
+
+    // Salvar campos granulares de cabelo
+    if (hairTexture && hairLength && hairColor) {
+      const { createAdminClient: createAdmin2 } = await import("@/lib/supabase/admin");
+      const sb2 = createAdmin2();
+      await sb2.from("store_models").update({
+        hair_texture: hairTexture,
+        hair_length: hairLength,
+        hair_color: hairColor,
+      }).eq("id", model.id);
+    }
 
     // Salvar face_ref_url no modelo
     if (faceRefUrl) {
@@ -157,7 +171,10 @@ export async function POST(request: NextRequest) {
           modelId: model.id,
           storeId: store.id,
           skinTone,
-          hairStyle,
+          hairStyle: hairTexture || hairStyle,
+          hairTexture: hairTexture || null,
+          hairLength: hairLength || null,
+          hairColor: hairColor || null,
           bodyType,
           style: style || "casual_natural",
           ageRange: ageRange || "adulta_26_35",
@@ -178,7 +195,7 @@ export async function POST(request: NextRequest) {
         previewUrl: null,
         previewStatus: "pending",
         hasFaceRef: !!faceRefUrl,
-        traits: { skinTone, hairStyle, bodyType, style, ageRange },
+        traits: { skinTone, hairStyle: hairTexture || hairStyle, hairTexture, hairLength, hairColor, bodyType, style, ageRange },
       },
     });
   } catch (error: unknown) {

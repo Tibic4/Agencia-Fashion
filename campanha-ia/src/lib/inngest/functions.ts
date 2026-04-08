@@ -73,6 +73,10 @@ interface ModelPreviewEvent {
   storeId: string;
   skinTone: string;
   hairStyle: string;
+  /** Novos campos granulares de cabelo */
+  hairTexture?: string | null;
+  hairLength?: string | null;
+  hairColor?: string | null;
   bodyType: string;
   style: string;
   ageRange: string;
@@ -118,7 +122,16 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
     // ── Montar parts via builder centralizado ──
     const mode = faceBase64 ? "multimodal (face ref)" : "text-only";
     const parts = buildGeminiParts(
-      { skinTone: data.skinTone, hairStyle: data.hairStyle, bodyType: data.bodyType, style: data.style, ageRange: data.ageRange },
+      {
+        skinTone: data.skinTone,
+        hairStyle: data.hairStyle,
+        hairTexture: data.hairTexture || undefined,
+        hairLength: data.hairLength || undefined,
+        hairColor: data.hairColor || undefined,
+        bodyType: data.bodyType,
+        style: data.style,
+        ageRange: data.ageRange,
+      },
       faceBase64,
       faceMime,
     );
