@@ -471,7 +471,7 @@ Respond with ONLY the JSON object, no markdown.`,
 
         if (nanoResult.status === "completed" && nanoResult.imageBase64) {
           console.log(`[TryOn] ✅ Gemini VTO sucesso (${nanoResult.durationMs}ms)`);
-          return { url: `data:image/png;base64,${nanoResult.imageBase64}`, provider: "gemini-3.1-flash-image" };
+          return { url: `data:image/png;base64,${nanoResult.imageBase64}`, provider: "gemini-3-pro-image" };
         }
 
         console.warn(`[TryOn] ❌ Gemini VTO falhou:`, nanoResult.error);
@@ -556,7 +556,7 @@ Respond with ONLY the JSON object, no markdown.`,
                 store_id: store.id,
                 campaign_id: campaignRecord?.id || null,
                 provider: "google",
-                model_used: "gemini-3.1-flash-image",
+                model_used: "gemini-3-pro-image",
                 action: "virtual_try_on",
                 cost_usd: baseCostUsd,
                 cost_brl: baseCostUsd * exchangeRate,

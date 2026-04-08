@@ -121,10 +121,10 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
       faceMime,
     );
 
-    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3.1-flash-image-preview — modo: ${mode}...`);
+    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3-pro-image-preview — modo: ${mode}...`);
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image-preview",
+      model: "gemini-3-pro-image-preview",
       contents: [{ role: "user", parts }],
       config: {
         responseModalities: ["IMAGE", "TEXT"],
