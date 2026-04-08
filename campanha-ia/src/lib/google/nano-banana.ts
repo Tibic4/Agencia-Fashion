@@ -534,7 +534,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
         responseModalities: ["TEXT", "IMAGE"],
         imageConfig: {
           aspectRatio,
-          imageSize: "1024",
+          imageSize: "2K",
         },
       } as any,
     });
