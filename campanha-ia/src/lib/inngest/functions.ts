@@ -1,6 +1,10 @@
 import { inngest } from "./client";
 import { savePipelineResultV3, incrementCampaignsUsed } from "@/lib/db";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
+import {
+  storageGarbageCollectorCron,
+  storageGarbageCollectorManual,
+} from "./storage-gc";
 
 interface CampaignGenerateEvent {
   campaignId: string;
@@ -232,4 +236,9 @@ export const generateModelPreviewJob = inngest.createFunction(
 /**
  * Lista de todas as functions Inngest para registrar no handler.
  */
-export const inngestFunctions = [generateCampaignJob, generateModelPreviewJob];
+export const inngestFunctions = [
+  generateCampaignJob,
+  generateModelPreviewJob,
+  storageGarbageCollectorCron,
+  storageGarbageCollectorManual,
+];
