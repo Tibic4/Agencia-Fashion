@@ -70,7 +70,7 @@ export function getStepProviders(): Record<PipelineStepName, StepConfig> {
         structuredOutput: true,
       },
       scorer: {
-        provider: new GeminiProvider(process.env.AI_MODEL_SCORER || geminiFlash),
+        provider: new GeminiProvider(process.env.AI_MODEL_SCORER || "gemini-3.1-flash-lite-preview"),
         structuredOutput: true,
       },
     };
