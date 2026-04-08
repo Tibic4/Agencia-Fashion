@@ -86,6 +86,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   "gemini-3.1-pro-preview": { inputPerMTok: 2.00, outputPerMTok: 12.00 },
   "gemini-3.1-flash-image-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
   // Claude
+  "claude-sonnet-4-6": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-sonnet-4-20250514": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-haiku-4-20250514": { inputPerMTok: 1.00, outputPerMTok: 5.00 },
 };

@@ -45,7 +45,7 @@ export function getStepProviders(): Record<PipelineStepName, StepConfig> {
   // Modelos configuráveis por env
   const geminiFlash = process.env.AI_MODEL_GEMINI_FLASH || "gemini-3-flash-preview";
   const geminiPro = process.env.AI_MODEL_GEMINI_PRO || "gemini-3.1-pro-preview";
-  const claudeSonnet = process.env.AI_MODEL_CLAUDE_SONNET || "claude-sonnet-4-20250514";
+  const claudeSonnet = process.env.AI_MODEL_CLAUDE_SONNET || "claude-sonnet-4-6";
 
   if (hasGoogleKey) {
     // Estratégia híbrida (recomendada)
