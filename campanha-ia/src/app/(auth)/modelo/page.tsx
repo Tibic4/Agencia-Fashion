@@ -101,6 +101,7 @@ export default function ModeloVirtual() {
   const [hairTexture, setHairTexture] = useState("ondulado");
   const [hairLength, setHairLength] = useState("ombro");
   const [hairColor, setHairColor] = useState("castanho");
+  const [hairFromPhoto, setHairFromPhoto] = useState(false);
   const [body, setBody] = useState("media");
   const [style, setStyle] = useState("casual_natural");
   const [age, setAge] = useState("adulta_26_35");
@@ -183,10 +184,14 @@ export default function ModeloVirtual() {
     try {
       const formData = new FormData();
       formData.append("skinTone", skin);
-      formData.append("hairTexture", hairTexture);
-      formData.append("hairLength", hairLength);
-      formData.append("hairColor", hairColor);
-      formData.append("hairStyle", hairTexture); // backward compat
+      if (hairFromPhoto) {
+        formData.append("hairFromPhoto", "true");
+      } else {
+        formData.append("hairTexture", hairTexture);
+        formData.append("hairLength", hairLength);
+        formData.append("hairColor", hairColor);
+      }
+      formData.append("hairStyle", hairFromPhoto ? "from_photo" : hairTexture); // backward compat
       formData.append("bodyType", body);
       formData.append("style", style);
       formData.append("ageRange", age);
@@ -267,6 +272,7 @@ export default function ModeloVirtual() {
     setHairTexture("ondulado");
     setHairLength("ombro");
     setHairColor("castanho");
+    setHairFromPhoto(false);
     setBody("media");
     setStyle("casual_natural");
     setAge("adulta_26_35");
@@ -536,8 +542,27 @@ export default function ModeloVirtual() {
           {/* Hair — 3 campos granulares */}
           <div>
             <label className="block text-sm font-semibold mb-1">Cabelo</label>
-            <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>Monte o visual combinando textura, comprimento e cor</p>
+            <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>Monte o visual combinando textura, comprimento e cor</p>
 
+            {/* Toggle: manter cabelo da foto */}
+            <button
+              onClick={() => setHairFromPhoto(!hairFromPhoto)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all mb-3 w-full"
+              style={{
+                background: hairFromPhoto ? "var(--brand-100)" : "var(--surface)",
+                color: hairFromPhoto ? "var(--brand-700)" : "var(--muted)",
+                border: hairFromPhoto ? "1.5px solid var(--brand-400)" : "1px solid var(--border)",
+              }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1, transition: "transform 0.2s", transform: hairFromPhoto ? "scale(1.1)" : "scale(1)" }}>
+                {hairFromPhoto ? "📸" : "✏️"}
+              </span>
+              {hairFromPhoto
+                ? "Usando cabelo da foto — a IA vai replicar exatamente"
+                : "Manter cabelo da foto (em vez de personalizar)"}
+            </button>
+
+            {!hairFromPhoto && (<>
             {/* Textura */}
             <p className="text-xs font-medium mb-2" style={{ color: "var(--muted)" }}>Textura</p>
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
@@ -594,6 +619,7 @@ export default function ModeloVirtual() {
                 </button>
               ))}
             </div>
+            </>)}
           </div>
 
           {/* Body type */}
