@@ -79,6 +79,8 @@ export interface AnalyzerInput {
   backgroundType?: string;
   /** Nome da loja */
   storeName?: string;
+  /** Cor da marca da loja (hex) — para identidade visual nos cenários */
+  brandColor?: string;
 }
 
 // ═══════════════════════════════════════
@@ -235,10 +237,41 @@ function buildOpusPrompt(input: AnalyzerInput): string {
   if (input.price) extras.push(`Preço de venda: R$ ${input.price}`);
   if (input.storeName) extras.push(`Loja: ${input.storeName}`);
   if (input.bodyType === "plus") extras.push("Tipo de corpo da modelo: plus size (GG/XGG)");
+  if (input.brandColor) extras.push(`Cor da marca da loja: ${input.brandColor}`);
+
+  // ── Cenário: resolver backgroundType em descrição rica ──
+  const SCENARIO_DESCRIPTIONS: Record<string, string> = {
+    branco: "Fundo branco clean de estúdio fotográfico profissional, iluminação uniforme e suave",
+    estudio: "Estúdio fotográfico profissional com iluminação de 3 pontos, fundo neutro (cinza/bege)",
+    lifestyle: "Cenário lifestyle cotidiano — café, sala de estar moderna, varanda com plantas, ambiente aconchegante e real",
+    urbano: "Cenário urbano moderno — rua com arquitetura contemporânea, grafites artísticos, calçada com textura, golden hour",
+    natureza: "Cenário ao ar livre na natureza — jardim florido, praia ao entardecer, campo verde, luz natural suave",
+    interior: "Interior elegante — loft moderno, apartamento decorado, escadaria com luz natural, chão de madeira",
+    boutique: "Interior de boutique/loja de moda sofisticada — araras minimalistas, espelho grande, iluminação quente de vitrine",
+    gradiente: "Fundo gradiente suave e elegante (cores complementares à peça), estilo editorial de revista",
+  };
 
   let bgHint = "";
-  if (input.backgroundType && input.backgroundType !== "branco" && input.backgroundType !== "estudio") {
-    bgHint = `\nA lojista prefere cenário: ${input.backgroundType}. Use isso como inspiração para o Prompt #1. Os outros 2 prompts devem ter cenários DIFERENTES.`;
+  const bgType = input.backgroundType || "";
+
+  if (bgType.startsWith("personalizado:")) {
+    // Cenário personalizado com texto livre do cliente
+    const customText = bgType.replace("personalizado:", "").trim();
+    if (customText) {
+      bgHint = `\nCENÁRIO OBRIGATÓRIO: A lojista descreveu o cenário que quer: "${customText}". Use EXATAMENTE esta ideia como cenário para o Prompt #1. Adapte o prompt em inglês para reproduzir fielmente esse cenário. Os prompts #2 e #3 devem ter cenários DIFERENTES, mas podem manter o mesmo clima/mood.`;
+    }
+  } else if (bgType && bgType !== "branco" && bgType !== "estudio") {
+    const scenarioDesc = SCENARIO_DESCRIPTIONS[bgType] || bgType;
+    bgHint = `\nCENÁRIO PREFERIDO: A lojista escolheu cenário "${bgType}" — ${scenarioDesc}. Use isso como base para o Prompt #1. Os outros 2 prompts devem ter cenários DIFERENTES mas igualmente profissionais.`;
+  } else if (bgType === "branco" || bgType === "estudio") {
+    const scenarioDesc = SCENARIO_DESCRIPTIONS[bgType];
+    bgHint = `\nCENÁRIO: A lojista escolheu "${bgType}" — ${scenarioDesc}. O Prompt #1 deve usar esse cenário. Os prompts #2 e #3 devem usar cenários DIFERENTES para dar variedade.`;
+  }
+
+  // ── Brand color hint ──
+  let brandHint = "";
+  if (input.brandColor) {
+    brandHint = `\nCOR DA MARCA: A loja tem cor de identidade visual ${input.brandColor}. Nos cenários, tente incluir detalhes sutis que harmonizem com essa cor (ex: acessórios, iluminação colorida, elementos de fundo) SEM competir com a cor da peça. Se o cenário for gradiente ou estúdio, use a cor da marca como base do fundo.`;
   }
 
   const numPhotos = 1 + (input.extraImages?.length || 0);
@@ -248,7 +281,7 @@ function buildOpusPrompt(input: AnalyzerInput): string {
       : "esta foto do produto de moda";
 
   return `Analise ${photoDesc}.
-${extras.length > 0 ? "\nINFO DO LOJISTA:\n" + extras.join("\n") : ""}${bgHint}
+${extras.length > 0 ? "\nINFO DO LOJISTA:\n" + extras.join("\n") : ""}${bgHint}${brandHint}
 
 Retorne um JSON com esta estrutura EXATA (sem markdown, apenas JSON puro):
 {
