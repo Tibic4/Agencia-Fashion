@@ -77,6 +77,8 @@ interface ModelPreviewEvent {
   hairTexture?: string | null;
   hairLength?: string | null;
   hairColor?: string | null;
+  /** Se true, replica o cabelo da foto de referência em vez de usar os campos granulares */
+  hairFromPhoto?: boolean;
   bodyType: string;
   style: string;
   ageRange: string;
@@ -128,6 +130,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
         hairTexture: data.hairTexture || undefined,
         hairLength: data.hairLength || undefined,
         hairColor: data.hairColor || undefined,
+        hairFromPhoto: data.hairFromPhoto || false,
         bodyType: data.bodyType,
         style: data.style,
         ageRange: data.ageRange,

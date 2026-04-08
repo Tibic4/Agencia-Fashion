@@ -85,6 +85,8 @@ export interface PromptTraits {
   hairTexture?: string;
   hairLength?: string;
   hairColor?: string;
+  /** Se true, replica o cabelo da foto de referência */
+  hairFromPhoto?: boolean;
   bodyType: string;
   style: string;
   ageRange: string;
@@ -101,10 +103,13 @@ export function buildGeminiParts(
   faceMimeType?: string,
 ): Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> {
   const skin = SKIN_DESC[traits.skinTone] || "warm medium complexion";
-  // Priorizar campos granulares, fallback para legado
-  const hair = (traits.hairTexture && traits.hairLength && traits.hairColor)
-    ? buildHairDescription(traits.hairTexture, traits.hairLength, traits.hairColor)
-    : HAIR_DESC[traits.hairStyle] || "soft wavy dark brown hair, shoulder-length";
+  // hairFromPhoto → deixar Gemini copiar da foto; senão usar campos granulares/legado
+  const useHairFromPhoto = traits.hairFromPhoto && faceBase64;
+  const hair = useHairFromPhoto
+    ? null // não precisa de descrição — prompt vai instruir copiar da foto
+    : (traits.hairTexture && traits.hairLength && traits.hairColor)
+      ? buildHairDescription(traits.hairTexture, traits.hairLength, traits.hairColor)
+      : HAIR_DESC[traits.hairStyle] || "soft wavy dark brown hair, shoulder-length";
   const body = BODY_DESC[traits.bodyType] || "average build";
   const age = AGE_DESC[traits.ageRange] || "a 30-year-old";
   const pose = POSE_DESC[traits.style] || "Standing relaxed with a natural, friendly expression.";
@@ -133,9 +138,18 @@ export function buildGeminiParts(
       `- This body type is MANDATORY regardless of what the reference photo may suggest`,
       `- Height: proportional for ${age} Brazilian woman`,
       ``,
-      `HAIR: ${hair}`,
-      `- The hair style, color, and length MUST match the specification above`,
-      `- DO NOT copy the hair from the reference photo — use ONLY the specified description`,
+      `HAIR:${useHairFromPhoto ? ' (COPY FROM REFERENCE PHOTO)' : ` ${hair}`}`,
+      ...(useHairFromPhoto
+        ? [
+            `- REPLICATE the EXACT hair from the reference photo: texture, color, length, and overall style`,
+            `- Preserve the natural appearance and volume of the hair as shown in the reference`,
+            `- This is the user's real hair — maintain it exactly as photographed`,
+          ]
+        : [
+            `- The hair style, color, and length MUST match the specification above`,
+            `- DO NOT copy the hair from the reference photo — use ONLY the specified description`,
+          ]
+      ),
       ``,
       `OUTFIT: Plain white crew-neck t-shirt and simple black shorts. Barefoot.`,
       `DO NOT add any accessories, jewelry, glasses, or extra clothing items.`,
@@ -160,7 +174,9 @@ export function buildGeminiParts(
       `- The face MUST closely match the identity from the reference photo`,
       `- The body MUST follow the specified build, not the reference photo`,
       `- The outfit MUST be exactly as specified (white t-shirt + black shorts)`,
-      `- The hair MUST follow the specified style/color/length, not the reference photo`,
+      useHairFromPhoto
+        ? `- The hair MUST closely replicate the hair from the reference photo`
+        : `- The hair MUST follow the specified style/color/length, not the reference photo`,
     ].join("\n") });
   } else {
     // ── Modo TEXT-ONLY: prompt descritivo (sem foto) ──
