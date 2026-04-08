@@ -11,14 +11,52 @@ export const SKIN_DESC: Record<string, string> = {
   morena: "warm medium-brown complexion",
   negra: "rich dark-brown complexion, deep skin tone",
 };
+// ── Cabelo: 3 dimensões composicionais ──
 
-export const HAIR_DESC: Record<string, string> = {
-  liso: "sleek straight black hair, shoulder-length",
-  ondulado: "soft wavy dark hair, flowing past shoulders",
-  cacheado: "voluminous curly hair, natural bouncy texture",
-  crespo: "beautiful afro-textured coily hair, natural volume",
-  curto: "stylish short-cropped hair",
+export const HAIR_TEXTURE_DESC: Record<string, string> = {
+  liso: "sleek straight",
+  ondulado: "soft wavy",
+  cacheado: "voluminous curly",
+  crespo: "beautiful afro-textured coily",
 };
+
+export const HAIR_LENGTH_DESC: Record<string, string> = {
+  joaozinho: "close-cropped pixie cut",
+  chanel: "chin-length bob",
+  ombro: "shoulder-length",
+  medio: "mid-back length, flowing",
+  longo: "long waist-length, flowing",
+};
+
+export const HAIR_COLOR_DESC: Record<string, string> = {
+  preto: "black",
+  castanho_escuro: "dark brown",
+  castanho: "chestnut brown",
+  ruivo: "auburn red",
+  loiro_escuro: "honey-blonde",
+  loiro: "light blonde",
+  platinado: "platinum blonde",
+};
+
+/** Legado — fallback para modelos antigos com hair_style único */
+export const HAIR_DESC: Record<string, string> = {
+  liso: "sleek straight dark brown hair, shoulder-length",
+  ondulado: "soft wavy chestnut brown hair, mid-back length",
+  cacheado: "voluminous curly dark brown hair, mid-back length",
+  crespo: "beautiful afro-textured coily black hair, natural volume",
+  curto: "stylish short-cropped dark brown hair, pixie cut",
+};
+
+/**
+ * Compõe descrição de cabelo a partir de 3 campos granulares.
+ * Ex: "voluminous curly auburn red hair, mid-back length"
+ */
+export function buildHairDescription(texture?: string, length?: string, color?: string): string {
+  const t = HAIR_TEXTURE_DESC[texture || ""] || "soft wavy";
+  const l = HAIR_LENGTH_DESC[length || ""] || "shoulder-length";
+  const c = HAIR_COLOR_DESC[color || ""] || "dark brown";
+  return `${t} ${c} hair, ${l}`;
+}
 
 export const BODY_DESC: Record<string, string> = {
   magra: "slim athletic silhouette",
@@ -41,7 +79,12 @@ export const POSE_DESC: Record<string, string> = {
 
 export interface PromptTraits {
   skinTone: string;
+  /** Legado — usado como fallback se granulares não vierem */
   hairStyle: string;
+  /** Novos campos granulares (opcionais para backward compat) */
+  hairTexture?: string;
+  hairLength?: string;
+  hairColor?: string;
   bodyType: string;
   style: string;
   ageRange: string;
@@ -58,7 +101,10 @@ export function buildGeminiParts(
   faceMimeType?: string,
 ): Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> {
   const skin = SKIN_DESC[traits.skinTone] || "warm medium complexion";
-  const hair = HAIR_DESC[traits.hairStyle] || "soft wavy dark hair";
+  // Priorizar campos granulares, fallback para legado
+  const hair = (traits.hairTexture && traits.hairLength && traits.hairColor)
+    ? buildHairDescription(traits.hairTexture, traits.hairLength, traits.hairColor)
+    : HAIR_DESC[traits.hairStyle] || "soft wavy dark brown hair, shoulder-length";
   const body = BODY_DESC[traits.bodyType] || "average build";
   const age = AGE_DESC[traits.ageRange] || "a 30-year-old";
   const pose = POSE_DESC[traits.style] || "Standing relaxed with a natural, friendly expression.";
@@ -88,6 +134,8 @@ export function buildGeminiParts(
       `- Height: proportional for ${age} Brazilian woman`,
       ``,
       `HAIR: ${hair}`,
+      `- The hair style, color, and length MUST match the specification above`,
+      `- DO NOT copy the hair from the reference photo — use ONLY the specified description`,
       ``,
       `OUTFIT: Plain white crew-neck t-shirt and simple black shorts. Barefoot.`,
       `DO NOT add any accessories, jewelry, glasses, or extra clothing items.`,
@@ -95,11 +143,15 @@ export function buildGeminiParts(
       ``,
       `POSE: ${pose}`,
       ``,
+      `LIGHTING NORMALIZATION (CRITICAL):`,
+      `- COMPLETELY IGNORE any lighting, shadows, or color cast from the reference photo`,
+      `- Apply fresh professional studio lighting: soft key light from 45° above-left, fill light from right`,
+      `- The output must look like a professional studio shoot regardless of reference photo quality`,
+      `- If the reference photo is dark, overexposed, warm-tinted, or has mixed lighting — normalize everything`,
+      ``,
       `PHOTOGRAPHY:`,
       `- Professional e-commerce fashion photography`,
-      `- Clean seamless white background`,
-      `- Soft diffused studio lighting from above and front, creating gentle shadows`,
-      `- Normalize lighting — ignore any lighting conditions from the reference photo`,
+      `- Clean seamless white background (#FFFFFF)`,
       `- Camera at eye level, 85mm portrait lens, full body framing from top of head to toes`,
       `- Sharp focus, high resolution, natural skin texture visible`,
       ``,
@@ -108,6 +160,7 @@ export function buildGeminiParts(
       `- The face MUST closely match the identity from the reference photo`,
       `- The body MUST follow the specified build, not the reference photo`,
       `- The outfit MUST be exactly as specified (white t-shirt + black shorts)`,
+      `- The hair MUST follow the specified style/color/length, not the reference photo`,
     ].join("\n") });
   } else {
     // ── Modo TEXT-ONLY: prompt descritivo (sem foto) ──
@@ -130,3 +183,4 @@ export function buildGeminiParts(
 
   return parts;
 }
+

@@ -24,12 +24,29 @@ const skinTones = [
   { value: "negra", label: "Negra", color: "#6B4226" },
 ];
 
-const hairStyles = [
+const hairTextures = [
   { value: "liso", label: "Liso", emoji: "💇‍♀️" },
-  { value: "ondulado", label: "Ondulado", emoji: "🌊" },
+  { value: "ondulado", label: "Ondulado", emoji: "〰️" },
   { value: "cacheado", label: "Cacheado", emoji: "🌀" },
   { value: "crespo", label: "Crespo", emoji: "✨" },
-  { value: "curto", label: "Curto", emoji: "✂️" },
+];
+
+const hairLengths = [
+  { value: "joaozinho", label: "Joãozinho", emoji: "✂️" },
+  { value: "chanel", label: "Chanel / Bob", emoji: "💈" },
+  { value: "ombro", label: "Ombro", emoji: "👤" },
+  { value: "medio", label: "Médio", emoji: "🙎‍♀️" },
+  { value: "longo", label: "Longo", emoji: "💁‍♀️" },
+];
+
+const hairColors = [
+  { value: "preto", label: "Preto", emoji: "⬛" },
+  { value: "castanho_escuro", label: "Cast. escuro", emoji: "🟫" },
+  { value: "castanho", label: "Castanho", emoji: "🤎" },
+  { value: "ruivo", label: "Ruivo", emoji: "🔶" },
+  { value: "loiro_escuro", label: "Mel", emoji: "🍯" },
+  { value: "loiro", label: "Loiro", emoji: "💛" },
+  { value: "platinado", label: "Platinado", emoji: "🤍" },
 ];
 
 const bodyTypes = [
@@ -59,6 +76,9 @@ interface StoreModel {
   name: string;
   skin_tone: string;
   hair_style: string;
+  hair_texture?: string;
+  hair_length?: string;
+  hair_color?: string;
   body_type: string;
   style: string;
   age_range: string;
@@ -78,7 +98,9 @@ export default function ModeloVirtual() {
 
   // ── Create form state ──
   const [skin, setSkin] = useState("morena_clara");
-  const [hair, setHair] = useState("ondulado");
+  const [hairTexture, setHairTexture] = useState("ondulado");
+  const [hairLength, setHairLength] = useState("ombro");
+  const [hairColor, setHairColor] = useState("castanho");
   const [body, setBody] = useState("media");
   const [style, setStyle] = useState("casual_natural");
   const [age, setAge] = useState("adulta_26_35");
@@ -161,7 +183,10 @@ export default function ModeloVirtual() {
     try {
       const formData = new FormData();
       formData.append("skinTone", skin);
-      formData.append("hairStyle", hair);
+      formData.append("hairTexture", hairTexture);
+      formData.append("hairLength", hairLength);
+      formData.append("hairColor", hairColor);
+      formData.append("hairStyle", hairTexture); // backward compat
       formData.append("bodyType", body);
       formData.append("style", style);
       formData.append("ageRange", age);
@@ -186,7 +211,10 @@ export default function ModeloVirtual() {
         id: json.data?.id || json.id || crypto.randomUUID(),
         name: name || "Modelo",
         skin_tone: skin,
-        hair_style: hair,
+        hair_style: hairTexture,
+        hair_texture: hairTexture,
+        hair_length: hairLength,
+        hair_color: hairColor,
         body_type: body,
         style: style,
         age_range: age,
@@ -236,7 +264,9 @@ export default function ModeloVirtual() {
   function resetForm() {
     setName("");
     setSkin("morena_clara");
-    setHair("ondulado");
+    setHairTexture("ondulado");
+    setHairLength("ombro");
+    setHairColor("castanho");
     setBody("media");
     setStyle("casual_natural");
     setAge("adulta_26_35");
@@ -393,7 +423,7 @@ export default function ModeloVirtual() {
                     {skinTones.find((s) => s.value === model.skin_tone)?.label || model.skin_tone}
                   </span>
                   <span className="badge badge-brand text-xs">
-                    {hairStyles.find((h) => h.value === model.hair_style)?.label || model.hair_style}
+                    {hairTextures.find((h) => h.value === (model.hair_texture || model.hair_style))?.label || model.hair_style}
                   </span>
                   <span className="badge badge-brand text-xs">
                     {bodyTypes.find((b) => b.value === model.body_type)?.label || model.body_type}
@@ -503,19 +533,61 @@ export default function ModeloVirtual() {
             </div>
           </div>
 
-          {/* Hair */}
+          {/* Hair — 3 campos granulares */}
           <div>
-            <label className="block text-sm font-semibold mb-3">Cabelo</label>
-            <div className="flex flex-wrap gap-2">
-              {hairStyles.map((h) => (
+            <label className="block text-sm font-semibold mb-1">Cabelo</label>
+            <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>Monte o visual combinando textura, comprimento e cor</p>
+
+            {/* Textura */}
+            <p className="text-xs font-medium mb-2" style={{ color: "var(--muted)" }}>Textura</p>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+              {hairTextures.map((h) => (
                 <button
                   key={h.value}
-                  onClick={() => setHair(h.value)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+                  onClick={() => setHairTexture(h.value)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[40px]"
                   style={{
-                    background: hair === h.value ? "var(--brand-100)" : "var(--surface)",
-                    color: hair === h.value ? "var(--brand-700)" : "var(--muted)",
-                    border: hair === h.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
+                    background: hairTexture === h.value ? "var(--brand-100)" : "var(--surface)",
+                    color: hairTexture === h.value ? "var(--brand-700)" : "var(--muted)",
+                    border: hairTexture === h.value ? "1.5px solid var(--brand-400)" : "1px solid var(--border)",
+                  }}
+                >
+                  <span>{h.emoji}</span> {h.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Comprimento */}
+            <p className="text-xs font-medium mb-2 mt-3" style={{ color: "var(--muted)" }}>Comprimento</p>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+              {hairLengths.map((h) => (
+                <button
+                  key={h.value}
+                  onClick={() => setHairLength(h.value)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[40px]"
+                  style={{
+                    background: hairLength === h.value ? "var(--brand-100)" : "var(--surface)",
+                    color: hairLength === h.value ? "var(--brand-700)" : "var(--muted)",
+                    border: hairLength === h.value ? "1.5px solid var(--brand-400)" : "1px solid var(--border)",
+                  }}
+                >
+                  <span>{h.emoji}</span> {h.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Cor */}
+            <p className="text-xs font-medium mb-2 mt-3" style={{ color: "var(--muted)" }}>Cor do cabelo</p>
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+              {hairColors.map((h) => (
+                <button
+                  key={h.value}
+                  onClick={() => setHairColor(h.value)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[40px]"
+                  style={{
+                    background: hairColor === h.value ? "var(--brand-100)" : "var(--surface)",
+                    color: hairColor === h.value ? "var(--brand-700)" : "var(--muted)",
+                    border: hairColor === h.value ? "1.5px solid var(--brand-400)" : "1px solid var(--border)",
                   }}
                 >
                   <span>{h.emoji}</span> {h.label}
@@ -731,7 +803,9 @@ export default function ModeloVirtual() {
                 )}
                 <div className="flex flex-wrap justify-center gap-2 mt-4">
                   {!facePreview && <span className="badge badge-brand text-xs">{skinTones.find(s => s.value === skin)?.label}</span>}
-                  <span className="badge badge-brand text-xs">{hairStyles.find(h => h.value === hair)?.label}</span>
+                  <span className="badge badge-brand text-xs">{hairTextures.find(h => h.value === hairTexture)?.label}</span>
+                  <span className="badge badge-brand text-xs">{hairLengths.find(h => h.value === hairLength)?.label}</span>
+                  <span className="badge badge-brand text-xs">{hairColors.find(h => h.value === hairColor)?.label}</span>
                   <span className="badge badge-brand text-xs">{bodyTypes.find(b => b.value === body)?.label}</span>
                   <span className="badge badge-brand text-xs">{styles.find(s => s.value === style)?.label}</span>
                   <span className="badge badge-brand text-xs">{ages.find(a => a.value === age)?.label}</span>
