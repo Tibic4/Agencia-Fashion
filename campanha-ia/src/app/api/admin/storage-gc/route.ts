@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { inngest } from "@/lib/inngest/client";
-
-const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
+import { requireAdmin } from "@/lib/admin/guard";
 
 /**
  * POST /api/admin/storage-gc
@@ -15,8 +13,8 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Bool
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session.userId || !ADMIN_USER_IDS.includes(session.userId)) {
+    const admin = await requireAdmin();
+    if (!admin.isAdmin) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
@@ -29,7 +27,7 @@ export async function POST(request: NextRequest) {
       data: { dryRun },
     });
 
-    console.log(`[Admin:GC] 🚀 Storage GC disparado por ${session.userId} (dryRun=${dryRun})`);
+    console.log(`[Admin:GC] 🚀 Storage GC disparado por ${admin.userId} (dryRun=${dryRun})`);
 
     return NextResponse.json({
       success: true,
@@ -51,8 +49,8 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session.userId || !ADMIN_USER_IDS.includes(session.userId)) {
+    const admin = await requireAdmin();
+    if (!admin.isAdmin) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 

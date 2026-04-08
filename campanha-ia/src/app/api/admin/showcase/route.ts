@@ -133,6 +133,7 @@ export async function PATCH(request: NextRequest) {
     const allowed: Record<string, unknown> = {};
     if ("caption" in updates) allowed.caption = updates.caption || null;
     if ("is_active" in updates) allowed.is_active = Boolean(updates.is_active);
+    if ("use_in_tips" in updates) allowed.use_in_tips = Boolean(updates.use_in_tips);
     if ("sort_order" in updates) allowed.sort_order = Number(updates.sort_order);
 
     if (Object.keys(allowed).length === 0) {
