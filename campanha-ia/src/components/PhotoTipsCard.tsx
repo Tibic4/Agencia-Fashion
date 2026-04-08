@@ -2,30 +2,13 @@
 
 import { useState, useEffect } from "react";
 
-interface ShowcaseTip {
-  before_photo_url: string;
-  after_photo_url: string;
-  caption: string | null;
-}
-
 /**
  * PhotoTipsCard — "Guia Relâmpago ⚡"
- * Inline collapsible card with photo tips + before/after from admin Vitrine.
+ * Inline collapsible card with photo tips.
  * Auto-closes when user uploads a photo.
  */
 export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
   const [open, setOpen] = useState(false);
-  const [showcase, setShowcase] = useState<ShowcaseTip | null>(null);
-
-  // Fetch the first showcase item from admin vitrine
-  useEffect(() => {
-    fetch("/api/showcase/tips")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.data) setShowcase(d.data);
-      })
-      .catch(() => {});
-  }, []);
 
   // Auto-close when user uploads
   useEffect(() => {
@@ -68,7 +51,7 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
       <div
         className="overflow-hidden transition-all duration-300 ease-out"
         style={{
-          maxHeight: open ? "600px" : "0",
+          maxHeight: open ? "400px" : "0",
           opacity: open ? 1 : 0,
           marginTop: open ? "8px" : "0",
         }}
@@ -152,52 +135,9 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
               </ul>
             </div>
           </div>
-
-          {/* Before/After from Vitrine (if admin uploaded one) */}
-          {showcase && (
-            <div
-              className="rounded-xl overflow-hidden"
-              style={{ border: "1px solid var(--border)" }}
-            >
-              <div className="grid grid-cols-2 gap-0.5" style={{ background: "var(--border)" }}>
-                <div className="relative">
-                  <img
-                    src={showcase.before_photo_url}
-                    alt="Foto original"
-                    className="w-full h-28 sm:h-36 object-cover"
-                    style={{ background: "var(--background)" }}
-                  />
-                  <span
-                    className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold"
-                    style={{ background: "var(--warning)", color: "black" }}
-                  >
-                    ANTES
-                  </span>
-                </div>
-                <div className="relative">
-                  <img
-                    src={showcase.after_photo_url}
-                    alt="Resultado CriaLook"
-                    className="w-full h-28 sm:h-36 object-cover"
-                    style={{ background: "var(--background)" }}
-                  />
-                  <span
-                    className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold"
-                    style={{ background: "var(--success)", color: "white" }}
-                  >
-                    DEPOIS
-                  </span>
-                </div>
-              </div>
-              <div className="px-3 py-2 text-center" style={{ background: "var(--background)" }}>
-                <p className="text-[10px]" style={{ color: "var(--muted)" }}>
-                  {showcase.caption || "Veja o que a IA faz com uma boa foto ✨"}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
 }
+
