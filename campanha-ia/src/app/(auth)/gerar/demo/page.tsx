@@ -146,15 +146,15 @@ export default function ResultadoCampanha() {
           {loadingFromApi ? (
             <>
               <div className="w-12 h-12 rounded-full border-4 border-t-transparent mx-auto animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
-              <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando campanha...</p>
+              <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando sua campanha…</p>
             </>
           ) : (
             <>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: "var(--gradient-card)" }}>
                 <span className="text-2xl">📷</span>
               </div>
-              <p className="text-sm font-semibold">Nenhum resultado encontrado</p>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>Gere uma nova campanha para ver aqui</p>
+              <p className="text-sm font-semibold">Nenhuma campanha encontrada</p>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>Crie uma nova campanha para ver suas fotos aqui</p>
             </>
           )}
           <button
@@ -162,7 +162,7 @@ export default function ResultadoCampanha() {
             className="text-sm underline"
             style={{ color: "var(--brand-500)" }}
           >
-            Voltar e gerar novamente
+            Criar nova campanha
           </button>
         </div>
       </div>
@@ -189,7 +189,7 @@ export default function ResultadoCampanha() {
           style={{ color: "var(--muted)" }}
         >
           <IconBack />
-          Nova campanha
+          Voltar
         </button>
         <div className="flex-1" />
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
@@ -201,10 +201,10 @@ export default function ResultadoCampanha() {
 
         {/* ── Título ── */}
         <div>
-          <h1 className="text-2xl font-bold mb-1">Suas fotos estão prontas! 🎉</h1>
+          <h1 className="text-2xl font-bold mb-1">Suas fotos ficaram incríveis! 🎉</h1>
           <p className="text-sm" style={{ color: "var(--muted)" }}>
             {analise?.produto?.nome_generico && `${analise.produto.nome_generico} · `}
-            Escolha a melhor e faça download · {data?.durationMs ? `${(data.durationMs / 1000).toFixed(0)}s` : ""}
+            Escolha a sua favorita e baixe para postar{data?.durationMs ? ` · gerado em ${(data.durationMs / 1000).toFixed(0)}s` : ""}
           </p>
         </div>
 
@@ -267,7 +267,7 @@ export default function ResultadoCampanha() {
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
                 >
                   <IconDownload />
-                  Baixar foto {idx + 1}
+                  Baixar foto #{idx + 1}
                 </button>
               )}
             </div>
@@ -291,14 +291,14 @@ export default function ResultadoCampanha() {
                 <span className="font-bold text-sm">Foto {(selectedIndex ?? 0) + 1} selecionada</span>
               </div>
               <p className="text-xs" style={{ color: "var(--muted)" }}>
-                Sua melhor foto para posts no Instagram, WhatsApp e Lojas Online.
+                Ideal para Instagram, WhatsApp Status e catálogo online.
               </p>
               <button
                 onClick={() => downloadImage(selectedImage, selectedIndex ?? 0)}
                 className="btn-primary flex items-center gap-2 w-full sm:w-auto px-6 py-3"
               >
                 <IconDownload />
-                Baixar foto selecionada
+                Baixar em alta qualidade
               </button>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function ResultadoCampanha() {
         {dicas?.caption_sugerida && (
           <div className="rounded-2xl p-5 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-sm">📝 Legenda sugerida</h2>
+              <h2 className="font-bold text-sm">📝 Legenda pronta para copiar</h2>
               <button
                 onClick={copyCaption}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-80"
@@ -340,15 +340,15 @@ export default function ResultadoCampanha() {
         {dicas && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ MELHOR HORÁRIO</p>
+              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
               <p className="text-sm font-semibold">{dicas.melhor_horario || "Entre 18h–21h"}</p>
             </div>
             <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA LEGENDA</p>
+              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
               <p className="text-sm font-semibold">{dicas.tom_legenda || "Descontraído e acolhedor"}</p>
             </div>
             <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CTA SUGERIDO</p>
+              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
               <p className="text-sm font-semibold">{dicas.cta || "Chama no direct!"}</p>
             </div>
           </div>
@@ -358,7 +358,7 @@ export default function ResultadoCampanha() {
         {analise?.produto && (
           <details className="rounded-2xl overflow-hidden group" style={{ border: "1px solid var(--border)" }}>
             <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" style={{ background: "var(--surface)" }}>
-              <span className="text-sm font-bold">🔍 Análise técnica do produto (Claude Opus)</span>
+              <span className="text-sm font-bold">🔍 Como a IA analisou sua peça</span>
               <span className="text-xs group-open:rotate-180 transition-transform" style={{ color: "var(--muted)" }}>▼</span>
             </summary>
             <div className="px-5 pb-5 pt-3 space-y-3" style={{ background: "var(--surface)" }}>
@@ -397,7 +397,7 @@ export default function ResultadoCampanha() {
             onClick={() => router.push("/gerar")}
             className="btn-secondary px-8 py-3 text-sm font-semibold"
           >
-            ✨ Gerar nova campanha
+            ✨ Criar mais fotos
           </button>
         </div>
       </div>
