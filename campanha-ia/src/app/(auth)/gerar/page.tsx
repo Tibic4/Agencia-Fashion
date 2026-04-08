@@ -226,16 +226,15 @@ export default function GerarCampanha() {
   }, [customModels.filter(m => !m.photo_url).map(m => m.id).join(",")]);
 
   const generationSteps = [
-    { label: "Analisando produto...", progress: 10 },
-    { label: "Identificando cores e tecido...", progress: 20 },
-    { label: "Criando estratégia de venda...", progress: 30 },
-    { label: "Escrevendo textos para Instagram...", progress: 40 },
-    { label: "Criando roteiro de Stories...", progress: 50 },
-    { label: "Adaptando para WhatsApp...", progress: 58 },
-    { label: "Refinando copy e hashtags...", progress: 66 },
-    { label: "Processando imagem com IA...", progress: 75 },
-    { label: "Montando criativo final...", progress: 85 },
-    { label: "Avaliando qualidade (score)...", progress: 93 },
+    { label: "Analisando fotos do produto...", progress: 8 },
+    { label: "Identificando cor, material e caimento...", progress: 18 },
+    { label: "Criando prompt fotográfico 1...", progress: 30 },
+    { label: "Criando prompt fotográfico 2...", progress: 40 },
+    { label: "Criando prompt fotográfico 3...", progress: 50 },
+    { label: "Gerando foto 1 com IA...", progress: 62 },
+    { label: "Gerando foto 2 com IA...", progress: 74 },
+    { label: "Gerando foto 3 com IA...", progress: 86 },
+    { label: "Salvando resultados...", progress: 95 },
     { label: "Pronto! ✨", progress: 100 },
   ];
 

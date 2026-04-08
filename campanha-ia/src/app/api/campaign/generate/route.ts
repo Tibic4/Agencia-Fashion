@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
-import { getCategory } from "@/lib/ai/config";
 import { runMockPipeline } from "@/lib/ai/mock-data";
-import { getStoreByClerkId, createCampaign, savePipelineResult, failCampaign, incrementCampaignsUsed, canGenerateCampaign, getActiveModel, consumeCredit, getStoreCredits, hasAvulsoCredit } from "@/lib/db";
+import {
+  getStoreByClerkId,
+  createCampaign,
+  savePipelineResultV3,
+  failCampaign,
+  incrementCampaignsUsed,
+  canGenerateCampaign,
+  getActiveModel,
+  consumeCredit,
+  getStoreCredits,
+  hasAvulsoCredit,
+} from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
-import type { PipelineStep } from "@/types";
 
 export const maxDuration = 180;
 export const dynamic = "force-dynamic";
@@ -109,12 +118,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Buscar modelo ativo (para contexto plus size) ──
-    let activeModelBodyType: string | undefined;
+    // ── Buscar modelo ativo da loja ──
+    let activeModelBodyType: "normal" | "plus" | undefined;
     if (store) {
       const model = await getActiveModel(store.id);
       if (model?.body_type) {
-        activeModelBodyType = model.body_type;
+        activeModelBodyType = model.body_type === "plus" ? "plus" : "normal";
       }
     }
 
@@ -209,145 +218,12 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ── MINI-VISION: extrair dados VTO usando TODAS as fotos + dados do lojista ──
-    // Combina: foto principal + close-up (textura!) + 2ª peça + material selecionado + tipo produto
-    let vtoData: { fabricDescriptor?: string; garmentStructure?: string; colorHex?: string; criticalDetails?: string[] } | undefined;
-
-    // Mapa de materiais → descritor de tecido em inglês (dados do lojista = fonte confiável)
-    const MATERIAL_FABRIC_MAP: Record<string, string> = {
-      viscose: "viscose/rayon fabric, soft drape, slight sheen, lightweight",
-      algodao: "cotton fabric, matte finish, natural texture, breathable",
-      linho: "linen fabric, natural slubbed texture, visible weave, crisp hand feel",
-      crepe: "crepe fabric, slightly crinkled surface texture, matte finish, fluid drape",
-      malha: "jersey knit fabric, smooth surface, slight stretch, medium weight",
-      jeans: "denim fabric, diagonal twill weave, sturdy cotton, visible texture",
-      trico: "knit fabric with visible ribbed or cable texture, matte finish, medium to heavy weight",
-      seda: "silk/satin fabric, smooth glossy surface, luxurious sheen, lightweight fluid drape",
-      couro: "leather or faux leather, smooth or textured surface, slight sheen, structured",
-      moletom: "sweatshirt fleece fabric, soft brushed interior, matte cotton exterior, heavyweight",
-      chiffon: "chiffon/mousseline, sheer semi-transparent, delicate flowing drape, lightweight",
-      poliester: "polyester fabric, smooth synthetic surface, slight sheen",
-      la: "wool fabric, soft fuzzy texture, matte finish, medium to heavy weight",
-      nylon: "nylon fabric, smooth synthetic surface, slight sheen, lightweight",
-      suede: "suede or faux suede, soft velvety napped texture, matte finish",
-      renda: "lace fabric, open decorative pattern, delicate texture, semi-transparent",
-    };
-
-    // Mapa de tipo de produto → seed de estrutura
-    const PRODUCT_STRUCTURE_MAP: Record<string, string> = {
-      blusa: "upper body garment, neckline and sleeves define silhouette",
-      saia: "lower body garment from waist, hemline defines length",
-      calca: "lower body garment covering full legs, rise and leg width define fit",
-      vestido: "full-body one-piece garment from shoulders to hemline",
-      macacao: "full-body jumpsuit/romper, connected top and bottom",
-      conjunto: "two-piece coordinated set, each piece has its own structure",
-      jaqueta: "outerwear layer, structured shoulders, front closure, defined collar",
-      acessorio: "fashion accessory item",
-    };
-
-    // Seed do fabricDescriptor a partir do material selecionado pelo lojista
-    const userFabricSeed = material ? MATERIAL_FABRIC_MAP[material.toLowerCase()] : undefined;
-    const userStructureSeed = productType ? PRODUCT_STRUCTURE_MAP[productType.split(":")[0]] : undefined;
-
-    if (process.env.GOOGLE_AI_API_KEY) {
-      try {
-        const { GeminiProvider } = await import("@/lib/ai/providers/gemini");
-        const miniVision = new GeminiProvider(process.env.AI_MODEL_GEMINI_FLASH || "gemini-3-flash-preview");
-
-        // Montar hints do lojista para o prompt
-        const hints: string[] = [];
-        if (userFabricSeed) hints.push(`The user confirmed the fabric is: ${userFabricSeed}. Use this as your BASE, then ADD visual details you observe (sheen, weight, texture pattern).`);
-        if (userStructureSeed) hints.push(`Product type: ${userStructureSeed}. Use this to seed the garmentStructure field.`);
-        if (material2) {
-          const mat2Seed = MATERIAL_FABRIC_MAP[material2.toLowerCase()];
-          if (mat2Seed) hints.push(`Second piece fabric (for conjunto): ${mat2Seed}`);
-        }
-
-        const miniResult = await miniVision.generateWithVision({
-          system: `You are a fashion garment analyst. Analyze ALL provided photos (main product + close-up texture detail + second piece if present) and return ONLY a JSON object with these 4 fields:
-- "fabricDescriptor": concise English description of the visible fabric texture for photographic reproduction (e.g., "ribbed knit with visible vertical channels, matte finish, medium weight")
-- "garmentStructure": English description of garment silhouette and structure (e.g., "structured shoulders, elastic waistband, A-line silhouette from waist down")
-- "colorHex": estimated hex color code of the main fabric color (e.g., "#F5C6D0")
-- "criticalDetails": array of English strings describing details that MUST be preserved in virtual try-on (e.g., ["gold buttons on front placket, 5 total", "ribbed cuffs 3cm wide"])
-${hints.length > 0 ? "\nUSER-PROVIDED DATA (use as authoritative source):\n" + hints.join("\n") : ""}
-The CLOSE-UP photo (if provided) is the most important for fabric texture analysis — examine it carefully.
-Respond with ONLY the JSON object, no markdown.`,
-          messages: [{ role: "user", content: "Analyze this garment for virtual try-on. Use close-up for fabric detail." }],
-          imageBase64,
-          mediaType,
-          extraImages: extraImages.length > 0 ? extraImages : undefined, // ← close-up + 2ª peça!
-          temperature: 0.1,
-          maxTokens: 400,
-        });
-        try {
-          let cleaned = miniResult.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-          // Fallback: extrair primeiro objeto JSON do texto
-          if (!cleaned.startsWith("{")) {
-            const match = cleaned.match(/\{[\s\S]*\}/);
-            if (match) cleaned = match[0];
-          }
-          vtoData = JSON.parse(cleaned);
-
-          // Garantir que material do lojista prevalece sobre detecção da IA (quando informado)
-          if (userFabricSeed && vtoData) {
-            // IA enriquece mas NÃO contradiz o lojista
-            if (!vtoData.fabricDescriptor?.toLowerCase().includes(material!.toLowerCase())) {
-              vtoData.fabricDescriptor = `${userFabricSeed} — ${vtoData.fabricDescriptor || ""}`;
-            }
-          }
-
-          console.log(`[MiniVision] 🔍 VTO data extraído (${extraImages.length} fotos extras): fabric=${vtoData?.fabricDescriptor?.substring(0, 50)}...`);
-          // Registrar custo REAL do mini-vision (tokens da API)
-          if (store) {
-            try {
-              const { createAdminClient } = await import("@/lib/supabase/admin");
-              const supabase = createAdminClient();
-              const { getExchangeRate, calculateCostBrlDynamic } = await import("@/lib/pricing");
-              const exchangeRate = await getExchangeRate();
-              const inputTokens = miniResult.usage?.inputTokens || 0;
-              const outputTokens = miniResult.usage?.outputTokens || 0;
-              const costBrl = await calculateCostBrlDynamic(
-                miniResult.model || "gemini-3-flash-preview",
-                { inputTokens, outputTokens },
-              );
-              const costUsd = exchangeRate > 0 ? costBrl / exchangeRate : 0;
-              await supabase.from("api_cost_logs").insert({
-                store_id: store.id,
-                campaign_id: campaignRecord?.id || null,
-                provider: "google",
-                model_used: miniResult.model || "gemini-3-flash-preview",
-                action: "mini_vision_vto",
-                input_tokens: inputTokens,
-                output_tokens: outputTokens,
-                cost_usd: costUsd,
-                cost_brl: costBrl,
-                response_time_ms: miniResult.usage ? undefined : undefined,
-              });
-              console.log(`[MiniVision] 💰 Custo: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens)`);
-            } catch { /* ignore cost log failure */ }
-          }
-        } catch {
-          console.warn("[MiniVision] Falha ao parsear JSON, try-on seguirá sem VTO data");
-        }
-      } catch (e) {
-        console.warn("[MiniVision] Falha (não fatal):", e);
-      }
-    }
-
-    // ── DEMO MODE (antes de paralelizar) ──
+    // ── DEMO MODE ──
     if (IS_DEMO_MODE) {
       console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock");
       const mockResult = await runMockPipeline(3000);
 
       if (campaignRecord) {
-        await savePipelineResult({
-          campaignId: campaignRecord.id,
-          durationMs: mockResult.durationMs,
-          vision: mockResult.vision as unknown as Record<string, unknown>,
-          strategy: mockResult.strategy as unknown as Record<string, unknown>,
-          output: mockResult.output as unknown as Record<string, unknown>,
-          score: mockResult.score as unknown as Record<string, unknown>,
-        });
         if (needsAvulsoCredit) {
           await consumeCredit(store!.id, "campaigns");
         } else {
@@ -360,229 +236,162 @@ Respond with ONLY the JSON object, no markdown.`,
         demo: true,
         campaignId: campaignRecord?.id || null,
         data: {
-          vision: mockResult.vision,
-          strategy: mockResult.strategy,
-          output: mockResult.output,
-          score: mockResult.score,
+          analise: {},
+          images: [],
+          dicas_postagem: {},
           durationMs: mockResult.durationMs,
         },
       });
     }
 
-    // ── PRODUCTION: pipeline real + try-on em PARALELO ──
-    // Compor material para conjunto (duas peças com materiais diferentes)
-    let materialHint: string | undefined = material || undefined;
-    if (productType?.startsWith("conjunto:") && material2) {
-      const types = productType.replace("conjunto:", "").split("+");
-      const parts: string[] = [];
-      if (material) parts.push(`Peça 1 (${types[0] || "peça 1"}): ${material}`);
-      parts.push(`Peça 2 (${types[1] || "peça 2"}): ${material2}`);
-      materialHint = parts.join(" | ");
-    }
+    // ── PRODUCTION: buscar modelo para o pipeline v3 ──
+    let modelImageBase64: string | null = null;
+    let modelMediaType = "image/png";
 
-    // ── Função try-on (roda em paralelo com pipeline) ──
-    // Provider ÚNICO: Gemini 3.1 Flash Image (Nano Banana 2)
-    // Aceita até 14 imagens de referência — enviamos: modelo + produto + close-up + 2ª peça
-    const runTryOn = async (): Promise<{ url: string | null; provider: string | null; debug?: string }> => {
-      if (!store) return { url: null, provider: null };
-      if (!process.env.GOOGLE_AI_API_KEY) {
-        return { url: null, provider: null, debug: "GOOGLE_AI_API_KEY not configured" };
-      }
-
+    if (store) {
       try {
-        // Buscar modelo do banco ou modelo ativa
         let modelImageUrl: string | null = null;
 
-        // Prioridade 1: Modelo do banco selecionada pelo usuário
+        // Prioridade 1: modelo do banco selecionado pelo usuário
         if (modelBankId) {
-          try {
-            const { createAdminClient } = await import("@/lib/supabase/admin");
-            const supabase = createAdminClient();
-            const { data: bankModel } = await supabase
-              .from("model_bank")
-              .select("image_url")
-              .eq("id", modelBankId)
-              .single();
-            if (bankModel?.image_url) {
-              modelImageUrl = bankModel.image_url;
-              console.log(`[TryOn] 🏦 Modelo do banco: ${modelImageUrl!.substring(0, 60)}...`);
-            }
-          } catch (e) {
-            console.warn("[TryOn] Erro ao buscar modelo do banco:", e instanceof Error ? e.message : e);
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const supabase = createAdminClient();
+          const { data: bankModel } = await supabase
+            .from("model_bank")
+            .select("image_url")
+            .eq("id", modelBankId)
+            .single();
+          if (bankModel?.image_url) {
+            modelImageUrl = bankModel.image_url;
+            console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId}`);
           }
         }
 
-        // Prioridade 2: Modelo ativa da loja (custom usa preview_url, stock usa image_url)
+        // Prioridade 2: modelo ativa da loja
         if (!modelImageUrl) {
           const activeModel = await getActiveModel(store.id);
           const activeUrl = activeModel?.preview_url || activeModel?.image_url;
           if (activeUrl) {
             modelImageUrl = activeUrl;
-            console.log(`[TryOn] 👤 Modelo ativa: ${modelImageUrl!.substring(0, 60)}...`);
+            console.log(`[Generate] 👤 Modelo ativa da loja`);
           }
         }
 
-        if (!modelImageUrl) {
-          console.log("[TryOn] ⚠️ Nenhuma modelo disponível");
-          return { url: null, provider: null, debug: "no model available" };
+        if (modelImageUrl) {
+          const modelRes = await fetch(modelImageUrl);
+          const modelBuf = Buffer.from(await modelRes.arrayBuffer());
+          modelImageBase64 = modelBuf.toString("base64");
+          const ct = modelRes.headers.get("content-type");
+          if (ct?.startsWith("image/")) modelMediaType = ct;
+          console.log(`[Generate] ✅ Modelo carregada (${(modelBuf.length / 1024).toFixed(0)}KB)`);
+        } else {
+          console.warn("[Generate] ⚠️ Nenhuma modelo disponível — pipeline continuará sem modelo");
         }
-
-        // Baixar modelo como base64
-        const modelRes = await fetch(modelImageUrl);
-        const modelBuf = Buffer.from(await modelRes.arrayBuffer());
-
-        // Montar chamada Nano Banana com TODAS as fotos disponíveis
-        // Ordem de imagens no prompt:
-        //   1. Modelo (referência visual — rosto, corpo, tom de pele)
-        //   2. Produto principal (outfit completo no manequim)
-        //   3. Close-up do tecido (textura, detalhes — opcional)
-        //   4. Segunda peça do conjunto (opcional)
-        const { nanoBananaTryOn } = await import("@/lib/google/nano-banana");
-        console.log(`[TryOn] 🍌 Gemini 3.1 Flash Image — ${1 + extraImages.length} foto(s) do produto + modelo`);
-
-        // Extrair cor da marca da loja (se background = minha_marca)
-        let brandColorHex: string | undefined;
-        if (backgroundType === "minha_marca" && store) {
-          try {
-            const { createAdminClient } = await import("@/lib/supabase/admin");
-            const supabase = createAdminClient();
-            const { data: storeData } = await supabase
-              .from("stores")
-              .select("brand_colors")
-              .eq("id", store.id)
-              .single();
-            const bc = storeData?.brand_colors as Record<string, string> | null;
-            brandColorHex = bc?.primary || undefined;
-            if (brandColorHex) console.log(`[TryOn] 🎨 Cor da marca: ${brandColorHex}`);
-          } catch { /* ignore */ }
-        }
-
-        const nanoResult = await nanoBananaTryOn({
-          productImageBase64: imageBase64,
-          productMimeType: mediaType,
-          closeUpBase64: extraImages[0]?.base64,
-          closeUpMimeType: extraImages[0]?.mediaType,
-          secondPieceBase64: extraImages[1]?.base64,
-          secondPieceMimeType: extraImages[1]?.mediaType,
-          modelImageBase64: modelBuf.toString("base64"),
-          modelMimeType: modelRes.headers.get("content-type")?.startsWith("image/") ? modelRes.headers.get("content-type") as any : "image/png",
-          bodyType: bodyType || "normal",
-          background: backgroundType as any,
-          brandColorHex,
-          visionData: vtoData,
-          storeId: store.id,
-          campaignId: campaignRecord?.id,
-        });
-
-        if (nanoResult.status === "completed" && nanoResult.imageBase64) {
-          console.log(`[TryOn] ✅ Gemini VTO sucesso (${nanoResult.durationMs}ms)`);
-          return { url: `data:image/png;base64,${nanoResult.imageBase64}`, provider: "gemini-3-pro-image" };
-        }
-
-        console.warn(`[TryOn] ❌ Gemini VTO falhou:`, nanoResult.error);
-        return { url: null, provider: null, debug: nanoResult.error || "Gemini VTO failed" };
-      } catch (tryOnErr) {
-        const errMsg = tryOnErr instanceof Error ? tryOnErr.message : String(tryOnErr);
-        console.warn("[TryOn] Erro geral (não fatal):", errMsg);
-        return { url: null, provider: null, debug: errMsg };
+      } catch (e) {
+        console.warn("[Generate] ⚠️ Erro ao carregar modelo (não fatal):", e instanceof Error ? e.message : e);
       }
-    };
+    }
+
+    if (!modelImageBase64) {
+      // Fallback: pixel transparente 1x1 PNG — o Gemini ainda pode gerar sem modelo de referência
+      modelImageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+      modelMediaType = "image/png";
+    }
 
     try {
-      // 🚀 SSE STREAMING: enviar progresso real do pipeline ao frontend
-      console.log("[Generate] 🚀 Iniciando pipeline com SSE streaming...");
+      // 🚀 SSE STREAMING — pipeline v3
+      console.log("[Generate] 🚀 Iniciando pipeline v3 (Opus + 3x Gemini)...");
 
       const encoder = new TextEncoder();
       const stream = new TransformStream();
       const writer = stream.writable.getWriter();
 
-      // Helper para enviar eventos SSE
-      const sendSSE = async (event: string, data: any) => {
+      const sendSSE = async (event: string, data: unknown) => {
         try {
           await writer.write(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-        } catch { /* stream may be closed */ }
+        } catch { /* stream fechado */ }
       };
 
-      // Rodar pipeline em background enquanto o stream está aberto
       (async () => {
         try {
-          const [tryOnSettled, pipelineSettled] = await Promise.allSettled([
-            runTryOn(),
-            runCampaignPipeline(
-              {
-                imageBase64,
-                mediaType,
-                extraImages: extraImages.length > 0 ? extraImages : undefined,
-                price: priceStr,
-                objective,
-                storeName: store?.name || storeName,
-                targetAudience: targetAudience || undefined,
-                toneOverride: toneOverride || undefined,
-                storeSegment: store?.segment_primary || undefined,
-                bodyType: bodyType || "normal",
-                productType: productType || undefined,
-                material: materialHint,
-                backgroundType: backgroundType || undefined,
-                storeId: store?.id,
-                campaignId: campaignRecord?.id,
-                signal: request.signal,
-              },
-              async (step, label, progress) => {
-                console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
-                await sendSSE("progress", { step, label, progress });
-              }
-            ),
-          ]);
+          const pipelineResult = await runCampaignPipeline(
+            {
+              imageBase64,
+              mediaType,
+              extraImages: extraImages.length > 0 ? extraImages : undefined,
+              modelImageBase64: modelImageBase64!,
+              modelMediaType,
+              price: priceStr,
+              storeName: store?.name || storeName,
+              bodyType: bodyType === "plus" ? "plus" : (activeModelBodyType || "normal"),
+              backgroundType: backgroundType || undefined,
+              storeId: store?.id,
+              campaignId: campaignRecord?.id,
+              signal: request.signal,
+            },
+            async (step, label, progress) => {
+              console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
+              await sendSSE("progress", { step, label, progress });
+            }
+          );
 
-          // Extrair resultados com tratamento de falha parcial
-          const tryOnResult = tryOnSettled.status === "fulfilled"
-            ? tryOnSettled.value
-            : { url: null, provider: null, debug: `TryOn failed: ${(tryOnSettled as PromiseRejectedResult).reason?.message || "unknown"}` };
+          const { successCount, images, analise, prompts, dicas_postagem, durationMs } = pipelineResult;
 
-          if (tryOnSettled.status === "rejected") {
-            console.warn(`[Generate] ⚠️ TryOn falhou (partial success): ${(tryOnSettled as PromiseRejectedResult).reason?.message}`);
+          // ── Regra de negócio: cobrar crédito SÓ se ≥1 imagem gerada ──
+          if (successCount === 0) {
+            if (campaignRecord) await failCampaign(campaignRecord.id, "0/3 images generated");
+            await sendSSE("error", {
+              error: "Nenhuma foto foi gerada. Tente novamente.",
+              retry: true,
+              code: "ALL_IMAGES_FAILED",
+            });
+            return;
           }
 
-          // Pipeline é obrigatório — se falhou, propaga o erro
-          if (pipelineSettled.status === "rejected") {
-            throw pipelineSettled.reason;
-          }
-          const pipelineResult = pipelineSettled.value;
-
-          // Registrar custo do try-on
-          if (tryOnResult.url && tryOnResult.provider && store) {
+          // ✅ ≥1 imagem gerada — cobrar crédito
+          if (campaignRecord) {
+            // Upload das imagens geradas para Supabase Storage
+            const imageUrls: (string | null)[] = [];
             try {
               const { createAdminClient } = await import("@/lib/supabase/admin");
               const supabase = createAdminClient();
-              const { getExchangeRate } = await import("@/lib/pricing");
-              const exchangeRate = await getExchangeRate();
-              const baseCostUsd = 0.005;
-              await supabase.from("api_cost_logs").insert({
-                store_id: store.id,
-                campaign_id: campaignRecord?.id || null,
-                provider: "google",
-                model_used: "gemini-3-pro-image",
-                action: "virtual_try_on",
-                cost_usd: baseCostUsd,
-                cost_brl: baseCostUsd * exchangeRate,
-                exchange_rate: exchangeRate,
-              });
-            } catch { /* ignore cost log failure */ }
-          }
+              for (let i = 0; i < images.length; i++) {
+                const img = images[i];
+                if (!img) { imageUrls.push(null); continue; }
+                try {
+                  const path = `campaigns/${campaignRecord.id}/v3_image_${i + 1}.webp`;
+                  const buf = Buffer.from(img.imageBase64, "base64");
+                  const { error: upErr } = await supabase.storage
+                    .from("campaign-outputs")
+                    .upload(path, buf, { contentType: "image/webp", upsert: true });
+                  if (upErr) {
+                    imageUrls.push(null);
+                  } else {
+                    const { data: urlData } = supabase.storage
+                      .from("campaign-outputs")
+                      .getPublicUrl(path);
+                    imageUrls.push(urlData.publicUrl);
+                  }
+                } catch { imageUrls.push(null); }
+              }
+            } catch (e) {
+              console.warn("[Generate] Upload parcial falhou:", e);
+              images.forEach(img => imageUrls.push(img ? "pending" : null));
+            }
 
-          // Persistir resultado no banco
-          if (campaignRecord) {
-            await savePipelineResult({
+            await savePipelineResultV3({
               campaignId: campaignRecord.id,
-              durationMs: pipelineResult.durationMs,
-              vision: pipelineResult.vision as unknown as Record<string, unknown>,
-              strategy: pipelineResult.strategy as unknown as Record<string, unknown>,
-              output: pipelineResult.output as unknown as Record<string, unknown>,
-              score: pipelineResult.score as unknown as Record<string, unknown>,
+              durationMs,
+              analise: analise as unknown as Record<string, unknown>,
+              imageUrls,
+              prompts: prompts as unknown as Record<string, unknown>[],
+              dicas_postagem: dicas_postagem as unknown as Record<string, unknown>,
+              successCount,
             });
+
             if (needsAvulsoCredit) {
               await consumeCredit(store!.id, "campaigns");
-              console.log(`[Generate] 💳 Crédito avulso CONSUMIDO após sucesso (produção)`);
+              console.log(`[Generate] 💳 Crédito avulso CONSUMIDO (${successCount}/3 imagens)`);
             } else {
               await incrementCampaignsUsed(store!.id);
             }
@@ -591,26 +400,22 @@ Respond with ONLY the JSON object, no markdown.`,
           // Enviar resultado final via SSE
           await sendSSE("done", {
             success: true,
-            demo: false,
             campaignId: campaignRecord?.id || null,
             data: {
-              vision: pipelineResult.vision,
-              strategy: pipelineResult.strategy,
-              output: pipelineResult.output,
-              score: pipelineResult.score,
-              durationMs: pipelineResult.durationMs,
-              tryOnImageUrl: tryOnResult.url || null,
-              tryOnProvider: tryOnResult.provider || null,
-              tryOnDebug: tryOnResult.url ? undefined : (tryOnResult.debug || "no provider succeeded"),
+              analise,
+              images,   // array de 3: GeneratedImage | null
+              prompts,  // para permitir regeneração individual no frontend
+              dicas_postagem,
+              durationMs,
+              successCount,
             },
           });
         } catch (pipelineError: unknown) {
-          // Marcar campanha como falha
           if (campaignRecord) {
-            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline error";
+            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v3 error";
             await failCampaign(campaignRecord.id, msg);
           }
-          const errMsg = pipelineError instanceof Error ? pipelineError.message : "Pipeline error";
+          const errMsg = pipelineError instanceof Error ? pipelineError.message : "Erro ao gerar campanha";
           await sendSSE("error", { error: errMsg });
         } finally {
           try { await writer.close(); } catch { /* already closed */ }
