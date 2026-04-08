@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDateTimeBR, formatTimeBR } from "@/lib/admin/format";
 
 async function getLogs() {
   const supabase = createAdminClient();
@@ -173,7 +174,7 @@ export default async function AdminLogs() {
                     </span>
                   </div>
                   <span className="text-[10px] text-gray-500">
-                    {new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                    {formatDateTimeBR(c.created_at as string)}
                   </span>
                 </div>
                 <pre className="text-[10px] md:text-xs text-red-300/80 bg-red-950/30 rounded-lg p-2 md:p-3 overflow-x-auto font-mono whitespace-pre-wrap break-all">
@@ -207,7 +208,7 @@ export default async function AdminLogs() {
                     </div>
                     <span className="text-xs font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
                   </div>
-                  <span className="text-[10px] text-gray-600">{new Date(String(log.created_at)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+                  <span className="text-[10px] text-gray-600">{formatTimeBR(String(log.created_at))}</span>
                 </div>
               ))}
             </div>
@@ -228,7 +229,7 @@ export default async function AdminLogs() {
                   {recentCosts.map((log: Record<string, unknown>, i: number) => (
                     <tr key={i} className="hover:bg-gray-800/30 transition">
                       <td className="px-6 py-2.5 text-gray-400 text-xs font-mono">
-                        {new Date(String(log.created_at)).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        {formatTimeBR(String(log.created_at))}
                       </td>
                       <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
                       <td className="px-6 py-2.5 text-gray-400 text-xs">{String(log.action || "—")}</td>
