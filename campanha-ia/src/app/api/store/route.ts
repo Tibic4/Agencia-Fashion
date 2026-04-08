@@ -53,8 +53,8 @@ export async function PATCH(req: NextRequest) {
     if (body.name !== undefined) updates.name = body.name;
     if (body.city !== undefined) updates.city = body.city;
     if (body.state !== undefined) updates.state = body.state;
-    if (body.instagram !== undefined) updates.instagram = body.instagram;
-    if (body.segment !== undefined) updates.segment = body.segment;
+    if (body.instagram !== undefined) updates.instagram_handle = body.instagram;
+    if (body.segment !== undefined) updates.segment_primary = body.segment;
     if (body.brand_colors !== undefined) updates.brand_colors = body.brand_colors;
 
     if (Object.keys(updates).length === 0) {
