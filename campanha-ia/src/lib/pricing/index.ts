@@ -30,8 +30,8 @@ let exchangeRateCache: CacheEntry<number> | null = null;
 // Fallbacks hardcoded (usados se o banco estiver indisponível)
 const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
   // ═══ EM USO (Pipeline v3) ═══
-  // Claude Opus 4.5 — Analista (opus-analyzer.ts)
-  "claude-opus-4-5": { inputPerMTok: 15.00, outputPerMTok: 75.00 },
+  // Claude Opus 4.6 — Analista (opus-analyzer.ts)
+  "claude-opus-4-6": { inputPerMTok: 15.00, outputPerMTok: 75.00 },
   // Gemini 3 Pro Image — Gerador de imagens (image-generator.ts)
   "gemini-3-pro-image-preview": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
   // Gemini 2.5 Flash — Preview de modelos (inngest/functions.ts)

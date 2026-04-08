@@ -131,7 +131,7 @@ export async function analyzeWithOpus(input: AnalyzerInput): Promise<OpusAnalyze
   });
 
   const response = await anthropic.messages.create({
-    model: "claude-opus-4-5",
+    model: "claude-opus-4-6",
     max_tokens: 4096,
     system: OPUS_SYSTEM_PROMPT,
     messages: [{ role: "user", content }],
