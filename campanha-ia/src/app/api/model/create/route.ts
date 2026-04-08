@@ -64,9 +64,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const skinTone = formData.get("skinTone") as string;
     const hairStyle = formData.get("hairStyle") as string;
-    const hairTexture = (formData.get("hairTexture") as string) || null;
-    const hairLength = (formData.get("hairLength") as string) || null;
-    const hairColor = (formData.get("hairColor") as string) || null;
+    const hairFromPhoto = formData.get("hairFromPhoto") === "true";
+    const hairTexture = hairFromPhoto ? null : ((formData.get("hairTexture") as string) || null);
+    const hairLength = hairFromPhoto ? null : ((formData.get("hairLength") as string) || null);
+    const hairColor = hairFromPhoto ? null : ((formData.get("hairColor") as string) || null);
     const bodyType = formData.get("bodyType") as string;
     const style = formData.get("style") as string;
     const ageRange = formData.get("ageRange") as string;
@@ -175,6 +176,7 @@ export async function POST(request: NextRequest) {
           hairTexture: hairTexture || null,
           hairLength: hairLength || null,
           hairColor: hairColor || null,
+          hairFromPhoto,
           bodyType,
           style: style || "casual_natural",
           ageRange: ageRange || "adulta_26_35",
