@@ -1,2 +1,1 @@
 [MiniVision] Falha ao parsear JSON, try-on seguirá sem VTO data
-[TryOn] ❌ Gemini VTO falhou: Nano Banana error: {"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT"}}
