@@ -485,7 +485,7 @@ export default function GerarCampanha() {
         {/* Left — Upload (3 fotos: 1 grande + 2 pequenas) */}
         <div className="space-y-6">
           {/* Upload Area — Layout 1 grande + 2 pequenas */}
-          <div className="flex gap-3" style={{ minHeight: "320px" }}>
+          <div className="flex flex-col sm:flex-row gap-3" style={{ minHeight: "280px" }}>
             {/* Foto Principal (grande) */}
             <div
               className="relative rounded-2xl overflow-hidden transition-all cursor-pointer group flex-[3]"
@@ -546,7 +546,7 @@ export default function GerarCampanha() {
             </div>
 
             {/* Coluna direita: 2 fotos pequenas */}
-            <div className="flex flex-col gap-3 flex-[2]">
+            <div className="flex flex-row sm:flex-col gap-3 flex-[2]">
               {/* Close-up do tecido */}
               <div
                 className="relative rounded-xl overflow-hidden transition-all cursor-pointer group flex-1"
@@ -961,7 +961,7 @@ export default function GerarCampanha() {
           {/* Cenário */}
           <div>
             <label className="block text-sm font-semibold mb-3">Cenário</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
               {(() => {
                 // Build dynamic backgrounds with "Minha Marca" if store has brand color
                 const allBgs = [...backgrounds];
