@@ -246,7 +246,7 @@ async function logImageGenCosts(
   const costPerImage = 0.101;
   const totalCostUsd = costPerImage * successCount;
 
-  await supabase.from("api_cost_logs").insert({
+  const { error } = await supabase.from("api_cost_logs").insert({
     store_id: storeId,
     campaign_id: campaignId || null,
     provider: "google",
@@ -256,6 +256,9 @@ async function logImageGenCosts(
     cost_brl: totalCostUsd * exchangeRate,
     exchange_rate: exchangeRate,
     response_time_ms: totalMs,
-    images_generated: successCount,
   });
+
+  if (error) {
+    console.warn("[ImageGen] ⚠️ Falha ao logar custo:", error.message);
+  }
 }
