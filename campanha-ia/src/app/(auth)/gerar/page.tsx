@@ -346,75 +346,100 @@ export default function GerarCampanha() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let streamDone = false;
+
+      // Helper para processar um bloco SSE (event: X\ndata: Y)
+      const processSSEBlock = (block: string): boolean => {
+        if (!block.trim()) return false;
+
+        const lines = block.split("\n");
+        let eventType = "";
+        let eventData = "";
+
+        for (const line of lines) {
+          if (line.startsWith("event: ")) eventType = line.slice(7).trim();
+          if (line.startsWith("data: ")) eventData = line.slice(6);
+        }
+
+        if (!eventType || !eventData) return false;
+
+        try {
+          const payload = JSON.parse(eventData);
+
+          if (eventType === "progress") {
+            const progress = payload.progress || 0;
+            const stepIndex = Math.min(
+              Math.floor((progress / 100) * (generationSteps.length - 1)),
+              generationSteps.length - 2
+            );
+            // ✅ Monotonic: nunca volta atrás
+            setGenerationStep((prev) => Math.max(prev, stepIndex));
+          } else if (eventType === "done") {
+            clearInterval(fallbackInterval);
+            streamDone = true;
+
+            // Store result for the demo page
+            sessionStorage.setItem("campaignResult", JSON.stringify(payload));
+
+            // Store form data for regeneration
+            const fileReader = new FileReader();
+            fileReader.onload = () => {
+              const base64 = (fileReader.result as string).split(",")[1];
+              sessionStorage.setItem("campaignFormData", JSON.stringify({
+                imageBase64: base64,
+                price,
+                objective,
+                targetAudience: audience,
+                toneOverride: tone,
+              }));
+            };
+            fileReader.readAsDataURL(selectedFile);
+
+            // Show completion then redirect
+            setGenerationStep(generationSteps.length - 1);
+            setTimeout(() => {
+              router.push("/gerar/demo");
+            }, 1500);
+            return true; // signals "done handled"
+          } else if (eventType === "error") {
+            clearInterval(fallbackInterval);
+            streamDone = true;
+            setIsGenerating(false);
+            setError(payload.error || "Erro ao gerar campanha");
+            return true;
+          }
+        } catch {
+          // Ignore malformed JSON
+        }
+        return false;
+      };
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // Keep incomplete line in buffer
 
-        let currentEvent = "";
-        for (const line of lines) {
-          if (line.startsWith("event: ")) {
-            currentEvent = line.slice(7).trim();
-          } else if (line.startsWith("data: ") && currentEvent) {
-            try {
-              const payload = JSON.parse(line.slice(6));
+        // SSE events are delimited by \n\n
+        const blocks = buffer.split("\n\n");
+        buffer = blocks.pop() || ""; // Keep incomplete block
 
-              if (currentEvent === "progress") {
-                // Map SSE progress (0-100) to generationSteps index
-                const progress = payload.progress || 0;
-                const stepIndex = Math.min(
-                  Math.floor((progress / 100) * (generationSteps.length - 1)),
-                  generationSteps.length - 2
-                );
-                setGenerationStep(stepIndex);
-              } else if (currentEvent === "done") {
-                clearInterval(fallbackInterval);
-
-                // Store result for the demo page
-                sessionStorage.setItem("campaignResult", JSON.stringify(payload));
-
-                // Store form data for regeneration
-                const fileReader = new FileReader();
-                fileReader.onload = () => {
-                  const base64 = (fileReader.result as string).split(",")[1];
-                  sessionStorage.setItem("campaignFormData", JSON.stringify({
-                    imageBase64: base64,
-                    price,
-                    objective,
-                    targetAudience: audience,
-                    toneOverride: tone,
-                  }));
-                };
-                fileReader.readAsDataURL(selectedFile);
-
-                // Show completion then redirect
-                setGenerationStep(generationSteps.length - 1);
-                setTimeout(() => {
-                  router.push("/gerar/demo");
-                }, 1500);
-                return;
-              } else if (currentEvent === "error") {
-                clearInterval(fallbackInterval);
-                setIsGenerating(false);
-                setError(payload.error || "Erro ao gerar campanha");
-                return;
-              }
-            } catch {
-              // Ignore malformed JSON
-            }
-            currentEvent = "";
-          }
+        for (const block of blocks) {
+          if (processSSEBlock(block)) return; // done or error handled
         }
       }
 
+      // ⚠️ Process remaining buffer — final "done" event may lack trailing \n\n
+      if (!streamDone && buffer.trim()) {
+        if (processSSEBlock(buffer)) return;
+      }
+
       // If stream ended without done/error event
-      clearInterval(fallbackInterval);
-      setIsGenerating(false);
-      setError("Conexão interrompida. Tente novamente.");
+      if (!streamDone) {
+        clearInterval(fallbackInterval);
+        setIsGenerating(false);
+        setError("Conexão interrompida. Tente novamente.");
+      }
 
     } catch (err: any) {
       clearInterval(fallbackInterval);
