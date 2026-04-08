@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
     if (process.env.GOOGLE_AI_API_KEY) {
       try {
         const { GeminiProvider } = await import("@/lib/ai/providers/gemini");
-        const miniVision = new GeminiProvider(process.env.AI_MODEL_GEMINI_FLASH || "gemini-2.5-flash");
+        const miniVision = new GeminiProvider(process.env.AI_MODEL_GEMINI_FLASH || "gemini-3-flash-preview");
 
         // Montar hints do lojista para o prompt
         const hints: string[] = [];
@@ -280,7 +280,12 @@ Respond with ONLY the JSON object, no markdown.`,
           maxTokens: 400,
         });
         try {
-          const cleaned = miniResult.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          let cleaned = miniResult.text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          // Fallback: extrair primeiro objeto JSON do texto
+          if (!cleaned.startsWith("{")) {
+            const match = cleaned.match(/\{[\s\S]*\}/);
+            if (match) cleaned = match[0];
+          }
           vtoData = JSON.parse(cleaned);
 
           // Garantir que material do lojista prevalece sobre detecção da IA (quando informado)
@@ -302,7 +307,7 @@ Respond with ONLY the JSON object, no markdown.`,
               const inputTokens = miniResult.usage?.inputTokens || 0;
               const outputTokens = miniResult.usage?.outputTokens || 0;
               const costBrl = await calculateCostBrlDynamic(
-                miniResult.model || "gemini-2.5-flash",
+                miniResult.model || "gemini-3-flash-preview",
                 { inputTokens, outputTokens },
               );
               const costUsd = exchangeRate > 0 ? costBrl / exchangeRate : 0;
@@ -310,7 +315,7 @@ Respond with ONLY the JSON object, no markdown.`,
                 store_id: store.id,
                 campaign_id: campaignRecord?.id || null,
                 provider: "google",
-                model_used: miniResult.model || "gemini-2.5-flash",
+                model_used: miniResult.model || "gemini-3-flash-preview",
                 action: "mini_vision_vto",
                 input_tokens: inputTokens,
                 output_tokens: outputTokens,
