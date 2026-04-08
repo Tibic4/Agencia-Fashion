@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDateTimeBR } from "@/lib/admin/format";
 
 async function getCampaigns() {
   const supabase = createAdminClient();
@@ -85,7 +86,7 @@ export default async function AdminCampanhas() {
                   {Number(c.pipeline_duration_ms) > 0 && <span>⏱ {(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s</span>}
                 </div>
                 <p className="text-[10px] text-gray-600 mt-2">
-                  {new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  {formatDateTimeBR(c.created_at as string)}
                 </p>
               </div>
             ))}
@@ -115,7 +116,7 @@ export default async function AdminCampanhas() {
                       <td className="px-6 py-3 text-gray-300">{Number(c.price) > 0 ? `R$ ${Number(c.price).toFixed(2)}` : "—"}</td>
                       <td className="px-6 py-3 text-gray-400">{c.pipeline_duration_ms ? `${(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s` : "—"}</td>
                       <td className="px-6 py-3"><StatusBadge status={c.status as string} /></td>
-                      <td className="px-6 py-3 text-gray-500 text-xs">{new Date(c.created_at as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                      <td className="px-6 py-3 text-gray-500 text-xs">{formatDateTimeBR(c.created_at as string)}</td>
                     </tr>
                   ))}
                 </tbody>

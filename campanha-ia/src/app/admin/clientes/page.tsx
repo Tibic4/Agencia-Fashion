@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import Link from "next/link";
+import { formatDateBR } from "@/lib/admin/format";
 
 async function getStores() {
   const supabase = createAdminClient();
@@ -37,9 +37,8 @@ export default async function AdminClientes() {
               const usage = Array.isArray(store.store_usage) ? store.store_usage[0] : store.store_usage;
               const plan = store.plans as Record<string, string> | null;
               return (
-                <Link
+                <div
                   key={store.id as string}
-                  href={`/admin/clientes/${store.id}`}
                   className="block bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition"
                 >
                   <div className="flex items-center gap-3 mb-3">
@@ -63,10 +62,10 @@ export default async function AdminClientes() {
                       {usage ? `${(usage as Record<string, number>).campaigns_generated}/${(usage as Record<string, number>).campaigns_limit} campanhas` : "0/0"}
                     </span>
                     <span className="text-gray-600 ml-auto">
-                      {new Date(store.created_at as string).toLocaleDateString("pt-BR")}
+                      {formatDateBR(store.created_at as string)}
                     </span>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -96,9 +95,9 @@ export default async function AdminClientes() {
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
                               {(store.name as string)?.charAt(0)?.toUpperCase()}
                             </div>
-                            <Link href={`/admin/clientes/${store.id}`} className="text-white font-medium hover:text-amber-400 transition">
+                            <span className="text-white font-medium">
                               {store.name as string}
-                            </Link>
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-gray-400">{store.segment_primary as string || "—"}</td>
@@ -117,7 +116,7 @@ export default async function AdminClientes() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-gray-500 text-xs">
-                          {new Date(store.created_at as string).toLocaleDateString("pt-BR")}
+                          {formatDateBR(store.created_at as string)}
                         </td>
                       </tr>
                     );
