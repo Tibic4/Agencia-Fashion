@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTimeBR, formatTimeBR } from "@/lib/admin/format";
+import { StuckCampaignsSection } from "./StuckCampaigns";
 
 async function getLogs() {
   const supabase = createAdminClient();
@@ -162,39 +163,7 @@ export default async function AdminLogs() {
       )}
 
       {/* ⚠️ Stuck campaigns — processing > 5min */}
-      {stuckCampaigns.length > 0 && (
-        <div className="bg-amber-950/30 border border-amber-500/30 rounded-2xl overflow-hidden">
-          <div className="px-4 md:px-6 py-4 border-b border-amber-500/20 flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <h2 className="text-sm font-semibold text-amber-300">⚠️ Campanhas presas ({stuckCampaigns.length})</h2>
-            <span className="text-[10px] text-amber-500">processing &gt; 5 min</span>
-          </div>
-          <div className="divide-y divide-amber-500/10 max-h-64 overflow-y-auto">
-            {stuckCampaigns.map((c: Record<string, unknown>) => {
-              const stuckSince = new Date(c.created_at as string);
-              const minutesStuck = Math.round((Date.now() - stuckSince.getTime()) / 60000);
-              return (
-                <div key={c.id as string} className="px-4 md:px-6 py-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-sm text-amber-200">
-                      {(c.stores as Record<string, string>)?.name || "Loja"}
-                    </span>
-                    <span className="text-[10px] text-amber-500 ml-2">
-                      presa há {minutesStuck} min
-                    </span>
-                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">
-                      {(c.id as string).slice(0, 8)}...
-                    </p>
-                  </div>
-                  <span className="px-2 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    ⏳ processing
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <StuckCampaignsSection campaigns={stuckCampaigns as any} />
 
       {/* Failed campaigns */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
