@@ -1,17 +1,18 @@
 /**
- * Google Nano Banana 2 (Gemini 3.1 Flash Image) — Image Generation Client
+ * Google Nano Banana Pro (Gemini 3 Pro Image) — Image Generation Client
  * 
  * Provider principal para geração de modelo vestindo a peça.
  * Funciona enviando a foto do produto + prompt descritivo → recebe foto de modelo gerada.
  * 
- * Modelo: gemini-3.1-flash-image-preview (Nano Banana 2)
- * Custo: ~$0.03 por imagem (~R$ 0,15)
+ * Modelo: gemini-3-pro-image-preview (Nano Banana Pro)
+ * Qualidade: Studio-quality, 4K support, melhor composição
+ * Custo: ~$0.05 por imagem (~R$ 0,25)
  */
 
 import { GoogleGenAI } from "@google/genai";
 
 const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY || "";
-const MODEL = "gemini-3.1-flash-image-preview";
+const MODEL = "gemini-3-pro-image-preview";
 
 // ═══════════════════════════════════════
 // Tipos
@@ -62,7 +63,7 @@ async function logNanoBananaCost(
     if (inputTokens > 0 || outputTokens > 0) {
       const pricing = await getModelPricing();
       // Usar pricing do modelo real (Nano Banana 2) ou fallback
-      const modelPrice = pricing[MODEL] || pricing["gemini-3.1-flash-image-preview"] || { inputPerMTok: 0.50, outputPerMTok: 3.00 };
+      const modelPrice = pricing[MODEL] || pricing["gemini-3-pro-image-preview"] || { inputPerMTok: 1.25, outputPerMTok: 10.00 };
       costUsd = (inputTokens * modelPrice.inputPerMTok) / 1_000_000
               + (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
     }

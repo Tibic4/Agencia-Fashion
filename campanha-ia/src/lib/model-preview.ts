@@ -53,7 +53,7 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
     );
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image-preview",
+      model: "gemini-3-pro-image-preview",
       contents: [{ role: "user", parts }],
       config: {
         responseModalities: ["IMAGE", "TEXT"],
