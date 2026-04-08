@@ -79,9 +79,9 @@ async function getCosts() {
     alertMessage = "⚠️ 80%+ do budget utilizado. Monitore os gastos.";
   }
 
-  // Custo médio por campanha — usa o step mais confiável como proxy
+  // Custo médio por campanha — usa opus_analyzer como proxy (1 chamada = 1 campanha)
   const totalCampaignCalls = Object.entries(byStep)
-    .filter(([k]) => k === "nano_banana" || k === "vision" || k === "copywriter")
+    .filter(([k]) => k === "opus_analyzer" || k === "gemini_image_gen")
     .reduce((s, [, v]) => Math.max(s, v.calls), 0);
   const avgCostPerCampaign = totalCampaignCalls > 0 ? totalThisMonth / totalCampaignCalls : 0;
 
@@ -111,16 +111,13 @@ const providerColors: Record<string, string> = {
 };
 
 const stepLabels: Record<string, string> = {
-  vision: "👁️ Vision Analyzer",
-  strategy: "🎯 Estrategista",
-  copywriter: "✍️ Copywriter",
-  refiner: "🔄 Refiner",
-  scorer: "📊 Scorer",
-  mini_vision_vto: "🔍 Mini-Vision VTO",
-  nano_banana: "👗 Virtual Try-On (Gemini)",
-  qa_visual_agent: "🔎 QA Visual Agent",
+  opus_analyzer: "🧠 Analista Opus (prompts + análise)",
+  gemini_image_gen: "📸 Geração de Imagem (Gemini)",
   model_preview: "🧍 Preview de Modelo",
-  copywriter_retry: "✍️ Copywriter (retry)",
+  nano_banana: "👗 Virtual Try-On (legado)",
+  vision: "👁️ Vision (legado)",
+  strategy: "🎯 Estrategista (legado)",
+  copywriter: "✍️ Copywriter (legado)",
 };
 
 const alertStyles: Record<string, { bg: string; border: string; text: string }> = {
