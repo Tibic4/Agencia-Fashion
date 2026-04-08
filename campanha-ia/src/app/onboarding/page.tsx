@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -761,9 +762,7 @@ export default function Onboarding() {
         {/* Top bar */}
         <div className="onb-topbar">
           <div className="onb-logo">
-            <div className="onb-logo-icon">
-              <IconSparkles />
-            </div>
+            <Image src="/logo.png" alt="CriaLook" width={36} height={36} style={{ borderRadius: '10px' }} />
             <span className="onb-logo-text">
               Cria<span className="gradient-text">Look</span>
             </span>
