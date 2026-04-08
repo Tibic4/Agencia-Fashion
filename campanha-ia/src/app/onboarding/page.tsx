@@ -3,6 +3,9 @@
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const BrandColorPicker = dynamic(() => import("@/components/BrandColorPicker"), { ssr: false });
 
 /* ═══════════════════════════════════════
    Icons (inline SVGs)
@@ -112,6 +115,7 @@ export default function Onboarding() {
   const [body, setBody] = useState("media");
   const [brandColor, setBrandColor] = useState("");
   const [showCustomColor, setShowCustomColor] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -918,73 +922,91 @@ export default function Onboarding() {
                     </div>
                   </div>
 
-                  {/* Brand color picker */}
-                  <div>
-                    <label className="onb-label">🎨 Cor da sua marca <span style={{ fontWeight: 400, color: "var(--muted)" }}>(opcional)</span></label>
-                    <p style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "10px" }}>Usaremos nos fundos das suas campanhas</p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
-                      {brandColors.map((bc) => (
-                        <button
-                          key={bc.value}
-                          onClick={() => { setBrandColor(bc.value); setShowCustomColor(false); }}
-                          className="onb-skin-btn"
-                          data-active={brandColor === bc.value}
-                          title={bc.label}
-                        >
-                          <div
-                            className="onb-skin-circle"
-                            style={{ background: bc.value, width: "44px", height: "44px" }}
-                          />
-                          <span className="onb-skin-label">{bc.label}</span>
-                        </button>
-                      ))}
-                      {/* Custom color button */}
-                      <button
-                        onClick={() => { setShowCustomColor(!showCustomColor); if (!showCustomColor && !brandColors.find(c => c.value === brandColor)) { /* keep custom */ } }}
-                        className="onb-skin-btn"
-                        data-active={showCustomColor || (brandColor && !brandColors.find(c => c.value === brandColor))}
-                        title="Outra cor"
-                      >
-                        <div
-                          className="onb-skin-circle"
-                          style={{
-                            background: (brandColor && !brandColors.find(c => c.value === brandColor)) ? brandColor : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
-                            width: "44px",
-                            height: "44px",
-                          }}
-                        />
-                        <span className="onb-skin-label">Outra</span>
-                      </button>
-                    </div>
-                    {showCustomColor && (
-                      <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
-                        <input
-                          type="color"
-                          value={brandColor || "#EC4899"}
-                          onChange={(e) => setBrandColor(e.target.value)}
-                          style={{ width: "44px", height: "44px", border: "none", borderRadius: "12px", cursor: "pointer", padding: 0 }}
-                        />
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--foreground)" }}>{brandColor || "#EC4899"}</span>
-                      </div>
-                    )}
-                  </div>
+                   {/* Brand color picker — with Canvas extractor */}
+                   <div>
+                     <label className="onb-label">{"🎨"} Cor da sua marca <span style={{ fontWeight: 400, color: "var(--muted)" }}>(opcional)</span></label>
+                     <p style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "10px" }}>Usaremos nos fundos das suas campanhas</p>
 
-                  {/* Buttons */}
-                  <div className="onb-btn-row">
-                    <button onClick={goBack} className="btn-secondary flex-1 !py-3">
-                      <IconArrowLeft /> Voltar
-                    </button>
-                    <button
-                      onClick={goNext}
-                      disabled={!storeName || !segment}
-                      className="btn-primary flex-1 !py-3 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      Continuar <IconArrowRight />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+                     {/* Canvas color extractor CTA */}
+                     <button
+                       onClick={() => setShowColorPicker(true)}
+                       style={{ width: "100%", marginBottom: "12px", padding: "12px", background: "var(--brand-50)", border: "2px dashed var(--brand-300)", borderRadius: "12px", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+                     >
+                       <span style={{ fontSize: "24px" }}>{"📤"}</span>
+                       <div style={{ textAlign: "left" }}>
+                         <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--foreground)" }}>Extrair cor da logo</p>
+                         <p style={{ fontSize: "11px", color: "var(--muted)" }}>Envie sua logo e toque na cor desejada</p>
+                       </div>
+                     </button>
+
+                     {showColorPicker && (
+                       <BrandColorPicker
+                         currentColor={brandColor}
+                         onColorSelected={(hex) => { setBrandColor(hex); setShowCustomColor(false); setShowColorPicker(false); }}
+                         onClose={() => setShowColorPicker(false)}
+                       />
+                     )}
+
+                     {/* Extracted color preview */}
+                     {brandColor && (
+                       <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "12px", padding: "10px", background: "var(--surface)", borderRadius: "12px", border: "1px solid var(--border)" }}>
+                         <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: brandColor, border: "2px solid var(--border)", flexShrink: 0 }} />
+                         <div>
+                           <p style={{ fontSize: "13px", fontWeight: 700, fontFamily: "monospace" }}>{brandColor}</p>
+                           <p style={{ fontSize: "11px", color: "var(--muted)" }}>Cor selecionada</p>
+                         </div>
+                         <button onClick={() => setBrandColor("")} style={{ marginLeft: "auto", fontSize: "12px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer" }}>{"✕"}</button>
+                       </div>
+                     )}
+
+                     <p style={{ fontSize: "11px", color: "var(--muted)", marginBottom: "8px", textAlign: "center" }}>ou escolha uma cor:</p>
+                     <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
+                       {brandColors.map((bc) => (
+                         <button
+                           key={bc.value}
+                           onClick={() => { setBrandColor(bc.value); setShowCustomColor(false); }}
+                           className="onb-skin-btn"
+                           data-active={brandColor === bc.value}
+                           title={bc.label}
+                         >
+                           <div className="onb-skin-circle" style={{ background: bc.value, width: "44px", height: "44px" }} />
+                           <span className="onb-skin-label">{bc.label}</span>
+                         </button>
+                       ))}
+                       <button
+                         onClick={() => { setShowCustomColor(!showCustomColor); }}
+                         className="onb-skin-btn"
+                         data-active={showCustomColor || Boolean(brandColor && !brandColors.find(c => c.value === brandColor))}
+                         title="Outra cor"
+                       >
+                         <div className="onb-skin-circle" style={{ background: (brandColor && !brandColors.find(c => c.value === brandColor)) ? brandColor : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)", width: "44px", height: "44px" }} />
+                         <span className="onb-skin-label">Outra</span>
+                       </button>
+                     </div>
+                     {showCustomColor && (
+                       <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
+                         <input type="color" value={brandColor || "#EC4899"} onChange={(e) => setBrandColor(e.target.value)} style={{ width: "44px", height: "44px", border: "none", borderRadius: "12px", cursor: "pointer", padding: 0 }} />
+                         <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--foreground)" }}>{brandColor || "#EC4899"}</span>
+                       </div>
+                     )}
+                   </div>
+
+                   {/* Buttons */}
+                   <div className="onb-btn-row">
+                     <button onClick={goBack} className="btn-secondary flex-1 !py-3">
+                       <IconArrowLeft /> Voltar
+                     </button>
+                     <button
+                       onClick={goNext}
+                       disabled={!storeName || !segment}
+                       className="btn-primary flex-1 !py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                     >
+                       Continuar <IconArrowRight />
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             )}
 
             {/* ═══════════════════════════════════════
                Step 2: Virtual Model
