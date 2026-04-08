@@ -984,29 +984,6 @@ export default function GerarCampanha() {
 
         {/* Right — Options */}
         <div className="space-y-6">
-          {/* Objective */}
-          <div>
-            <label className="block text-sm font-semibold mb-3">Objetivo</label>
-            <div className="grid grid-cols-2 gap-2">
-              {objectives.map((obj) => (
-                <button
-                  key={obj.value}
-                  onClick={() => setObjective(obj.value)}
-                  className="p-3 rounded-xl text-left transition-all"
-                  style={{
-                    background: objective === obj.value ? "var(--gradient-card)" : "var(--surface)",
-                    border: objective === obj.value
-                      ? "1px solid var(--brand-300)"
-                      : "1px solid var(--border)",
-                  }}
-                >
-                  <p className="text-sm font-semibold">{obj.label}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{obj.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-
 
 
           {/* Body Type — Tipo de Corpo */}
