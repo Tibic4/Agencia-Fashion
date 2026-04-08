@@ -75,6 +75,7 @@ export async function runCampaignPipeline(
   // — Etapa 1: Opus analisa o produto ——————————————————————
   await onProgress?.("opus", "Analisando fotos do produto...", 8);
 
+  const opusStart = Date.now();
   const opusResult = await analyzeWithOpus({
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType as any,
@@ -85,6 +86,14 @@ export async function runCampaignPipeline(
     backgroundType: input.backgroundType,
     brandColor: input.brandColor,
   });
+  const opusDurationMs = Date.now() - opusStart;
+
+  // Log de custo do Opus (fire-and-forget)
+  if (input.storeId) {
+    logOpusCost(input.storeId, input.campaignId, opusDurationMs).catch((e) =>
+      console.warn("[Pipeline] Erro ao salvar custo Opus:", e)
+    );
+  }
 
   await onProgress?.("opus_done", "Análise completa! Criando prompts...", 30);
 
@@ -120,3 +129,51 @@ export async function runCampaignPipeline(
     durationMs,
   };
 }
+
+// ═══════════════════════════════════════
+// Log de custo do Opus
+// Pricing claude-opus-4-6: $15 / 1M input, $75 / 1M output
+// Imagem ~1600 tokens, prompt ~1000 tokens, resposta ~5000 tokens
+// Estimativa conservadora por chamada: ~$0.48 (6.6K in + 5.2K out)
+// ═══════════════════════════════════════
+
+async function logOpusCost(
+  storeId: string,
+  campaignId: string | undefined,
+  responseTimeMs: number,
+) {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+
+  let exchangeRate = 5.8;
+  try {
+    const { getExchangeRate } = await import("@/lib/pricing");
+    exchangeRate = await getExchangeRate();
+  } catch {
+    // fallback
+  }
+
+  // Estimativa baseada nos logs médios: input=6700, output=5200
+  const avgInputTokens = 6700;
+  const avgOutputTokens = 5200;
+  const costUsd =
+    (avgInputTokens / 1_000_000) * 15 + (avgOutputTokens / 1_000_000) * 75;
+
+  const { error } = await supabase.from("api_cost_logs").insert({
+    store_id: storeId,
+    campaign_id: campaignId || null,
+    provider: "anthropic",
+    model_used: "claude-opus-4-6",
+    action: "opus_analyzer",
+    cost_usd: costUsd,
+    cost_brl: costUsd * exchangeRate,
+    exchange_rate: exchangeRate,
+    tokens_used: avgInputTokens + avgOutputTokens,
+    response_time_ms: responseTimeMs,
+  });
+
+  if (error) {
+    console.warn("[Pipeline] ⚠️ Falha ao logar custo Opus:", error.message);
+  }
+}
+
