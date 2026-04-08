@@ -42,8 +42,8 @@ export default function Configuracoes() {
           setStoreName(store.name || "");
           setCity(store.city || "");
           setStateUF(store.state || "");
-          setInstagram(store.instagram || "");
-          setSegment(store.segment || "");
+          setInstagram(store.instagram_handle || "");
+          setSegment(store.segment_primary || "");
           setLogoUrl(store.logo_url || null);
           const bc = store.brand_colors as { primary?: string } | null;
           if (bc?.primary) setBrandColor(bc.primary);
