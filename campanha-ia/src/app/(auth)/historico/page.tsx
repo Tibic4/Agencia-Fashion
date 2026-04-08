@@ -155,8 +155,8 @@ export default function Historico() {
             )}
           </p>
         </div>
-        <Link href="/gerar" className="btn-primary text-sm !py-2.5 min-h-[44px] flex items-center justify-center">
-          + Nova campanha
+        <Link href="/gerar" className="btn-primary text-sm !py-2 min-h-[44px] flex items-center justify-center flex-shrink-0">
+          + Nova
         </Link>
       </div>
 
@@ -248,11 +248,10 @@ export default function Historico() {
             return (
               <div
                 key={campaign.id}
-                className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl transition-all hover:-translate-y-0.5 group min-h-[60px]"
+                className="flex items-center gap-2 p-3 rounded-2xl transition-all group min-h-[60px]"
                 style={{
                   background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
                   border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
-                  animationDelay: `${i * 0.05}s`,
                 }}
               >
                 {/* Star favorite button */}
@@ -263,7 +262,7 @@ export default function Historico() {
                     toggleFavorite(campaign.id, isFav);
                   }}
                   disabled={isToggling}
-                  className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 min-h-[36px]"
+                  className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 min-h-[36px]"
                   style={{
                     background: isFav ? "var(--brand-100, rgba(236,72,153,0.12))" : "var(--surface)",
                     border: isFav ? "1px solid var(--brand-300, rgba(236,72,153,0.3))" : "1px solid var(--border)",
@@ -290,38 +289,37 @@ export default function Historico() {
                 {/* Clickable area → navigate to campaign */}
                 <Link
                   href={`/gerar/demo?id=${campaign.id}`}
-                  className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0"
+                  className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 overflow-hidden"
                 >
                   {/* Status icon */}
-                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                  <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-base sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
                     {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm group-hover:text-[var(--brand-500)] transition truncate">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="font-semibold text-sm truncate">
                       {headline}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--muted)" }}>
                       R$ {Number(campaign.price).toFixed(2).replace(".", ",")} · {objectiveLabels[campaign.objective || ""] || "—"} · {formatDate(campaign.created_at)}
                     </p>
                   </div>
 
                   {/* Score */}
-                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {score ? (
                       <div className="text-right">
-                        <p className="text-lg font-black gradient-text">{score}</p>
-                        <p className="text-[10px]" style={{ color: "var(--muted)" }}>score</p>
+                        <p className="text-base sm:text-lg font-black gradient-text">{score}</p>
                       </div>
                     ) : (
                       <div className="text-right">
-                        <p className="text-xs" style={{ color: "var(--muted)" }}>
-                          {campaign.status === "processing" ? "Processando..." : campaign.status === "failed" ? "Falhou" : "—"}
+                        <p className="text-[10px] sm:text-xs" style={{ color: "var(--muted)" }}>
+                          {campaign.status === "processing" ? "..." : campaign.status === "failed" ? "❌" : ""}
                         </p>
                       </div>
                     )}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </div>
                 </Link>
               </div>
