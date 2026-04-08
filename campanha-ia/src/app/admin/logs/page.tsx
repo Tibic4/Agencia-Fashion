@@ -8,8 +8,11 @@ async function getLogs() {
   const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
   const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
+  const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
+
   const [
     { data: failedCampaigns },
+    { data: stuckCampaigns },
     { data: recentCosts },
     { data: allCampaigns24h },
     { data: allCampaigns7d },
@@ -19,6 +22,13 @@ async function getLogs() {
       .eq("status", "failed")
       .order("created_at", { ascending: false })
       .limit(50),
+    // Campanhas presas em processing > 5 minutos
+    supabase.from("campaigns")
+      .select("id, status, created_at, store_id, stores(name)")
+      .eq("status", "processing")
+      .lt("created_at", fiveMinAgo)
+      .order("created_at", { ascending: false })
+      .limit(20),
     supabase.from("api_cost_logs")
       .select("provider, model_used, action, cost_brl, tokens_used, created_at, campaign_id")
       .order("created_at", { ascending: false })
@@ -64,6 +74,7 @@ async function getLogs() {
 
   return {
     failedCampaigns: failedCampaigns ?? [],
+    stuckCampaigns: stuckCampaigns ?? [],
     recentCosts: recentCosts ?? [],
     stats: {
       total24h, success24h, failed24h, processing24h, sla24h,
@@ -87,7 +98,7 @@ const slaBg = (pct: number) => {
 };
 
 export default async function AdminLogs() {
-  const { failedCampaigns, recentCosts, stats } = await getLogs();
+  const { failedCampaigns, stuckCampaigns, recentCosts, stats } = await getLogs();
 
   return (
     <div className="space-y-6">
@@ -146,6 +157,41 @@ export default async function AdminLogs() {
                 <p className="text-lg font-bold text-red-400">{count}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ⚠️ Stuck campaigns — processing > 5min */}
+      {stuckCampaigns.length > 0 && (
+        <div className="bg-amber-950/30 border border-amber-500/30 rounded-2xl overflow-hidden">
+          <div className="px-4 md:px-6 py-4 border-b border-amber-500/20 flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <h2 className="text-sm font-semibold text-amber-300">⚠️ Campanhas presas ({stuckCampaigns.length})</h2>
+            <span className="text-[10px] text-amber-500">processing &gt; 5 min</span>
+          </div>
+          <div className="divide-y divide-amber-500/10 max-h-64 overflow-y-auto">
+            {stuckCampaigns.map((c: Record<string, unknown>) => {
+              const stuckSince = new Date(c.created_at as string);
+              const minutesStuck = Math.round((Date.now() - stuckSince.getTime()) / 60000);
+              return (
+                <div key={c.id as string} className="px-4 md:px-6 py-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-sm text-amber-200">
+                      {(c.stores as Record<string, string>)?.name || "Loja"}
+                    </span>
+                    <span className="text-[10px] text-amber-500 ml-2">
+                      presa há {minutesStuck} min
+                    </span>
+                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">
+                      {(c.id as string).slice(0, 8)}...
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    ⏳ processing
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
