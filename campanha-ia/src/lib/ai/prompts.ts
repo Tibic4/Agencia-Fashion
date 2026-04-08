@@ -98,21 +98,6 @@ EXEMPLO 1 — Blusa cropped de tricô:
   "palavras_chave_venda": ["tricô", "cropped", "inverno ${CURRENT_YEAR}", "blusa quentinha"]
 }
 
-EXEMPLO 2 — Conjunto blusa + saia floral:
-{
-  "produto": {"nome_generico": "Conjunto saia midi + cropped de viscose floral", "categoria": "Conjuntos", "subcategoria": "Midi"},
-  "segmento": "feminino",
-  "atributos_visuais": {"cor_principal": "Verde esmeralda", "cor_secundaria": "Branco", "cores_complementares": ["Rosa claro"], "material_aparente": "Viscose", "estampa": "Floral", "detalhes": ["Amarração na cintura com faixa", "Decote V profundo", "Manga curta bufante", "Fenda lateral esquerda"]},
-  "caimento": "fluido", "ocasiao_uso": ["casual", "trabalho"], "estacao": "verão",
-  "qualidade_foto": {"resolucao": "boa", "fundo": "branco", "iluminacao": "boa", "necessita_tratamento": false},
-  "nicho_sensivel": false, "mood": ["feminino", "romântico", "verão"],
-  "vto_fabric_descriptor": "lightweight viscose, soft fluid drape, matte finish, breathable",
-  "vto_garment_structure": "two-piece set: fitted cropped blouse with V-neck and puff sleeves + midi A-line skirt with side slit",
-  "vto_color_hex_estimate": "#1B7340",
-  "vto_critical_details": ["floral print with roses in pink/white on emerald green", "self-tie waist sash ~5cm wide", "left side slit to knee", "puff sleeves with elastic cuff"],
-  "palavras_chave_venda": ["conjunto", "floral", "verão ${CURRENT_YEAR}", "viscose"]
-}
-
 DICAS:
 - Para "palavras_chave_venda", pense no que a cliente buscaria no Google/Instagram
 - O "mood" deve refletir a vibração que a peça transmite
@@ -317,6 +302,14 @@ REGRAS DE OURO:
 - JAMAIS invente promoções, descontos ou preços que não foram informados
 - JAMAIS compare com marcas específicas (Zara, Shein, etc.) — risco de compliance
 - Hashtags: SEM prefixo # (apenas a palavra). Mix de alto volume (modafeminina, lookdodia) com nicho (categoria, estação). Sem erros de digitação! Se usar ano, SOMENTE ${CURRENT_YEAR}.${plusSizeRules}
+
+CHECKLIST DE AUTO-REFINAMENTO (revise ANTES de responder):
+1. NATURALIDADE: Parece algo que uma lojista brasileira REAL postaria?
+2. EMOJIS: Feed 3-5, WhatsApp 1-2, Stories 1 por slide
+3. CTA: Claro, direto, urgente (DM, WhatsApp, link bio)
+4. CLICHÊS PROIBIDOS: 'imperdível', 'sensacional', 'compre já', 'peça única', 'arrasa', 'lacra', 'virou queridinha'. SUBSTITUIR por linguagem autêntica.
+5. META ADS: Zero claims não comprováveis, sem emojis, sem ALL CAPS
+6. Preço no momento certo (após benefícios, antes do CTA)
 
 Responda APENAS com o JSON.`;
 }
