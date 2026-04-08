@@ -41,13 +41,6 @@ const audiences = [
   { value: "premium", label: "Público premium" },
 ];
 
-const objectives = [
-  { value: "venda_imediata", label: "💰 Venda imediata", desc: "Foco em conversão rápida" },
-  { value: "lancamento", label: "🚀 Lançamento", desc: "Novidade, curiosidade" },
-  { value: "promocao", label: "🔥 Promoção", desc: "Desconto, urgência" },
-  { value: "engajamento", label: "💬 Engajamento", desc: "Curtidas, comentários" },
-];
-
 const tones = [
   { value: "casual_energetico", label: "⚡ Casual e energético" },
   { value: "sofisticado", label: "✨ Sofisticado" },
@@ -68,35 +61,6 @@ const backgrounds = [
   { value: "personalizado", label: "Personalizado", thumb: null,            ai: true },
 ];
 
-const productTypes = [
-  { value: "blusa",     label: "👚 Blusa / Regata / Top" },
-  { value: "saia",      label: "👗 Saia" },
-  { value: "calca",     label: "👖 Calça / Shorts" },
-  { value: "vestido",   label: "👗 Vestido" },
-  { value: "macacao",   label: "🩱 Macacão / Culotte" },
-  { value: "jaqueta",   label: "🧥 Jaqueta / Casaco" },
-  { value: "acessorio", label: "💎 Acessório" },
-];
-
-const materials = [
-  { value: "viscose",   label: "Viscose" },
-  { value: "algodao",   label: "Algodão" },
-  { value: "linho",     label: "Linho" },
-  { value: "crepe",     label: "Crepe" },
-  { value: "malha",     label: "Malha" },
-  { value: "jeans",     label: "Jeans" },
-  { value: "trico",     label: "Tricô" },
-  { value: "seda",      label: "Seda / Cetim" },
-  { value: "couro",     label: "Couro" },
-  { value: "moletom",   label: "Moletom" },
-  { value: "chiffon",   label: "Chiffon" },
-  { value: "poliester", label: "Poliéster" },
-  { value: "la",        label: "Lã" },
-  { value: "nylon",     label: "Nylon" },
-  { value: "suede",     label: "Suede" },
-  { value: "outro",     label: "Outro" },
-];
-
 interface ModelBankItem {
   id: string;
   name: string;
@@ -112,7 +76,6 @@ export default function GerarCampanha() {
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [price, setPrice] = useState("");
-  const [objective, setObjective] = useState("venda_imediata");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("");
@@ -133,25 +96,7 @@ export default function GerarCampanha() {
   const [dragOverCloseUp, setDragOverCloseUp] = useState(false);
   const [dragOverSecond, setDragOverSecond] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [material, setMaterial] = useState("");
-  const [customMaterial, setCustomMaterial] = useState("");
-  const [material2, setMaterial2] = useState("");
-  const [customMaterial2, setCustomMaterial2] = useState("");
   const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
-  const [priceMode, setPriceMode] = useState<"conjunto" | "separado">("conjunto");
-  const [price2, setPrice2] = useState("");
-
-  const isConjunto = selectedTypes.length === 2;
-  const productType = isConjunto ? `conjunto:${selectedTypes.join("+")}` : selectedTypes[0] || "";
-
-  function toggleProductType(value: string) {
-    setSelectedTypes(prev => {
-      if (prev.includes(value)) return prev.filter(v => v !== value);
-      if (prev.length >= 2) return [prev[1], value]; // swap oldest
-      return [...prev, value];
-    });
-  }
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
   const [customModels, setCustomModels] = useState<{ id: string; name: string; body_type: string; skin_tone?: string; photo_url?: string | null; is_active: boolean }[]>([]);
   const [userPlan, setUserPlan] = useState("free");
@@ -287,21 +232,9 @@ export default function GerarCampanha() {
       if (closeUpFile) formData.append("closeUpImage", closeUpFile);
       if (secondFile) formData.append("secondImage", secondFile);
       formData.append("price", price);
-      formData.append("objective", objective);
       formData.append("storeName", "Minha Loja");
       if (audience) formData.append("targetAudience", audience);
       if (tone) formData.append("toneOverride", tone);
-      if (productType) formData.append("productType", productType);
-      const materialFinal = material === "outro" ? customMaterial : material;
-      if (materialFinal) formData.append("material", materialFinal);
-      if (isConjunto) {
-        const material2Final = material2 === "outro" ? customMaterial2 : material2;
-        if (material2Final) formData.append("material2", material2Final);
-      }
-      if (isConjunto && priceMode === "separado" && price2) {
-        formData.append("price2", price2);
-        formData.append("priceMode", "separado");
-      }
       formData.append("bodyType", bodyType);
 
       const bgFinal = background === "personalizado" ? `personalizado:${customBg}` : background;
@@ -387,7 +320,6 @@ export default function GerarCampanha() {
               sessionStorage.setItem("campaignFormData", JSON.stringify({
                 imageBase64: base64,
                 price,
-                objective,
                 targetAudience: audience,
                 toneOverride: tone,
               }));
@@ -737,248 +669,30 @@ export default function GerarCampanha() {
             </div>
           </div>
 
-          {/* Product Type — Multi-select (até 2 = conjunto) */}
-          <div>
-            <label className="block text-sm font-semibold mb-1">Tipo de produto *</label>
-            <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
-              Selecione 1 peça ou 2 para conjunto
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {productTypes.map((pt) => (
-                <button
-                  key={pt.value}
-                  onClick={() => toggleProductType(pt.value)}
-                  className="p-2.5 rounded-xl text-left text-sm transition-all"
-                  style={{
-                    background: selectedTypes.includes(pt.value) ? "var(--gradient-card)" : "var(--surface)",
-                    border: selectedTypes.includes(pt.value)
-                      ? "1px solid var(--brand-300)"
-                      : "1px solid var(--border)",
-                    fontWeight: selectedTypes.includes(pt.value) ? 600 : 400,
-                  }}
-                >
-                  {pt.label}
-                  {selectedTypes.includes(pt.value) && (
-                    <span
-                      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold ml-2"
-                      style={{
-                        background: "var(--brand-500)",
-                        color: "white",
-                        minWidth: "20px"
-                      }}
-                    >
-                      {selectedTypes.indexOf(pt.value) + 1}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-            {isConjunto && (
-              <div className="mt-3 p-3 rounded-xl text-sm font-semibold flex items-center gap-2" style={{ background: "var(--brand-50)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}>
-                🎀 Conjunto: {productTypes.find(p => p.value === selectedTypes[0])?.label?.replace(/^.\s/, "")} + {productTypes.find(p => p.value === selectedTypes[1])?.label?.replace(/^.\s/, "")}
-              </div>
-            )}
-          </div>
 
-          {/* Material / Tecido — chips visuais (dual para conjunto) */}
-          {isConjunto ? (
-            <div className="space-y-4">
-              {/* Material Peça 1 */}
-              <div>
-                <label className="block text-sm font-semibold mb-1" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold" style={{ background: "var(--brand-500)", color: "white" }}>1</span>
-                  Material — {productTypes.find(p => p.value === selectedTypes[0])?.label}
-                </label>
-                <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
-                  Opcional — a IA detecta pela foto
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {materials.map((m) => (
-                    <button
-                      key={m.value}
-                      onClick={() => setMaterial(material === m.value ? "" : m.value)}
-                      className="px-3.5 py-2 rounded-lg text-sm font-medium transition-all min-h-[36px]"
-                      style={{
-                        background: material === m.value ? "var(--brand-100)" : "var(--surface)",
-                        color: material === m.value ? "var(--brand-700)" : "var(--muted)",
-                        border: material === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                      }}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-                {material === "outro" && (
-                  <input
-                    type="text"
-                    value={customMaterial}
-                    onChange={(e) => setCustomMaterial(e.target.value)}
-                    placeholder="Ex: crepe georgette, tricoline..."
-                    maxLength={40}
-                    className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
-                    style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
-                    autoFocus
-                  />
-                )}
-              </div>
-              {/* Divisor visual */}
-              <div style={{ height: "1px", background: "var(--border)" }} />
-              {/* Material Peça 2 */}
-              <div>
-                <label className="block text-sm font-semibold mb-1" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold" style={{ background: "var(--brand-500)", color: "white" }}>2</span>
-                  Material — {productTypes.find(p => p.value === selectedTypes[1])?.label}
-                </label>
-                <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
-                  Opcional — a IA detecta pela foto
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {materials.map((m) => (
-                    <button
-                      key={`m2-${m.value}`}
-                      onClick={() => setMaterial2(material2 === m.value ? "" : m.value)}
-                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-                      style={{
-                        background: material2 === m.value ? "var(--brand-100)" : "var(--surface)",
-                        color: material2 === m.value ? "var(--brand-700)" : "var(--muted)",
-                        border: material2 === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                      }}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-                {material2 === "outro" && (
-                  <input
-                    type="text"
-                    value={customMaterial2}
-                    onChange={(e) => setCustomMaterial2(e.target.value)}
-                    placeholder="Ex: crepe georgette, tricoline..."
-                    maxLength={40}
-                    className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
-                    style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
-                    autoFocus
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-semibold mb-1">
-                Material / Tecido
-              </label>
-              <p className="text-xs mb-2" style={{ color: "var(--muted)" }}>
-                Opcional — a IA detecta pela foto, mas informar melhora a precisão
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {materials.map((m) => (
-                  <button
-                    key={m.value}
-                    onClick={() => setMaterial(material === m.value ? "" : m.value)}
-                    className="px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
-                    style={{
-                      background: material === m.value ? "var(--brand-100)" : "var(--surface)",
-                      color: material === m.value ? "var(--brand-700)" : "var(--muted)",
-                      border: material === m.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-              {material === "outro" && (
-                <input
-                  type="text"
-                  value={customMaterial}
-                  onChange={(e) => setCustomMaterial(e.target.value)}
-                  placeholder="Ex: crepe georgette, tricoline..."
-                  maxLength={40}
-                  className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
-                  style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
-                  autoFocus
-                />
-              )}
-            </div>
-          )}
 
-          {/* Price — adaptável a conjunto */}
+          {/* Price */}
           <div>
             <label className="block text-sm font-semibold mb-2">
-              {isConjunto ? "Preço do conjunto" : "Preço de venda"} <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional)</span>
+              Preço de venda <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional)</span>
             </label>
-
-            {/* Toggle preço conjunto vs separado */}
-            {isConjunto && (
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setPriceMode("conjunto")}
-                  className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-                  style={{
-                    background: priceMode === "conjunto" ? "var(--brand-100)" : "var(--surface)",
-                    color: priceMode === "conjunto" ? "var(--brand-700)" : "var(--muted)",
-                    border: priceMode === "conjunto" ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                  }}
-                >
-                  💰 Preço único
-                </button>
-                <button
-                  onClick={() => setPriceMode("separado")}
-                  className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
-                  style={{
-                    background: priceMode === "separado" ? "var(--brand-100)" : "var(--surface)",
-                    color: priceMode === "separado" ? "var(--brand-700)" : "var(--muted)",
-                    border: priceMode === "separado" ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                  }}
-                >
-                  💰💰 Preços separados
-                </button>
-              </div>
-            )}
-
-            {priceMode === "separado" && isConjunto ? (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: "var(--muted)" }}>R$</span>
-                  <input
-                    type="text"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
-                    placeholder={productTypes.find(p => p.value === selectedTypes[0])?.label?.replace(/^.\s/, "") || "Peça 1"}
-                    className="w-full h-11 pl-9 pr-3 rounded-xl text-sm font-semibold outline-none transition-all"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
-                  />
-                </div>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: "var(--muted)" }}>R$</span>
-                  <input
-                    type="text"
-                    value={price2}
-                    onChange={(e) => setPrice2(e.target.value.replace(/[^0-9.,]/g, ""))}
-                    placeholder={productTypes.find(p => p.value === selectedTypes[1])?.label?.replace(/^.\s/, "") || "Peça 2"}
-                    className="w-full h-11 pl-9 pr-3 rounded-xl text-sm font-semibold outline-none transition-all"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
-                  R$
-                </span>
-                <input
-                  type="text"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
-                  placeholder="Ex: 89,90"
-                  className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    color: "var(--foreground)",
-                  }}
-                />
-              </div>
-            )}
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
+                R$
+              </span>
+              <input
+                type="text"
+                value={price}
+                onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                placeholder="Ex: 89,90"
+                className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  color: "var(--foreground)",
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -1362,19 +1076,19 @@ export default function GerarCampanha() {
           {/* Generate button */}
           <button
             onClick={handleGenerate}
-            disabled={!preview || selectedTypes.length === 0}
+            disabled={!preview}
             className="btn-primary w-full !py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
             style={{
-              boxShadow: preview && selectedTypes.length > 0 ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
+              boxShadow: preview ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
             }}
           >
             <IconZap />
             Gerar Campanha
           </button>
 
-          {(!preview || selectedTypes.length === 0) && (
+          {!preview && (
             <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
-              {!preview ? "Faça upload da foto para continuar" : "Selecione o tipo de produto"}
+              Faça upload da foto para continuar
             </p>
           )}
         </div>
