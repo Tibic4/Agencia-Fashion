@@ -87,6 +87,60 @@ export function useGenerateCampaign() {
         const decoder = new TextDecoder();
         let buffer = "";
 
+        // Helper para processar blocos SSE
+        const processEventBlock = (eventBlock: string) => {
+          if (!eventBlock.trim()) return null;
+
+          const lines = eventBlock.split("\n");
+          let eventType = "";
+          let eventData = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event: ")) eventType = line.slice(7);
+            if (line.startsWith("data: ")) eventData = line.slice(6);
+          }
+
+          if (!eventType || !eventData) return null;
+
+          try {
+            const parsed = JSON.parse(eventData);
+
+            if (eventType === "progress") {
+              const stepInfo = STEPS_LABELS[parsed.step] || { label: parsed.label, progress: parsed.progress };
+              setState((prev) => ({
+                ...prev,
+                status: "generating",
+                step: parsed.step,
+                stepLabel: parsed.label || stepInfo.label,
+                progress: Math.max(prev.progress, parsed.progress || stepInfo.progress),
+              }));
+            } else if (eventType === "done") {
+              if (!parsed.success) {
+                throw new Error(parsed.error || "Erro desconhecido");
+              }
+              setState({
+                status: "done",
+                step: "done",
+                stepLabel: "✅ Pronto!",
+                progress: 100,
+                result: parsed.data,
+                error: null,
+              });
+              return parsed.data;
+            } else if (eventType === "error") {
+              throw new Error(parsed.error || "Erro no pipeline");
+            }
+          } catch (parseError: any) {
+            if (parseError.message && !parseError.message.includes("JSON")) {
+              throw parseError;
+            }
+            console.warn("[SSE] Parse error:", parseError);
+          }
+          return null;
+        };
+
+        let sseResult: any = null;
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -98,55 +152,19 @@ export function useGenerateCampaign() {
           buffer = events.pop() || ""; // último item pode ser incompleto
 
           for (const eventBlock of events) {
-            if (!eventBlock.trim()) continue;
-
-            const lines = eventBlock.split("\n");
-            let eventType = "";
-            let eventData = "";
-
-            for (const line of lines) {
-              if (line.startsWith("event: ")) eventType = line.slice(7);
-              if (line.startsWith("data: ")) eventData = line.slice(6);
-            }
-
-            if (!eventType || !eventData) continue;
-
-            try {
-              const parsed = JSON.parse(eventData);
-
-              if (eventType === "progress") {
-                const stepInfo = STEPS_LABELS[parsed.step] || { label: parsed.label, progress: parsed.progress };
-                setState((prev) => ({
-                  ...prev,
-                  status: "generating",
-                  step: parsed.step,
-                  stepLabel: parsed.label || stepInfo.label,
-                  progress: parsed.progress || stepInfo.progress,
-                }));
-              } else if (eventType === "done") {
-                if (!parsed.success) {
-                  throw new Error(parsed.error || "Erro desconhecido");
-                }
-                setState({
-                  status: "done",
-                  step: "done",
-                  stepLabel: "✅ Pronto!",
-                  progress: 100,
-                  result: parsed.data,
-                  error: null,
-                });
-                return parsed.data;
-              } else if (eventType === "error") {
-                throw new Error(parsed.error || "Erro no pipeline");
-              }
-            } catch (parseError: any) {
-              if (parseError.message && !parseError.message.includes("JSON")) {
-                throw parseError; // Re-throw non-parse errors
-              }
-              console.warn("[SSE] Parse error:", parseError);
-            }
+            const result = processEventBlock(eventBlock);
+            if (result) { sseResult = result; }
           }
         }
+
+        // ⚠️ Processar dados restantes no buffer após stream fechar
+        // O último evento "done" pode não ter \n\n final
+        if (buffer.trim()) {
+          const result = processEventBlock(buffer);
+          if (result) { sseResult = result; }
+        }
+
+        if (sseResult) return sseResult;
 
         // Stream ended without 'done' event
         throw new Error("Stream finalizado sem resultado");
