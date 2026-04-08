@@ -1,14 +1,14 @@
 /**
  * Configuração centralizada de modelos de IA
  *
- * v2.0 — Migração híbrida Claude/Gemini
+ * v3.0 — Pipeline otimizado (4 steps, sem Refiner)
  *
- * Modelo por step configurável via .env.local:
- *   AI_MODEL_VISION=gemini-2.5-flash
- *   AI_MODEL_STRATEGY=gemini-2.5-pro
- *   AI_MODEL_COPYWRITER=claude-sonnet-4-20250514
- *   AI_MODEL_REFINER=gemini-2.5-flash
- *   AI_MODEL_SCORER=gemini-2.5-flash
+ * Modelo por step (defaults no código, override via .env.local):
+ *   AI_MODEL_VISION=gemini-3-flash-preview
+ *   AI_MODEL_STRATEGY=gemini-3-flash-preview
+ *   AI_MODEL_COPYWRITER=claude-sonnet-4-6
+ *   AI_MODEL_SCORER=gemini-3.1-flash-lite-preview
+ *   Imagem: gemini-3-pro-image-preview (Nano Banana Pro)
  *
  * Para forçar tudo Claude: não setar GOOGLE_AI_API_KEY
  * Para forçar tudo Gemini: não setar ANTHROPIC_API_KEY
