@@ -167,6 +167,37 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
 
     const { data: publicData } = supabase.storage.from("assets").getPublicUrl(filePath);
 
+    // ── Logar custo no admin ──
+    try {
+      const { getModelPricing, getExchangeRate } = await import("@/lib/pricing");
+      const pricing = await getModelPricing();
+      const exchangeRate = await getExchangeRate();
+      const modelPrice = pricing["gemini-3-pro-image-preview"] || { inputPerMTok: 1.25, outputPerMTok: 10.00 };
+
+      // Estimar tokens: ~250 input (prompt + imagem ref), ~4000 output (imagem gerada)
+      const inputTokens = faceBase64 ? 1300 : 250;
+      const outputTokens = 4000;
+      const costUsd = (inputTokens * modelPrice.inputPerMTok + outputTokens * modelPrice.outputPerMTok) / 1_000_000;
+      const costBrl = costUsd * exchangeRate;
+
+      await supabase.from("api_cost_logs").insert({
+        store_id: data.storeId || null,
+        campaign_id: null,
+        provider: "google",
+        model_used: "gemini-3-pro-image-preview",
+        action: "model_preview",
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        tokens_used: inputTokens + outputTokens,
+        cost_usd: costUsd,
+        cost_brl: costBrl,
+      });
+
+      console.log(`[Gemini:Preview] 💰 Custo: R$ ${costBrl.toFixed(4)} (${mode})`);
+    } catch (costErr) {
+      console.warn("[Gemini:Preview] ⚠️ Falha ao logar custo:", costErr);
+    }
+
     console.log(`[Gemini:Preview] ✅ Imagem gerada e salva: ${publicData.publicUrl.slice(0, 60)}...`);
     return publicData.publicUrl;
   } catch (err) {
