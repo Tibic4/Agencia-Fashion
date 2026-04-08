@@ -40,10 +40,12 @@ async function getCosts() {
     byProvider[p].tokens += row.tokens_used || 0;
   });
 
-  // Group by pipeline step
+  // Group by pipeline step — only show current v3 actions
+  const v3Actions = new Set(["opus_analyzer", "gemini_image_gen", "model_preview"]);
   const byStep: Record<string, { calls: number; cost: number }> = {};
   filteredThisMonth.forEach((row) => {
     const step = row.action || "unknown";
+    if (!v3Actions.has(step)) return; // skip legacy v2 steps
     if (!byStep[step]) byStep[step] = { calls: 0, cost: 0 };
     byStep[step].calls++;
     byStep[step].cost += row.cost_brl || 0;
