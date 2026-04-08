@@ -239,6 +239,7 @@ export default function GerarCampanha() {
 
       const bgFinal = background === "personalizado" ? `personalizado:${customBg}` : background;
       formData.append("backgroundType", bgFinal);
+      if (storeBrandColor) formData.append("brandColor", storeBrandColor);
       if (selectedModelId !== "random") {
         formData.append("modelBankId", selectedModelId);
       } else if (modelBank.length > 0) {
