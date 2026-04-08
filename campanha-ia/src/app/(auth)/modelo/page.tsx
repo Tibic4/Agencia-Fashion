@@ -277,7 +277,7 @@ export default function ModeloVirtual() {
             Modelos <span className="gradient-text">Virtuais</span>
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-            {models.length}/{maxModels} modelos · Plano{" "}
+            {models.length}/{maxModels} criadas · Plano{" "}
             <span className="font-semibold capitalize">{userPlan}</span>
           </p>
         </div>
@@ -297,7 +297,7 @@ export default function ModeloVirtual() {
               color: "white",
             }}
           >
-            {maxModels === 0 ? "⭐ Assinar plano para criar modelos" : "⬆️ Upgrade para mais modelos"}
+            {maxModels === 0 ? "⭐ Assine um plano para começar" : "⬆️ Liberar mais modelos"}
           </Link>
         )}
       </div>
@@ -318,24 +318,24 @@ export default function ModeloVirtual() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="text-8xl mb-6">👩</div>
           <h2 className="text-xl font-bold mb-2">
-            Nenhuma modelo ainda
+            Crie sua modelo exclusiva
           </h2>
           <p className="text-sm mb-6 max-w-md" style={{ color: "var(--muted)" }}>
             {maxModels === 0
-              ? "Faça upgrade para um plano pago e crie sua modelo virtual. Suas roupas serão vestidas nela automaticamente."
-              : "Crie uma modelo virtual que representa suas clientes. Suas roupas serão vestidas nela automaticamente quando gerar campanhas."
+              ? "Assine um plano pago e crie uma modelo com o rosto e corpo da sua cliente ideal. Suas roupas serão vestidas nela automaticamente!"
+              : "Monte a modelo ideal para sua loja — escolha tom de pele, cabelo, biotipo e estilo. As roupas serão vestidas nela em todas as campanhas."
             }
           </p>
           {maxModels === 0 ? (
             <Link href="/plano" className="btn-primary">
-              ⭐ Ver planos a partir de R$ 59/mês
+              ⭐ Ver planos
             </Link>
           ) : (
             <button
               className="btn-primary"
               onClick={() => setShowCreateForm(true)}
             >
-              ✨ Criar primeira modelo
+              ✨ Criar minha primeira modelo
             </button>
           )}
         </div>
@@ -474,7 +474,7 @@ export default function ModeloVirtual() {
           Nova Modelo <span className="gradient-text">Virtual</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Crie uma modelo IA que representa suas clientes.
+          Personalize tom de pele, cabelo e estilo — a IA fará o resto.
           {models.length > 0 && ` (${models.length}/${maxModels} usadas)`}
         </p>
       </div>
@@ -607,7 +607,7 @@ export default function ModeloVirtual() {
               📷 Foto de referência <span style={{ color: "var(--muted)", fontWeight: 400 }}>(opcional)</span>
             </label>
             <p className="text-xs mb-3" style={{ color: "var(--muted)" }}>
-              Suba uma foto do rosto da sua cliente ideal. A IA usará o rosto como base, mas o corpo seguirá as opções acima.
+              Envie uma foto do rosto da sua cliente ideal. A IA preservará o rosto e ajustará o corpo conforme as opções acima.
             </p>
 
             {facePreview ? (
@@ -700,7 +700,7 @@ export default function ModeloVirtual() {
             )}
           </button>
           <p className="text-xs text-center mt-3" style={{ color: "var(--muted)" }}>
-            Consome 1 criação de modelo do seu plano · Leva ~30 segundos
+            Usa 1 crédito de modelo do seu plano · Pronta em ~30 segundos
           </p>
         </div>
 
@@ -739,8 +739,8 @@ export default function ModeloVirtual() {
 
                 <p className="text-xs mt-6" style={{ color: "var(--muted)" }}>
                   {facePreview
-                    ? "A IA usará o rosto da foto como base para gerar a modelo"
-                    : "A modelo será gerada pela IA após clicar em \"Criar\""
+                    ? "A IA vai usar essa foto como referência para criar o rosto da modelo"
+                    : "O visual completo será gerado pela IA ao clicar em \"Criar\""
                   }
                 </p>
               </div>

@@ -477,10 +477,10 @@ export default function GerarCampanha() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Nova <span className="gradient-text">Campanha</span>
+          Criar <span className="gradient-text">Campanha</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Upload da foto + preço = campanha completa em 60 segundos
+          Envie a foto da peça e receba 3 fotos editoriais prontas para postar
         </p>
       </div>
 
@@ -539,9 +539,9 @@ export default function GerarCampanha() {
                     <IconUpload />
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold text-sm mb-0.5">Foto principal *</p>
+                    <p className="font-semibold text-sm mb-0.5">Foto da peça *</p>
                     <p className="text-xs" style={{ color: "var(--muted)" }}>
-                      Visão completa da peça
+                      Mostrando a peça inteira, de frente
                     </p>
                   </div>
                 </div>
@@ -602,8 +602,8 @@ export default function GerarCampanha() {
                       <IconSearch />
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-semibold">Close-up do tecido</p>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>Melhora a precisão</p>
+                      <p className="text-xs font-semibold">Detalhe do tecido</p>
+                      <p className="text-xs" style={{ color: "var(--muted)" }}>Ajuda a IA acertar a textura</p>
                     </div>
                     <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
@@ -662,8 +662,8 @@ export default function GerarCampanha() {
                       <IconPlus />
                     </div>
                     <div className="text-center">
-                      <p className="text-xs font-semibold">Segunda peça</p>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>Outra peça do look</p>
+                      <p className="text-xs font-semibold">Compor o look</p>
+                      <p className="text-xs" style={{ color: "var(--muted)" }}>Outra peça para combinar</p>
                     </div>
                     <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
@@ -705,7 +705,7 @@ export default function GerarCampanha() {
 
           {/* Body Type — Tipo de Corpo */}
           <div className="animate-fade-in">
-            <label className="block text-sm font-semibold mb-2">Tipo de corpo da modelo</label>
+            <label className="block text-sm font-semibold mb-2">Biotipo da modelo</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => { setBodyType("normal"); setModelFilter("normal"); }}
@@ -742,7 +742,7 @@ export default function GerarCampanha() {
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <label className="text-sm font-semibold">Escolha a modelo</label>
+                <label className="text-sm font-semibold">Modelo virtual</label>
                 {customModels.length > 0 && (
                   <span className="text-xs ml-2" style={{ color: "var(--muted)" }}>
                     {customModels.length}/{maxModels} personalizadas
@@ -963,7 +963,7 @@ export default function GerarCampanha() {
 
           {/* Cenário */}
           <div>
-            <label className="block text-sm font-semibold mb-3">Cenário</label>
+            <label className="block text-sm font-semibold mb-3">Cenário da foto</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
               {(() => {
                 // Build dynamic backgrounds with "Minha Marca" if store has brand color
@@ -1015,7 +1015,7 @@ export default function GerarCampanha() {
                 type="text"
                 value={customBg}
                 onChange={(e) => setCustomBg(e.target.value)}
-                placeholder="Ex: parede rosa da loja, praia ao pôr do sol..."
+                placeholder="Descreva: parede rosa da loja, praia ao pôr do sol…"
                 maxLength={60}
                 className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
                 style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
@@ -1031,7 +1031,7 @@ export default function GerarCampanha() {
               className="flex items-center gap-2 text-sm font-medium transition"
               style={{ color: "var(--muted)" }}
             >
-              Opções avançadas
+              Personalizar mais
               <span className={`transition-transform ${showAdvanced ? "rotate-180" : ""}`}>
                 <IconChevronDown />
               </span>
@@ -1086,12 +1086,12 @@ export default function GerarCampanha() {
             }}
           >
             <IconZap />
-            Gerar Campanha
+            Gerar fotos agora
           </button>
 
           {!preview && (
             <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
-              Faça upload da foto para continuar
+              Envie pelo menos a foto principal para começar
             </p>
           )}
         </div>
