@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 interface Campaign {
@@ -13,6 +13,7 @@ interface Campaign {
   pipeline_duration_ms: number | null;
   regen_count: number | null;
   preview_token: string | null;
+  is_favorited: boolean;
   campaign_scores: { nota_geral: number }[] | null;
   campaign_outputs: { headline_principal: string }[] | null;
 }
@@ -49,6 +50,40 @@ export default function Historico() {
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "favorites">("all");
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  /** Toggle favorito — optimistic UI */
+  const toggleFavorite = useCallback(async (campaignId: string, currentState: boolean) => {
+    setTogglingId(campaignId);
+
+    // Optimistic: atualiza instantaneamente na UI
+    setCampaigns(prev =>
+      prev.map(c => c.id === campaignId ? { ...c, is_favorited: !currentState } : c)
+    );
+
+    try {
+      const res = await fetch(`/api/campaign/${campaignId}/favorite`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorited: !currentState }),
+      });
+
+      if (!res.ok) {
+        // Rollback on error
+        setCampaigns(prev =>
+          prev.map(c => c.id === campaignId ? { ...c, is_favorited: currentState } : c)
+        );
+      }
+    } catch {
+      // Rollback on network error
+      setCampaigns(prev =>
+        prev.map(c => c.id === campaignId ? { ...c, is_favorited: currentState } : c)
+      );
+    } finally {
+      setTogglingId(null);
+    }
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -103,6 +138,8 @@ export default function Historico() {
   }
 
   const historyLabel = planInfo?.historyDays === 0 ? "ilimitado" : `${planInfo?.historyDays || 7} dias`;
+  const favCount = campaigns.filter(c => c.is_favorited).length;
+  const filteredCampaigns = filter === "favorites" ? campaigns.filter(c => c.is_favorited) : campaigns;
 
   return (
     <div className="animate-fade-in-up">
@@ -113,12 +150,43 @@ export default function Historico() {
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
             {campaigns.length} campanha{campaigns.length !== 1 ? "s" : ""} gerada{campaigns.length !== 1 ? "s" : ""}
+            {favCount > 0 && (
+              <span> · <span style={{ color: "var(--brand-500)" }}>⭐ {favCount} favorita{favCount !== 1 ? "s" : ""}</span></span>
+            )}
           </p>
         </div>
         <Link href="/gerar" className="btn-primary text-sm !py-2.5 min-h-[44px] flex items-center justify-center">
           + Nova campanha
         </Link>
       </div>
+
+      {/* Filter tabs */}
+      {campaigns.length > 0 && (
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setFilter("all")}
+            className="text-xs font-semibold px-4 py-2 rounded-full transition-all min-h-[36px]"
+            style={{
+              background: filter === "all" ? "var(--brand-500)" : "var(--surface)",
+              color: filter === "all" ? "white" : "var(--muted)",
+              border: filter === "all" ? "none" : "1px solid var(--border)",
+            }}
+          >
+            Todas ({campaigns.length})
+          </button>
+          <button
+            onClick={() => setFilter("favorites")}
+            className="text-xs font-semibold px-4 py-2 rounded-full transition-all min-h-[36px]"
+            style={{
+              background: filter === "favorites" ? "var(--brand-500)" : "var(--surface)",
+              color: filter === "favorites" ? "white" : "var(--muted)",
+              border: filter === "favorites" ? "none" : "1px solid var(--border)",
+            }}
+          >
+            ⭐ Favoritas ({favCount})
+          </button>
+        </div>
+      )}
 
       {/* Aviso de expiração de histórico */}
       {planInfo && planInfo.historyDays > 0 && (
@@ -162,53 +230,101 @@ export default function Historico() {
         </div>
       ) : (
         <div className="space-y-3">
-          {campaigns.map((campaign, i) => {
+          {filter === "favorites" && filteredCampaigns.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">⭐</div>
+              <p className="font-semibold mb-1">Nenhuma campanha favorita</p>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>
+                Toque na ⭐ para proteger campanhas do arquivamento automático
+              </p>
+            </div>
+          )}
+          {filteredCampaigns.map((campaign, i) => {
             const score = campaign.campaign_scores?.[0]?.nota_geral;
             const headline = campaign.campaign_outputs?.[0]?.headline_principal || `Campanha ${campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : ""}`;
+            const isFav = campaign.is_favorited;
+            const isToggling = togglingId === campaign.id;
 
             return (
-              <Link
+              <div
                 key={campaign.id}
-                href={`/gerar/demo?id=${campaign.id}`}
-                className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl transition-all hover:-translate-y-0.5 group min-h-[60px]"
+                className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl transition-all hover:-translate-y-0.5 group min-h-[60px]"
                 style={{
-                  background: "var(--background)",
-                  border: "1px solid var(--border)",
+                  background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
+                  border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
                   animationDelay: `${i * 0.05}s`,
                 }}
               >
-                {/* Status icon */}
-                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
-                  {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
-                </div>
+                {/* Star favorite button */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFavorite(campaign.id, isFav);
+                  }}
+                  disabled={isToggling}
+                  className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 min-h-[36px]"
+                  style={{
+                    background: isFav ? "var(--brand-100, rgba(236,72,153,0.12))" : "var(--surface)",
+                    border: isFav ? "1px solid var(--brand-300, rgba(236,72,153,0.3))" : "1px solid var(--border)",
+                    opacity: isToggling ? 0.6 : 1,
+                    cursor: isToggling ? "wait" : "pointer",
+                  }}
+                  title={isFav ? "Remover dos favoritos" : "Favoritar — protege do arquivamento"}
+                  aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  <svg
+                    width="18" height="18"
+                    viewBox="0 0 24 24"
+                    fill={isFav ? "var(--brand-500, #ec4899)" : "none"}
+                    stroke={isFav ? "var(--brand-500, #ec4899)" : "var(--muted)"}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ transition: "all 0.2s ease" }}
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </button>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm group-hover:text-[var(--brand-500)] transition truncate">
-                    {headline}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                    R$ {Number(campaign.price).toFixed(2).replace(".", ",")} · {objectiveLabels[campaign.objective || ""] || "—"} · {formatDate(campaign.created_at)}
-                  </p>
-                </div>
+                {/* Clickable area → navigate to campaign */}
+                <Link
+                  href={`/gerar/demo?id=${campaign.id}`}
+                  className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0"
+                >
+                  {/* Status icon */}
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                    {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
+                  </div>
 
-                {/* Score */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {score ? (
-                    <div className="text-right">
-                      <p className="text-lg font-black gradient-text">{score}</p>
-                      <p className="text-[10px]" style={{ color: "var(--muted)" }}>score</p>
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>
-                        {campaign.status === "processing" ? "Processando..." : campaign.status === "failed" ? "Falhou" : "—"}
-                      </p>
-                    </div>
-                  )}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                </div>
-              </Link>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm group-hover:text-[var(--brand-500)] transition truncate">
+                      {headline}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                      R$ {Number(campaign.price).toFixed(2).replace(".", ",")} · {objectiveLabels[campaign.objective || ""] || "—"} · {formatDate(campaign.created_at)}
+                    </p>
+                  </div>
+
+                  {/* Score */}
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    {score ? (
+                      <div className="text-right">
+                        <p className="text-lg font-black gradient-text">{score}</p>
+                        <p className="text-[10px]" style={{ color: "var(--muted)" }}>score</p>
+                      </div>
+                    ) : (
+                      <div className="text-right">
+                        <p className="text-xs" style={{ color: "var(--muted)" }}>
+                          {campaign.status === "processing" ? "Processando..." : campaign.status === "failed" ? "Falhou" : "—"}
+                        </p>
+                      </div>
+                    )}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </div>
+                </Link>
+              </div>
             );
           })}
         </div>

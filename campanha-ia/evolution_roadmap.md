@@ -59,11 +59,45 @@ Lojistas não publicam apenas fotos frontais e secas de 1 Peça.
 
 ---
 
-## 5. Custo Zero em Ociosidade: Garbage Collector Local de Armazenamento
+## 5. ✅ Custo Zero em Ociosidade: Garbage Collector Local de Armazenamento
+
+> **STATUS: IMPLEMENTADO** — CronJob ativo via Inngest (diário 03:00 UTC)
 
 Em 30 dias na VPS rodando a pleno vapor com centenas de lojistas atarefados, os bancos de R2 ou Supabase Storage vão atingir TBs de imagens de "testes e erros", engolindo a margem de lucro por mero custo de Cloud Storage.
 
-**A Evolução:**
-- Adição silenciosa de um **CronJob Expurgo (Scheduler)** na sua hospedagem em Linux ou Workers: 
-  - Regra Oculta: Exclua e invalide links Caches RAWs Base64 + Resultados de Fallback + Preview Pictures que datam de *"Mais de 25 dias"* se os mesmos não tiverem sido "Favoritados/Aprovados" pelo painel do Lojista. 
-- Retém sua balança financeira de SaaS saudável nos próximos 2 anos operando.
+**Implementação Atual:**
+
+### 5.1 CronJob Expurgo (Inngest Scheduler)
+- **Ficheiro:** `src/lib/inngest/storage-gc.ts`
+- **Schedule:** `0 3 * * *` (diário, 03:00 UTC = 00:00 BRT)
+- **Retries:** 1x automático com backoff
+
+### 5.2 Regras de Expurgo
+- **Retenção:** 25 dias após `created_at` da campanha
+- **Proteção:** Campanhas com `is_favorited = true` são **imunes** ao GC
+- **Buckets varridos:**
+  - `product-photos` — fotos originais do produto (upload do lojista)
+  - `campaign-outputs` — imagens geradas (v3_image_1/2/3.webp)
+  - `assets/model-previews` — previews de modelos virtual órfãs
+
+### 5.3 API de Favoritos
+- `PATCH /api/campaign/[id]/favorite` — toggle favorito (body: `{ "favorited": true }`)
+- Verificação de ownership (loja dona da campanha)
+
+### 5.4 Controle Admin
+- `POST /api/admin/storage-gc` — disparo manual (`{ "dryRun": true }`)
+- `GET  /api/admin/storage-gc` — stats da última execução
+- Resultados salvos em `admin_settings.gc_last_run`
+
+### 5.5 Safety Valves
+- **Batch Size:** 100 campanhas por query
+- **Max Deletes/Run:** 500 arquivos (válvula anti-runaway)
+- **Dry Run:** modo simulação (default no disparo manual)
+- Campanhas purgadas são marcadas `is_archived=true` e URLs viram `[purged]` — dados textuais (copy, análise, scores) são **preservados**
+
+### 5.6 Projeção de Economia (2 anos)
+| Cenário           | Campanhas/mês | Storage sem GC (24m) | Storage c/ GC (24m) | Economia   |
+|-------------------|---------------|----------------------|---------------------|------------|
+| 100 lojistas      | ~2.000        | ~1.4 TB              | ~15 GB              | **~98.9%** |
+| 500 lojistas      | ~10.000       | ~7.2 TB              | ~75 GB              | **~98.9%** |
+| 1.000 lojistas    | ~20.000       | ~14.4 TB             | ~150 GB             | **~98.9%** |

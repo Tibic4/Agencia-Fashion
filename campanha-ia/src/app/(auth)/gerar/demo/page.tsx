@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /* ─────────────────────────────────────────
    Types — v3 payload
@@ -82,24 +82,46 @@ const IconStar = () => (
 ───────────────────────────────────────── */
 export default function ResultadoCampanha() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [result, setResult] = useState<V3Result | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [copiedCaption, setCopiedCaption] = useState(false);
+  const [loadingFromApi, setLoadingFromApi] = useState(false);
 
   useEffect(() => {
+    // 1. Try sessionStorage first (fresh generation)
     try {
       const raw = sessionStorage.getItem("campaignResult");
       if (raw) {
         const parsed = JSON.parse(raw) as V3Result;
         setResult(parsed);
-        // Auto-select first valid image
         const firstValid = parsed.data?.images?.findIndex(img => img !== null) ?? -1;
         if (firstValid >= 0) setSelectedIndex(firstValid);
+        return;
       }
     } catch {
       // ignore
     }
-  }, []);
+
+    // 2. If no sessionStorage, try loading by campaign ID from URL
+    const campaignId = searchParams.get("id");
+    if (campaignId) {
+      setLoadingFromApi(true);
+      fetch(`/api/campaigns/${campaignId}`)
+        .then(res => res.ok ? res.json() : Promise.reject(new Error(`Erro ${res.status}`)))
+        .then(data => {
+          if (data?.data) {
+            setResult(data.data as V3Result);
+            const firstValid = (data.data as V3Result).data?.images?.findIndex((img: GeneratedImage | null) => img !== null) ?? -1;
+            if (firstValid >= 0) setSelectedIndex(firstValid);
+          }
+        })
+        .catch(() => {
+          // Campaign not found or error — will show empty state
+        })
+        .finally(() => setLoadingFromApi(false));
+    }
+  }, [searchParams]);
 
   const downloadImage = (img: GeneratedImage, idx: number) => {
     const link = document.createElement("a");
@@ -120,9 +142,21 @@ export default function ResultadoCampanha() {
   if (!result) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 rounded-full border-4 border-t-transparent mx-auto animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
-          <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando resultados...</p>
+        <div className="text-center space-y-4 px-6">
+          {loadingFromApi ? (
+            <>
+              <div className="w-12 h-12 rounded-full border-4 border-t-transparent mx-auto animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+              <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando campanha...</p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: "var(--gradient-card)" }}>
+                <span className="text-2xl">📷</span>
+              </div>
+              <p className="text-sm font-semibold">Nenhum resultado encontrado</p>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>Gere uma nova campanha para ver aqui</p>
+            </>
+          )}
           <button
             onClick={() => router.push("/gerar")}
             className="text-sm underline"
@@ -175,7 +209,7 @@ export default function ResultadoCampanha() {
         </div>
 
         {/* ── Grid 3 fotos ── */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((img, idx) => (
             <div key={idx} className="space-y-2">
               <button
@@ -328,7 +362,7 @@ export default function ResultadoCampanha() {
               <span className="text-xs group-open:rotate-180 transition-transform" style={{ color: "var(--muted)" }}>▼</span>
             </summary>
             <div className="px-5 pb-5 pt-3 space-y-3" style={{ background: "var(--surface)" }}>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: "Produto", value: analise.produto.nome_generico },
                   { label: "Tipo", value: analise.produto.tipo },

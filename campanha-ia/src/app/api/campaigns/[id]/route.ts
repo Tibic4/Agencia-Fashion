@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { getStoreByClerkId, getCampaignById } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/campaigns/[id]
+ *
+ * Retorna dados de uma campanha específica.
+ * Verifica que a campanha pertence à loja do usuário.
+ */
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session.userId) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    const store = await getStoreByClerkId(session.userId);
+    if (!store) {
+      return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
+    }
+
+    const { id } = await params;
+    const campaign = await getCampaignById(id);
+
+    if (!campaign) {
+      return NextResponse.json({ error: "Campanha não encontrada" }, { status: 404 });
+    }
+
+    // Verify campaign belongs to user's store
+    if (campaign.store_id !== store.id) {
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
+    }
+
+    // Transform to v3 result format for the demo page
+    const outputs = campaign.campaign_outputs?.[0];
+    const scores = campaign.campaign_scores?.[0];
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        success: true,
+        campaignId: campaign.id,
+        data: {
+          analise: outputs?.vision_analysis || null,
+          images: [], // Images are not stored in DB (base64 too large)
+          prompts: [],
+          dicas_postagem: {
+            melhor_horario: "Entre 18h–21h",
+            hashtags: outputs?.hashtags || [],
+            cta: "Chama no direct!",
+            tom_legenda: "Descontraído e acolhedor",
+            caption_sugerida: outputs?.instagram_feed || "",
+          },
+          durationMs: campaign.pipeline_duration_ms || 0,
+          successCount: 0,
+        },
+        score: scores || null,
+        headline: outputs?.headline_principal || null,
+        status: campaign.status,
+        createdAt: campaign.created_at,
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("[API:campaigns/id] Error:", message);
+    return NextResponse.json({ error: "Erro ao buscar campanha" }, { status: 500 });
+  }
+}
