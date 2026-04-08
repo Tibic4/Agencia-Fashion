@@ -171,16 +171,16 @@ export default function GerarCampanha() {
   }, [customModels.filter(m => !m.photo_url).map(m => m.id).join(",")]);
 
   const generationSteps = [
-    { label: "Analisando fotos do produto...", progress: 8 },
-    { label: "Identificando cor, material e caimento...", progress: 18 },
-    { label: "Criando prompt fotográfico 1...", progress: 30 },
-    { label: "Criando prompt fotográfico 2...", progress: 40 },
-    { label: "Criando prompt fotográfico 3...", progress: 50 },
-    { label: "Gerando foto 1 com IA...", progress: 62 },
-    { label: "Gerando foto 2 com IA...", progress: 74 },
-    { label: "Gerando foto 3 com IA...", progress: 86 },
-    { label: "Salvando resultados...", progress: 95 },
-    { label: "Pronto! ✨", progress: 100 },
+    { label: "Observando sua peça de roupa…", progress: 8 },
+    { label: "Identificando tecido, cor e caimento…", progress: 18 },
+    { label: "Montando o editorial #1…", progress: 30 },
+    { label: "Montando o editorial #2…", progress: 40 },
+    { label: "Montando o editorial #3…", progress: 50 },
+    { label: "Fotografando look 1 📸", progress: 62 },
+    { label: "Fotografando look 2 📸", progress: 74 },
+    { label: "Fotografando look 3 📸", progress: 86 },
+    { label: "Finalizando e salvando…", progress: 95 },
+    { label: "Suas fotos estão prontas! ✨", progress: 100 },
   ];
 
 
