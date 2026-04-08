@@ -134,7 +134,7 @@ export async function analyzeWithOpus(input: AnalyzerInput): Promise<OpusAnalyze
 
   const response = await anthropic.messages.create({
     model: "claude-opus-4-6",
-    max_tokens: 4096,
+    max_tokens: 8192,
     system: OPUS_SYSTEM_PROMPT,
     messages: [{ role: "user", content }],
   });
@@ -145,6 +145,11 @@ export async function analyzeWithOpus(input: AnalyzerInput): Promise<OpusAnalyze
     throw new Error("Opus não retornou texto");
   }
 
+  // Detectar truncamento: se stop_reason é "max_tokens", o JSON está cortado
+  if (response.stop_reason === "max_tokens") {
+    console.error(`[Opus] ⚠️ RESPOSTA TRUNCADA! output=${response.usage.output_tokens} tokens atingiu max_tokens=8192. Aumentar o limite.`);
+  }
+
   // Parse JSON
   const result = parseOpusJSON(textBlock.text);
 
@@ -153,11 +158,15 @@ export async function analyzeWithOpus(input: AnalyzerInput): Promise<OpusAnalyze
     throw new Error("Opus retornou análise incompleta — tente outra foto");
   }
   if (!result.prompts || result.prompts.length < 3) {
-    throw new Error("Opus não gerou os 3 prompts necessários");
+    throw new Error(
+      response.stop_reason === "max_tokens"
+        ? "Resposta do Opus foi truncada — tente com foto menor ou mais simples"
+        : "Opus não gerou os 3 prompts necessários"
+    );
   }
 
   console.log(
-    `[Opus] ✅ Análise completa | input=${response.usage.input_tokens} output=${response.usage.output_tokens} tokens | peça: ${result.analise.tipo_peca}`
+    `[Opus] ✅ Análise completa | input=${response.usage.input_tokens} output=${response.usage.output_tokens} tokens | stop=${response.stop_reason} | peça: ${result.analise.tipo_peca}`
   );
 
   return result;
