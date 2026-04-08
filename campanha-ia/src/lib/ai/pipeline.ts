@@ -73,7 +73,7 @@ export async function runCampaignPipeline(
   const startTime = Date.now();
 
   // — Etapa 1: Opus analisa o produto ——————————————————————
-  await onProgress?.("opus", "Analisando produto com IA...", 10);
+  await onProgress?.("opus", "Analisando fotos do produto...", 8);
 
   const opusResult = await analyzeWithOpus({
     productImageBase64: input.imageBase64,
@@ -86,9 +86,11 @@ export async function runCampaignPipeline(
     brandColor: input.brandColor,
   });
 
-  await onProgress?.("images", "Gerando 3 fotos em paralelo...", 40);
+  await onProgress?.("opus_done", "Análise completa! Criando prompts...", 30);
 
   // — Etapa 2: Gemini gera 3 imagens em paralelo ————————————
+  await onProgress?.("images_start", "Gerando foto 1 com IA...", 45);
+
   const imageResult = await generateImages({
     prompts: opusResult.prompts,
     productImageBase64: input.imageBase64,
@@ -101,6 +103,7 @@ export async function runCampaignPipeline(
     campaignId: input.campaignId,
   });
 
+  await onProgress?.("saving", "Salvando resultados...", 92);
   await onProgress?.("done", "Pronto!", 100);
 
   const durationMs = Date.now() - startTime;

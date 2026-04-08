@@ -218,12 +218,14 @@ export default function GerarCampanha() {
     setError(null);
 
     // Fallback interval — advances steps slowly if SSE events are delayed
+    // Capped at step 4 to never get ahead of real progress (Opus can take 15-30s)
     const fallbackInterval = setInterval(() => {
       setGenerationStep((prev) => {
+        if (prev >= 4) return prev; // Never go past "Criando prompt 2" without SSE
         if (prev >= generationSteps.length - 2) return prev;
         return prev + 1;
       });
-    }, 4000);
+    }, 8000);
 
     try {
       // Build FormData
