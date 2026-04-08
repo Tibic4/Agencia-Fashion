@@ -436,7 +436,7 @@ PHYSICAL REALISM REQUIREMENTS (CRITICAL):
 // ═══════════════════════════════════════
 
 /**
- * Gera foto de modelo vestindo a peça usando Nano Banana 2.
+ * Gera foto de modelo vestindo a peça usando Nano Banana Pro.
  * Envia: foto do produto + (opcional) close-up + (opcional) cenário + modelo de referência + prompt
  * Recebe: foto gerada em base64
  */
@@ -534,7 +534,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
         responseModalities: ["TEXT", "IMAGE"],
         imageConfig: {
           aspectRatio,
-          imageSize: "2K",
+          imageSize: "1024",
         },
       } as any,
     });
