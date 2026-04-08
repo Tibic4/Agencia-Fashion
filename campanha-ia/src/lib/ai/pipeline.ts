@@ -257,69 +257,80 @@ export async function runCampaignPipeline(
   costs.push(buildCostEntry("copywriter", copyResponse, copyStart));
   const copyTexts = parseJSON<any>(copyResponse.text, "Copywriter");
 
-  // ── STEP 4: Refiner (primeiro — refina os textos brutos) ────────
-  onProgress?.("refiner", "Refinando textos...", 55);
-  const refinerStart = Date.now();
+  // ── STEP 4+5: Scorer + Refiner em PARALELO ────────────────────────
+  // Scorer avalia o copy bruto; Refiner refina em paralelo.
+  // Se score >= 70, descartamos o Refiner (copy já é bom o suficiente).
+  onProgress?.("refiner", "Refinando e avaliando...", 55);
+
   const refinerConfig = providers.refiner;
   const scorerConfig = providers.scorer;
 
-  const refinerResult = await withRetry(
-    () => refinerConfig.provider.generate({
-      system: REFINER_SYSTEM,
-      messages: [{
-        role: "user",
-        content: buildRefinerPrompt({
-          textos: JSON.stringify(copyTexts),
-          estrategia: JSON.stringify(strategy),
-        }),
-      }],
-      maxTokens: 8192,
-      temperature: 0.5,
-      responseSchema: refinerConfig.structuredOutput ? undefined : undefined, // Refiner tem schema especial
-    }),
-    "Refiner",
-    2,
-    input.signal,
-  );
-
-  costs.push(buildCostEntry("refiner", refinerResult.result, refinerStart));
-  const refined = parseJSON<any>(refinerResult.result.text, "Refiner");
-
-  // Use refined texts if available, else original
-  let finalTexts = refined.textos_refinados
-    ? { ...copyTexts, ...refined.textos_refinados }
-    : { ...copyTexts };
-
-  // ── STEP 5: Scorer (avalia os textos REFINADOS, não os brutos) ────────
-  onProgress?.("scorer", "Avaliando campanha...", 70);
+  const refinerStart = Date.now();
   const scorerStart = Date.now();
 
-  const scorerResult = await withRetry(
-    () => scorerConfig.provider.generate({
-      system: SCORER_SYSTEM,
-      messages: [{
-        role: "user",
-        content: buildScorerPrompt({
-          textos: JSON.stringify(finalTexts),
+  const [refinerSettled, scorerSettled] = await Promise.allSettled([
+    withRetry(
+      () => refinerConfig.provider.generate({
+        system: REFINER_SYSTEM,
+        messages: [{ role: "user", content: buildRefinerPrompt({
+          textos: JSON.stringify(copyTexts),
           estrategia: JSON.stringify(strategy),
-          produto: vision.produto.nome_generico,
+        }) }],
+        maxTokens: 8192,
+        temperature: 0.5,
+      }),
+      "Refiner", 2, input.signal,
+    ),
+    withRetry(
+      () => scorerConfig.provider.generate({
+        system: SCORER_SYSTEM,
+        messages: [{ role: "user", content: buildScorerPrompt({
+          textos: JSON.stringify(copyTexts),
+          estrategia: JSON.stringify(strategy),
+          produto: vision.produto?.nome_generico || "Produto",
           preco: input.price,
-        }),
-      }],
-      temperature: 0.3,
-      responseSchema: scorerConfig.structuredOutput ? ScoreOutputSchema : undefined,
-    }),
-    "Scorer",
-    2,
-    input.signal,
-  );
+        }) }],
+        temperature: 0.3,
+        responseSchema: scorerConfig.structuredOutput ? ScoreOutputSchema : undefined,
+      }),
+      "Scorer", 2, input.signal,
+    ),
+  ]);
 
-  costs.push(buildCostEntry("scorer", scorerResult.result, scorerStart));
-  const score = parseAndValidate<Omit<CampaignScore, "id" | "campaign_id">>(
-    scorerResult.result.text, ScoreOutputSchema, "Scorer"
-  );
+  // Processar Scorer
+  onProgress?.("scorer", "Avaliando campanha...", 70);
+  let score: Omit<CampaignScore, "id" | "campaign_id">;
+  if (scorerSettled.status === "fulfilled") {
+    costs.push(buildCostEntry("scorer", scorerSettled.value.result, scorerStart));
+    score = parseAndValidate<Omit<CampaignScore, "id" | "campaign_id">>(
+      scorerSettled.value.result.text, ScoreOutputSchema, "Scorer"
+    );
+  } else {
+    console.warn("[Pipeline] ⚠️ Scorer falhou:", scorerSettled.reason);
+    score = { nota_geral: 70, conversao: 70, clareza: 70, urgencia: 70, naturalidade: 70,
+      aprovacao_meta: 70, criatividade: 70, nivel_risco: "baixo", resumo: "Score indisponível",
+      pontos_fortes: [], melhorias: [], alertas_meta: [], previsao_engajamento: "medio" } as any;
+  }
 
-  // ── Flag de refinamento: se score < 55, sinalizar para o frontend ──
+  // Processar Refiner — só aplicar se score < 70
+  let finalTexts = { ...copyTexts };
+  let refinements: any[] = [];
+
+  if (score.nota_geral < 70 && refinerSettled.status === "fulfilled") {
+    costs.push(buildCostEntry("refiner", refinerSettled.value.result, refinerStart));
+    const refined = parseJSON<any>(refinerSettled.value.result.text, "Refiner");
+    if (refined.textos_refinados) {
+      finalTexts = { ...copyTexts, ...refined.textos_refinados };
+      refinements = refined.refinements || [];
+      console.log(`[Pipeline] ✂️ Refiner aplicado (score ${score.nota_geral} < 70)`);
+    }
+  } else if (score.nota_geral >= 70) {
+    console.log(`[Pipeline] ⚡ Refiner ignorado (score ${score.nota_geral} >= 70 — copy já está bom)`);
+  } else if (refinerSettled.status === "rejected") {
+    console.warn("[Pipeline] ⚠️ Refiner falhou:", refinerSettled.reason);
+  }
+
+  // ── Flag de refinamento ──
   const needsRefinement = score.nota_geral < 55;
   if (needsRefinement) {
     console.log(`[Pipeline] ⚠️ Score ${score.nota_geral} < 55 — sinalizando needsRefinement para o frontend`);
@@ -344,7 +355,7 @@ export async function runCampaignPipeline(
     lifestyle_image_url: null,
     creative_feed_url: null,
     creative_stories_url: null,
-    refinements: refined.refinements || [],
+    refinements: refinements,
   };
 
   const durationMs = Date.now() - startTime;
