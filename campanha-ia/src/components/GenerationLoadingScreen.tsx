@@ -53,19 +53,41 @@ interface GenerationLoadingScreenProps {
  */
 function getIconPhase(stepIdx: number): "search" | "pen" | "camera" | "check" {
   if (stepIdx <= 2) return "search";
-  if (stepIdx <= 6) return "pen";
-  if (stepIdx <= 9) return "camera";
+  if (stepIdx <= 5) return "pen";
+  if (stepIdx <= 8) return "camera";
   return "check";
+}
+
+/** Dynamic title per phase */
+function getPhaseTitle(phase: string, isComplete: boolean): string {
+  if (isComplete) return "Sua campanha está pronta! ✨";
+  switch (phase) {
+    case "search": return "Analisando sua peça";
+    case "pen": return "Criando o editorial";
+    case "camera": return "Fotografando com IA";
+    default: return "Finalizando";
+  }
+}
+
+/** Dynamic subtitle per phase */
+function getPhaseSubtitle(phase: string, isComplete: boolean): string {
+  if (isComplete) return "Suas 3 fotos editoriais estão prontas para vender!";
+  switch (phase) {
+    case "search": return "Identificando tecido, cor, modelagem e cada detalhe";
+    case "pen": return "Escrevendo 3 roteiros fotográficos únicos";
+    case "camera": return "Gerando fotos profissionais com modelo virtual";
+    default: return "Salvando tudo para você";
+  }
 }
 
 /* ── Waiting messages that cycle when stuck at a step ── */
 const waitMessages = [
-  "Isso pode levar alguns segundos…",
-  "A IA está trabalhando na melhor versão…",
-  "Quase lá! Finalizando detalhes…",
-  "Processamento de imagem em andamento…",
-  "Gerando a imagem com modelo virtual…",
-  "Aplicando ajustes de qualidade…",
+  "Fique tranquila, estamos caprichando ✨",
+  "Nossa IA analisa cada detalhe da peça…",
+  "Buscando o melhor ângulo e cenário…",
+  "Quase lá! Ajustando a iluminação…",
+  "Trabalhando para um resultado incrível…",
+  "Cada segundo vale — a foto fica perfeita 💅",
 ];
 
 /* ─── Confetti colors ─── */
@@ -180,18 +202,18 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
           </div>
         </div>
 
-        {/* Title */}
+        {/* Title — dynamic per phase */}
         <h2 className="gen-title">
-          {isComplete ? "Campanha pronta! ✨" : "Gerando sua campanha"}
+          {getPhaseTitle(phase, isComplete)}
         </h2>
 
-        {/* Current step label */}
-        <p className="gen-subtitle" key={step}>
-          {currentStep.label}
+        {/* Phase subtitle */}
+        <p className="gen-subtitle" key={phase}>
+          {getPhaseSubtitle(phase, isComplete)}
         </p>
 
         {/* Extra waiting message when stuck */}
-        {stuckTime > 5 && !isComplete && (
+        {stuckTime > 8 && !isComplete && (
           <p className="gen-wait-msg" key={waitMsgIndex}>
             {waitMessages[waitMsgIndex]}
           </p>
@@ -241,7 +263,7 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
           <div className="gen-result-btn">
             <Link href="/gerar/demo" className="btn-primary">
               <IconZap />
-              Ver resultado →
+              Ver minhas fotos →
             </Link>
           </div>
         )}
