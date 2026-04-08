@@ -144,7 +144,12 @@ export const StoreOnboardingSchema = z.object({
 
 export const ModelCreateSchema = z.object({
   skin_tone: z.enum(['branca', 'morena_clara', 'morena', 'negra']),
-  hair_style: z.enum(['liso', 'ondulado', 'cacheado', 'crespo', 'curto']),
+  // Novos campos granulares de cabelo
+  hair_texture: z.enum(['liso', 'ondulado', 'cacheado', 'crespo']),
+  hair_length: z.enum(['joaozinho', 'chanel', 'ombro', 'medio', 'longo']),
+  hair_color: z.enum(['preto', 'castanho_escuro', 'castanho', 'ruivo', 'loiro_escuro', 'loiro', 'platinado']),
+  // Legado — mantido para backward compat
+  hair_style: z.enum(['liso', 'ondulado', 'cacheado', 'crespo', 'curto']).optional(),
   body_type: z.enum(['magra', 'media', 'plus_size']),
   style: z.enum(['casual_natural', 'elegante', 'esportivo', 'urbano']),
   age_range: z.enum(['jovem_18_25', 'adulta_26_35', 'madura_36_50']),
