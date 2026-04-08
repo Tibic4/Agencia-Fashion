@@ -128,6 +128,20 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
           if (totalDeleted >= MAX_DELETES_PER_RUN) break;
 
           try {
+            // Obter tamanho real do arquivo antes de deletar (se possível)
+            let fileSize = 300 * 1024; // fallback: 300KB
+            try {
+              const { data: fileList } = await supabase.storage
+                .from(bucket)
+                .list(path.substring(0, path.lastIndexOf("/")), {
+                  limit: 1,
+                  search: path.substring(path.lastIndexOf("/") + 1),
+                });
+              if (fileList?.[0]?.metadata?.size) {
+                fileSize = fileList[0].metadata.size;
+              }
+            } catch { /* usar fallback */ }
+
             if (!dryRun) {
               const { error: delError } = await supabase.storage
                 .from(bucket)
@@ -143,8 +157,7 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
 
             stats.filesDeleted++;
             totalDeleted++;
-            // Estimativa: ~300KB por imagem webp média
-            stats.bytesFreed += 300 * 1024;
+            stats.bytesFreed += fileSize;
 
             console.log(
               `[GC] ${dryRun ? "🔍 DRY" : "🗑️ DEL"} ${bucket}/${path.slice(0, 50)}...`
@@ -304,27 +317,22 @@ async function purgeOrphanedModelPreviews(
   dryRun: boolean
 ) {
   try {
-    // Listar todos os store_ids com modelos
+    // Listar todos os modelos válidos
     const { data: models } = await supabase
       .from("store_models")
       .select("id, store_id");
 
-    if (!models) return;
+    if (!models || models.length === 0) return;
 
-    // Criar set de model IDs válidos
+    // Criar set de model IDs válidos e stores que têm modelos
     const validModelIds = new Set(models.map(m => m.id));
+    const storeIdsWithModels = [...new Set(models.map(m => m.store_id))];
 
-    // Listar todos os arquivos em model-previews/
-    const { data: stores } = await supabase
-      .from("stores")
-      .select("id");
-
-    if (!stores) return;
-
-    for (const store of stores) {
+    // Só escanear stores que realmente têm/tinham modelos (não todas)
+    for (const storeId of storeIdsWithModels) {
       const { data: files } = await supabase.storage
         .from("assets")
-        .list(`model-previews/${store.id}`, { limit: 100 });
+        .list(`model-previews/${storeId}`, { limit: 100 });
 
       if (!files) continue;
 
@@ -332,7 +340,7 @@ async function purgeOrphanedModelPreviews(
         // Extrair modelId do nome do arquivo (formato: <modelId>.png)
         const modelId = file.name.split(".")[0];
         if (modelId && !validModelIds.has(modelId)) {
-          const path = `model-previews/${store.id}/${file.name}`;
+          const path = `model-previews/${storeId}/${file.name}`;
           if (!dryRun) {
             await supabase.storage.from("assets").remove([path]);
           }

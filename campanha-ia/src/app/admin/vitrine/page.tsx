@@ -8,6 +8,7 @@ interface ShowcaseItem {
   after_photo_url: string;
   caption: string | null;
   is_active: boolean;
+  use_in_tips: boolean;
   sort_order: number;
   created_at: string;
 }
@@ -129,13 +130,13 @@ export default function AdminVitrine() {
     }
   };
 
-  // ── Toggle ativo/inativo ──
-  const handleToggle = async (id: string, currentActive: boolean) => {
+  // ── Toggle ativo/inativo ou use_in_tips ──
+  const handleToggle = async (id: string, currentValue: boolean, field: "is_active" | "use_in_tips" = "is_active") => {
     try {
       await fetch("/api/admin/showcase", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, is_active: !currentActive }),
+        body: JSON.stringify({ id, [field]: !currentValue }),
       });
       fetchItems();
     } catch {
@@ -311,6 +312,7 @@ export default function AdminVitrine() {
         <div className="flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
           <span className="inline-block w-2 h-2 rounded-full" style={{ background: "var(--success)" }} /> Ativo
           <span className="inline-block w-2 h-2 rounded-full ml-2" style={{ background: "var(--border)" }} /> Oculto
+          <span className="inline-block w-2 h-2 rounded-full ml-2" style={{ background: "var(--brand-500)" }} /> Guia
         </div>
       </div>
 
@@ -330,10 +332,16 @@ export default function AdminVitrine() {
               className="rounded-2xl overflow-hidden transition-all"
               style={{
                 background: "var(--surface)",
-                border: `1px solid ${item.is_active ? "var(--border)" : "var(--error)"}`,
+                border: `1px solid ${item.use_in_tips ? "var(--brand-500)" : item.is_active ? "var(--border)" : "var(--error)"}`,
                 opacity: item.is_active ? 1 : 0.6,
               }}
             >
+              {/* Badge se for Guia Relâmpago */}
+              {item.use_in_tips && (
+                <div className="px-4 py-1.5 text-xs font-bold text-center" style={{ background: "var(--brand-500)", color: "white" }}>
+                  ⚡ Aparece no Guia Relâmpago
+                </div>
+              )}
               {/* Imagens lado a lado */}
               <div className="grid grid-cols-2 gap-1 p-2">
                 <div className="relative">
@@ -385,13 +393,13 @@ export default function AdminVitrine() {
               </div>
 
               {/* Ações */}
-              <div className="px-4 py-2 flex items-center justify-between gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+              <div className="px-4 py-2 flex flex-wrap items-center justify-between gap-2" style={{ borderTop: "1px solid var(--border)" }}>
                 {/* Reordenar */}
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleMove(index, "up")}
                     disabled={index === 0}
-                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30"
+                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title="Mover para cima"
                   >
                     ↑
@@ -399,7 +407,7 @@ export default function AdminVitrine() {
                   <button
                     onClick={() => handleMove(index, "down")}
                     disabled={index === items.length - 1}
-                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30"
+                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title="Mover para baixo"
                   >
                     ↓
@@ -407,11 +415,23 @@ export default function AdminVitrine() {
                   <span className="text-[10px] ml-1" style={{ color: "var(--muted)" }}>#{index + 1}</span>
                 </div>
 
-                {/* Toggle + Delete */}
-                <div className="flex items-center gap-2">
+                {/* Guia Relâmpago + Toggle + Delete */}
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={() => handleToggle(item.id, item.is_active)}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-all"
+                    onClick={() => handleToggle(item.id, item.use_in_tips, "use_in_tips")}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all min-h-[44px]"
+                    style={{
+                      background: item.use_in_tips ? "var(--brand-500)" : "var(--background)",
+                      color: item.use_in_tips ? "white" : "var(--muted)",
+                      border: `1px solid ${item.use_in_tips ? "transparent" : "var(--border)"}`,
+                    }}
+                    title="Mostrar no Guia Relâmpago (dicas de foto)"
+                  >
+                    {item.use_in_tips ? "⚡ Guia" : "⚡ Guia"}
+                  </button>
+                  <button
+                    onClick={() => handleToggle(item.id, item.is_active, "is_active")}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all min-h-[44px]"
                     style={{
                       background: item.is_active ? "var(--background)" : "var(--success)",
                       color: item.is_active ? "var(--muted)" : "white",
@@ -422,7 +442,7 @@ export default function AdminVitrine() {
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-red-500/10"
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-red-500/10 min-h-[44px]"
                     style={{ color: "var(--error)" }}
                   >
                     🗑️ Excluir

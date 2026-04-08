@@ -139,7 +139,7 @@ export default function AdminConfiguracoes() {
             const isActive = getSettingValue(key) === "true";
             const isSaving = saving === key;
             return (
-              <div key={key} className="px-6 py-4 flex items-center justify-between hover:bg-gray-800/30 transition">
+              <div key={key} className="px-4 md:px-6 py-4 flex items-center justify-between hover:bg-gray-800/30 transition gap-4">
                 <div>
                   <p className="text-sm font-medium text-white">{meta.label}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{meta.description}</p>
@@ -147,7 +147,7 @@ export default function AdminConfiguracoes() {
                 <button
                   onClick={() => handleToggle(key)}
                   disabled={isSaving}
-                  className={`relative w-14 h-7 rounded-full transition-all duration-300 ${
+                  className={`relative w-14 h-7 rounded-full transition-all duration-300 shrink-0 min-h-[44px] flex items-center ${
                     isActive ? "bg-emerald-500" : "bg-gray-700"
                   } ${isSaving ? "opacity-50" : ""}`}
                 >
@@ -170,7 +170,7 @@ export default function AdminConfiguracoes() {
           {textSettings.map(([key, meta]) => {
             const val = getSettingValue(key);
             return (
-              <div key={key} className="px-6 py-4 hover:bg-gray-800/30 transition">
+              <div key={key} className="px-4 md:px-6 py-4 hover:bg-gray-800/30 transition">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <p className="text-sm font-medium text-white">{meta.label}</p>
@@ -207,10 +207,45 @@ export default function AdminConfiguracoes() {
 
       {/* Plans */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-800">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-800">
           <h2 className="text-sm font-semibold text-white">Planos de assinatura</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile: Card Layout */}
+        <div className="md:hidden divide-y divide-gray-800">
+          {plans.map((plan) => (
+            <div key={plan.id} className="px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-medium text-sm">{plan.display_name}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                    plan.is_active
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                  }`}>
+                    {plan.is_active ? "Ativo" : "Inativo"}
+                  </span>
+                </div>
+                <span className="text-amber-400 font-semibold text-sm">
+                  {plan.price_monthly === 0 ? "Grátis" : `R$ ${plan.price_monthly}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span>📸 {plan.campaigns_per_month === -1 ? "∞" : plan.campaigns_per_month}/mês</span>
+                <span className={plan.enable_tryon ? "text-emerald-400" : "text-gray-500"}>
+                  {plan.enable_tryon ? "✓ Try-On" : "✗ Try-On"}
+                </span>
+                <span className="font-mono text-gray-600 ml-auto">{plan.name}</span>
+              </div>
+            </div>
+          ))}
+          {plans.length === 0 && (
+            <div className="px-4 py-12 text-center text-gray-500 text-sm">Nenhum plano cadastrado</div>
+          )}
+        </div>
+
+        {/* Desktop: Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">

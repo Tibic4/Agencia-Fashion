@@ -5,13 +5,30 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/showcase/tips
- * Returns the first active showcase item (before/after) for the photo tips card.
+ * Returns the showcase item marked for the photo tips card (use_in_tips = true).
+ * Falls back to first active item if none is marked.
  * Public endpoint — no auth required.
  */
 export async function GET() {
   try {
     const supabase = createAdminClient();
-    const { data, error } = await supabase
+
+    // 1. Try to find item explicitly marked for tips
+    const { data: tipsItem } = await supabase
+      .from("showcase_items")
+      .select("before_photo_url, after_photo_url, caption")
+      .eq("is_active", true)
+      .eq("use_in_tips", true)
+      .order("sort_order")
+      .limit(1)
+      .maybeSingle();
+
+    if (tipsItem) {
+      return NextResponse.json({ success: true, data: tipsItem });
+    }
+
+    // 2. Fallback: first active item
+    const { data: fallback } = await supabase
       .from("showcase_items")
       .select("before_photo_url, after_photo_url, caption")
       .eq("is_active", true)
@@ -19,11 +36,9 @@ export async function GET() {
       .limit(1)
       .maybeSingle();
 
-    if (error) throw error;
-
     return NextResponse.json({
       success: true,
-      data: data || null,
+      data: fallback || null,
     });
   } catch (error) {
     console.error("[API:showcase/tips] Error:", error);
