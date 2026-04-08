@@ -55,7 +55,7 @@ export function getStepProviders(): Record<PipelineStepName, StepConfig> {
         structuredOutput: true,
       },
       strategy: {
-        provider: new GeminiProvider(process.env.AI_MODEL_STRATEGY || geminiPro),
+        provider: new GeminiProvider(process.env.AI_MODEL_STRATEGY || geminiFlash),
         structuredOutput: true,
       },
       copywriter: {
