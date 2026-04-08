@@ -1,5 +1,5 @@
 import { inngest } from "./client";
-import { savePipelineResult, incrementCampaignsUsed } from "@/lib/db";
+import { savePipelineResultV3, incrementCampaignsUsed } from "@/lib/db";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
 
 interface CampaignGenerateEvent {
@@ -8,10 +8,7 @@ interface CampaignGenerateEvent {
   imageBase64: string;
   mediaType: string;
   price: string;
-  objective: string;
   storeName: string;
-  targetAudience?: string;
-  toneOverride?: string;
 }
 
 /**
@@ -34,10 +31,10 @@ export const generateCampaignJob = inngest.createFunction(
           imageBase64: data.imageBase64,
           mediaType: data.mediaType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
           price: data.price,
-          objective: data.objective,
           storeName: data.storeName,
-          targetAudience: data.targetAudience,
-          toneOverride: data.toneOverride,
+          // Fallback 1x1 transparent PNG — inngest jobs typically don't have a model
+          modelImageBase64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          modelMediaType: "image/png",
         },
         (stepName: string, label: string, progress: number) => {
           console.log(`[Inngest:Pipeline] ${stepName} (${progress}%) — ${label}`);
@@ -47,13 +44,14 @@ export const generateCampaignJob = inngest.createFunction(
 
     // Step 2: Salvar resultado no banco
     await step.run("save-result", async () => {
-      await savePipelineResult({
+      await savePipelineResultV3({
         campaignId: data.campaignId,
         durationMs: result.durationMs,
-        vision: result.vision as unknown as Record<string, unknown>,
-        strategy: result.strategy as unknown as Record<string, unknown>,
-        output: result.output as unknown as Record<string, unknown>,
-        score: result.score as unknown as Record<string, unknown>,
+        analise: result.analise as unknown as Record<string, unknown>,
+        imageUrls: result.images.map(img => (img ? "pending" : null)),
+        prompts: result.prompts as unknown as Record<string, unknown>[],
+        dicas_postagem: result.dicas_postagem as unknown as Record<string, unknown>,
+        successCount: result.successCount,
       });
       await incrementCampaignsUsed(data.storeId);
     });

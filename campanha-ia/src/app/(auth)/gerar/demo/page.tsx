@@ -1,650 +1,370 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
-import HeadlineABTest from "@/components/HeadlineABTest";
-import MobilePreview from "@/components/MobilePreview";
-import { extractPrice } from "@/components/konva/constants";
-import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { ssr: false });
-const KonvaStoriesCompositor = dynamic(() => import("@/components/konva/KonvaStoriesCompositor"), { ssr: false });
+/* ─────────────────────────────────────────
+   Types — v3 payload
+───────────────────────────────────────── */
+interface GeneratedImage {
+  imageBase64: string;
+  mimeType: string;
+  prompt: string;
+  durationMs: number;
+}
 
-/* ═══════════════════════════════════════
-   Campaign Data Type (replaces `any`)
-   ═══════════════════════════════════════ */
-interface CampaignOutput {
-  instagram_feed?: string;
-  instagram_stories?: {
-    slide_1: string;
-    slide_2: string;
-    slide_3: string;
-    cta_final: string;
+interface OpusAnalise {
+  produto: {
+    nome_generico: string;
+    tipo: string;
+    cor_principal: string;
+    cor_secundaria?: string;
+    material: string;
+    comprimento: string;
+    estilo: string;
+    detalhes_especiais?: string;
   };
-  whatsapp?: string;
-  meta_ads?: {
-    titulo: string;
-    texto_principal: string;
+  modelo: {
+    tipo_corpo: string;
+    pose_sugerida: string;
+    expressao: string;
+  };
+  cenario: {
+    tipo: string;
     descricao: string;
-    cta_button: string;
+    iluminacao: string;
   };
-  hashtags?: string[];
-  headline_principal?: string;
-  headline_variacao_1?: string;
-  headline_variacao_2?: string;
+  negative_prompt: string;
 }
 
-interface CampaignVision {
-  produto?: { nome_generico?: string };
-  contexto?: { loja?: string };
+interface DicasPostagem {
+  melhor_horario: string;
+  hashtags: string[];
+  cta: string;
+  tom_legenda: string;
+  caption_sugerida: string;
 }
 
-interface CampaignData {
-  output?: CampaignOutput;
-  vision?: CampaignVision;
-  score?: typeof fallbackScore;
-  durationMs?: number;
-  campaignId?: string;
-  tryOnImageUrl?: string;
+interface V3Result {
+  success: boolean;
+  campaignId?: string | null;
+  data?: {
+    analise: OpusAnalise;
+    images: (GeneratedImage | null)[];
+    prompts: string[];
+    dicas_postagem: DicasPostagem;
+    durationMs: number;
+    successCount: number;
+  };
 }
 
-const IconCopy = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-);
+/* ─────────────────────────────────────────
+   Mini Icons
+───────────────────────────────────────── */
 const IconDownload = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 );
-const IconRefresh = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+const IconCopy = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
 );
 const IconCheck = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
+const IconBack = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+);
+const IconStar = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+);
 
-const allChannels = [
-  { id: "instagram_feed", label: "Instagram Feed", icon: "📸", freeAccess: true },
-  { id: "instagram_stories", label: "Stories", icon: "📱", freeAccess: false },
-  { id: "whatsapp", label: "WhatsApp", icon: "💬", freeAccess: true },
-  { id: "meta_ads", label: "Meta Ads", icon: "📢", freeAccess: false },
-];
-
-interface PlanUsage {
-  plan_name: string;
-  regen_limit: number;
-  full_score: boolean;
-  all_channels: boolean;
-  preview_link: boolean;
-}
-
-// Fallback mock data (used when no sessionStorage data)
-const fallbackTexts: Record<string, { title: string; text: string; extra?: string }> = {
-  instagram_feed: {
-    title: "Legenda Instagram Feed",
-    text: "✨ Ela chegou pra roubar a cena!\n\nVestido floral perfeito pro verão — confortável, estiloso e com aquele caimento que valoriza qualquer corpo.\n\n💕 De R$ 129,90 por apenas R$ 89,90\n\n📲 Chama no direct ou no WhatsApp que a gente te atende!\n\n#modafeminina #vestidofloral #looknovo #fashionstyle #tendencia2026 #lookdodia #modabrasileira #estiloconfortavel",
-    extra: "#modafeminina #vestidofloral #looknovo #fashionstyle #tendencia2026",
-  },
-  instagram_stories: {
-    title: "Roteiro Stories (3 slides)",
-    text: "🎬 Slide 1: \"Olha essa LINDEZA que acabou de chegar! 😍\"\n\n🎬 Slide 2: \"Vestido floral, tecido fresquinho, perfeito pro calor! Caimento incrível em todos os corpos 💃\"\n\n🎬 Slide 3: \"De R$ 129,90 por R$ 89,90 — mas corre que tem pouca unidade!\"\n\n📲 CTA: \"Arrasta pra cima ou chama no direct!\"",
-  },
-  whatsapp: {
-    title: "Mensagem WhatsApp",
-    text: "Oi! 🌸\n\nAcabou de chegar vestido floral LINDO, super fresquinho pro calor!\n\nTecido macio, caimento perfeito 💃\n\nDe R$ 129,90 por apenas *R$ 89,90*\n\nTem pouca unidade, hein! Quer ver mais fotos? 📲\n\n👉 Disponível nos tamanhos P, M e G",
-  },
-  meta_ads: {
-    title: "Anúncio Meta Ads",
-    text: "Título: Vestido Floral — Conforto & Estilo\n\nTexto principal: Tecido fresquinho, caimento perfeito e preço que cabe no bolso. Vestido floral por R$ 89,90.\n\nDescrição: Frete grátis acima de R$ 150\n\nCTA: Comprar agora",
-  },
-};
-
-const fallbackScore = {
-  nota_geral: 87, conversao: 85, clareza: 92, urgencia: 78,
-  naturalidade: 90, aprovacao_meta: 95, nivel_risco: "baixo" as const,
-  pontos_fortes: [
-    "Linguagem natural e próxima do público",
-    "Preço com desconto gera urgência",
-    "CTA claro e direto",
-    "Emojis bem dosados",
-  ],
-  melhorias: [
-    { campo: "Urgência", sugestao: "Adicionar prazo limitado (ex: 'só até sexta')" },
-    { campo: "Social proof", sugestao: "Mencionar vendas anteriores ou avaliações" },
-  ],
-};
-
+/* ─────────────────────────────────────────
+   Main Page
+───────────────────────────────────────── */
 export default function ResultadoCampanha() {
-  const [activeChannel, setActiveChannel] = useState("instagram_feed");
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isDemo, setIsDemo] = useState(false);
-  const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
-  const [regenerating, setRegenerating] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [productImageUrl, setProductImageUrl] = useState<string | null>(null);
-  const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
-  const [regenUsed, setRegenUsed] = useState(0);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [copyingLink, setCopyingLink] = useState(false);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
-  const [tryOnImageUrl, setTryOnImageUrl] = useState<string | null>(null);
+  const router = useRouter();
+  const [result, setResult] = useState<V3Result | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [copiedCaption, setCopiedCaption] = useState(false);
 
-  // Load data from sessionStorage on mount
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem("campaignResult");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setCampaignData(parsed.data);
-        setIsDemo(parsed.demo === true);
-        if (parsed.data?.campaignId) setCampaignId(parsed.data.campaignId);
-        if (parsed.data?.tryOnImageUrl) setTryOnImageUrl(parsed.data.tryOnImageUrl);
-        // Debug: mostrar status do try-on no console
-        console.log("[Demo] 🔍 tryOnImageUrl:", parsed.data?.tryOnImageUrl ? "✅ " + parsed.data.tryOnImageUrl.substring(0, 80) : "❌ null");
-        console.log("[Demo] 🔍 tryOnProvider:", parsed.data?.tryOnProvider || "nenhum");
-        if (parsed.data?.tryOnDebug) {
-          console.warn("[Demo] ⚠️ tryOnDebug:", parsed.data.tryOnDebug);
-        }
-      } else {
-        console.warn("[Demo] ⚠️ sessionStorage vazio — dados carregados do Supabase ou página recarregada");
-      }
-      // Load product image from form data
-      const formStored = sessionStorage.getItem("campaignFormData");
-      if (formStored) {
-        const formData = JSON.parse(formStored);
-        if (formData.imageBase64) {
-          setProductImageUrl(`data:image/jpeg;base64,${formData.imageBase64}`);
-        }
-      }
-    } catch {}
-    // Load plan usage
-    fetch("/api/store/usage").then(r => r.json()).then(d => {
-      if (d.data) setPlanUsage(d.data);
-    }).catch(() => {});
-  }, []);
-
-  // ── Regerar canal (com enforcement de limite) ──
-  const handleRegenerate = async () => {
-    // Verificar limite de regeneração
-    const regenLimit = planUsage?.regen_limit ?? 0;
-    if (regenLimit === 0) {
-      alert("Regenerações não estão disponíveis no plano Grátis. Faça upgrade!");
-      return;
-    }
-    if (regenUsed >= regenLimit) {
-      alert(`Limite de ${regenLimit} regenerações atingido para esta campanha.`);
-      return;
-    }
-
-    setRegenerating(true);
-    try {
-      // Verificar no backend (se tiver campaignId)
-      if (campaignId) {
-        const checkRes = await fetch(`/api/campaign/${campaignId}/regenerate`, { method: "POST" });
-        const checkData = await checkRes.json();
-        if (!checkRes.ok) {
-          alert(checkData.error || "Limite de regenerações atingido.");
-          setRegenerating(false);
-          return;
-        }
-        setRegenUsed(checkData.data.used);
-      } else {
-        setRegenUsed(prev => prev + 1);
-      }
-
-      const stored = sessionStorage.getItem("campaignFormData");
-      if (!stored) {
-        alert("Dados da campanha original não encontrados. Gere uma nova campanha.");
-        return;
-      }
-      const formData = new FormData();
-      const original = JSON.parse(stored);
-      if (original.imageBase64) {
-        const blob = await fetch(`data:image/jpeg;base64,${original.imageBase64}`).then(r => r.blob());
-        formData.append("image", blob, "product.jpg");
-      }
-      formData.append("price", original.price || "99,90");
-      formData.append("objective", original.objective || "vender");
-      formData.append("targetAudience", original.targetAudience || "");
-      formData.append("toneOverride", original.toneOverride || "");
-      formData.append("useModel", original.useModel || "false");
-
-      const res = await fetch("/api/campaign/generate", { method: "POST", body: formData });
-      const json = await res.json();
-
-      if (json.success) {
-        setCampaignData(json.data);
-        sessionStorage.setItem("campaignResult", JSON.stringify(json));
-      } else {
-        alert(json.error || "Erro ao regerar. Tente novamente.");
-      }
-    } catch (err) {
-      console.error("Regen error:", err);
-      alert("Erro de conexão ao regerar.");
-    } finally {
-      setRegenerating(false);
-    }
-  };
-
-  // ── Gerar link de prévia ──
-  const handleGeneratePreview = async () => {
-    if (!campaignId) return;
-    setCopyingLink(true);
-    try {
-      const res = await fetch(`/api/campaign/${campaignId}/preview`, { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        setPreviewUrl(data.data.url);
-        navigator.clipboard.writeText(data.data.url);
-        setCopiedField("preview");
-        setTimeout(() => setCopiedField(null), 3000);
-      } else {
-        alert(data.error || "Erro ao gerar link.");
+      const raw = sessionStorage.getItem("campaignResult");
+      if (raw) {
+        const parsed = JSON.parse(raw) as V3Result;
+        setResult(parsed);
+        // Auto-select first valid image
+        const firstValid = parsed.data?.images?.findIndex(img => img !== null) ?? -1;
+        if (firstValid >= 0) setSelectedIndex(firstValid);
       }
     } catch {
-      alert("Erro ao gerar link de prévia.");
-    } finally {
-      setCopyingLink(false);
+      // ignore
     }
-  };
+  }, []);
 
-  // ── Download de PNG removido — agora usa o download integrado do KonvaCompositor ──
-
-  // ── Baixar todos os textos ──
-  const handleDownloadTexts = () => {
-    let allTexts = `CriaLook — Campanha: ${productName}\n`;
-    allTexts += `Score: ${scoreData.nota_geral}/100\n`;
-    allTexts += `═══════════════════════════════════════\n\n`;
-
-    visibleChannels.forEach(ch => {
-      const c = getChannelContent(ch.id);
-      allTexts += `${ch.icon} ${c.title}\n${"-".repeat(40)}\n${c.text}\n\n`;
-      if (c.extra) allTexts += `Hashtags: ${c.extra}\n\n`;
-    });
-
-    const blob = new Blob([allTexts], { type: "text/plain;charset=utf-8" });
+  const downloadImage = (img: GeneratedImage, idx: number) => {
     const link = document.createElement("a");
-    link.download = `crialook-${productName.toLowerCase().replace(/\s+/g, "-")}-textos.txt`;
-    link.href = URL.createObjectURL(blob);
+    link.href = `data:${img.mimeType};base64,${img.imageBase64}`;
+    link.download = `crialook_foto_${idx + 1}.png`;
     link.click();
   };
 
-  const copyText = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+  const copyCaption = async () => {
+    const caption = result?.data?.dicas_postagem?.caption_sugerida;
+    if (!caption) return;
+    await navigator.clipboard.writeText(caption);
+    setCopiedCaption(true);
+    setTimeout(() => setCopiedCaption(false), 2000);
   };
 
-  // Build texts from API data or fallback
-  const getChannelContent = (channelId: string): { title: string; text: string; extra?: string } => {
-    if (campaignData?.output) {
-      const o = campaignData.output;
-      switch (channelId) {
-        case "instagram_feed":
-          return {
-            title: "Legenda Instagram Feed",
-            text: o.instagram_feed || fallbackTexts.instagram_feed.text,
-            extra: o.hashtags?.map((h: string) => `#${h}`).join(" "),
-          };
-        case "instagram_stories": {
-          const s = o.instagram_stories;
-          return {
-            title: "Roteiro Stories (3 slides)",
-            text: s ? `🎬 Slide 1: "${s.slide_1}"\n\n🎬 Slide 2: "${s.slide_2}"\n\n🎬 Slide 3: "${s.slide_3}"\n\n📲 CTA: "${s.cta_final}"` : fallbackTexts.instagram_stories.text,
-          };
-        }
-        case "whatsapp":
-          return { title: "Mensagem WhatsApp", text: o.whatsapp || fallbackTexts.whatsapp.text };
-        case "meta_ads": {
-          const m = o.meta_ads;
-          return {
-            title: "Anúncio Meta Ads",
-            text: m ? `Título: ${m.titulo}\n\nTexto principal: ${m.texto_principal}\n\nDescrição: ${m.descricao}\n\nCTA: ${m.cta_button}` : fallbackTexts.meta_ads.text,
-          };
-        }
-        default:
-          return fallbackTexts[channelId];
-      }
-    }
-    return fallbackTexts[channelId];
-  };
-
-  const scoreData = campaignData?.score || fallbackScore;
-  const content = getChannelContent(activeChannel);
-  const productName = campaignData?.vision?.produto?.nome_generico || "Vestido Floral";
-  const durationSec = campaignData?.durationMs ? Math.round(campaignData.durationMs / 1000) : 47;
-
-  // Filtrar canais por plano
-  const hasAllChannelsAccess = planUsage?.all_channels ?? false;
-  const visibleChannels = hasAllChannelsAccess ? allChannels : allChannels.filter(ch => ch.freeAccess);
-  const regenLimit = planUsage?.regen_limit ?? 0;
-  const showFullScore = planUsage?.full_score ?? false;
-  const canPreview = planUsage?.preview_link ?? false;
-
-  return (
-    <div className="animate-fade-in-up">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
-        <div>
-          <div className="badge badge-brand mb-2 inline-flex text-xs">✅ Campanha gerada</div>
-          <h1 className="text-lg sm:text-2xl font-bold tracking-tight">
-            {productName} — <span className="gradient-text">Campanha</span>
-          </h1>
-          <p className="text-[11px] sm:text-xs mt-1" style={{ color: "var(--muted)" }}>
-            Gerada em {durationSec}s · Score {scoreData.nota_geral}/100 · {visibleChannels.length} canais{isDemo && " · 🎭 Demo"}
-            {regenLimit > 0 && ` · 🔄 ${regenUsed}/${regenLimit} regen`}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {canPreview && campaignId && (
-            <button
-              onClick={handleGeneratePreview}
-              disabled={copyingLink}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-              style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--border)" }}
-            >
-              {copiedField === "preview" ? "✅ Link copiado!" : copyingLink ? "⏳ Gerando..." : "🔗 Link de prévia"}
-            </button>
-          )}
-          <Link href="/gerar" className="btn-secondary text-sm !py-2">
-            + Nova campanha
-          </Link>
+  // ── Loading / empty ──
+  if (!result) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 rounded-full border-4 border-t-transparent mx-auto animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+          <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando resultados...</p>
+          <button
+            onClick={() => router.push("/gerar")}
+            className="text-sm underline"
+            style={{ color: "var(--brand-500)" }}
+          >
+            Voltar e gerar novamente
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Preview URL banner */}
-      {previewUrl && (
-        <div className="mb-4 p-3 rounded-xl flex items-center justify-between text-xs" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-200)" }}>
-          <span>🔗 <strong>Link público:</strong> <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "var(--brand-600)" }}>{previewUrl}</a></span>
-          <button onClick={() => { navigator.clipboard.writeText(previewUrl); setCopiedField("preview"); setTimeout(() => setCopiedField(null), 2000); }} className="px-2 py-1 rounded" style={{ color: "var(--brand-600)" }}>
-            {copiedField === "preview" ? "✓" : "Copiar"}
-          </button>
+  const data = result.data;
+  const images = data?.images ?? [];
+  const analise = data?.analise;
+  const dicas = data?.dicas_postagem;
+  const validImages = images.filter(Boolean) as GeneratedImage[];
+  const selectedImage = selectedIndex !== null ? images[selectedIndex] : null;
+
+  return (
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
+      {/* Header */}
+      <div
+        className="sticky top-0 z-40 px-4 py-3 flex items-center gap-3"
+        style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
+      >
+        <button
+          onClick={() => router.push("/gerar")}
+          className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70"
+          style={{ color: "var(--muted)" }}
+        >
+          <IconBack />
+          Nova campanha
+        </button>
+        <div className="flex-1" />
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
+          ✨ {validImages.length} foto{validImages.length !== 1 ? "s" : ""} gerada{validImages.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+
+        {/* ── Título ── */}
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Suas fotos estão prontas! 🎉</h1>
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
+            {analise?.produto?.nome_generico && `${analise.produto.nome_generico} · `}
+            Escolha a melhor e faça download · {data?.durationMs ? `${(data.durationMs / 1000).toFixed(0)}s` : ""}
+          </p>
         </div>
-      )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left — Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Channel tabs — touch-friendly */}
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ WebkitOverflowScrolling: "touch" }}>
-            {allChannels.map((ch) => {
-              const locked = !ch.freeAccess && !hasAllChannelsAccess;
-              return (
-                <button
-                  key={ch.id}
-                  onClick={() => !locked && setActiveChannel(ch.id)}
-                  disabled={locked}
-                  className="flex items-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all min-h-[44px]"
-                  style={{
-                    background: locked ? "var(--surface)" : activeChannel === ch.id ? "var(--gradient-brand)" : "var(--surface)",
-                    color: locked ? "var(--muted)" : activeChannel === ch.id ? "white" : "var(--muted)",
-                    border: activeChannel === ch.id && !locked ? "none" : "1px solid var(--border)",
-                    opacity: locked ? 0.5 : 1,
-                    cursor: locked ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <span>{ch.icon}</span>
-                  {ch.label}
-                  {locked && <span className="text-[10px] ml-1">🔒</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Content card */}
-          <div className="rounded-2xl p-4 sm:p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-              <h3 className="font-semibold">{content.title}</h3>
-                <div className="flex gap-2">
-                <button
-                  onClick={() => copyText(content.text, activeChannel)}
-                  className="flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] sm:min-h-0"
-                  style={{
-                    background: copiedField === activeChannel ? "var(--success)" : "var(--brand-100)",
-                    color: copiedField === activeChannel ? "white" : "var(--brand-700)",
-                  }}
-                >
-                  {copiedField === activeChannel ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
-                </button>
-                <button
-                  onClick={handleRegenerate}
-                  disabled={regenerating || regenUsed >= regenLimit}
-                  className="flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all min-h-[44px] sm:min-h-0"
-                  style={{
-                    background: regenerating ? "var(--surface)" : "var(--brand-100)",
-                    color: regenerating ? "var(--muted)" : "var(--brand-700)",
-                    border: "1px solid var(--border)",
-                    opacity: regenerating || regenUsed >= regenLimit ? 0.5 : 1,
-                    cursor: regenUsed >= regenLimit ? "not-allowed" : "pointer",
-                  }}
-                  title={regenUsed >= regenLimit ? `Limite de ${regenLimit} regenerações atingido` : `${regenUsed}/${regenLimit} regenerações usadas`}
-                >
-                  {regenerating ? (
-                    <><span className="animate-spin inline-block w-3 h-3 border-2 border-brand-300 border-t-brand-600 rounded-full" /> Regerando...</>
-                  ) : regenUsed >= regenLimit ? (
-                    <>🔒 Limite ({regenLimit})</>
-                  ) : (
-                    <><IconRefresh /> Regerar ({regenUsed}/{regenLimit})</>
-                  )}
-                </button>
-              </div>
-            </div>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed p-4 rounded-xl" style={{ background: "var(--surface)" }}>
-              {content.text}
-            </div>
-            {content.extra && (
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs font-semibold" style={{ color: "var(--brand-500)" }}>Hashtags:</span>
-                <p className="text-xs" style={{ color: "var(--muted)" }}>{content.extra}</p>
-                <button
-                  onClick={() => copyText(content.extra!, "hashtags")}
-                  className="text-xs px-2 py-1 rounded transition"
-                  style={{ color: "var(--brand-500)" }}
-                >
-                  {copiedField === "hashtags" ? "✓" : "Copiar"}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* ═══ Compositor Konva (único sistema de criativo) ═══ */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-semibold">🎨 Criativo {tryOnImageUrl ? "com Modelo IA" : "do Produto"}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "#dcfce7", color: "#166534" }}>
-                Pronto para postar
-              </span>
-            </div>
-            <KonvaCompositor
-              modelImageUrl={tryOnImageUrl}
-              productImageUrl={productImageUrl}
-              productName={productName}
-              price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
-              headline={campaignData?.output?.meta_ads?.titulo || ""}
-              cta={campaignData?.output?.meta_ads?.cta_button || "Compre agora"}
-              storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
-              score={scoreData.nota_geral}
-            />
-          </div>
-
-          {/* ═══ Stories Preview (Konva — 3 interactive slides) ═══ */}
-          <div className="mb-6">
-            <KonvaStoriesCompositor
-              productName={productName}
-              price={extractPrice(campaignData?.output?.meta_ads?.texto_principal)}
-              slideGancho={campaignData?.output?.instagram_stories?.slide_1}
-              slideProduto={campaignData?.output?.instagram_stories?.slide_2}
-              slideCTA={campaignData?.output?.instagram_stories?.slide_3}
-              productImageUrl={productImageUrl}
-              modelImageUrl={tryOnImageUrl}
-              storeName={campaignData?.vision?.contexto?.loja || "CriaLook"}
-            />
-          </div>
-
-          {/* A/B Testing — Headlines */}
-          <HeadlineABTest
-            principal={campaignData?.output?.headline_principal || "O vestido que vai ser seu favorito nesse verão 🌺"}
-            variacao1={campaignData?.output?.headline_variacao_1}
-            variacao2={campaignData?.output?.headline_variacao_2}
-          />
-
-          {/* Mobile Preview */}
-          <MobilePreview format="feed">
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                background: "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 40%, #f5f3ff 100%)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "'Inter', system-ui, sans-serif",
-                padding: 12,
-                textAlign: "center",
-              }}
-            >
-              {(tryOnImageUrl || productImageUrl) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={tryOnImageUrl || productImageUrl!}
-                  alt={productName}
-                  style={{
-                    width: "100%",
-                    height: "70%",
-                    objectFit: "cover",
-                    borderRadius: 8,
-                    marginBottom: 8,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-                  }}
-                />
-              ) : (
-                <div style={{ fontSize: 48, marginBottom: 8 }}>👗</div>
-              )}
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#1a1a2e" }}>
-                {productName}
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#ec4899", marginTop: 4 }}>
-                {extractPrice(campaignData?.output?.meta_ads?.texto_principal) || "R$ 89,90"}
-              </div>
-              <div
+        {/* ── Grid 3 fotos ── */}
+        <div className="grid grid-cols-3 gap-4">
+          {images.map((img, idx) => (
+            <div key={idx} className="space-y-2">
+              <button
+                onClick={() => img && setSelectedIndex(idx)}
+                disabled={!img}
+                className="w-full relative rounded-2xl overflow-hidden transition-all"
                 style={{
-                  marginTop: 8,
-                  background: "linear-gradient(135deg, #ec4899, #a855f7)",
-                  color: "white",
-                  fontSize: 9,
-                  fontWeight: 700,
-                  padding: "6px 20px",
-                  borderRadius: 16,
+                  aspectRatio: "3/4",
+                  border: selectedIndex === idx
+                    ? "3px solid var(--brand-500)"
+                    : "2px solid var(--border)",
+                  background: "var(--surface)",
+                  boxShadow: selectedIndex === idx ? "0 0 0 4px var(--brand-100)" : "none",
+                  opacity: img ? 1 : 0.4,
+                  cursor: img ? "pointer" : "not-allowed",
                 }}
               >
-                Comprar agora 💕
-              </div>
-            </div>
-          </MobilePreview>
+                {img ? (
+                  <img
+                    src={`data:${img.mimeType};base64,${img.imageBase64}`}
+                    alt={`Foto ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                    <span className="text-3xl">❌</span>
+                    <span className="text-xs" style={{ color: "var(--muted)" }}>Falhou</span>
+                  </div>
+                )}
 
-          {/* Download all texts */}
-          <button
-            onClick={handleDownloadTexts}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80 min-h-[48px]"
-            style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--border)" }}
-          >
-            <IconDownload /> Baixar todos os textos (.txt)
-          </button>
+                {/* Selecionado badge */}
+                {selectedIndex === idx && img && (
+                  <div
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+                    style={{ background: "var(--brand-500)", color: "white" }}
+                  >
+                    <IconCheck />
+                  </div>
+                )}
+
+                {/* Número */}
+                <div
+                  className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  style={{ background: "rgba(0,0,0,0.55)", color: "white" }}
+                >
+                  {idx + 1}
+                </div>
+              </button>
+
+              {/* Download individual */}
+              {img && (
+                <button
+                  onClick={() => downloadImage(img, idx)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                >
+                  <IconDownload />
+                  Baixar foto {idx + 1}
+                </button>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Right — Score */}
-        <div className="space-y-4">
-          {/* Score card */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold">Score de qualidade</h3>
-              <span className="badge badge-brand text-xs">
-                Risco {scoreData.nivel_risco}
-              </span>
-            </div>
-
-            {/* Overall score */}
-            <div className="text-center mb-6">
-              <div className="relative w-28 h-28 mx-auto">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" strokeWidth="8" />
-                  <circle
-                    cx="60" cy="60" r="52" fill="none"
-                    stroke="url(#scoreGradient)" strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${(scoreData.nota_geral / 100) * 327} 327`}
-                  />
-                  <defs>
-                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#ec4899" />
-                      <stop offset="100%" stopColor="#a855f7" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-black gradient-text">{scoreData.nota_geral}</span>
-                </div>
+        {/* ── Foto selecionada em destaque + botão principal ── */}
+        {selectedImage && (
+          <div
+            className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-5"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+          >
+            <img
+              src={`data:${selectedImage.mimeType};base64,${selectedImage.imageBase64}`}
+              alt="Foto selecionada"
+              className="w-32 h-40 object-cover rounded-xl flex-shrink-0"
+            />
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center gap-2">
+                <IconStar />
+                <span className="font-bold text-sm">Foto {(selectedIndex ?? 0) + 1} selecionada</span>
               </div>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>
+                Sua melhor foto para posts no Instagram, WhatsApp e Lojas Online.
+              </p>
+              <button
+                onClick={() => downloadImage(selectedImage, selectedIndex ?? 0)}
+                className="btn-primary flex items-center gap-2 w-full sm:w-auto px-6 py-3"
+              >
+                <IconDownload />
+                Baixar foto selecionada
+              </button>
             </div>
+          </div>
+        )}
 
-            {/* Individual scores — only for paid plans */}
-            {showFullScore ? (
-              <div className="space-y-3">
-                {[
-                  { label: "Conversão", value: scoreData.conversao },
-                  { label: "Clareza", value: scoreData.clareza },
-                  { label: "Urgência", value: scoreData.urgencia },
-                  { label: "Naturalidade", value: scoreData.naturalidade },
-                  { label: "Meta Ads ✓", value: scoreData.aprovacao_meta },
-                ].map((s) => (
-                  <div key={s.label}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span style={{ color: "var(--muted)" }}>{s.label}</span>
-                      <span className="font-semibold">{s.value}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${s.value}%`,
-                          background: s.value >= 80 ? "var(--success)" : s.value >= 60 ? "var(--warning)" : "var(--error)",
-                        }}
-                      />
-                    </div>
-                  </div>
+        {/* ── Caption sugerida ── */}
+        {dicas?.caption_sugerida && (
+          <div className="rounded-2xl p-5 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-sm">📝 Legenda sugerida</h2>
+              <button
+                onClick={copyCaption}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-80"
+                style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}
+              >
+                {copiedCaption ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
+              </button>
+            </div>
+            <pre className="text-sm whitespace-pre-wrap break-words font-sans" style={{ color: "var(--foreground)", lineHeight: 1.65 }}>
+              {dicas.caption_sugerida}
+            </pre>
+            {dicas.hashtags && dicas.hashtags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+                {dicas.hashtags.slice(0, 20).map((tag, i) => (
+                  <span
+                    key={i}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium"
+                    style={{ background: "var(--brand-50)", color: "var(--brand-600)", border: "1px solid var(--brand-100)" }}
+                  >
+                    {tag.startsWith("#") ? tag : `#${tag}`}
+                  </span>
                 ))}
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-xs" style={{ color: "var(--muted)" }}>Score detalhado disponível nos planos pagos</p>
-                <Link href="/plano" className="text-xs font-semibold mt-2 inline-block" style={{ color: "var(--brand-600)" }}>
-                  ⬆️ Fazer upgrade
-                </Link>
               </div>
             )}
           </div>
+        )}
 
-          {/* Strengths */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--success)" }}>✅ Pontos fortes</h3>
-            <div className="space-y-2">
-              {scoreData.pontos_fortes.map((p: string, i: number) => (
-                <p key={i} className="text-xs leading-relaxed" style={{ color: "var(--muted)" }}>• {p}</p>
-              ))}
+        {/* ── Dicas adicionais ── */}
+        {dicas && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ MELHOR HORÁRIO</p>
+              <p className="text-sm font-semibold">{dicas.melhor_horario || "Entre 18h–21h"}</p>
+            </div>
+            <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA LEGENDA</p>
+              <p className="text-sm font-semibold">{dicas.tom_legenda || "Descontraído e acolhedor"}</p>
+            </div>
+            <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CTA SUGERIDO</p>
+              <p className="text-sm font-semibold">{dicas.cta || "Chama no direct!"}</p>
             </div>
           </div>
+        )}
 
-          {/* Improvements */}
-          <div className="rounded-2xl p-5" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--warning)" }}>💡 Melhorias sugeridas</h3>
-            <div className="space-y-3">
-              {scoreData.melhorias.map((m: { campo: string; sugestao: string }, i: number) => (
-                <div key={i}>
-                  <p className="text-xs font-semibold">{m.campo}</p>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{m.sugestao}</p>
+        {/* ── Análise do produto (colapsável) ── */}
+        {analise?.produto && (
+          <details className="rounded-2xl overflow-hidden group" style={{ border: "1px solid var(--border)" }}>
+            <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" style={{ background: "var(--surface)" }}>
+              <span className="text-sm font-bold">🔍 Análise técnica do produto (Claude Opus)</span>
+              <span className="text-xs group-open:rotate-180 transition-transform" style={{ color: "var(--muted)" }}>▼</span>
+            </summary>
+            <div className="px-5 pb-5 pt-3 space-y-3" style={{ background: "var(--surface)" }}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "Produto", value: analise.produto.nome_generico },
+                  { label: "Tipo", value: analise.produto.tipo },
+                  { label: "Cor principal", value: analise.produto.cor_principal },
+                  { label: "Cor secundária", value: analise.produto.cor_secundaria },
+                  { label: "Material", value: analise.produto.material },
+                  { label: "Comprimento", value: analise.produto.comprimento },
+                  { label: "Estilo", value: analise.produto.estilo },
+                  { label: "Detalhes", value: analise.produto.detalhes_especiais },
+                ]
+                  .filter(f => f.value)
+                  .map((f, i) => (
+                    <div key={i} className="rounded-xl p-3" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+                      <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>{f.label}</p>
+                      <p className="text-sm font-semibold mt-0.5">{f.value}</p>
+                    </div>
+                  ))}
+              </div>
+              {analise.negative_prompt && (
+                <div className="rounded-xl p-3" style={{ background: "var(--background)", border: "1px dashed var(--border)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Negative prompt usado</p>
+                  <p className="text-xs font-mono" style={{ color: "var(--muted)" }}>{analise.negative_prompt}</p>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          </details>
+        )}
+
+        {/* ── Nova campanha ── */}
+        <div className="flex justify-center pb-8">
+          <button
+            onClick={() => router.push("/gerar")}
+            className="btn-secondary px-8 py-3 text-sm font-semibold"
+          >
+            ✨ Gerar nova campanha
+          </button>
         </div>
       </div>
     </div>

@@ -761,3 +761,51 @@ export async function getStoreCredits(storeId: string) {
     regenerations: store?.credit_regenerations || 0,
   };
 }
+
+// ═══════════════════════════════════════════════════════════
+// PIPELINE V3 — Salvar resultado do novo fluxo Opus + Gemini
+// ═══════════════════════════════════════════════════════════
+
+export interface SavePipelineResultV3Input {
+  campaignId: string;
+  durationMs: number;
+  analise: Record<string, unknown>;
+  /** Array de 3 URLs públicas das imagens (string) ou null se falhou */
+  imageUrls: (string | null)[];
+  /** Os 3 prompts gerados pelo Opus (enviados ao frontend para regeneração) */
+  prompts: Record<string, unknown>[];
+  dicas_postagem: Record<string, unknown>;
+  successCount: number;
+}
+
+/**
+ * Salva os resultados do pipeline v3 (Opus + Gemini 3x) na campanha.
+ * Usa o campo JSONB `output` da tabela campaigns para armazenar tudo.
+ * NÃO altera a tabela campaign_outputs (compatibilidade com v2).
+ */
+export async function savePipelineResultV3(input: SavePipelineResultV3Input) {
+  const supabase = createAdminClient();
+
+  await supabase
+    .from("campaigns")
+    .update({
+      status: "completed",
+      pipeline_completed_at: new Date().toISOString(),
+      pipeline_duration_ms: input.durationMs,
+      // Armazenar tudo no campo JSONB output (campaigns.output)
+      output: {
+        version: "v3",
+        analise: input.analise,
+        image_urls: input.imageUrls,
+        prompts: input.prompts,
+        dicas_postagem: input.dicas_postagem,
+        success_count: input.successCount,
+        generated_at: new Date().toISOString(),
+      },
+    })
+    .eq("id", input.campaignId);
+
+  console.log(
+    `[DB] ✅ savePipelineResultV3 | campaign=${input.campaignId} | ${input.successCount}/3 imagens | ${input.durationMs}ms`
+  );
+}
