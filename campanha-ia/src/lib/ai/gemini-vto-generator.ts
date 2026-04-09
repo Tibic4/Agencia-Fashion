@@ -9,9 +9,9 @@
  * - Aceita fotos com fundo poluído (loja, manequim)
  * - Prompt narrativo = controle fino do resultado
  * - Saída em base64 (upload direto pro Supabase, sem CDN temporário)
- * - Mais barato: ~$0.08/imagem (4K) vs ~$0.15/imagem (FASHN)
+ * - Mais barato: ~$0.04/imagem (2K) vs ~$0.15/imagem (FASHN)
  *
- * Resolução: 4K Ultra HD — máxima qualidade para campanhas profissionais
+ * Resolução: 2K (~4MP) — ideal para Instagram Feed (1080x1350)
  */
 
 import { GoogleGenAI } from "@google/genai";
@@ -59,7 +59,7 @@ export interface GeminiVTOResult {
 // ═══════════════════════════════════════
 
 const MODEL = "gemini-3.1-flash-image-preview";
-const IMAGE_SIZE = "4K";
+const IMAGE_SIZE = "2K";
 const DEFAULT_ASPECT = "3:4";
 
 // ═══════════════════════════════════════
@@ -162,7 +162,7 @@ SECTION 5: SKIN & HUMAN REALISM
 SECTION 6: TECHNICAL CAMERA SPECIFICATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Output: ONE photorealistic image, portrait orientation, 3:4 aspect ratio
-• Resolution quality: 4K Ultra HD — maximum detail in fabric texture and skin
+• Resolution quality: 2K high-resolution — sharp detail in fabric texture and skin
 • Sharp focus across the entire figure — thread-level garment detail, individual hair strands at edges
 • Natural depth of field appropriate to the scene (studio = deeper DOF, outdoor = shallower)
 • Clean image: NO text, NO watermarks, NO split frames, NO borders, NO artifacts
@@ -312,7 +312,7 @@ function mapAspectRatio(ratio: string): string {
 
 // ═══════════════════════════════════════
 // Log de custos
-// Gemini 3.1 Flash Image: ~$0.08/imagem (4K)
+// Gemini 3.1 Flash Image: ~$0.04/imagem (2K)
 // Input: ~0.001/img, Output: ~0.04/img (1312×1744 ≈ $0.0385/img)
 // ═══════════════════════════════════════
 
@@ -333,8 +333,8 @@ async function logGeminiVTOCosts(
     // fallback
   }
 
-  // Gemini 3.1 Flash Image 4K: ~$0.08/imagem (input tokens + output image)
-  const costPerImage = 0.08;
+  // Gemini 3.1 Flash Image 2K: ~$0.04/imagem (input tokens + output image)
+  const costPerImage = 0.04;
   const totalCostUsd = costPerImage * successCount;
 
   const { error } = await supabase.from("api_cost_logs").insert({
