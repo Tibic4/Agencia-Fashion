@@ -40,12 +40,12 @@ async function getCosts() {
     byProvider[p].tokens += row.tokens_used || 0;
   });
 
-  // Group by pipeline step — only show current v4 actions
-  const v4Actions = new Set(["sonnet_analyzer", "fashn_tryon_v4", "model_preview"]);
+  // Group by pipeline step — only show current v5 actions
+  const v5Actions = new Set(["sonnet_analyzer", "gemini_vto_v5", "model_preview"]);
   const byStep: Record<string, { calls: number; cost: number }> = {};
   filteredThisMonth.forEach((row) => {
     const step = row.action || "unknown";
-    if (!v4Actions.has(step)) return; // skip legacy v2/v3 steps
+    if (!v5Actions.has(step)) return; // skip legacy v2/v3/v4 steps
     if (!byStep[step]) byStep[step] = { calls: 0, cost: 0 };
     byStep[step].calls++;
     byStep[step].cost += row.cost_brl || 0;
@@ -82,9 +82,9 @@ async function getCosts() {
     alertMessage = "⚠️ 80%+ do budget utilizado. Monitore os gastos.";
   }
 
-  // Custo médio por campanha — usa sonnet_analyzer ou fashn_tryon como proxy (1 chamada = 1 campanha)
+  // Custo médio por campanha — usa sonnet_analyzer ou gemini_vto como proxy (1 chamada = 1 campanha)
   const totalCampaignCalls = Object.entries(byStep)
-    .filter(([k]) => k === "sonnet_analyzer" || k === "fashn_tryon_v4")
+    .filter(([k]) => k === "sonnet_analyzer" || k === "gemini_vto_v5")
     .reduce((s, [, v]) => Math.max(s, v.calls), 0);
   const avgCostPerCampaign = totalCampaignCalls > 0 ? totalThisMonth / totalCampaignCalls : 0;
 
@@ -109,16 +109,16 @@ async function getCosts() {
 
 const providerColors: Record<string, string> = {
   anthropic: "from-violet-500 to-purple-500",
-  fashn: "from-pink-500 to-rose-500",
   google: "from-blue-500 to-indigo-500",
   unknown: "from-gray-500 to-gray-600",
 };
 
 const stepLabels: Record<string, string> = {
   sonnet_analyzer: "🧠 Análise da peça (Sonnet)",
-  fashn_tryon_v4: "👗 Virtual Try-On (FASHN)",
+  gemini_vto_v5: "👗 Virtual Try-On (Gemini)",
   model_preview: "🧍 Preview de modelo",
   // legacy (para logs antigos)
+  fashn_tryon_v4: "👗 Try-On (FASHN — legacy)",
   opus_analyzer: "🧠 Análise (Opus — legacy)",
   gemini_image_gen: "📸 Geração (Gemini — legacy)",
 };

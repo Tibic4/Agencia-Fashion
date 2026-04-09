@@ -19,8 +19,8 @@ import { checkRateLimit } from "@/lib/rate-limit";
 export const maxDuration = 180;
 export const dynamic = "force-dynamic";
 
-// v4: Pipeline Sonnet + FASHN. Demo mode se nenhuma key existe.
-const IS_DEMO_MODE = !process.env.FASHN_API_KEY && !process.env.ANTHROPIC_API_KEY;
+// v5: Pipeline Sonnet + Gemini VTO. Demo mode se nenhuma key existe.
+const IS_DEMO_MODE = !process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY;
 
 /**
  * POST /api/campaign/generate
@@ -245,9 +245,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ── PRODUCTION: buscar modelo para o pipeline v3 ──
+    // ── PRODUCTION: buscar modelo para o pipeline v5 ──
     let modelImageBase64: string | null = null;
     let modelMediaType = "image/png";
+    // Metadados da modelo para o Sonnet (prompts contextuais)
+    let modelInfo: { skinTone?: string; bodyType?: string; pose?: string; hairColor?: string; hairTexture?: string; hairLength?: string; ageRange?: string; style?: string } = {};
 
     if (store) {
       try {
@@ -259,22 +261,37 @@ export async function POST(request: NextRequest) {
           const supabase = createAdminClient();
           const { data: bankModel } = await supabase
             .from("model_bank")
-            .select("image_url")
+            .select("image_url, body_type, skin_tone, pose")
             .eq("id", modelBankId)
             .single();
           if (bankModel?.image_url) {
             modelImageUrl = bankModel.image_url;
-            console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId}`);
+            modelInfo = {
+              skinTone: bankModel.skin_tone || undefined,
+              bodyType: bankModel.body_type || undefined,
+              pose: bankModel.pose || undefined,
+            };
+            console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
           }
         }
 
-        // Prioridade 2: modelo ativa da loja
+        // Prioridade 2: modelo ativa da loja (gerada pelo Gemini — tem mais campos)
         if (!modelImageUrl) {
           const activeModel = await getActiveModel(store.id);
           const activeUrl = activeModel?.preview_url || activeModel?.image_url;
           if (activeUrl) {
             modelImageUrl = activeUrl;
-            console.log(`[Generate] 👤 Modelo ativa da loja`);
+            const am = activeModel as Record<string, unknown>;
+            modelInfo = {
+              skinTone: (am.skin_tone as string) || undefined,
+              bodyType: (am.body_type as string) || undefined,
+              hairColor: (am.hair_color as string) || undefined,
+              hairTexture: (am.hair_texture as string) || undefined,
+              hairLength: (am.hair_length as string) || undefined,
+              ageRange: (am.age_range as string) || undefined,
+              style: (am.style as string) || undefined,
+            };
+            console.log(`[Generate] 👤 Modelo ativa da loja (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
           }
         }
 
@@ -300,8 +317,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // 🚀 SSE STREAMING — pipeline v3
-      console.log("[Generate] 🚀 Iniciando pipeline v3 (Opus + 3x Gemini)...");
+      // 🚀 SSE STREAMING — pipeline v5
+      console.log("[Generate] 🚀 Iniciando pipeline v5 (Sonnet + 3x Gemini VTO)...");
 
       const encoder = new TextEncoder();
       const stream = new TransformStream();
@@ -327,6 +344,7 @@ export async function POST(request: NextRequest) {
               bodyType: bodyType === "plus" ? "plus" : (activeModelBodyType || "normal"),
               backgroundType: backgroundType || undefined,
               brandColor: brandColor || undefined,
+              modelInfo,
               storeId: store?.id,
               campaignId: campaignRecord?.id,
               signal: request.signal,
@@ -337,7 +355,7 @@ export async function POST(request: NextRequest) {
             }
           );
 
-          const { successCount, images, analise, fashn_hints, dicas_postagem, durationMs } = pipelineResult;
+          const { successCount, images, analise, vto_hints, dicas_postagem, durationMs } = pipelineResult;
 
           // ── Regra de negócio: cobrar crédito SÓ se ≥1 imagem gerada ──
           if (successCount === 0) {
@@ -352,8 +370,7 @@ export async function POST(request: NextRequest) {
 
           // ✅ ≥1 imagem gerada — cobrar crédito
           if (campaignRecord) {
-            // FASHN retorna URLs do CDN (expiram em 72h)
-            // Download e re-upload para Supabase Storage (permanente)
+            // Gemini VTO retorna base64 — upload direto para Supabase Storage
             const imageUrls: (string | null)[] = [];
             try {
               const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -362,36 +379,34 @@ export async function POST(request: NextRequest) {
                 const img = images[i];
                 if (!img) { imageUrls.push(null); continue; }
                 try {
-                  // Download da URL FASHN CDN
-                  const resp = await fetch(img.imageUrl);
-                  if (!resp.ok) {
-                    console.warn(`[Generate] ⚠️ Download FASHN imagem ${i + 1} falhou: ${resp.status}`);
-                    imageUrls.push(img.imageUrl); // fallback: usar URL original
-                    continue;
-                  }
-                  const buf = Buffer.from(await resp.arrayBuffer());
-                  const path = `campaigns/${campaignRecord.id}/v4_look_${i + 1}.jpg`;
+                  // Converter base64 para Buffer e upload direto
+                  const buf = Buffer.from(img.imageBase64, "base64");
+                  const ext = img.mimeType === "image/png" ? "png" : "jpg";
+                  const contentType = img.mimeType || "image/jpeg";
+                  const path = `campaigns/${campaignRecord.id}/v5_look_${i + 1}.${ext}`;
                   const { error: upErr } = await supabase.storage
                     .from("generated-images")
-                    .upload(path, buf, { contentType: "image/jpeg", upsert: true });
+                    .upload(path, buf, { contentType, upsert: true });
                   if (upErr) {
                     console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} falhou:`, upErr.message);
-                    imageUrls.push(img.imageUrl); // fallback: URL FASHN
+                    imageUrls.push(null);
                   } else {
                     const { data: urlData } = supabase.storage
                       .from("generated-images")
                       .getPublicUrl(path);
                     imageUrls.push(urlData.publicUrl);
+                    // Preencher imageUrl no objeto para SSE
+                    img.imageUrl = urlData.publicUrl;
                     console.log(`[Generate] ✅ Imagem ${i + 1} salva: ${path}`);
                   }
                 } catch (uploadErr) {
                   console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} exception:`, uploadErr);
-                  imageUrls.push(img.imageUrl); // fallback: URL FASHN
+                  imageUrls.push(null);
                 }
               }
             } catch (e) {
               console.warn("[Generate] Upload parcial falhou:", e);
-              images.forEach(img => imageUrls.push(img?.imageUrl || null));
+              images.forEach(() => imageUrls.push(null));
             }
 
             await savePipelineResultV3({
@@ -399,7 +414,7 @@ export async function POST(request: NextRequest) {
               durationMs,
               analise: analise as unknown as Record<string, unknown>,
               imageUrls,
-              prompts: (fashn_hints?.styling_prompts || []) as unknown as Record<string, unknown>[],
+              prompts: (vto_hints?.scene_prompts || []) as unknown as Record<string, unknown>[],
               dicas_postagem: dicas_postagem as unknown as Record<string, unknown>,
               successCount,
             });
@@ -413,7 +428,7 @@ export async function POST(request: NextRequest) {
           }
 
           // Enviar resultado final via SSE
-          // FASHN retorna URLs — enviar para o frontend
+          // Gemini VTO — imagens já estão no Supabase, enviar URLs
           await sendSSE("done", {
             success: true,
             campaignId: campaignRecord?.id || null,
@@ -425,7 +440,7 @@ export async function POST(request: NextRequest) {
                 conceptName: img.conceptName,
                 durationMs: img.durationMs,
               } : null),
-              prompts: fashn_hints?.styling_prompts || [],
+              prompts: vto_hints?.scene_prompts || [],
               dicas_postagem,
               durationMs,
               successCount,
@@ -433,7 +448,7 @@ export async function POST(request: NextRequest) {
           });
         } catch (pipelineError: unknown) {
           if (campaignRecord) {
-            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v4 error";
+            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v5 error";
             await failCampaign(campaignRecord.id, msg);
           }
           const errMsg = pipelineError instanceof Error ? pipelineError.message : "Erro ao gerar campanha";

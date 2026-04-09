@@ -1,21 +1,33 @@
 /**
- * CriaLook Campaign Pipeline v4
+ * CriaLook Campaign Pipeline v5
  *
  * Fluxo:
- * 1. Claude Sonnet — Análise visual + styling hints + dicas de postagem
- * 2. FASHN AI — 3 chamadas product-to-model em paralelo (Virtual Try-On)
+ * 1. Claude Sonnet — Análise visual + scene/styling prompts + dicas de postagem
+ * 2. Gemini 3.1 Flash Image — 3 chamadas VTO em paralelo (multi-image fusion)
  *
- * Substitui pipeline v3 (Opus + Gemini Image).
+ * Contexto rico: dados da modelo (skin_tone, body_type, hair, etc.) e
+ * cenário preferido são passados ao Sonnet para prompts ultra-detalhados.
  */
 
-import type { SonnetAnalise, SonnetDicasPostagem, SonnetFashnHint } from "./sonnet-analyzer";
+import type { SonnetAnalise, SonnetDicasPostagem, SonnetVTOHint } from "./sonnet-analyzer";
 import { analyzeWithSonnet } from "./sonnet-analyzer";
-import type { GeneratedImage } from "./fashn-generator";
-import { generateWithFashn } from "./fashn-generator";
+import type { GeneratedImage } from "./gemini-vto-generator";
+import { generateWithGeminiVTO } from "./gemini-vto-generator";
 
 // ═══════════════════════════════════════
 // Tipos públicos
 // ═══════════════════════════════════════
+
+export interface ModelInfo {
+  skinTone?: string;
+  bodyType?: string;
+  pose?: string;
+  hairColor?: string;
+  hairTexture?: string;
+  hairLength?: string;
+  ageRange?: string;
+  style?: string;
+}
 
 export interface PipelineInput {
   /** Foto principal do produto (base64, sem prefixo data:) */
@@ -26,6 +38,8 @@ export interface PipelineInput {
   /** Foto da modelo do banco (base64) — obrigatória */
   modelImageBase64: string;
   modelMediaType?: string;
+  /** Metadados da modelo (para prompts contextuais) */
+  modelInfo?: ModelInfo;
   /** Informações de contexto para o Sonnet */
   price?: string;
   storeName?: string;
@@ -48,7 +62,7 @@ export interface PipelineInput {
 
 export interface PipelineResult {
   analise: SonnetAnalise;
-  fashn_hints: SonnetFashnHint;
+  vto_hints: SonnetVTOHint;
   dicas_postagem: SonnetDicasPostagem;
   /** Array de 3 — null significa que aquela imagem falhou */
   images: (GeneratedImage | null)[];
@@ -85,6 +99,7 @@ export async function runCampaignPipeline(
     bodyType: (input.bodyType === "plus" ? "plus" : "normal"),
     backgroundType: input.backgroundType,
     brandColor: input.brandColor,
+    modelInfo: input.modelInfo,
   });
   const sonnetDurationMs = Date.now() - sonnetStart;
 
@@ -97,17 +112,17 @@ export async function runCampaignPipeline(
 
   await onProgress?.("sonnet_done", "Análise completa! Gerando looks...", 30);
 
-  // — Etapa 2: FASHN gera 3 imagens em paralelo (Virtual Try-On) ————
+  // — Etapa 2: Gemini VTO gera 3 imagens em paralelo ————
   await onProgress?.("images_start", "Vestindo a modelo com IA...", 45);
 
-  const imageResult = await generateWithFashn({
-    stylingPrompts: sonnetResult.fashn_hints.styling_prompts,
+  const imageResult = await generateWithGeminiVTO({
+    stylingPrompts: sonnetResult.vto_hints.scene_prompts,
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
     modelMediaType: input.modelMediaType,
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
-    aspectRatio: sonnetResult.fashn_hints.aspect_ratio,
+    aspectRatio: sonnetResult.vto_hints.aspect_ratio,
     storeId: input.storeId,
     campaignId: input.campaignId,
   });
@@ -117,12 +132,12 @@ export async function runCampaignPipeline(
 
   const durationMs = Date.now() - startTime;
   console.log(
-    `[Pipeline v4] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${sonnetResult.analise.tipo_peca}`
+    `[Pipeline v5] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${sonnetResult.analise.tipo_peca}`
   );
 
   return {
     analise: sonnetResult.analise,
-    fashn_hints: sonnetResult.fashn_hints,
+    vto_hints: sonnetResult.vto_hints,
     dicas_postagem: sonnetResult.dicas_postagem,
     images: imageResult.images,
     successCount: imageResult.successCount,
@@ -132,9 +147,6 @@ export async function runCampaignPipeline(
 
 // ═══════════════════════════════════════
 // Log de custo do Sonnet
-// Pricing claude-sonnet-4: $3 / 1M input, $15 / 1M output
-// Imagem ~1600 tokens, prompt ~800 tokens, resposta ~2500 tokens
-// Estimativa por chamada: ~$0.04 (4.4K in + 2.5K out)
 // ═══════════════════════════════════════
 
 async function logSonnetCost(
@@ -153,7 +165,6 @@ async function logSonnetCost(
     // fallback
   }
 
-  // Estimativa: input=4400, output=2500
   const avgInputTokens = 4400;
   const avgOutputTokens = 2500;
   const costUsd =
