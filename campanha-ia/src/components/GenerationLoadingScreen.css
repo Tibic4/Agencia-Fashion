@@ -65,7 +65,7 @@
   text-align: center;
 }
 
-/* ── Dynamic Icon ── */
+/* ── Dynamic Icon (premium, mobile-first) ── */
 .gen-icon-container {
   position: relative;
   width: 80px;
@@ -82,7 +82,9 @@
   border-radius: 24px;
   background: var(--gradient-brand);
   color: white;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  /* Slower, smoother transition between icons */
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 8px 30px rgba(236, 72, 153, 0.3),
     0 0 60px rgba(236, 72, 153, 0.15);
@@ -90,35 +92,46 @@
 
 .gen-icon-stage[data-active="false"] {
   opacity: 0;
-  transform: scale(0.8) rotate(-10deg);
+  transform: scale(0.6) rotate(-15deg);
+  pointer-events: none;
 }
 
 .gen-icon-stage[data-active="true"] {
   opacity: 1;
   transform: scale(1) rotate(0deg);
-  animation: icon-float 3s ease-in-out infinite;
+  animation: icon-breathe 3.5s ease-in-out infinite;
 }
 
-@keyframes icon-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-6px) scale(1.03); }
+@keyframes icon-breathe {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 8px 30px rgba(236, 72, 153, 0.3),
+      0 0 60px rgba(236, 72, 153, 0.15);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.04);
+    box-shadow:
+      0 12px 40px rgba(236, 72, 153, 0.4),
+      0 0 80px rgba(236, 72, 153, 0.2);
+  }
 }
 
-/* Icon ring decoration */
+/* Icon ring — orbiting glow */
 .gen-icon-ring {
   position: absolute;
   inset: -8px;
   border-radius: 28px;
   border: 2px solid transparent;
-  background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(168,85,247,0.2)) border-box;
+  background: linear-gradient(135deg, rgba(236,72,153,0.25), rgba(168,85,247,0.25)) border-box;
   -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  animation: ring-spin 8s linear infinite;
+  animation: ring-orbit 6s linear infinite;
 }
 
-@keyframes ring-spin {
+@keyframes ring-orbit {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
