@@ -165,7 +165,7 @@ export default function FashionFactsCarousel() {
     <div
       style={{
         width: "100%",
-        minHeight: "120px",
+        height: "140px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -176,15 +176,16 @@ export default function FashionFactsCarousel() {
       <div
         style={{
           width: "100%",
-          minHeight: "100px",
-          padding: "14px 16px",
+          height: "108px",
+          padding: "12px 16px",
           borderRadius: "14px",
           background: "var(--surface)",
           border: "1px solid var(--border)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          gap: "6px",
+          gap: "4px",
+          overflow: "hidden",
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? "translateY(0)" : "translateY(6px)",
           transition: "opacity 0.2s ease, transform 0.2s ease",
