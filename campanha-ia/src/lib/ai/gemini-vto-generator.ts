@@ -1,7 +1,7 @@
 /**
- * CriaLook Image Generator v5 — Gemini 3.1 Flash Image (Nano Banana 2)
+ * CriaLook Image Generator v6 — Gemini 3 Pro Image (Nano Banana Pro)
  *
- * Usa o modelo `gemini-3.1-flash-image-preview` para Virtual Try-On via
+ * Usa o modelo `gemini-3-pro-image-preview` para Virtual Try-On via
  * multi-image fusion nativa do Gemini.
  *
  * Vantagens sobre FASHN tryon-max:
@@ -9,7 +9,8 @@
  * - Aceita fotos com fundo poluído (loja, manequim)
  * - Prompt narrativo = controle fino do resultado
  * - Saída em base64 (upload direto pro Supabase, sem CDN temporário)
- * - Mais barato: ~$0.04/imagem (2K) vs ~$0.15/imagem (FASHN)
+ * - Thinking sempre ativo = máxima qualidade de composição
+ * - Character consistency STRONGEST entre todos os modelos
  *
  * Resolução: 2K (~4MP) — ideal para Instagram Stories (1080x1920, 9:16)
  */
@@ -58,7 +59,7 @@ export interface GeminiVTOResult {
 // Config
 // ═══════════════════════════════════════
 
-const MODEL = "gemini-3.1-flash-image-preview";
+const MODEL = "gemini-3-pro-image-preview";
 const IMAGE_SIZE = "2K";
 const DEFAULT_ASPECT = "9:16";
 
@@ -305,10 +306,7 @@ async function generateSingleImage(
         aspectRatio: geminiAspect as any,
         imageSize: IMAGE_SIZE as any,
       },
-      thinkingConfig: {
-        thinkingLevel: "high" as any,
-        includeThoughts: false,
-      },
+      // Pro model has thinking ALWAYS ON — no thinkingConfig needed
     },
   });
 

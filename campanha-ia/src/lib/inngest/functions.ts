@@ -139,15 +139,15 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
       faceMime,
     );
 
-    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3.1-flash-image-preview — modo: ${mode}...`);
+    console.log(`[Gemini:Preview] 🎨 Gerando via gemini-3-pro-image-preview — modo: ${mode}...`);
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image-preview",
+      model: "gemini-3-pro-image-preview",
       contents: [{ role: "user", parts }],
       config: {
         responseModalities: ["IMAGE", "TEXT"],
         imageConfig: {
-          aspectRatio: "3:4",
+          aspectRatio: "9:16",
           imageSize: "2K",
         },
       } as any,
@@ -192,7 +192,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
       const { getModelPricing, getExchangeRate } = await import("@/lib/pricing");
       const pricing = await getModelPricing();
       const exchangeRate = await getExchangeRate();
-      const modelPrice = pricing["gemini-3.1-flash-image-preview"] || pricing["gemini-3-pro-image-preview"] || { inputPerMTok: 0.15, outputPerMTok: 0.60 };
+      const modelPrice = pricing["gemini-3-pro-image-preview"] || pricing["gemini-3.1-flash-image-preview"] || { inputPerMTok: 0.15, outputPerMTok: 0.60 };
 
       // Estimar tokens: ~250 input (prompt + imagem ref), ~4000 output (imagem gerada)
       const inputTokens = faceBase64 ? 1300 : 250;
@@ -204,7 +204,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
         store_id: data.storeId || null,
         campaign_id: null,
         provider: "google",
-        model_used: "gemini-3.1-flash-image-preview",
+        model_used: "gemini-3-pro-image-preview",
         action: "model_preview",
         input_tokens: inputTokens,
         output_tokens: outputTokens,
