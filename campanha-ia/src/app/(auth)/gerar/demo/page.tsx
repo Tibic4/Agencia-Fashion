@@ -165,10 +165,18 @@ export default function ResultadoCampanha() {
   useEffect(() => {
     const campaignId = searchParams.get("id");
 
+    // Reset state when campaign changes (prevents showing stale data)
+    setResult(null);
+    setSelectedIndex(null);
+    setSmartTips(null);
+    setTipsFetched(null);
+    setPreviewDataUrl(null);
+    setCopiedCaption(false);
+
     // 1. If URL has ?id=, ALWAYS load from API (history / shared links)
     if (campaignId) {
       setLoadingFromApi(true);
-      fetch(`/api/campaigns/${campaignId}`)
+      fetch(`/api/campaigns/${campaignId}?t=${Date.now()}`)
         .then(res => res.ok ? res.json() : Promise.reject(new Error(`Erro ${res.status}`)))
         .then(data => {
           if (data?.data) {
@@ -192,6 +200,8 @@ export default function ResultadoCampanha() {
         setResult(parsed);
         const firstValid = parsed.data?.images?.findIndex(img => img !== null) ?? -1;
         if (firstValid >= 0) setSelectedIndex(firstValid);
+        // Clear sessionStorage after loading so next generation doesn't show stale data
+        sessionStorage.removeItem("campaignResult");
       }
     } catch {
       // ignore
