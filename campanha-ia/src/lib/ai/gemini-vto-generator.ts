@@ -240,6 +240,17 @@ SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
 - Adding patterns/prints to a solid-color garment
 - Removing buttons, pockets, or construction details visible in IMAGE 2
 - Transparent or see-through fabric where it shouldn't be
+- Merging separate garment pieces into one (if IMAGE 2 shows a top + skirt, generate BOTH as separate pieces)
+
+❌ TEXTURE & COLOR FIDELITY (CRITICAL — COMMON AI FAILURE):
+- NO color shifting: if the garment is cobalt blue in IMAGE 2, it must be cobalt blue in output — not navy, not teal, not royal blue
+- NO saturation loss: vibrant colors must stay vibrant — do not desaturate or wash out colors
+- NO texture simplification: if IMAGE 2 shows smocking/shirring (elastic gathered texture), the output MUST show the same 3D gathered ridges — not smooth fabric
+- NO flat shading: fabric must show realistic light interaction — highlights on folds, shadows in creases, specular on satin/silk
+- NO plastic/synthetic look: cotton must look like cotton (matte, soft), silk must look like silk (lustrous, flowing), denim must look like denim (textured weave)
+- Ribbed knit → visible ribbing ridges | Lace → visible lace pattern holes | Chiffon → visible transparency layers
+- Pattern scale must match: if stripes are 2cm wide in IMAGE 2, they must be ~2cm wide on the model — not stretched or compressed
+- Color temperature consistency: garment color under studio lighting (IMAGE 2) must look natural under the SCENE lighting — adjust for warm/cool shift but maintain the SAME perceived hue
 
 ❌ COMPOSITION ERRORS:
 - Text, watermarks, logos, borders, frames, split panels
