@@ -103,6 +103,7 @@ export default function GerarCampanha() {
   const [userPlan, setUserPlan] = useState("free");
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
   const [modelFilter, setModelFilter] = useState<string>("all");
+  const [showAllModels, setShowAllModels] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState<{
@@ -725,12 +726,12 @@ export default function GerarCampanha() {
         <div className="space-y-6">
 
 
-          {/* Body Type — Tipo de Corpo */}
+          {/* Body Type — Biotipo */}
           <div className="animate-fade-in">
             <label className="block text-sm font-semibold mb-2">Biotipo da modelo</label>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => { setBodyType("normal"); setModelFilter("normal"); }}
+                onClick={() => { setBodyType("normal"); setModelFilter("normal"); setShowAllModels(false); }}
                 className="p-3 rounded-xl text-center transition-all"
                 style={{
                   border: bodyType === "normal"
@@ -740,11 +741,11 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">👤</span>
-                <p className="text-sm font-semibold mt-1">Normal</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos P / M / G</p>
+                <p className="text-sm font-semibold mt-1">Padrão</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>P · M · G</p>
               </button>
               <button
-                onClick={() => { setBodyType("plus"); setModelFilter("plus_size"); }}
+                onClick={() => { setBodyType("plus"); setModelFilter("plus_size"); setShowAllModels(false); }}
                 className="p-3 rounded-xl text-center transition-all"
                 style={{
                   border: bodyType === "plus"
@@ -754,8 +755,8 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">💃</span>
-                <p className="text-sm font-semibold mt-1">Plus Size</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>Tamanhos GG / XGG / EGG</p>
+                <p className="text-sm font-semibold mt-1">Curvilínea</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>GG · XGG · EGG</p>
               </button>
             </div>
           </div>
@@ -782,7 +783,7 @@ export default function GerarCampanha() {
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
                     }}
                   >
-                    {f === "all" ? "Todas" : f === "normal" ? "Normal" : "Plus"}
+                    {f === "all" ? "Todas" : f === "normal" ? "Padrão" : "Curvilínea"}
                   </button>
                 ))}
               </div>
@@ -938,33 +939,58 @@ export default function GerarCampanha() {
               ) : null}
 
               {/* Modelos stock do banco */}
-              {modelBank
-                .filter(m => modelFilter === "all" || m.body_type === modelFilter)
-                .map((model) => (
+              {(() => {
+                const filtered = modelBank.filter(m => modelFilter === "all" || m.body_type === modelFilter);
+                const visibleModels = showAllModels ? filtered : filtered.slice(0, 6);
+                return visibleModels.map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => setSelectedModelId(model.id)}
+                    className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                    style={{
+                      border: selectedModelId === model.id
+                        ? "2px solid var(--brand-500)"
+                        : "1px solid var(--border)",
+                    }}
+                    title={model.name}
+                  >
+                    <img
+                      src={model.thumbnail_url || model.image_url}
+                      alt={model.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {selectedModelId === model.id && (
+                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
+                        <span className="text-white text-sm font-bold">✓</span>
+                      </div>
+                    )}
+                  </button>
+                ));
+              })()}
+            </div>
+
+            {/* Botão ver mais modelos */}
+            {(() => {
+              const filtered = modelBank.filter(m => modelFilter === "all" || m.body_type === modelFilter);
+              if (filtered.length <= 6) return null;
+              return (
                 <button
-                  key={model.id}
-                  onClick={() => setSelectedModelId(model.id)}
-                  className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                  onClick={() => setShowAllModels(!showAllModels)}
+                  className="mt-2 w-full py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px] flex items-center justify-center gap-1.5"
                   style={{
-                    border: selectedModelId === model.id
-                      ? "2px solid var(--brand-500)"
-                      : "1px solid var(--border)",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    color: "var(--brand-600)",
                   }}
-                  title={model.name}
                 >
-                  <img
-                    src={model.thumbnail_url || model.image_url}
-                    alt={model.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {selectedModelId === model.id && (
-                    <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">✓</span>
-                    </div>
+                  {showAllModels ? (
+                    <>▲ Mostrar menos</>
+                  ) : (
+                    <>▼ Ver todas ({filtered.length - 6} mais)</>
                   )}
                 </button>
-              ))}
-            </div>
+              );
+            })()}
 
             {/* CTA comprar modelo avulsa — quando atingiu limite e plano não é free */}
             {maxModels > 0 && customModels.length >= maxModels && (
