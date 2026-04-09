@@ -53,12 +53,12 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
     );
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image-preview",
+      model: "gemini-3-pro-image-preview",
       contents: [{ role: "user", parts }],
       config: {
         responseModalities: ["IMAGE", "TEXT"],
         imageConfig: {
-          aspectRatio: "3:4",
+          aspectRatio: "9:16",
           imageSize: "2K",
         },
       } as any,
@@ -98,7 +98,7 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
       const { getModelPricing, getExchangeRate } = await import("@/lib/pricing");
       const pricing = await getModelPricing();
       const exchangeRate = await getExchangeRate();
-      const modelPrice = pricing["gemini-3.1-flash-image-preview"] || pricing["gemini-3-pro-image-preview"] || { inputPerMTok: 0.15, outputPerMTok: 0.60 };
+      const modelPrice = pricing["gemini-3-pro-image-preview"] || pricing["gemini-3.1-flash-image-preview"] || { inputPerMTok: 0.15, outputPerMTok: 0.60 };
 
       const inputTokens = data.faceRefBase64 ? 1300 : 250;
       const outputTokens = 4000;
@@ -109,7 +109,7 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
         store_id: data.storeId || null,
         campaign_id: null,
         provider: "google",
-        model_used: "gemini-3.1-flash-image-preview",
+        model_used: "gemini-3-pro-image-preview",
         action: "model_preview",
         input_tokens: inputTokens,
         output_tokens: outputTokens,
