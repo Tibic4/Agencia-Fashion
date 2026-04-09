@@ -11,7 +11,7 @@
  * - Saída em base64 (upload direto pro Supabase, sem CDN temporário)
  * - Mais barato: ~$0.04/imagem (2K) vs ~$0.15/imagem (FASHN)
  *
- * Resolução: 2K (~4MP) — ideal para Instagram Feed (1080x1350)
+ * Resolução: 2K (~4MP) — ideal para Instagram Stories (1080x1920, 9:16)
  */
 
 import { GoogleGenAI } from "@google/genai";
@@ -60,7 +60,7 @@ export interface GeminiVTOResult {
 
 const MODEL = "gemini-3.1-flash-image-preview";
 const IMAGE_SIZE = "2K";
-const DEFAULT_ASPECT = "3:4";
+const DEFAULT_ASPECT = "9:16";
 
 // ═══════════════════════════════════════
 // Singleton GoogleGenAI
@@ -141,6 +141,15 @@ UNIVERSAL PHYSICS RULES:
 • Cuffs/sleeves end at the correct anatomical point (wrist bone for long sleeves, mid-upper arm for short)
 • The garment looks like it was TAILORED for this specific person
 
+GARMENT PRESENTATION ("IRONED" LOOK):
+• The garment must appear FRESHLY PRESSED and WRINKLE-FREE — as if just steamed by a professional stylist
+• ❌ NO random wrinkles, NO creases from storage, NO messy bunching of fabric
+• ✅ Only NATURAL fold lines at movement points (elbows when bent, behind knees when walking) are allowed
+• The fabric must look CRISP, CLEAN, and PRISTINE — like a luxury lookbook
+• Sleeves, collars, and hems must be PERFECTLY aligned and smooth
+• If the garment has pleats, they must be SHARP and DEFINED
+• Think: the garment was just delivered from the dry cleaner and steamed on-set before this photo
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 4: SCENE, ENVIRONMENT & PHOTOGRAPHY DIRECTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -169,7 +178,7 @@ SECTION 6: FRAMING & CAMERA (CRITICAL)
 • If in doubt, zoom OUT slightly to ensure nothing is cut off
 
 CAMERA:
-• Output: ONE photorealistic image, portrait orientation, 3:4 aspect ratio
+• Output: ONE photorealistic image, portrait orientation, 9:16 aspect ratio (Instagram Stories format)
 • Resolution quality: 2K high-resolution — sharp detail in fabric texture and skin
 • Camera at eye-level or slightly above (1.5m-1.7m from ground), angled to show full figure
 • Sharp focus across the entire figure — thread-level garment detail, individual hair strands at edges
