@@ -302,10 +302,17 @@ REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
    - TODOS os 3 prompts DEVEM especificar "full-body shot from head to feet/shoes"
    - A modelo deve aparecer DOS PÉS À CABEÇA — NUNCA corte na cintura ou joelho
    - Inclua sapatos/sandálias/pés no enquadramento
-   - Aspect ratio 3:4, orientação retrato, com ~10% de espaço acima da cabeça e abaixo dos pés
+   - Aspect ratio 9:16 (formato Instagram Stories), orientação retrato, com ~10% de espaço acima da cabeça e abaixo dos pés
    - ❌ PROIBIDO: meio corpo, busto, close-up, corte na cintura
 
-7. NUNCA escreva prompts curtos como "tuck in shirt" ou "casual confident look" — isso é INÚTIL para o Gemini
+7. 👠 SAPATOS E CALÇADOS — OBRIGATÓRIO EM CADA PROMPT:
+   - Cada scene_prompt DEVE mencionar o tipo de sapato/sandália/tênis que a modelo usa
+   - O calçado DEVE combinar com o estilo da roupa (vestido elegante → scarpin/salto; casual → tênis/flat)
+   - Harmonize a COR do calçado com a paleta do look
+   - Exemplo: "wearing nude pointed-toe stilettos that complement the dress color palette"
+   - ❌ PROIBIDO: pés descalços (exceto moda praia), sapatos que destoam do look
+
+8. NUNCA escreva prompts curtos como "tuck in shirt" ou "casual confident look" — isso é INÚTIL para o Gemini
 
 EXEMPLO DE PROMPT EXCELENTE ✅:
 "Full-body fashion photograph from head to feet in a bright, airy loft studio with floor-to-ceiling windows casting soft natural light from the left. The model walks mid-stride with natural arm swing, captured in fluid motion with confidence, her long wavy hair bouncing softly. The blouse is neatly tucked into the high-waisted trousers, belt cinched at the smallest point of the waist. She wears nude pointed-toe heels visible in the frame. Shot with an 85mm portrait lens at f/2.8, full-body framing with 10% headroom and feet visible at the bottom edge. The overall mood is polished, modern editorial — think Vogue Brazil meets everyday elegance."
