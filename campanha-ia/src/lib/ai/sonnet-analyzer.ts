@@ -272,10 +272,13 @@ REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
    e) CÂMERA — ângulo, enquadramento, profundidade de campo, estilo fotográfico
    f) MOOD/ATMOSFERA — sensação visual geral (editorial, aspiracional, fresh, warm, sophisticated...)
 
-3. Os 3 prompts DEVEM ser RADICALMENTE diferentes entre si:
-   - Prompt 1: segue o cenário preferido da lojista (se informado)
-   - Prompt 2: cenário contrastante (se P1 é estúdio, P2 é externo)
-   - Prompt 3: criativo/inesperado (ângulo diferente, mood especial)
+3. Os 3 prompts DEVEM usar o MESMO CENÁRIO/FUNDO — a campanha é uma SESSÃO DE FOTOS coesa:
+   - O ambiente, fundo e iluminação DEVEM ser IDÊNTICOS nos 3 prompts
+   - O que MUDA entre os 3 prompts: POSE, ÂNGULO DE CÂMERA e EXPRESSÃO FACIAL
+   - Se a lojista escolheu cenário "estúdio branco", os 3 prompts usam estúdio branco
+   - Se a lojista escolheu "urbano", os 3 prompts usam o MESMO cenário urbano
+   - Pense como uma sessão real: mesmo estúdio/locação, 3 poses diferentes
+   - ❌ NUNCA mude o fundo entre os prompts (ex: P1 estúdio, P2 jardim = PROIBIDO)
 
 4. 🚨 CADA PROMPT DEVE TER UMA POSE COMPLETAMENTE DIFERENTE — NUNCA repita a mesma pose!
    Use este banco de referência (escolha 3 poses DISTINTAS dos 3 prompts):
@@ -295,10 +298,17 @@ REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
 
 5. Se a peça é um CONJUNTO (blusa+saia, top+calça), CADA prompt deve mencionar TODAS as peças
 
-6. NUNCA escreva prompts curtos como "tuck in shirt" ou "casual confident look" — isso é INÚTIL para o Gemini
+6. 📏 ENQUADRAMENTO OBRIGATÓRIO: CORPO INTEIRO (FULL BODY)
+   - TODOS os 3 prompts DEVEM especificar "full-body shot from head to feet/shoes"
+   - A modelo deve aparecer DOS PÉS À CABEÇA — NUNCA corte na cintura ou joelho
+   - Inclua sapatos/sandálias/pés no enquadramento
+   - Aspect ratio 3:4, orientação retrato, com ~10% de espaço acima da cabeça e abaixo dos pés
+   - ❌ PROIBIDO: meio corpo, busto, close-up, corte na cintura
+
+7. NUNCA escreva prompts curtos como "tuck in shirt" ou "casual confident look" — isso é INÚTIL para o Gemini
 
 EXEMPLO DE PROMPT EXCELENTE ✅:
-"Professional fashion photography in a bright, airy loft studio with floor-to-ceiling windows casting soft natural light from the left. The model walks mid-stride with natural arm swing, captured in fluid motion with confidence, her long wavy hair bouncing softly. The blouse is neatly tucked into the high-waisted trousers, belt cinched at the smallest point of the waist. Shot with an 85mm portrait lens at f/2.8, creating a creamy bokeh in the background while keeping fabric texture tack-sharp. The overall mood is polished, modern editorial — think Vogue Brazil meets everyday elegance."
+"Full-body fashion photograph from head to feet in a bright, airy loft studio with floor-to-ceiling windows casting soft natural light from the left. The model walks mid-stride with natural arm swing, captured in fluid motion with confidence, her long wavy hair bouncing softly. The blouse is neatly tucked into the high-waisted trousers, belt cinched at the smallest point of the waist. She wears nude pointed-toe heels visible in the frame. Shot with an 85mm portrait lens at f/2.8, full-body framing with 10% headroom and feet visible at the bottom edge. The overall mood is polished, modern editorial — think Vogue Brazil meets everyday elegance."
 
 EXEMPLO DE PROMPT RUIM ❌:
 "Studio setting with good lighting. Model stands confidently wearing the garment."
@@ -377,13 +387,13 @@ function buildSonnetPrompt(input: AnalyzerInput): string {
   if (bgType.startsWith("personalizado:")) {
     const customText = bgType.replace("personalizado:", "").trim();
     if (customText) {
-      sceneInstruction = `\n\n🎬 CENÁRIO PREFERIDO PELA LOJISTA:\n"${customText}"\nUse este cenário como inspiração PRINCIPAL para o Prompt #1 (scene_prompts[0]).\nOs Prompts #2 e #3 devem usar cenários COMPLETAMENTE diferentes para dar variedade à campanha.`;
+      sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO PELA LOJISTA:\n"${customText}"\nUse este cenário como fundo para TODOS os 3 prompts (scene_prompts[0], [1] e [2]).\nTODOS os prompts devem ter o MESMO ambiente e iluminação — varie apenas POSE e ÂNGULO DE CÂMERA.`;
     }
   } else if (bgType === "minha_marca" && input.brandColor) {
-    sceneInstruction = `\n\n🎬 CENÁRIO PREFERIDO: Minha Marca\nA lojista quer fotos com a identidade visual da marca. Cor principal: ${input.brandColor}.\nPrompt #1: Use um backdrop com gradiente ou tom sólido na cor ${input.brandColor} (ou complementar). Iluminação que valorize a cor da marca.\nPrompts #2 e #3: cenários diferentes mas MANTENHA toques da cor da marca em detalhes (acessórios, fundo sutil, filtro de cor).`;
+    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca\nA lojista quer fotos com a identidade visual da marca. Cor principal: ${input.brandColor}.\nTODOS os 3 prompts devem usar backdrop com gradiente ou tom sólido na cor ${input.brandColor} (ou complementar) com iluminação que valorize a cor da marca.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o fundo é SEMPRE o mesmo.`;
   } else if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
-    sceneInstruction = `\n\n🎬 CENÁRIO PREFERIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nUse este cenário como base para o Prompt #1 (scene_prompts[0]).\nOs Prompts #2 e #3 DEVEM ser cenários COMPLETAMENTE diferentes (ex: se P1 é estúdio, P2 pode ser urbano, P3 natureza).`;
+    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;
   }
 
   // ── Model description for prompts ──
