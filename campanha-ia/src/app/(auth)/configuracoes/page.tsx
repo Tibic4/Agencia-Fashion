@@ -147,10 +147,18 @@ export default function Configuracoes() {
 
       {/* Error */}
       {error && (
-        <div className="mb-6 p-3 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
-          <span>⚠️</span>
-          <p className="text-sm font-medium flex-1" style={{ color: "#DC2626" }}>{error}</p>
-          <button onClick={() => setError(null)} style={{ color: "#DC2626" }}>✕</button>
+        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+          <span className="text-lg">⚠️</span>
+          <p className="text-sm font-medium flex-1" style={{ color: "#991B1B" }}>
+            Não foi possível salvar. Verifique sua conexão e tente novamente.
+          </p>
+          <button
+            onClick={() => setError(null)}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition hover:bg-red-100"
+            style={{ color: "#DC2626" }}
+          >
+            ✕
+          </button>
         </div>
       )}
 
