@@ -203,10 +203,14 @@
   pointer-events: none;
 }
 
-.gen-progress-percent {
+.gen-progress-meta {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 6px;
+}
+
+.gen-progress-percent {
   font-size: 13px;
   font-weight: 700;
   background: linear-gradient(135deg, var(--brand-500), var(--accent-500));
@@ -214,6 +218,13 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-variant-numeric: tabular-nums;
+}
+
+.gen-elapsed {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
 }
 
 /* ── Fashion Facts (injected) ── */
@@ -297,124 +308,204 @@
   }
 }
 
-/* ── Waiting message (when stuck on step) ── */
-.gen-wait-msg {
-  font-size: 12px;
-  color: var(--muted);
-  margin: -20px 0 22px;
-  min-height: 18px;
-  animation: wait-msg-in 0.4s ease-out forwards;
-  opacity: 0;
-}
-
-@keyframes wait-msg-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 0.7;
-    transform: translateY(0);
-  }
-}
-
-/* ── Steps List ── */
-.gen-steps {
+/* ═══ Visual Pipeline Timeline ═══ */
+.gen-pipeline {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin: 20px 0 16px;
   width: 100%;
 }
 
-.gen-step {
+.gen-pipeline-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  padding: 6px 0;
-  transition: all 0.4s ease;
-  transform: translateX(0);
-  opacity: 0.25;
+  position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
-.gen-step[data-state="done"] {
-  opacity: 1;
-  color: var(--success);
-}
-
-.gen-step[data-state="active"] {
-  opacity: 1;
-  color: var(--brand-500);
-  font-weight: 600;
-}
-
-.gen-step[data-state="pending"] {
-  opacity: 0.25;
-  color: var(--muted);
-}
-
-/* Step enter animation */
-.gen-step-enter {
-  animation: step-slide-in 0.4s ease-out forwards;
-}
-
-@keyframes step-slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Step indicator */
-.gen-step-icon {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+.gen-pipeline-dot {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
+  position: relative;
+  z-index: 2;
 }
 
-.gen-step-icon[data-state="done"] {
+.gen-pipeline-dot[data-state="done"] {
   background: var(--success);
   color: white;
+  font-size: 12px;
   animation: check-bounce 0.4s ease;
 }
 
-.gen-step-icon[data-state="active"] {
-  background: var(--brand-500);
+.gen-pipeline-dot[data-state="active"] {
+  background: var(--gradient-brand);
   color: white;
-  animation: active-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15);
+  animation: pipeline-pulse 2s ease-in-out infinite;
 }
 
-.gen-step-icon[data-state="pending"] {
-  background: var(--border);
+.gen-pipeline-dot[data-state="pending"] {
+  background: var(--surface);
+  border: 2px solid var(--border);
   color: var(--muted);
+  font-size: 12px;
 }
 
-@keyframes check-bounce {
-  0% { transform: scale(0.6); }
-  50% { transform: scale(1.25); }
-  100% { transform: scale(1); }
-}
-
-@keyframes active-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
+@keyframes pipeline-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.15); }
   50% { box-shadow: 0 0 0 8px rgba(236, 72, 153, 0); }
 }
 
-/* ── Result Button ── */
-.gen-result-btn {
-  margin-top: 28px;
+.gen-pipeline-label {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.gen-pipeline-item[data-state="done"] .gen-pipeline-label {
+  color: var(--success);
+}
+
+.gen-pipeline-item[data-state="active"] .gen-pipeline-label {
+  color: var(--brand-500);
+}
+
+/* Connector line between dots */
+.gen-pipeline-line {
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 20px);
+  width: calc(100% - 40px);
+  height: 2px;
+  background: var(--border);
+  z-index: 1;
+  transition: background 0.4s ease;
+}
+
+.gen-pipeline-line[data-state="done"] {
+  background: var(--success);
+}
+
+.gen-pipeline-line[data-state="active"] {
+  background: linear-gradient(90deg, var(--brand-500) 40%, var(--border) 100%);
+}
+
+/* ═══ Behind the Scenes (live feed) ═══ */
+.gen-bts {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  min-height: 22px;
+  animation: bts-fade-in 0.5s ease-out;
+}
+
+@keyframes bts-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 0.8; transform: translateY(0); }
+}
+
+/* ═══ Photo Counter Pills ═══ */
+.gen-photo-counter {
+  margin: 8px 0 4px;
+}
+
+.gen-photo-pills {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.gen-photo-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.4s ease;
+}
+
+.gen-photo-pill[data-ready="true"] {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.gen-photo-pill[data-ready="false"] {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  opacity: 0.6;
+}
+
+/* ═══ Result Area (completion) ═══ */
+.gen-result-area {
+  margin-top: 20px;
   animation: result-appear 0.6s ease-out forwards;
+}
+
+.gen-result-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.gen-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.gen-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--brand-500), var(--accent-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gen-stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.gen-stat-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+}
+
+.gen-result-btn {
+  margin-top: 0;
 }
 
 @keyframes result-appear {
@@ -426,6 +517,12 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+@keyframes check-bounce {
+  0% { transform: scale(0.6); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
 }
 
 /* ── Floating Particles ── */
@@ -592,6 +689,67 @@
     font-size: 12px;
   }
 
+  .gen-elapsed {
+    font-size: 11px;
+  }
+
+  /* Pipeline mobile */
+  .gen-pipeline {
+    margin: 16px 0 12px;
+  }
+
+  .gen-pipeline-dot {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .gen-pipeline-label {
+    font-size: 9px;
+  }
+
+  .gen-pipeline-line {
+    top: 16px;
+    left: calc(50% + 18px);
+    width: calc(100% - 36px);
+  }
+
+  /* BTS mobile */
+  .gen-bts {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  /* Photo pills mobile */
+  .gen-photo-pill {
+    padding: 5px 10px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .gen-photo-pills {
+    gap: 6px;
+  }
+
+  /* Result stats mobile */
+  .gen-result-stats {
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .gen-stat-value {
+    font-size: 16px;
+  }
+
+  .gen-stat-label {
+    font-size: 9px;
+  }
+
+  .gen-stat-divider {
+    height: 24px;
+  }
+
+  /* Fashion facts */
   .fashion-fact-card {
     padding: 14px 16px;
     min-height: 100px;
@@ -617,22 +775,6 @@
 
   .fashion-facts-wrapper {
     margin: 16px 0 20px;
-  }
-
-  .gen-steps {
-    gap: 4px;
-  }
-
-  .gen-step {
-    font-size: 12px;
-    gap: 10px;
-    padding: 4px 0;
-  }
-
-  .gen-step-icon {
-    width: 20px;
-    height: 20px;
-    font-size: 10px;
   }
 
   .gen-loading-bg::before {
@@ -668,8 +810,13 @@
     padding: 12px 14px;
   }
 
-  .gen-steps {
-    gap: 2px;
+  .gen-pipeline {
+    margin: 12px 0 8px;
+  }
+
+  .gen-bts {
+    padding: 4px 12px;
+    margin-bottom: 4px;
   }
 }
 
@@ -690,12 +837,17 @@
     animation: none;
   }
 
-  .gen-step-icon[data-state="active"] {
+  .gen-pipeline-dot[data-state="active"] {
     animation: none;
   }
 
-  .gen-step-icon[data-state="done"] {
+  .gen-pipeline-dot[data-state="done"] {
     animation: none;
+  }
+
+  .gen-bts {
+    animation: none;
+    opacity: 0.8;
   }
 
   .gen-loading-bg::before,
@@ -703,15 +855,9 @@
     animation: none;
   }
 
-  .gen-result-btn {
+  .gen-result-area {
     animation: none;
     opacity: 1;
-  }
-
-  .gen-step-enter {
-    animation: none;
-    opacity: 1;
-    transform: none;
   }
 }
 
@@ -726,7 +872,17 @@
     background: var(--gray-800);
   }
 
-  .gen-step-icon[data-state="pending"] {
-    background: var(--gray-700);
+  .gen-pipeline-dot[data-state="pending"] {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+
+  .gen-photo-pill[data-ready="false"] {
+    background: var(--gray-800);
+  }
+
+  .gen-result-stats {
+    background: var(--gray-900);
+    border-color: var(--gray-700);
   }
 }
