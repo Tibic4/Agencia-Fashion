@@ -53,7 +53,7 @@ export const generateCampaignJob = inngest.createFunction(
         durationMs: result.durationMs,
         analise: result.analise as unknown as Record<string, unknown>,
         imageUrls: result.images.map(img => (img ? "pending" : null)),
-        prompts: (result.fashn_hints?.styling_prompts || []) as unknown as Record<string, unknown>[],
+        prompts: (result.vto_hints?.scene_prompts || []) as unknown as Record<string, unknown>[],
         dicas_postagem: result.dicas_postagem as unknown as Record<string, unknown>,
         successCount: result.successCount,
       });
