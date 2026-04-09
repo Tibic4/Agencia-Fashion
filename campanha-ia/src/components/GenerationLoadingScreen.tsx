@@ -5,38 +5,7 @@ import Link from "next/link";
 import FashionFactsCarousel from "./FashionFactsCarousel";
 import "./GenerationLoadingScreen.css";
 
-/* ─── Icons (SVG inline — compact for mobile perf) ─── */
-const IconSearch = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-  </svg>
-);
-
-const IconPen = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-  </svg>
-);
-
-const IconCamera = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-    <circle cx="12" cy="13" r="3" />
-  </svg>
-);
-
-const IconCheck = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
-const IconZap = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-  </svg>
-);
-
+/* ─── Props (mantém compatibilidade com a page pai) ─── */
 interface Step {
   label: string;
   progress: number;
@@ -47,89 +16,120 @@ interface GenerationLoadingScreenProps {
   steps: Step[];
 }
 
-/*
- * Derive phase from ELAPSED TIME — not from step index.
- * This ensures the icon/title rotate naturally regardless of
- * where the progress bar is stuck waiting for the API.
- *
- * Timeline:
- *  0-15s  → search (analysing the garment)
- * 15-40s  → pen    (writing editorials)
- * 40s+    → camera (shooting photos) — until done
- */
-type Phase = "search" | "pen" | "camera" | "check";
+/* ═══════════════════════════════════════
+   Phases — 100% baseado em TEMPO
+   
+   Pipeline real:
+   • Gemini Analyzer: ~5-10s
+   • VTO Generation (3 paralelas): ~30-60s
+   • Upload + save: ~5s
+   Total: ~45-75s
+   ═══════════════════════════════════════ */
 
-function getPhaseFromTime(elapsed: number, isComplete: boolean): Phase {
-  if (isComplete) return "check";
-  if (elapsed < 15) return "search";
-  if (elapsed < 40) return "pen";
-  return "camera";
+type Phase = "analyzing" | "editorial" | "shooting" | "polishing" | "almostDone";
+
+function getPhase(elapsed: number, isComplete: boolean): Phase {
+  if (isComplete) return "polishing"; // won't render — completion area shows instead
+  if (elapsed < 8)  return "analyzing";
+  if (elapsed < 20) return "editorial";
+  if (elapsed < 45) return "shooting";
+  if (elapsed < 70) return "polishing";
+  return "almostDone";
 }
 
-/** Dynamic title per phase */
-function getPhaseTitle(phase: Phase, isComplete: boolean): string {
-  if (isComplete) return "Sua campanha está pronta! ✨";
-  switch (phase) {
-    case "search": return "Analisando sua peça";
-    case "pen": return "Criando o editorial";
-    case "camera": return "Fotografando com IA";
-    default: return "Finalizando";
-  }
-}
-
-/** Dynamic subtitle per phase */
-function getPhaseSubtitle(phase: Phase, isComplete: boolean): string {
-  if (isComplete) return "Suas 3 fotos editoriais estão prontas para vender!";
-  switch (phase) {
-    case "search": return "Identificando tecido, cor, modelagem e cada detalhe";
-    case "pen": return "Escrevendo 3 roteiros fotográficos únicos";
-    case "camera": return "Gerando fotos profissionais com modelo virtual";
-    default: return "Salvando tudo para você";
-  }
-}
+const PHASE_CONFIG: Record<Phase, {
+  icon: string;
+  title: string;
+  subtitle: string;
+  color: string;
+}> = {
+  analyzing: {
+    icon: "🔍",
+    title: "Analisando sua peça",
+    subtitle: "Identificando tecido, cor, modelagem e cada detalhe",
+    color: "#818cf8",
+  },
+  editorial: {
+    icon: "✍️",
+    title: "Criando o editorial",
+    subtitle: "Escrevendo 3 roteiros fotográficos únicos",
+    color: "#f472b6",
+  },
+  shooting: {
+    icon: "📸",
+    title: "Fotografando com IA",
+    subtitle: "Gerando fotos profissionais com modelo virtual",
+    color: "#a855f7",
+  },
+  polishing: {
+    icon: "✨",
+    title: "Finalizando detalhes",
+    subtitle: "Aplicando acabamento editorial profissional",
+    color: "#f59e0b",
+  },
+  almostDone: {
+    icon: "🎯",
+    title: "Quase lá...",
+    subtitle: "Salvando suas fotos em alta qualidade",
+    color: "#10b981",
+  },
+};
 
 /* ── Behind-the-scenes messages per phase ── */
-const behindTheScenes: Record<string, string[]> = {
-  search: [
+const BEHIND_SCENES: Record<Phase, string[]> = {
+  analyzing: [
     "🔍 Analisando tons e saturação da peça…",
     "🧵 Identificando tipo de tecido pelo brilho e textura…",
     "📐 Mapeando caimento e modelagem…",
     "🎨 Extraindo a paleta de cores principal…",
     "✂️ Detectando detalhes: costuras, botões, estampas…",
   ],
-  pen: [
+  editorial: [
     "✍️ Escrevendo direção de arte para o fotógrafo…",
     "💡 Definindo iluminação ideal para esta peça…",
     "🎬 Criando 3 poses diferentes para a campanha…",
     "👠 Selecionando sapatos que combinam com o look…",
     "🪄 Montando paleta de cenário e acessórios…",
   ],
-  camera: [
+  shooting: [
     "📸 Posicionando a modelo no cenário escolhido…",
     "💫 Ajustando caimento natural do tecido no corpo…",
     "🌟 Renderizando iluminação e sombras realistas…",
     "✨ Aplicando acabamento editorial profissional…",
     "🎯 Finalizando enquadramento corpo inteiro…",
   ],
+  polishing: [
+    "🖼️ Otimizando resolução e nitidez…",
+    "🎨 Equilibrando cores e contraste…",
+    "💎 Verificando qualidade final de cada foto…",
+    "📤 Preparando para salvar suas criações…",
+    "✅ Últimos ajustes de qualidade…",
+  ],
+  almostDone: [
+    "⏳ Finalizando os últimos detalhes…",
+    "💾 Salvando em alta resolução…",
+    "🎁 Preparando suas 3 fotos editoriais…",
+    "🚀 Quase pronto, só mais um instante…",
+    "✨ Sua campanha está ficando incrível…",
+  ],
 };
 
-/* ── Pipeline phases for visual timeline ── */
-const pipelinePhases: { key: Phase; emoji: string; label: string }[] = [
-  { key: "search", emoji: "🔍", label: "Análise" },
-  { key: "pen", emoji: "✍️", label: "Editorial" },
-  { key: "camera", emoji: "📸", label: "Fotos" },
-  { key: "check", emoji: "✨", label: "Pronto" },
+/* ── Motivational messages ── */
+const MOTIVATIONAL = [
+  "Cada foto é feita sob medida para sua peça ✨",
+  "Resultado de estúdio profissional, direto no celular 📱",
+  "Lojas que usam fotos com modelo vendem até 3x mais 📈",
+  "Sua peça merece uma campanha de alto nível 💎",
+  "Em instantes você terá 3 fotos prontas para vender 🚀",
 ];
 
-const phaseOrder: Phase[] = ["search", "pen", "camera", "check"];
-
-/* ─── Confetti colors ─── */
-const confettiColors = [
+/* ── Confetti colors ── */
+const CONFETTI_COLORS = [
   "#ec4899", "#a855f7", "#f97316", "#10b981",
   "#3b82f6", "#f472b6", "#c084fc", "#fbbf24",
 ];
 
-/* ─── Format time ─── */
+/* ── Format time ── */
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -137,11 +137,13 @@ function formatTime(seconds: number): string {
   return `0:${secs.toString().padStart(2, "0")}`;
 }
 
+/* ═══════════════════════════════════════
+   Component
+   ═══════════════════════════════════════ */
 export default function GenerationLoadingScreen({ step, steps }: GenerationLoadingScreenProps) {
-  const currentStep = steps[step];
   const isComplete = step >= steps.length - 1;
 
-  // ── Elapsed timer (drives phase transitions) ──
+  // ── Elapsed timer (drives everything) ──
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (isComplete) return;
@@ -149,27 +151,13 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
     return () => clearInterval(timer);
   }, [isComplete]);
 
-  // Phase derived from TIME, not step (solves the "stuck on pen" problem)
-  const phase = getPhaseFromTime(elapsed, isComplete);
-
-  // ── Smooth progress interpolation (no jumps) ──
-  const [displayProgress, setDisplayProgress] = useState(currentStep.progress);
-  useEffect(() => {
-    const target = currentStep.progress;
-    const interval = setInterval(() => {
-      setDisplayProgress(prev => {
-        if (prev >= target) { clearInterval(interval); return target; }
-        const gap = target - prev;
-        const increment = Math.max(0.15, gap * 0.06);
-        return Math.min(prev + increment, target);
-      });
-    }, 150);
-    return () => clearInterval(interval);
-  }, [currentStep.progress]);
+  // Phase from TIME only
+  const phase = getPhase(elapsed, isComplete);
+  const config = PHASE_CONFIG[phase];
 
   // ── Behind-the-scenes cycling ──
   const [btsIndex, setBtsIndex] = useState(0);
-  const btsMessages = behindTheScenes[phase] || behindTheScenes.search;
+  const btsMessages = BEHIND_SCENES[phase];
   useEffect(() => {
     setBtsIndex(0);
     const interval = setInterval(() => {
@@ -178,23 +166,30 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
     return () => clearInterval(interval);
   }, [phase, btsMessages.length]);
 
-  // ── Photo count (from actual step, not time) ──
-  const photosReady = isComplete
-    ? 3
-    : step >= 7 ? 2 : step >= 6 ? 1 : 0;
+  // ── Motivational message cycling ──
+  const [motIndex, setMotIndex] = useState(0);
+  useEffect(() => {
+    if (isComplete) return;
+    const interval = setInterval(() => {
+      setMotIndex(prev => (prev + 1) % MOTIVATIONAL.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [isComplete]);
 
-  // ── Confetti ──
+  // ── Confetti (memoized) ──
   const confettiPieces = useMemo(() => {
-    return Array.from({ length: 16 }).map((_, i) => ({
-      color: confettiColors[i % confettiColors.length],
-      left: `${10 + Math.random() * 80}%`,
-      top: `${30 + Math.random() * 20}%`,
-      delay: `${i * 0.08}s`,
+    return Array.from({ length: 20 }).map((_, i) => ({
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      left: `${5 + Math.random() * 90}%`,
+      delay: `${i * 0.1}s`,
       size: 6 + Math.random() * 6,
+      duration: `${1.5 + Math.random() * 1.5}s`,
     }));
   }, []);
 
-  const roundedProgress = Math.round(displayProgress);
+  // ── Phase timeline for dots ──
+  const PHASE_KEYS: Phase[] = ["analyzing", "editorial", "shooting", "polishing"];
+  const currentPhaseIdx = PHASE_KEYS.indexOf(phase);
 
   return (
     <div className="gen-loading animate-fade-in">
@@ -220,9 +215,9 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
               className="gen-confetti-piece"
               style={{
                 left: piece.left,
-                top: piece.top,
                 background: piece.color,
                 animationDelay: piece.delay,
+                animationDuration: piece.duration,
                 width: piece.size,
                 height: piece.size,
               }}
@@ -232,88 +227,83 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
       )}
 
       <div className="gen-loading-content">
-        {/* ─── Premium animated icon ─── */}
-        <div className="gen-icon-container">
-          <div className="gen-icon-ring" />
-          <div className="gen-icon-stage" data-active={phase === "search"}><IconSearch /></div>
-          <div className="gen-icon-stage" data-active={phase === "pen"}><IconPen /></div>
-          <div className="gen-icon-stage" data-active={phase === "camera"}><IconCamera /></div>
-          <div className="gen-icon-stage" data-active={phase === "check"}><IconCheck /></div>
+        {/* ─── Breathing ring + animated emoji ─── */}
+        <div className="gen-icon-area">
+          <div
+            className="gen-breathing-ring"
+            style={{ borderColor: `${config.color}40`, boxShadow: `0 0 40px ${config.color}20` }}
+          />
+          <div
+            className="gen-breathing-ring gen-breathing-ring-2"
+            style={{ borderColor: `${config.color}20` }}
+          />
+          <div className="gen-emoji-icon" key={phase}>
+            <span className="gen-emoji-text">{isComplete ? "🎉" : config.icon}</span>
+          </div>
         </div>
 
-        {/* Title — dynamic per phase */}
-        <h2 className="gen-title">{getPhaseTitle(phase, isComplete)}</h2>
+        {/* Title */}
+        <h2 className="gen-title" key={`title-${phase}`}>
+          {isComplete ? "Sua campanha está pronta! ✨" : config.title}
+        </h2>
 
-        {/* Phase subtitle */}
-        <p className="gen-subtitle" key={phase}>
-          {getPhaseSubtitle(phase, isComplete)}
+        {/* Subtitle */}
+        <p className="gen-subtitle" key={`sub-${phase}`}>
+          {isComplete ? "Suas 3 fotos editoriais estão prontas para vender!" : config.subtitle}
         </p>
 
-        {/* Progress bar + timer */}
-        <div className="gen-progress-wrapper">
-          <div className="gen-progress-track">
-            <div
-              className="gen-progress-fill"
-              style={{ width: `${roundedProgress}%` }}
-            />
-          </div>
-          <div
-            className="gen-progress-glow"
-            style={{ width: `${roundedProgress}%` }}
-          />
-          <div className="gen-progress-meta">
-            <span className="gen-progress-percent">{roundedProgress}%</span>
-            {!isComplete && (
-              <span className="gen-elapsed">⏱ {formatTime(elapsed)}</span>
+        {/* ── Timer ── */}
+        {!isComplete && (
+          <div className="gen-timer">
+            <span className="gen-timer-icon">⏱</span>
+            <span className="gen-timer-value">{formatTime(elapsed)}</span>
+            {elapsed < 10 && (
+              <span className="gen-timer-hint">Geralmente leva ~45s</span>
             )}
           </div>
-        </div>
+        )}
 
-        {/* ── Visual Pipeline ── */}
-        <div className="gen-pipeline">
-          {pipelinePhases.map((p, i) => {
-            const currentIdx = phaseOrder.indexOf(phase);
-            const thisIdx = phaseOrder.indexOf(p.key);
-            const state = thisIdx < currentIdx ? "done" : thisIdx === currentIdx ? "active" : "pending";
-            return (
-              <div key={p.key} className="gen-pipeline-item" data-state={state}>
-                <div className="gen-pipeline-dot" data-state={state}>
-                  {state === "done" ? "✓" : p.emoji}
+        {/* ── Phase dots (simple, no progress bar) ── */}
+        {!isComplete && (
+          <div className="gen-phase-dots">
+            {PHASE_KEYS.map((key, i) => (
+              <div key={key} className="gen-phase-dot-group">
+                <div
+                  className={`gen-phase-dot ${
+                    i < currentPhaseIdx ? "gen-phase-done" :
+                    i === currentPhaseIdx ? "gen-phase-active" :
+                    "gen-phase-pending"
+                  }`}
+                  style={i <= currentPhaseIdx ? { background: config.color } : undefined}
+                >
+                  {i < currentPhaseIdx ? "✓" : PHASE_CONFIG[key].icon}
                 </div>
-                <span className="gen-pipeline-label">{p.label}</span>
-                {i < pipelinePhases.length - 1 && (
-                  <div className="gen-pipeline-line" data-state={state} />
+                {i < PHASE_KEYS.length - 1 && (
+                  <div
+                    className={`gen-phase-line ${i < currentPhaseIdx ? "gen-phase-line-done" : ""}`}
+                    style={i < currentPhaseIdx ? { background: config.color } : undefined}
+                  />
                 )}
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* ── Behind-the-scenes (what IA is doing NOW) ── */}
+        {/* ── Behind-the-scenes ── */}
         {!isComplete && (
           <div className="gen-bts" key={`${phase}-${btsIndex}`}>
             {btsMessages[btsIndex]}
           </div>
         )}
 
-        {/* ── Photo counter pills (during camera phase) ── */}
-        {phase === "camera" && !isComplete && (
-          <div className="gen-photo-counter">
-            <div className="gen-photo-pills">
-              {[1, 2, 3].map(n => (
-                <div
-                  key={n}
-                  className="gen-photo-pill"
-                  data-ready={n <= photosReady}
-                >
-                  {n <= photosReady ? "📸" : "⏳"} Look {n}
-                </div>
-              ))}
-            </div>
+        {/* ── Motivational ── */}
+        {!isComplete && (
+          <div className="gen-motivational" key={`mot-${motIndex}`}>
+            {MOTIVATIONAL[motIndex]}
           </div>
         )}
 
-        {/* ── Fashion Facts Carousel (mantido) ── */}
+        {/* ── Fashion Facts Carousel ── */}
         {!isComplete && <FashionFactsCarousel />}
 
         {/* ── Completion area ── */}
@@ -331,14 +321,13 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
               </div>
               <div className="gen-stat-divider" />
               <div className="gen-stat">
-                <span className="gen-stat-value">Pro</span>
+                <span className="gen-stat-value">HD</span>
                 <span className="gen-stat-label">Qualidade</span>
               </div>
             </div>
             <div className="gen-result-btn">
               <Link href="/gerar/demo" className="btn-primary">
-                <IconZap />
-                Ver minhas fotos →
+                ⚡ Ver minhas fotos →
               </Link>
             </div>
           </div>
