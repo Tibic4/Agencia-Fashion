@@ -108,13 +108,16 @@ YOUR MISSION: Produce a SINGLE stunning photorealistic fashion photograph of the
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 1: IDENTITY PRESERVATION (NON-NEGOTIABLE)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• The person's face must be a PIXEL-PERFECT match to IMAGE 1
+🚨 THE FACE IN THE OUTPUT MUST BE THE EXACT SAME PERSON AS IMAGE 1 — NOT A SIMILAR PERSON.
+• ANCHOR POINTS: Use IMAGE 1 as the SOLE identity reference throughout the entire generation process.
+  — Before generating ANYTHING, study IMAGE 1 for 5 seconds: memorize the face shape, nose bridge angle, eye spacing ratio, lip thickness, chin line.
 • Reproduce: exact bone structure, eye shape/color/spacing, nose profile, lip shape/fullness, eyebrow arch, jawline, chin shape
 • Skin tone and undertone must be IDENTICAL — no color shifting, no lightening, no darkening
-• Preserve every natural detail: beauty marks, freckles, dimples, smile lines
-• Hair: same texture, color, volume, length, styling, and part line as IMAGE 1
-• Body proportions: same build, shoulder width, hip width, height proportions
-• The face must pass a "forensic comparison" — clearly the SAME person
+• Preserve every natural detail: beauty marks, freckles, dimples, smile lines, wrinkles, asymmetries
+• Hair: same EXACT texture, color, volume, length, styling, and part line as IMAGE 1 — do NOT change the hairstyle
+• Body proportions: same build, shoulder width, hip width, height proportions — match IMAGE 1 exactly
+• Age appearance: the generated person must look the SAME AGE as IMAGE 1 — no younger, no older
+• The face must pass a "forensic comparison" — a viewer shown IMAGE 1 and the output must say "same person"
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 2: GARMENT REPRODUCTION (CRITICAL FIDELITY)
@@ -164,9 +167,18 @@ SECTION 5: SKIN & HUMAN REALISM
 • Natural color variation: slightly pinker on knuckles, elbows, knees
 • Eye realism: visible iris detail, natural moisture, catchlights reflecting the scene light source
 • Lips with natural color variation and subtle texture
-• Hands: 5 fingers each, realistic proportions, natural nail beds
 • The person must look ALIVE — natural body weight distribution, relaxed muscles, breathing pose
 • NO airbrushing, NO plastic skin, NO uncanny valley perfection
+
+🚨 HANDS & FINGERS (CRITICAL — AI COMMON FAILURE POINT):
+• Each hand has EXACTLY 5 fingers: thumb, index, middle, ring, pinky — COUNT them before finalizing
+• Fingers must have 3 visible joints (or 2 for thumb), natural nail beds, and realistic skin folds
+• Finger proportions: index ≈ ring > middle > pinky > thumb (in length)
+• ❌ ABSOLUTELY FORBIDDEN: 6+ fingers, fused fingers, missing fingers, extra-long fingers, stub fingers
+• ❌ NO melted/boneless fingers, NO fingers disappearing into fabric, NO transparent fingers
+• Hands should be relaxed or in a natural pose — resting on hip, at sides, touching hair, or holding an accessory
+• If a hand is partially behind the body or garment, the VISIBLE portion must still be anatomically correct
+• Wrists: normal diameter, visible wrist bones, natural transition from forearm to hand
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 6: FRAMING & CAMERA (CRITICAL)
@@ -206,7 +218,35 @@ SECTION 8: STYLING COMPLETION & POLISH
 • Natural makeup that matches the scene mood (soft glam for editorial, minimal for casual)
 • Nails: clean, well-groomed, matching the overall color palette
 • The overall look must feel COMPLETE — as if a professional stylist prepared every detail
-• Think: this image will be posted on Instagram by a luxury fashion brand`;
+• Think: this image will be posted on Instagram by a luxury fashion brand
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ ANATOMICAL ERRORS:
+- Extra fingers (6+), missing fingers, fused/melted fingers, stub fingers, boneless hands
+- Extra limbs, missing limbs, distorted joints, twisted wrists or ankles
+- Teeth errors: extra teeth, missing teeth, metallic teeth, blurred mouth interior
+- Ears: distorted, asymmetric placement, missing earlobes, floating earrings
+
+❌ IDENTITY DRIFT:
+- Different face than IMAGE 1 — the person must be RECOGNIZABLE, not a "similar-looking" person
+- Skin tone change: lighter or darker than the reference
+- Eye color change: must match IMAGE 1 exactly
+- Different hairstyle, hair color, or hair length than IMAGE 1
+
+❌ GARMENT ERRORS:
+- Changing the garment's color (must match IMAGE 2 exactly)
+- Adding patterns/prints to a solid-color garment
+- Removing buttons, pockets, or construction details visible in IMAGE 2
+- Transparent or see-through fabric where it shouldn't be
+
+❌ COMPOSITION ERRORS:
+- Text, watermarks, logos, borders, frames, split panels
+- Multiple people (output ONE person only)
+- Cropped body (must be HEAD TO FEET)
+- Floating objects, duplicated elements, background artifacts
+- Blurry faces, distorted features, uncanny valley expressions`;
 }
 
 
