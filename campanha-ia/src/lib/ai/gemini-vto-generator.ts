@@ -9,9 +9,9 @@
  * - Aceita fotos com fundo poluído (loja, manequim)
  * - Prompt narrativo = controle fino do resultado
  * - Saída em base64 (upload direto pro Supabase, sem CDN temporário)
- * - Mais barato: ~$0.04/imagem vs ~$0.15/imagem (FASHN)
+ * - Mais barato: ~$0.08/imagem (4K) vs ~$0.15/imagem (FASHN)
  *
- * Resolução: 2K (~4MP) — ideal para Instagram Feed (1080x1350)
+ * Resolução: 4K Ultra HD — máxima qualidade para campanhas profissionais
  */
 
 import { GoogleGenAI } from "@google/genai";
@@ -59,7 +59,7 @@ export interface GeminiVTOResult {
 // ═══════════════════════════════════════
 
 const MODEL = "gemini-3.1-flash-image-preview";
-const IMAGE_SIZE = "2K";
+const IMAGE_SIZE = "4K";
 const DEFAULT_ASPECT = "3:4";
 
 // ═══════════════════════════════════════
@@ -69,8 +69,8 @@ const DEFAULT_ASPECT = "3:4";
 let _ai: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI {
   if (!_ai) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+    const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("GOOGLE_AI_API_KEY (ou GEMINI_API_KEY) não configurada");
     _ai = new GoogleGenAI({ apiKey });
   }
   return _ai;
@@ -82,51 +82,94 @@ function getAI(): GoogleGenAI {
 
 function buildVTOPrompt(stylingPrompt: string, bodyType: string): string {
   const fitContext = bodyType === "plus"
-    ? `The model has a plus-size curvy body with full figure. Ensure the garment fits naturally, flattering her curves — no pulling at seams, no bunching. The fabric should drape smoothly over her bust, waist, and hips. Choose poses and angles that celebrate her body shape confidently.`
-    : `The model has a standard/slim build. Ensure the garment fits naturally with appropriate ease — not too tight, not too loose. The fabric should fall cleanly along her frame.`;
+    ? `BODY TYPE: Plus-size / curvy figure with full bust, soft defined waist, and wide hips.
+FIT DIRECTIVES:
+- The garment must accommodate her curves without ANY pulling at seams, stretching, or bunching
+- Fabric should drape smoothly over bust, follow the natural waist curve, and flow over hips
+- Show how the garment flatters her figure — emphasize the silhouette, not hide it
+- Ensure armholes are comfortable and necklines sit correctly on a fuller bust
+- If the garment has a waistband, it should sit naturally at her waist without digging in
+- Choose angles that celebrate her body shape with confidence and beauty`
+    : `BODY TYPE: Standard/slim build with naturally proportioned frame.
+FIT DIRECTIVES:
+- Garment should fit with appropriate ease — not vacuum-sealed to the body, not overly loose
+- Fabric falls cleanly along her frame, following natural contours
+- Show natural body movement suggesting the garment is comfortable and lived-in`;
 
-  return `You are an elite fashion photographer and virtual try-on specialist working for a premium e-commerce brand.
+  return `You are an elite commercial fashion photographer with 20 years of experience shooting campaigns for Vogue, ELLE, and luxury e-commerce brands.
 
-I am providing exactly TWO reference images in this request:
-• IMAGE 1 (first image): The PERSON — a fashion model reference photo. This is the person who must appear in the final image.
-• IMAGE 2 (second image): The GARMENT/OUTFIT — a product photo that may show clothing on a mannequin, flat-lay, hanger, or worn by a different person.
+I am providing exactly TWO reference images:
+• IMAGE 1 (first image): THE MODEL — a person whose identity you must preserve EXACTLY in the output.
+• IMAGE 2 (second image): THE GARMENT — a product photo showing the clothing piece(s) that must appear on the model.
 
-YOUR TASK: Create a single photorealistic image of the person from IMAGE 1 wearing ALL garments/pieces visible in IMAGE 2.
+YOUR MISSION: Produce a SINGLE stunning photorealistic fashion photograph of the person from IMAGE 1 wearing the COMPLETE outfit from IMAGE 2. This image must be indistinguishable from a real professional photoshoot.
 
-━━━ IDENTITY PRESERVATION (HIGHEST PRIORITY) ━━━
-• Reproduce the person's face with pixel-level accuracy — same bone structure, eye shape, nose, lips, skin texture
-• Match skin tone and undertone EXACTLY — warm/cool, no color shifts
-• Preserve hairstyle, hair color, hair texture, and hair volume precisely
-• Maintain body proportions, posture baseline, and physical build
-• The result must be indistinguishable from a real photo of THIS specific person
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1: IDENTITY PRESERVATION (NON-NEGOTIABLE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• The person's face must be a PIXEL-PERFECT match to IMAGE 1
+• Reproduce: exact bone structure, eye shape/color/spacing, nose profile, lip shape/fullness, eyebrow arch, jawline, chin shape
+• Skin tone and undertone must be IDENTICAL — no color shifting, no lightening, no darkening
+• Preserve every natural detail: beauty marks, freckles, dimples, smile lines
+• Hair: same texture, color, volume, length, styling, and part line as IMAGE 1
+• Body proportions: same build, shoulder width, hip width, height proportions
+• The face must pass a "forensic comparison" — clearly the SAME person
 
-━━━ GARMENT FIDELITY (CRITICAL) ━━━
-• Reproduce EVERY visible piece from the product image — if there is a blouse AND a skirt, include BOTH
-• Match fabric colors exactly — same hue, saturation, and value. No color drift
-• Preserve ALL details: buttons, zippers, seams, stitching, embroidery, lace, pleats, ruffles
-• Maintain exact patterns: stripes, florals, geometric prints must match scale and placement
-• Reproduce fabric texture faithfully: ribbed knit, smooth silk, denim weave, crepe, chiffon
-• Labels, tags, and small brand details should NOT be visible (clean product shot)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2: GARMENT REPRODUCTION (CRITICAL FIDELITY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Reproduce EVERY visible piece from IMAGE 2 — if there's a top AND a bottom, BOTH must appear
+• If IMAGE 2 shows a SET/CONJUNTO (blouse + skirt, top + pants, dress + jacket), include ALL pieces
+• Color matching: exact hue, saturation, and brightness of the original garment — NO color drift
+• Pattern fidelity: stripes, florals, geometric prints, animal prints — match scale, rotation, and placement
+• Construction details: every button, zipper, snap, hook, seam, stitch line, pocket, belt loop must be visible
+• Embellishments: embroidery, lace, sequins, beading, appliqué — render with photographic accuracy
+• Fabric texture: you can SEE the fabric type — ribbed knit shows ridges, silk shows sheen, denim shows weave, chiffon shows transparency
+• Labels, tags, price stickers: NOT visible (this is a finished campaign shot)
 
-━━━ FABRIC PHYSICS & FIT ━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3: FABRIC PHYSICS & TAILORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${fitContext}
-• The garment must drape realistically following gravity and body contours
-• Show natural fabric creasing at bend points (elbows, waist, knees) — NOT wrinkled or messy
-• Seams must align with the body's center line and shoulder points
-• Hemlines must be even and at the correct length relative to the body
 
-━━━ SCENE, STYLING & PHOTOGRAPHY ━━━
+UNIVERSAL PHYSICS RULES:
+• Gravity: fabric hangs DOWN and follows body contours — never floats or defies physics
+• Creasing: natural fold lines at elbows, behind knees, at waist when seated — NOT wrinkled or messy
+• Seam alignment: center-front seam runs down the sternum, shoulder seams sit on the shoulder point
+• Hemlines: even, at the correct length, following the garment's design (not riding up or drooping)
+• If there's a collar, it sits properly around the neck with even spacing
+• Cuffs/sleeves end at the correct anatomical point (wrist bone for long sleeves, mid-upper arm for short)
+• The garment looks like it was TAILORED for this specific person
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4: SCENE, ENVIRONMENT & PHOTOGRAPHY DIRECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${stylingPrompt}
 
-━━━ TECHNICAL REQUIREMENTS ━━━
-• Output a single photorealistic image at professional fashion photography quality
-• Sharp focus on fabric texture and garment details — thread-level clarity
-• Natural skin rendering — visible pores, subtle highlights, no airbrushed plastic look
-• Realistic eye reflections matching the scene lighting
-• Clean image with no artifacts, no text overlays, no watermarks, no split frames
-• Portrait orientation (3:4 aspect ratio)
-• The person should appear confident, natural, and alive — NOT posed like a mannequin`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5: SKIN & HUMAN REALISM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Natural skin rendering — visible pores on nose/cheeks, fine texture on forehead
+• Realistic highlights on cheekbones, collarbones, and shoulders from the scene lighting
+• Natural color variation: slightly pinker on knuckles, elbows, knees
+• Eye realism: visible iris detail, natural moisture, catchlights reflecting the scene light source
+• Lips with natural color variation and subtle texture
+• Hands: 5 fingers each, realistic proportions, natural nail beds
+• The person must look ALIVE — natural body weight distribution, relaxed muscles, breathing pose
+• NO airbrushing, NO plastic skin, NO uncanny valley perfection
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: TECHNICAL CAMERA SPECIFICATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Output: ONE photorealistic image, portrait orientation, 3:4 aspect ratio
+• Resolution quality: 4K Ultra HD — maximum detail in fabric texture and skin
+• Sharp focus across the entire figure — thread-level garment detail, individual hair strands at edges
+• Natural depth of field appropriate to the scene (studio = deeper DOF, outdoor = shallower)
+• Clean image: NO text, NO watermarks, NO split frames, NO borders, NO artifacts
+• NO duplicated elements, NO extra limbs, NO distorted proportions
+• Color output: sRGB color space, balanced exposure, no blown highlights or crushed shadows`;
 }
+
 
 // ═══════════════════════════════════════
 // Função principal — 3 chamadas paralelas
@@ -269,7 +312,7 @@ function mapAspectRatio(ratio: string): string {
 
 // ═══════════════════════════════════════
 // Log de custos
-// Gemini 3.1 Flash Image: ~$0.04/imagem (2K)
+// Gemini 3.1 Flash Image: ~$0.08/imagem (4K)
 // Input: ~0.001/img, Output: ~0.04/img (1312×1744 ≈ $0.0385/img)
 // ═══════════════════════════════════════
 
@@ -290,8 +333,8 @@ async function logGeminiVTOCosts(
     // fallback
   }
 
-  // Gemini 3.1 Flash Image 2K: ~$0.04/imagem (input tokens + output image)
-  const costPerImage = 0.04;
+  // Gemini 3.1 Flash Image 4K: ~$0.08/imagem (input tokens + output image)
+  const costPerImage = 0.08;
   const totalCostUsd = costPerImage * successCount;
 
   const { error } = await supabase.from("api_cost_logs").insert({
