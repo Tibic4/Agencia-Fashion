@@ -30,7 +30,7 @@ export interface SonnetAnalise {
 }
 
 export interface SonnetFashnHint {
-  /** 3 styling prompts para o FASHN product-to-model */
+  /** 3 styling prompts para o FASHN tryon-max (instruções de caimento/estilo) */
   styling_prompts: [string, string, string];
   /** Aspect ratio sugerido */
   aspect_ratio: "3:4" | "4:5" | "2:3";
@@ -181,17 +181,35 @@ export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAna
 
 const SONNET_SYSTEM_PROMPT = `Você é um analista de moda especializado em e-commerce brasileiro. Você recebe fotos de peças de roupa e faz uma análise detalhada para gerar conteúdo visual profissional usando IA.
 
-Sua análise será usada para alimentar um sistema de Virtual Try-On (FASHN AI) que coloca peças de roupa em modelos virtuais. Por isso, você precisa:
+Sua análise será usada para alimentar o FASHN AI "tryon-max" — um sistema de Virtual Try-On que VESTE a peça real numa modelo virtual. O tryon-max recebe a foto do produto + foto da modelo e coloca a peça na modelo com alta fidelidade.
+
+Por isso, você precisa:
 
 1. ANALISAR a peça com detalhes (cor, tecido, modelagem, detalhes)
-2. GERAR 3 styling prompts curtos e eficazes para o FASHN (em inglês)
+2. GERAR 3 styling prompts para o tryon-max (em inglês)
 3. CRIAR dicas de postagem para a lojista brasileira (em português)
 
-REGRAS PARA OS STYLING PROMPTS (FASHN):
-- Os prompts do FASHN são CURTOS (1-2 frases) — descrevem o CENÁRIO e POSE, não a roupa
-- O FASHN já vê a foto do produto — não precisa descrever a peça
-- Exemplos bons: "professional studio setting, neutral background", "outdoor urban street, golden hour lighting", "café terrace, relaxed sitting pose"
-- Cada prompt deve propor um cenário DIFERENTE
+REGRAS CRÍTICAS PARA OS STYLING PROMPTS (tryon-max):
+- O prompt do tryon-max controla COMO a peça é vestida — NÃO descreve cenários
+- São instruções curtas de STYLING/CAIMENTO da peça no corpo da modelo
+- Exemplos BONS:
+  • "tuck in shirt, natural relaxed pose" (camisa por dentro)
+  • "roll up sleeves, casual confident look" (mangas dobradas)
+  • "open jacket showing inner layer" (jaqueta aberta)
+  • "belt cinched at waist, elegant drape" (marcação na cintura)
+  • "off-shoulder style, relaxed fit" (ombro caído)
+  • "button up fully, professional sleek look" (toda abotoada)
+  • "tie front knot, casual summer style" (nó na frente)
+  • "layered over simple top, street style" (sobreposição)
+- Exemplos RUINS (NÃO FAÇA ISSO):
+  • "urban street golden hour lighting" ← cenário, não styling
+  • "professional studio neutral background" ← isso é background
+- Cada prompt deve propor uma VARIAÇÃO DIFERENTE de como vestir a peça
+- Se a peça não permite variações (ex: vestido simples), varie pose/atitude:
+  • "natural standing pose, hands at sides"
+  • "walking confidently, slight movement"
+  • "hand on hip, looking away naturally"
+- Máximo 1-2 frases curtas por prompt
 - Prompts em INGLÊS
 
 REGRAS PARA DICAS DE POSTAGEM:
@@ -213,28 +231,28 @@ function buildSonnetPrompt(input: AnalyzerInput): string {
   if (input.bodyType === "plus") extras.push("Tipo de corpo da modelo: plus size (GG/XGG)");
   if (input.brandColor) extras.push(`Cor da marca da loja: ${input.brandColor}`);
 
-  // ── Cenário ──
-  const SCENARIO_DESCRIPTIONS: Record<string, string> = {
-    branco: "Clean white studio background",
-    estudio: "Professional studio with soft lighting",
-    lifestyle: "Everyday lifestyle setting — café, living room, cozy environment",
-    urbano: "Urban modern setting — city street, modern architecture, golden hour",
-    natureza: "Outdoor natural setting — garden, beach at sunset, green field",
-    interior: "Elegant interior — modern loft, decorated apartment",
-    boutique: "Fashion boutique interior — minimalist racks, warm lighting",
-    gradiente: "Elegant gradient background matching garment colors",
+  // ── Mood de styling (tryon-max controla caimento, não cenário) ──
+  const STYLING_MOODS: Record<string, string> = {
+    branco: "Clean minimal styling, natural relaxed fit",
+    estudio: "Polished professional styling, well-fitted look",
+    lifestyle: "Casual everyday styling, relaxed comfortable fit",
+    urbano: "Street style confident look, edgy modern fit",
+    natureza: "Effortless natural styling, breezy relaxed drape",
+    interior: "Elegant refined styling, sophisticated silhouette",
+    boutique: "Fashion-forward styling, details highlighted",
+    gradiente: "Clean styled look, garment details front and center",
   };
 
-  let bgHint = "";
+  let styleHint = "";
   const bgType = input.backgroundType || "";
 
   if (bgType.startsWith("personalizado:")) {
     const customText = bgType.replace("personalizado:", "").trim();
     if (customText) {
-      bgHint = `\nCENÁRIO PREFERIDO pela lojista: "${customText}". Use como base para o Prompt #1. Os outros 2 devem ser diferentes.`;
+      styleHint = `\nESTILO PREFERIDO pela lojista: "${customText}". Use como inspiração para o Prompt #1. Os outros 2 devem ser variações diferentes.`;
     }
-  } else if (bgType && SCENARIO_DESCRIPTIONS[bgType]) {
-    bgHint = `\nCENÁRIO PREFERIDO: "${SCENARIO_DESCRIPTIONS[bgType]}". Use como base para o Prompt #1.`;
+  } else if (bgType && STYLING_MOODS[bgType]) {
+    styleHint = `\nMOOD DE STYLING PREFERIDO: "${STYLING_MOODS[bgType]}". Use como inspiração para o Prompt #1.`;
   }
 
   const numPhotos = 1 + (input.extraImages?.length || 0);
@@ -244,7 +262,7 @@ function buildSonnetPrompt(input: AnalyzerInput): string {
       : "esta foto do produto de moda";
 
   return `Analise ${photoDesc}.
-${extras.length > 0 ? "\nINFO DO LOJISTA:\n" + extras.join("\n") : ""}${bgHint}
+${extras.length > 0 ? "\nINFO DO LOJISTA:\n" + extras.join("\n") : ""}${styleHint}
 
 Retorne um JSON com esta estrutura EXATA (sem markdown, apenas JSON puro):
 {
@@ -263,9 +281,9 @@ Retorne um JSON com esta estrutura EXATA (sem markdown, apenas JSON puro):
   },
   "fashn_hints": {
     "styling_prompts": [
-      "professional studio setting, model standing confidently, soft lighting",
-      "outdoor urban street, golden hour, walking naturally",
-      "café terrace, relaxed pose, natural daylight"
+      "natural relaxed fit, hands in pockets, casual confident look",
+      "tuck in front, belt at waist, polished styling",
+      "sleeves slightly rolled, walking pose, effortless style"
     ],
     "aspect_ratio": "3:4",
     "category": "tops | bottoms | dresses | outerwear | sets | accessories"
