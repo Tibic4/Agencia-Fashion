@@ -272,24 +272,24 @@ export default function ResultadoCampanha() {
     return () => { cancelled = true; };
   }, [selectedIndex, activeFormat, result]);
 
-  /** Fetch AI tips when a photo is selected (lazy, once per image) */
+  /** Fetch AI tips ONCE per campaign (not per photo switch) */
   useEffect(() => {
-    if (selectedIndex === null) return;
-    const img = result?.data?.images?.[selectedIndex];
-    if (!img) return;
-    const src = img.imageUrl;
-    if (!src) return;
-    if (tipsFetched === src) return; // already fetched for this image
-
+    if (selectedIndex === null || !result) return;
     const campaignId = searchParams.get("id") || result?.campaignId;
     if (!campaignId) return;
+    if (tipsFetched === campaignId) return; // already fetched for this campaign
+
+    const img = result?.data?.images?.[selectedIndex];
+    if (!img?.imageUrl) return;
 
     setTipsLoading(true);
+    setTipsFetched(campaignId); // mark immediately to prevent double-fire
+
     fetch(`/api/campaign/${campaignId}/tips`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        imageUrl: src,
+        imageUrl: img.imageUrl,
         objective: result?.objective || undefined,
         targetAudience: result?.targetAudience || undefined,
       }),
@@ -298,12 +298,12 @@ export default function ResultadoCampanha() {
       .then(data => {
         if (data?.data) {
           setSmartTips(data.data);
-          setTipsFetched(src);
         }
       })
       .catch(() => { /* silent fallback to static tips */ })
       .finally(() => setTipsLoading(false));
-  }, [selectedIndex, result, tipsFetched, searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIndex, tipsFetched]);
 
   const copyCaption = async () => {
     const caption = result?.data?.dicas_postagem?.caption_sugerida;
