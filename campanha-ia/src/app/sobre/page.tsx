@@ -1,33 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { Metadata } from "next";
+import Footer from "@/components/Footer";
+import ThemeToggle from "@/components/ThemeToggle";
+import { IconCamera, IconZap, IconDownload, IconMail, IconPhone, IconArrowRight, IconHeart, IconTarget } from "@/components/Icons";
 
 /* ═══════════════════════════════════════
-   Icons (inline SVGs)
+   N6: Page metadata for SEO
    ═══════════════════════════════════════ */
-const IconCamera = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-);
-const IconZap = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-);
-const IconDownload = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-);
-const IconMail = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-);
-const IconPhone = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-);
-const IconArrowRight = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-);
-const IconHeart = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-);
-const IconTarget = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-);
+export const metadata: Metadata = {
+  title: "Sobre — CriaLook | Marketing de Moda com IA",
+  description: "Conheça a CriaLook: a plataforma que transforma fotos de roupa em campanhas de marketing completas usando inteligência artificial. Feita para lojistas brasileiros.",
+};
 
 const steps = [
   {
@@ -61,10 +45,14 @@ export default function Sobre() {
             <Link href="/#como-funciona" className="text-sm font-medium" style={{ color: "var(--muted)" }}>Como funciona</Link>
             <Link href="/#precos" className="text-sm font-medium" style={{ color: "var(--muted)" }}>Preços</Link>
           </nav>
-          <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-3 sm:!py-2.5 sm:!px-5 min-h-[44px] flex items-center">
-            <span className="sm:hidden">Começar</span>
-            <span className="hidden sm:inline">Testar na prática</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/sign-in" className="text-sm font-medium min-h-[44px] flex items-center px-3" style={{ color: "var(--muted)" }}>Entrar</Link>
+            <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-3 sm:!py-2.5 sm:!px-5 min-h-[44px] flex items-center">
+              <span className="sm:hidden">Começar</span>
+              <span className="hidden sm:inline">Testar na prática</span>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -142,19 +130,6 @@ export default function Sobre() {
           <h2 className="text-2xl font-bold mt-10 mb-6" style={{ color: "var(--foreground)" }}>Contato</h2>
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <a
-              href="mailto:contato@crialook.com.br"
-              className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5 min-h-[60px]"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-            >
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
-                <IconMail />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-0.5" style={{ color: "var(--muted)" }}>E-mail</p>
-                <p className="text-sm font-semibold gradient-text">contato@crialook.com.br</p>
-              </div>
-            </a>
-            <a
               href="https://wa.me/553498223001"
               className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5 min-h-[60px]"
               style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
@@ -167,17 +142,30 @@ export default function Sobre() {
                 <p className="text-sm font-semibold" style={{ color: "#16a34a" }}>(34) 9822-3001</p>
               </div>
             </a>
+            <a
+              href="mailto:contato@crialook.com.br"
+              className="flex items-center gap-4 rounded-xl p-5 transition-all hover:-translate-y-0.5 min-h-[60px]"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            >
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
+                <IconMail />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-0.5" style={{ color: "var(--muted)" }}>E-mail</p>
+                <p className="text-sm font-semibold gradient-text">contato@crialook.com.br</p>
+              </div>
+            </a>
           </div>
 
           {/* CTA final */}
           <div className="rounded-2xl p-8 text-center mt-12" style={{ background: "var(--gradient-brand-soft)", border: "1px solid var(--brand-200)" }}>
             <h2 className="text-xl font-bold mb-2" style={{ color: "var(--foreground)" }}>
-              Pronto para vender <span className="gradient-text">mais</span>?
+              Sua próxima campanha está a uma <span className="gradient-text">foto de distância</span>.
             </h2>
             <p className="text-sm mb-5" style={{ color: "var(--muted)" }}>
-              Teste com 3 campanhas por R$ 9,90. Sem compromisso.
+              Teste com 5 campanhas por R$ 9,90. Sem compromisso.
             </p>
-            <Link href="/sign-up" className="btn-primary text-sm !py-3 !px-8 animate-pulse-glow inline-flex min-h-[48px] items-center">
+            <Link href="/sign-up" className="btn-primary text-sm !py-3 !px-8 hover:animate-pulse-glow inline-flex min-h-[48px] items-center" aria-label="Criar minha primeira campanha com IA">
               <IconZap />
               Criar minha primeira campanha
               <IconArrowRight />
@@ -186,41 +174,7 @@ export default function Sobre() {
         </div>
       </main>
 
-      {/* Issue #12: footer compartilhado — consistente com a Home */}
-      <footer className="py-12" style={{ background: "var(--gray-950)", color: "var(--gray-400)" }}>
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
-                <span className="text-lg font-bold text-white">CriaLook</span>
-              </div>
-              <p className="text-sm leading-relaxed">
-                Transforme fotos de roupa em campanhas de marketing completas com inteligência artificial.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Produto</h4>
-              <div className="space-y-3 text-sm">
-                <Link href="/#como-funciona" className="block hover:text-white transition py-1">Como funciona</Link>
-                <Link href="/#precos" className="block hover:text-white transition py-1">Preços</Link>
-                <Link href="/#beneficios" className="block hover:text-white transition py-1">Benefícios</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Legal & Contato</h4>
-              <div className="space-y-3 text-sm">
-                <Link href="/termos" className="block hover:text-white transition py-1">Termos de Uso</Link>
-                <Link href="/privacidade" className="block hover:text-white transition py-1">Privacidade</Link>
-                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition py-1">contato@crialook.com.br</a>
-              </div>
-            </div>
-          </div>
-          <div className="pt-8 text-center text-xs" style={{ borderTop: "1px solid var(--gray-800)" }}>
-            © {new Date().getFullYear()} CriaLook. Todos os direitos reservados.
-          </div>
-        </div>
-      </footer>
+      <Footer useLinks currentPage="sobre" />
     </div>
   );
 }
