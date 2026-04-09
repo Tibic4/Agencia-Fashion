@@ -1,15 +1,21 @@
 /**
- * CriaLook Sonnet Analyzer v4
+ * CriaLook Sonnet Analyzer v5.1 — Ultra-detailed prompts for Gemini VTO
  *
- * Substitui o Opus para análise do produto.
- * Mais rápido e barato — Sonnet 4 é suficiente para análise visual.
- * NÃO gera prompts de imagem (FASHN não precisa) — foca em:
- * 1. Análise da peça (para display no frontend)
- * 2. Dicas de postagem (para a lojista)
- * 3. Styling hints para o FASHN (prompt de estilo)
+ * Analisa o produto e gera:
+ * 1. Análise completa da peça (para display no frontend)
+ * 2. 3 scene-prompts narrativos ULTRA-DETALHADOS para o Gemini VTO
+ *    — cada prompt descreve: cenário + iluminação + pose + styling + câmera
+ *    — usa dados da modelo (skin_tone, body_type, hair, etc.) e cenário
+ * 3. Dicas de postagem premium para lojistas brasileiras
+ *
+ * Otimizado para Gemini 3.1 Flash Image (Nano Banana 2):
+ * — Prompts narrativos longos → Gemini entende contexto rico
+ * — Detalhes de fotografia profissional → qualidade editorial
+ * — Referências a physique da modelo → consistência de identidade
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import type { ModelInfo } from "./pipeline";
 
 // ═══════════════════════════════════════
 // Tipos de retorno
@@ -29,9 +35,9 @@ export interface SonnetAnalise {
   publico: string;
 }
 
-export interface SonnetFashnHint {
-  /** 3 styling prompts para o FASHN tryon-max (instruções de caimento/estilo) */
-  styling_prompts: [string, string, string];
+export interface SonnetVTOHint {
+  /** 3 scene+styling prompts para o Gemini VTO (em inglês) */
+  scene_prompts: [string, string, string];
   /** Aspect ratio sugerido */
   aspect_ratio: "3:4" | "4:5" | "2:3";
   /** Tipo de peça para categorização */
@@ -55,7 +61,7 @@ export interface SonnetDicasPostagem {
 
 export interface SonnetAnalyzerResult {
   analise: SonnetAnalise;
-  fashn_hints: SonnetFashnHint;
+  vto_hints: SonnetVTOHint;
   dicas_postagem: SonnetDicasPostagem;
 }
 
@@ -93,6 +99,8 @@ export interface AnalyzerInput {
   storeName?: string;
   /** Cor da marca da loja (hex) */
   brandColor?: string;
+  /** Metadados da modelo selecionada (skin_tone, body_type, hair, etc.) */
+  modelInfo?: ModelInfo;
 }
 
 // ═══════════════════════════════════════
@@ -101,7 +109,7 @@ export interface AnalyzerInput {
 
 /**
  * Chama Claude Sonnet para análise visual do produto.
- * Retorna: análise + hints para FASHN + dicas de postagem.
+ * Retorna: análise + hints para Gemini VTO + dicas de postagem.
  */
 export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAnalyzerResult> {
   const anthropic = getClient();
@@ -145,7 +153,7 @@ export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAna
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
-    system: SONNET_SYSTEM_PROMPT,
+    system: buildSystemPrompt(input),
     messages: [{ role: "user", content }],
   });
 
@@ -164,8 +172,8 @@ export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAna
   if (!result.analise?.tipo_peca) {
     throw new Error("Sonnet retornou análise incompleta — tente outra foto");
   }
-  if (!result.fashn_hints?.styling_prompts || result.fashn_hints.styling_prompts.length < 3) {
-    throw new Error("Sonnet não gerou os 3 styling prompts para FASHN");
+  if (!result.vto_hints?.scene_prompts || result.vto_hints.scene_prompts.length < 3) {
+    throw new Error("Sonnet não gerou os 3 scene prompts para Gemini VTO");
   }
 
   console.log(
@@ -176,49 +184,133 @@ export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAna
 }
 
 // ═══════════════════════════════════════
-// System Prompt
+// System Prompt — dinâmico com dados da modelo
 // ═══════════════════════════════════════
 
-const SONNET_SYSTEM_PROMPT = `Você é um analista de moda especializado em e-commerce brasileiro. Você recebe fotos de peças de roupa e faz uma análise detalhada para gerar conteúdo visual profissional usando IA.
+function buildSystemPrompt(input: AnalyzerInput): string {
+  const mi = input.modelInfo;
 
-Sua análise será usada para alimentar o FASHN AI "tryon-max" — um sistema de Virtual Try-On que VESTE a peça real numa modelo virtual. O tryon-max recebe a foto do produto + foto da modelo e coloca a peça na modelo com alta fidelidade.
+  // Traduzir dados da modelo para inglês (para os scene_prompts)
+  const skinToneMap: Record<string, string> = {
+    branca: "fair/light skin",
+    morena_clara: "light-medium warm skin tone",
+    morena: "medium-to-dark warm brown skin",
+    negra: "deep rich dark skin",
+  };
+  const bodyMap: Record<string, string> = {
+    normal: "standard/slim body frame",
+    media: "standard average build",
+    magra: "slim/petite body frame",
+    plus_size: "plus-size curvy body with full figure",
+    plus: "plus-size curvy body with full figure",
+  };
+  const hairColorMap: Record<string, string> = {
+    preto: "jet black hair",
+    castanho_escuro: "dark brown hair",
+    castanho: "medium brown hair",
+    ruivo: "auburn/red hair",
+    loiro_escuro: "dark blonde hair",
+    loiro: "blonde hair",
+    platinado: "platinum blonde hair",
+  };
+  const hairTextureMap: Record<string, string> = {
+    liso: "straight",
+    ondulado: "wavy",
+    cacheado: "curly",
+    crespo: "coily/afro-textured",
+  };
+  const hairLengthMap: Record<string, string> = {
+    joaozinho: "pixie-cut short",
+    chanel: "bob-cut chin-length",
+    ombro: "shoulder-length",
+    medio: "medium-length past shoulders",
+    longo: "long flowing",
+  };
+  const ageMap: Record<string, string> = {
+    jovem_18_25: "young woman (18-25)",
+    adulta_26_35: "adult woman (26-35)",
+    madura_36_50: "mature woman (36-50)",
+  };
 
-Por isso, você precisa:
+  // Construir descrição da modelo
+  const modelParts: string[] = [];
+  if (mi?.ageRange && ageMap[mi.ageRange]) modelParts.push(ageMap[mi.ageRange]);
+  if (mi?.skinTone && skinToneMap[mi.skinTone]) modelParts.push(`with ${skinToneMap[mi.skinTone]}`);
+  if (mi?.bodyType && bodyMap[mi.bodyType]) modelParts.push(bodyMap[mi.bodyType]);
 
-1. ANALISAR a peça com detalhes (cor, tecido, modelagem, detalhes)
-2. GERAR 3 styling prompts para o tryon-max (em inglês)
-3. CRIAR dicas de postagem para a lojista brasileira (em português)
+  const hairParts: string[] = [];
+  if (mi?.hairLength && hairLengthMap[mi.hairLength]) hairParts.push(hairLengthMap[mi.hairLength]);
+  if (mi?.hairTexture && hairTextureMap[mi.hairTexture]) hairParts.push(hairTextureMap[mi.hairTexture]);
+  if (mi?.hairColor && hairColorMap[mi.hairColor]) hairParts.push(hairColorMap[mi.hairColor]);
+  if (hairParts.length > 0) modelParts.push(hairParts.join(" "));
 
-REGRAS CRÍTICAS PARA OS STYLING PROMPTS (tryon-max):
-- O prompt do tryon-max controla COMO a peça é vestida — NÃO descreve cenários
-- São instruções curtas de STYLING/CAIMENTO da peça no corpo da modelo
-- Exemplos BONS:
-  • "tuck in shirt, natural relaxed pose" (camisa por dentro)
-  • "roll up sleeves, casual confident look" (mangas dobradas)
-  • "open jacket showing inner layer" (jaqueta aberta)
-  • "belt cinched at waist, elegant drape" (marcação na cintura)
-  • "off-shoulder style, relaxed fit" (ombro caído)
-  • "button up fully, professional sleek look" (toda abotoada)
-  • "tie front knot, casual summer style" (nó na frente)
-  • "layered over simple top, street style" (sobreposição)
-- Exemplos RUINS (NÃO FAÇA ISSO):
-  • "urban street golden hour lighting" ← cenário, não styling
-  • "professional studio neutral background" ← isso é background
-- Cada prompt deve propor uma VARIAÇÃO DIFERENTE de como vestir a peça
-- Se a peça não permite variações (ex: vestido simples), varie pose/atitude:
-  • "natural standing pose, hands at sides"
-  • "walking confidently, slight movement"
-  • "hand on hip, looking away naturally"
-- Máximo 1-2 frases curtas por prompt
-- Prompts em INGLÊS
+  const modelDescription = modelParts.length > 0
+    ? `\n\n🧍 MODELO SELECIONADA PELA LOJISTA:\nA modelo na foto de referência é: ${modelParts.join(", ")}.\nUse esses detalhes nos scene_prompts para que o Gemini entenda exatamente QUE PESSOA reproduzir — isso melhora a fidelidade da identidade. Incorpore a cor de pele, cabelo e tipo de corpo NATURALMENTE na descrição da cena (ex: "warm golden-hour light complementing her deep skin tone", "her long wavy auburn hair flowing naturally").`
+    : "";
+
+  return `Você é o analista de moda mais experiente do Brasil, especializado em fotografia de e-commerce e campanhas para Instagram.
+
+Sua MISSÃO CRÍTICA é analisar fotos de peças de roupa e criar 3 cenários de fotos profissionais DISTINTOS que serão executados por uma IA de Virtual Try-On (Gemini) — essa IA recebe a foto do produto + foto de uma modelo e gera uma imagem fotorrealista da modelo VESTINDO aquela peça.
+
+O Gemini é um modelo multimodal avançado que entende prompts NARRATIVOS ricos. Quanto MAIS detalhado o prompt, MELHOR o resultado. Ele compreende:
+- Linguagem de fotografia profissional (lentes, iluminação, composição)
+- Física de tecidos e caimento
+- Cenários e ambientes detalhados
+- Expressões faciais e poses
+- Cor de pele e como a luz interage com ela
+
+Você PRECISA gerar prompts que pareçam direções de um fotógrafo de moda para seu assistente.${modelDescription}
+
+REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
+
+1. Cada prompt DEVE ser em INGLÊS e ter 4-7 frases detalhadas
+2. Cada prompt DEVE incluir TODOS estes 6 elementos:
+   a) CENÁRIO/AMBIENTE — onde a foto acontece (estúdio, rua, café, jardim, boutique...)
+   b) ILUMINAÇÃO — tipo de luz, temperatura de cor, direção (softbox, golden hour, natural window light, ring light...)
+   c) POSE E EXPRESSÃO — como a modelo está posicionada, expressão facial, linguagem corporal
+   d) STYLING DO VESTIR — como a peça está vestida (tucked in, off-shoulder, sleeves rolled, jacket open...)
+   e) CÂMERA — ângulo, enquadramento, profundidade de campo, estilo fotográfico
+   f) MOOD/ATMOSFERA — sensação visual geral (editorial, aspiracional, fresh, warm, sophisticated...)
+
+3. Os 3 prompts DEVEM ser RADICALMENTE diferentes entre si:
+   - Prompt 1: segue o cenário preferido da lojista (se informado)
+   - Prompt 2: cenário contrastante (se P1 é estúdio, P2 é externo)
+   - Prompt 3: criativo/inesperado (ângulo diferente, mood especial)
+
+4. 🚨 CADA PROMPT DEVE TER UMA POSE COMPLETAMENTE DIFERENTE — NUNCA repita a mesma pose!
+   Use este banco de referência (escolha 3 poses DISTINTAS dos 3 prompts):
+   - "standing with a relaxed three-quarter turn, one hand resting on her hip, chin slightly tilted up"
+   - "walking mid-stride with natural arm swing, captured in motion with confidence"
+   - "sitting on a tall stool with legs crossed elegantly, leaning slightly forward"
+   - "standing straight front-facing with arms at sides, calm neutral editorial expression"
+   - "leaning against a wall with one shoulder, arms loosely crossed, playful half-smile"
+   - "turning to look over her shoulder (back view showing garment construction), face in profile"
+   - "crouching slightly with one knee forward, dynamic fashion-forward angle"
+   - "hands in jacket/pants pockets, weight shifted to one leg, relaxed street-style stance"
+   - "one arm raised adjusting hair, showcasing the garment's sleeve and silhouette"
+   - "seated on the ground with knees up, casual lifestyle feel"
+   - "stepping off a curb or stair, mid-movement with fabric catching air"
+   - "arms behind back with clasped hands, chest open — elegant confident posture"
+   Adapte a pose à peça: se a peça é um vestido longo, use pose que mostre o caimento; se é jaqueta, use pose que mostre a estrutura.
+
+5. Se a peça é um CONJUNTO (blusa+saia, top+calça), CADA prompt deve mencionar TODAS as peças
+
+6. NUNCA escreva prompts curtos como "tuck in shirt" ou "casual confident look" — isso é INÚTIL para o Gemini
+
+EXEMPLO DE PROMPT EXCELENTE ✅:
+"Professional fashion photography in a bright, airy loft studio with floor-to-ceiling windows casting soft natural light from the left. The model walks mid-stride with natural arm swing, captured in fluid motion with confidence, her long wavy hair bouncing softly. The blouse is neatly tucked into the high-waisted trousers, belt cinched at the smallest point of the waist. Shot with an 85mm portrait lens at f/2.8, creating a creamy bokeh in the background while keeping fabric texture tack-sharp. The overall mood is polished, modern editorial — think Vogue Brazil meets everyday elegance."
+
+EXEMPLO DE PROMPT RUIM ❌:
+"Studio setting with good lighting. Model stands confidently wearing the garment."
 
 REGRAS PARA DICAS DE POSTAGEM:
-- Em PORTUGUÊS brasileiro
-- Práticas e úteis para lojistas pequenas/médias
-- Incluir legendas prontas para copiar com emojis
-- Hashtags relevantes para o nicho
+- Em PORTUGUÊS brasileiro, tom acessível e "amiga da lojista"
+- Legendas prontas para copiar com emojis relevantes
+- Hashtags atuais do nicho fashion brasileiro
+- Incluir dica de SEQUÊNCIA (como postar as 3 fotos nos stories/feed)
 
-Responda APENAS com JSON válido, sem markdown.`;
+Responda APENAS com JSON válido, sem markdown, sem backticks.`;
+}
 
 // ═══════════════════════════════════════
 // User Prompt builder
@@ -228,31 +320,90 @@ function buildSonnetPrompt(input: AnalyzerInput): string {
   const extras: string[] = [];
   if (input.price) extras.push(`Preço de venda: R$ ${input.price}`);
   if (input.storeName) extras.push(`Loja: ${input.storeName}`);
-  if (input.bodyType === "plus") extras.push("Tipo de corpo da modelo: plus size (GG/XGG)");
   if (input.brandColor) extras.push(`Cor da marca da loja: ${input.brandColor}`);
 
-  // ── Mood de styling (tryon-max controla caimento, não cenário) ──
-  const STYLING_MOODS: Record<string, string> = {
-    branco: "Clean minimal styling, natural relaxed fit",
-    estudio: "Polished professional styling, well-fitted look",
-    lifestyle: "Casual everyday styling, relaxed comfortable fit",
-    urbano: "Street style confident look, edgy modern fit",
-    natureza: "Effortless natural styling, breezy relaxed drape",
-    interior: "Elegant refined styling, sophisticated silhouette",
-    boutique: "Fashion-forward styling, details highlighted",
-    gradiente: "Clean styled look, garment details front and center",
+  // Body type context
+  if (input.bodyType === "plus" || input.modelInfo?.bodyType === "plus_size" || input.modelInfo?.bodyType === "plus") {
+    extras.push("🔴 ATENÇÃO — Modelo é plus size. Os prompts devem valorizar o corpo curvilíneo com poses e ângulos flattering");
+  }
+
+  // ── Scene context (cenário selecionado) ──
+  const SCENE_MOODS: Record<string, { name: string; description: string; details: string }> = {
+    branco: {
+      name: "Estúdio Branco Minimalista",
+      description: "Clean minimalist white studio with pure seamless white cyclorama background",
+      details: "Soft even lighting from large overhead softboxes. No shadows on background. E-commerce product-focus aesthetic."
+    },
+    estudio: {
+      name: "Estúdio Profissional",
+      description: "Professional fashion photography studio with controlled three-point lighting setup",
+      details: "Key light 45° from subject, fill light opposite, hair/rim light from behind. Neutral gray or gradient backdrop. Sharp, editorial feel."
+    },
+    lifestyle: {
+      name: "Lifestyle / Casual",
+      description: "Casual everyday setting — modern café interior, cozy living room, or sunlit breakfast table",
+      details: "Warm ambient natural light filtering through windows. Lived-in, relatable atmosphere. Shallow depth of field blurring the background props."
+    },
+    urbano: {
+      name: "Urbano / Street",
+      description: "Dynamic urban street setting — grafitti walls, concrete architecture, modern glass buildings, or trendy neighborhood",
+      details: "Dramatic directional light — golden hour side-lighting or neon reflections. High contrast, fashion-forward street style photography."
+    },
+    natureza: {
+      name: "Natureza / Outdoor",
+      description: "Beautiful natural outdoor setting — botanical garden, sun-dappled forest trail, beach promenade, or flower field",
+      details: "Gorgeous golden-hour backlight creating a warm halo. Lush green or earth-toned organic background. Dreamy lens flare touches."
+    },
+    interior: {
+      name: "Interior Elegante",
+      description: "Sophisticated upscale interior — luxury hotel lobby, modern apartment with designer furniture, or art gallery",
+      details: "Warm ambient lighting mixing with focused spots. Marble, wood, and neutral tones in background. Aspirational upper-class atmosphere."
+    },
+    boutique: {
+      name: "Boutique Fashion",
+      description: "Chic fashion boutique interior with curated clothing racks, mirrors, and tasteful displays",
+      details: "Warm pin-spot lighting highlighting the subject against softly blurred racks. Intimate, feminine shopping atmosphere."
+    },
+    gradiente: {
+      name: "Gradiente Editorial",
+      description: "Smooth color gradient backdrop transitioning between two harmonious tones",
+      details: "Even front lighting with no harsh shadows. Fashion editorial aesthetic with color that complements the garment."
+    },
   };
 
-  let styleHint = "";
+  let sceneInstruction = "";
   const bgType = input.backgroundType || "";
 
   if (bgType.startsWith("personalizado:")) {
     const customText = bgType.replace("personalizado:", "").trim();
     if (customText) {
-      styleHint = `\nESTILO PREFERIDO pela lojista: "${customText}". Use como inspiração para o Prompt #1. Os outros 2 devem ser variações diferentes.`;
+      sceneInstruction = `\n\n🎬 CENÁRIO PREFERIDO PELA LOJISTA:\n"${customText}"\nUse este cenário como inspiração PRINCIPAL para o Prompt #1 (scene_prompts[0]).\nOs Prompts #2 e #3 devem usar cenários COMPLETAMENTE diferentes para dar variedade à campanha.`;
     }
-  } else if (bgType && STYLING_MOODS[bgType]) {
-    styleHint = `\nMOOD DE STYLING PREFERIDO: "${STYLING_MOODS[bgType]}". Use como inspiração para o Prompt #1.`;
+  } else if (bgType === "minha_marca" && input.brandColor) {
+    sceneInstruction = `\n\n🎬 CENÁRIO PREFERIDO: Minha Marca\nA lojista quer fotos com a identidade visual da marca. Cor principal: ${input.brandColor}.\nPrompt #1: Use um backdrop com gradiente ou tom sólido na cor ${input.brandColor} (ou complementar). Iluminação que valorize a cor da marca.\nPrompts #2 e #3: cenários diferentes mas MANTENHA toques da cor da marca em detalhes (acessórios, fundo sutil, filtro de cor).`;
+  } else if (bgType && SCENE_MOODS[bgType]) {
+    const scene = SCENE_MOODS[bgType];
+    sceneInstruction = `\n\n🎬 CENÁRIO PREFERIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nUse este cenário como base para o Prompt #1 (scene_prompts[0]).\nOs Prompts #2 e #3 DEVEM ser cenários COMPLETAMENTE diferentes (ex: se P1 é estúdio, P2 pode ser urbano, P3 natureza).`;
+  }
+
+  // ── Model description for prompts ──
+  let modelInstruction = "";
+  if (input.modelInfo) {
+    const mi = input.modelInfo;
+    const parts: string[] = [];
+    if (mi.pose) parts.push(`Pose atual na foto de referência: "${mi.pose}"`);
+    if (mi.style) {
+      const styleMap: Record<string, string> = {
+        casual_natural: "estilo casual/natural",
+        elegante: "estilo elegante/sofisticado",
+        esportivo: "estilo esportivo/athleisure",
+        urbano: "estilo urbano/street",
+      };
+      parts.push(`Estilo visual preferido: ${styleMap[mi.style] || mi.style}`);
+    }
+    if (parts.length > 0) {
+      modelInstruction = `\n\n👤 CONTEXTO DA MODELO:\n${parts.join("\n")}`;
+    }
   }
 
   const numPhotos = 1 + (input.extraImages?.length || 0);
@@ -261,58 +412,57 @@ function buildSonnetPrompt(input: AnalyzerInput): string {
       ? `estas ${numPhotos} fotos do produto`
       : "esta foto do produto de moda";
 
-  return `Analise ${photoDesc}.
-${extras.length > 0 ? "\nINFO DO LOJISTA:\n" + extras.join("\n") : ""}${styleHint}
+  return `Analise ${photoDesc}.${extras.length > 0 ? "\n\nINFO DA LOJISTA:\n" + extras.join("\n") : ""}${sceneInstruction}${modelInstruction}
 
 Retorne um JSON com esta estrutura EXATA (sem markdown, apenas JSON puro):
 {
   "analise": {
     "tipo_peca": "blusa | saia | calca | vestido | macacao | jaqueta | conjunto | acessorio",
     "pecas": ["nome descritivo da peça 1", "nome da peça 2 se conjunto"],
-    "tecido": "descrição do tecido",
-    "cor_principal": { "nome": "nome da cor", "hex": "#XXXXXX" },
-    "cores_secundarias": [],
-    "modelagem": "ajustado | oversized | flare | reto | evasê",
-    "caimento": "fluido | estruturado | justo",
-    "detalhes": ["detalhe 1", "detalhe 2"],
+    "tecido": "descrição detalhada do tecido (ex: crepe de viscose com toque sedoso)",
+    "cor_principal": { "nome": "nome preciso da cor (ex: azul petróleo)", "hex": "#XXXXXX" },
+    "cores_secundarias": [{ "nome": "cor", "hex": "#XXXXXX" }],
+    "modelagem": "ajustado | oversized | flare | reto | evasê | A-line | wrap | bodycon",
+    "caimento": "fluido | estruturado | justo | solto",
+    "detalhes": ["detalhe1 (ex: botões de madrepérola 1cm)", "detalhe2 (ex: gola V profunda 15cm)"],
     "estacao": "primavera/verão | outono/inverno | meia-estação",
-    "mood": "romântico casual | urbano moderno | etc",
-    "publico": "mulheres 20-35 | etc"
+    "mood": "romântico casual | urbano moderno | chic minimalista | boho sofisticado | etc",
+    "publico": "mulheres 20-35 classe B | etc"
   },
-  "fashn_hints": {
-    "styling_prompts": [
-      "natural relaxed fit, hands in pockets, casual confident look",
-      "tuck in front, belt at waist, polished styling",
-      "sleeves slightly rolled, walking pose, effortless style"
+  "vto_hints": {
+    "scene_prompts": [
+      "PROMPT 1 (4-7 frases): [cenário preferido + iluminação detalhada + pose específica + styling do vestir + ângulo de câmera + mood] — lembre de mencionar TODAS as peças visíveis do produto",
+      "PROMPT 2 (4-7 frases): [cenário DIFERENTE do P1 + iluminação diferente + pose diferente + styling alternativo + câmera diferente + mood contrastante]",
+      "PROMPT 3 (4-7 frases): [cenário criativo/inesperado + iluminação especial + pose dinâmica ou artística + styling ousado + ângulo fotográfico interessante + mood marcante]"
     ],
     "aspect_ratio": "3:4",
     "category": "tops | bottoms | dresses | outerwear | sets | accessories"
   },
   "dicas_postagem": {
-    "melhor_dia": "terça ou quinta",
+    "melhor_dia": "terça ou quinta (maior engajamento para moda)",
     "melhor_horario": "11h-13h ou 19h-21h",
-    "sequencia_sugerida": "dica de como usar as 3 fotos em sequência",
+    "sequencia_sugerida": "dica detalhada de como usar as 3 fotos em sequência no feed/stories",
     "legendas": [
       {
         "foto": 1,
         "plataforma": "Instagram Feed",
-        "legenda": "legenda pronta ✨",
-        "hashtags": ["#modafeminina", "#lookdodia"],
-        "dica": "dica de uso"
+        "legenda": "legenda pronta e envolvente com emojis ✨👗",
+        "hashtags": ["#modafeminina", "#lookdodia", "#ootd"],
+        "dica": "por que esta legenda funciona e como adaptar"
       },
       {
         "foto": 2,
         "plataforma": "WhatsApp / Catálogo",
-        "legenda": "legenda para catálogo",
+        "legenda": "texto persuasivo para catálogo de WhatsApp ❤️",
         "hashtags": [],
-        "dica": "dica"
+        "dica": "tom de voz para WhatsApp"
       },
       {
         "foto": 3,
-        "plataforma": "Instagram Stories",
-        "legenda": "legenda curta para stories",
-        "hashtags": ["#stories"],
-        "dica": "dica de stories"
+        "plataforma": "Instagram Stories / Reels",
+        "legenda": "legenda curta/CTA para stories 🔥",
+        "hashtags": ["#stories", "#modabrasil"],
+        "dica": "como usar nos stories com enquete"
       }
     ]
   }
