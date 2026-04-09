@@ -16,6 +16,16 @@ interface Campaign {
   is_favorited: boolean;
   campaign_scores: { nota_geral: number }[] | null;
   campaign_outputs: { headline_principal: string }[] | null;
+  // Pipeline v3: output JSONB from campaigns table
+  output: {
+    version?: string;
+    analise?: {
+      tipo_peca?: string;
+      cor_principal?: { nome?: string; hex?: string };
+    };
+    image_urls?: (string | null)[];
+    success_count?: number;
+  } | null;
 }
 
 interface PlanInfo {
@@ -241,7 +251,13 @@ export default function Historico() {
           )}
           {filteredCampaigns.map((campaign, i) => {
             const score = campaign.campaign_scores?.[0]?.nota_geral;
-            const headline = campaign.campaign_outputs?.[0]?.headline_principal || `Campanha ${campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : ""}`;
+            // v3: nome da peça vem de output.analise | v2: headline_principal de campaign_outputs
+            const v3Name = campaign.output?.analise?.tipo_peca;
+            const v3Color = campaign.output?.analise?.cor_principal?.nome;
+            const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
+            const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
+            const headline = v2Name
+              || (v3Name ? `${v3Name} ${objLabel}${v3Color ? ` — ${v3Color}` : ""}` : `Campanha ${objLabel}`);
             const isFav = campaign.is_favorited;
             const isToggling = togglingId === campaign.id;
 
