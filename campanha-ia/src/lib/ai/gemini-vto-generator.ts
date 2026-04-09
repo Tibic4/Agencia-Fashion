@@ -159,10 +159,19 @@ SECTION 5: SKIN & HUMAN REALISM
 • NO airbrushing, NO plastic skin, NO uncanny valley perfection
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 6: TECHNICAL CAMERA SPECIFICATIONS
+SECTION 6: FRAMING & CAMERA (CRITICAL)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 MANDATORY FULL-BODY FRAMING:
+• The image MUST show the model from HEAD TO FEET — including shoes/sandals/toes
+• Frame: ~10% negative space above the head, ~5% below the feet
+• The ENTIRE body must be visible — head, torso, arms, hands, legs, feet
+• ❌ ABSOLUTELY FORBIDDEN: cropping at waist, cropping at knees, half-body, bust-only
+• If in doubt, zoom OUT slightly to ensure nothing is cut off
+
+CAMERA:
 • Output: ONE photorealistic image, portrait orientation, 3:4 aspect ratio
 • Resolution quality: 2K high-resolution — sharp detail in fabric texture and skin
+• Camera at eye-level or slightly above (1.5m-1.7m from ground), angled to show full figure
 • Sharp focus across the entire figure — thread-level garment detail, individual hair strands at edges
 • Natural depth of field appropriate to the scene (studio = deeper DOF, outdoor = shallower)
 • Clean image: NO text, NO watermarks, NO split frames, NO borders, NO artifacts
