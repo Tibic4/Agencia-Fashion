@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, listCampaigns, getStorePlanName, getHistoryDaysForPlan, getRegenLimitForPlan, hasFullScore, hasAllChannels, hasPreviewLink } from "@/lib/db";
+import { getStoreByClerkId, listCampaigns, getStorePlanName, getHistoryDaysForPlan } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
  * 
  * Lista campanhas da loja do usuário logado.
  * Respeita limite de histórico por plano.
- * Retorna info do plano para UI diferenciar features.
  */
 export async function GET() {
   try {
@@ -26,7 +25,6 @@ export async function GET() {
     // Buscar plano e limites
     const planName = await getStorePlanName(store.id);
     const historyDays = getHistoryDaysForPlan(planName);
-    const regenLimit = getRegenLimitForPlan(planName);
 
     const campaigns = await listCampaigns(store.id, 50, historyDays);
 
@@ -36,10 +34,6 @@ export async function GET() {
       plan: {
         name: planName,
         historyDays,
-        regenLimit,
-        fullScore: hasFullScore(planName),
-        allChannels: hasAllChannels(planName),
-        previewLink: hasPreviewLink(planName),
       },
     });
   } catch (error: unknown) {

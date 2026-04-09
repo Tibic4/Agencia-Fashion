@@ -104,10 +104,9 @@ function StatusBadge({ status }: { status: string }) {
 
 const planColors: Record<string, string> = {
   gratis: "bg-gray-600",
-  starter: "bg-blue-500",
+  essencial: "bg-blue-500",
   pro: "bg-fuchsia-500",
   business: "bg-amber-500",
-  agencia: "bg-emerald-500",
   sem_plano: "bg-gray-700",
 };
 

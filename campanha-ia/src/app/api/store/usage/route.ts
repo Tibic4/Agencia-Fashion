@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, getCurrentUsage, getStorePlanName, getModelLimitForPlan, getRegenLimitForPlan, getHistoryDaysForPlan, hasFullScore, hasAllChannels, hasPreviewLink, hasWhiteLabel, hasPublicApi } from "@/lib/db";
+import { getStoreByClerkId, getCurrentUsage, getStorePlanName, getModelLimitForPlan, getHistoryDaysForPlan } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -42,16 +42,10 @@ export async function GET() {
       data: {
         plan_name: planName,
         campaigns_generated: usage?.campaigns_generated ?? 0,
-        campaigns_limit: usage?.campaigns_limit ?? 3,
+        campaigns_limit: usage?.campaigns_limit ?? 0,
         models_used: modelsUsed,
         models_limit: getModelLimitForPlan(planName),
-        regen_limit: getRegenLimitForPlan(planName),
         history_days: getHistoryDaysForPlan(planName),
-        full_score: hasFullScore(planName),
-        all_channels: hasAllChannels(planName),
-        preview_link: hasPreviewLink(planName),
-        white_label: hasWhiteLabel(planName),
-        public_api: hasPublicApi(planName),
         period_start: usage?.period_start ?? null,
         period_end: usage?.period_end ?? null,
       },

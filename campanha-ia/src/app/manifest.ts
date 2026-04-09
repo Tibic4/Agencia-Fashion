@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "CriaLook — Marketing de Moda com IA",
     short_name: "CriaLook",
-    description: "Transforme fotos de roupa em campanhas de marketing prontas em 60 segundos",
+    description: "Transforme fotos de roupa em campanhas de marketing prontas pra postar",
     start_url: "/",
     display: "standalone",
     background_color: "#0a0a12",

@@ -232,21 +232,16 @@ export async function getStorePlanName(storeId: string): Promise<string> {
   return plans.name || "free";
 }
 
-/** Limites de modelos por plano (CUSTOS_PLANOS.md) */
+/** Limites de modelos por plano */
 export function getModelLimitForPlan(planName: string): number {
   const limits: Record<string, number> = {
     gratis: 0,
-    starter: 1,
-    pro: 3,
-    business: 5,
-    agencia: 10,
+    free: 0,
+    essencial: 3,
+    pro: 10,
+    business: 25,
   };
   return limits[planName] ?? 0;
-}
-
-/** Regenerações removidas — todos os planos retornam 0 */
-export function getRegenLimitForPlan(planName: string): number {
-  return 0;
 }
 
 /** Dias de histórico por plano (0 = ilimitado) */
@@ -254,37 +249,11 @@ export function getHistoryDaysForPlan(planName: string): number {
   const limits: Record<string, number> = {
     gratis: 7,
     free: 7,
-    starter: 90,
+    essencial: 30,
     pro: 365,
     business: 0,
-    agencia: 0,
   };
   return limits[planName] ?? 7;
-}
-
-/** Verifica se o plano tem acesso ao score completo */
-export function hasFullScore(planName: string): boolean {
-  return !["gratis", "free"].includes(planName);
-}
-
-/** Verifica se o plano tem acesso a todos os canais */
-export function hasAllChannels(planName: string): boolean {
-  return !["gratis", "free"].includes(planName);
-}
-
-/** Link de prévia removido — nenhum plano tem mais */
-export function hasPreviewLink(_planName: string): boolean {
-  return false;
-}
-
-/** Verifica se o plano tem marca branca */
-export function hasWhiteLabel(planName: string): boolean {
-  return planName === "agencia";
-}
-
-/** Verifica se o plano tem API pública */
-export function hasPublicApi(planName: string): boolean {
-  return planName === "agencia";
 }
 
 /** Incrementa o contador de regenerações de uma campanha */
@@ -308,11 +277,10 @@ export async function incrementRegenCount(campaignId: string): Promise<number> {
   return newCount;
 }
 
-/** Verifica se a campanha pode regenerar */
-export async function canRegenerate(campaignId: string, storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+/** Verifica se a campanha pode regenerar (desabilitado — todos os planos limit = 0) */
+export async function canRegenerate(campaignId: string, _storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const supabase = createAdminClient();
   
-  // Buscar regen_count da campanha
   const { data: campaign } = await supabase
     .from("campaigns")
     .select("regen_count")
@@ -321,14 +289,10 @@ export async function canRegenerate(campaignId: string, storeId: string): Promis
   
   const used = campaign?.regen_count || 0;
   
-  // Buscar plano da loja
-  const planName = await getStorePlanName(storeId);
-  const limit = getRegenLimitForPlan(planName);
-  
   return {
-    allowed: used < limit,
+    allowed: false,
     used,
-    limit,
+    limit: 0,
   };
 }
 
