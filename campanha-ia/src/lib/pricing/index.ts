@@ -34,12 +34,12 @@ const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
   "claude-opus-4-6": { inputPerMTok: 15.00, outputPerMTok: 75.00 },
   // Gemini 3 Pro Image — Gerador de imagens (image-generator.ts)
   "gemini-3-pro-image-preview": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
-  // Gemini 2.5 Flash — Preview de modelos (inngest/functions.ts)
-  "gemini-2.5-flash": { inputPerMTok: 0.30, outputPerMTok: 2.50 },
+  // Gemini 3 Flash — Smart Tips + Preview de modelos
+  "gemini-3-flash-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
 
   // ═══ LEGADO (mantidos para histórico) ═══
+  "gemini-2.5-flash": { inputPerMTok: 0.30, outputPerMTok: 2.50 },
   "gemini-2.5-pro": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
-  "gemini-3-flash-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
   "gemini-3.1-flash-lite-preview": { inputPerMTok: 0.20, outputPerMTok: 1.00 },
   "gemini-3.1-pro-preview": { inputPerMTok: 2.00, outputPerMTok: 12.00 },
   "gemini-3.1-flash-image-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
