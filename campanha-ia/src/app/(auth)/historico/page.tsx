@@ -152,7 +152,7 @@ export default function Historico() {
   const filteredCampaigns = filter === "favorites" ? campaigns.filter(c => c.is_favorited) : campaigns;
 
   return (
-    <div className="animate-fade-in-up" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+    <div className="animate-fade-in-up">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -165,7 +165,7 @@ export default function Historico() {
             )}
           </p>
         </div>
-        <Link href="/gerar" className="btn-primary text-sm !py-2 min-h-[44px] flex items-center justify-center flex-shrink-0" style={{ whiteSpace: 'nowrap' }}>
+        <Link href="/gerar" className="btn-primary text-sm !py-2.5 !px-5 min-h-[44px] flex items-center justify-center self-start flex-shrink-0" style={{ whiteSpace: 'nowrap', width: 'auto' }}>
           + Nova
         </Link>
       </div>
