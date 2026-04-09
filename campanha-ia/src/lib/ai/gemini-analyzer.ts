@@ -57,6 +57,10 @@ export interface SonnetDicasPostagem {
   melhor_dia: string;
   melhor_horario: string;
   sequencia_sugerida: string;
+  caption_sugerida: string;
+  tom_legenda: string;
+  cta: string;
+  hashtags: string[];
   legendas: SonnetDicaLegenda[];
 }
 
@@ -173,8 +177,12 @@ const RESPONSE_SCHEMA = {
       description: "Dicas de postagem em português brasileiro",
       properties: {
         melhor_dia: { type: "string", description: "Melhor dia da semana para postar" },
-        melhor_horario: { type: "string", description: "Melhor horário para postar" },
+        melhor_horario: { type: "string", description: "Melhor horário para postar (ex: '19h', '18h às 21h')" },
         sequencia_sugerida: { type: "string", description: "Como usar as 3 fotos em sequência no feed/stories" },
+        caption_sugerida: { type: "string", description: "Legenda pronta para Instagram com emojis, entre 100-200 caracteres. Deve ser envolvente e gerar desejo pela peça sem mencionar preço." },
+        tom_legenda: { type: "string", description: "Tom da voz da legenda em 3-5 palavras (ex: 'Elegante e sofisticado', 'Jovem e descolado', 'Casual e acolhedor')" },
+        cta: { type: "string", description: "Call-to-action curto e criativo, max 8 palavras (ex: 'Garanta a sua antes que acabe!', 'Chama no direct pra garantir')" },
+        hashtags: { type: "array", items: { type: "string" }, description: "10-15 hashtags relevantes sem # (mix de alcance e nicho)" },
         legendas: {
           type: "array",
           items: {
@@ -192,7 +200,7 @@ const RESPONSE_SCHEMA = {
           maxItems: 3,
         },
       },
-      required: ["melhor_dia", "melhor_horario", "sequencia_sugerida", "legendas"],
+      required: ["melhor_dia", "melhor_horario", "sequencia_sugerida", "caption_sugerida", "tom_legenda", "cta", "hashtags", "legendas"],
     },
   },
   required: ["analise", "vto_hints", "dicas_postagem"],

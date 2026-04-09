@@ -53,6 +53,49 @@ export async function GET(
       const dicas = v3Output.dicas_postagem as Record<string, unknown> | null;
       const analise = v3Output.analise as Record<string, unknown> | null;
 
+      // ── Map Gemini Analyzer's dicas_postagem → UI format ──
+      // Gemini generates: { melhor_dia, melhor_horario, sequencia_sugerida, legendas[] }
+      // UI expects:       { melhor_horario, caption_sugerida, tom_legenda, cta, hashtags[] }
+      let mappedDicas: Record<string, unknown> = {
+        melhor_horario: "Entre 18h–21h",
+        hashtags: [],
+        cta: "Chama no direct!",
+        tom_legenda: "Descontraído e acolhedor",
+        caption_sugerida: "",
+      };
+
+      if (dicas) {
+        const legendas = (dicas.legendas as Array<Record<string, unknown>>) || [];
+        const firstLegenda = legendas[0] || {};
+        const allHashtags = legendas.flatMap(
+          (l) => (l.hashtags as string[]) || []
+        );
+        // Deduplicate hashtags
+        const uniqueHashtags = [...new Set(allHashtags)];
+
+        mappedDicas = {
+          melhor_horario: dicas.melhor_horario || mappedDicas.melhor_horario,
+          melhor_dia: dicas.melhor_dia || undefined,
+          sequencia_sugerida: dicas.sequencia_sugerida || undefined,
+          caption_sugerida:
+            (firstLegenda.legenda as string) ||
+            (dicas.caption_sugerida as string) ||
+            "",
+          tom_legenda:
+            (dicas.tom_legenda as string) ||
+            (firstLegenda.dica as string) ||
+            "Descontraído e acolhedor",
+          cta:
+            (dicas.cta as string) ||
+            "Chama no direct!",
+          hashtags: uniqueHashtags.length > 0
+            ? uniqueHashtags
+            : (dicas.hashtags as string[]) || [],
+          // Preserve all legendas for expanded view
+          legendas: legendas.length > 0 ? legendas : undefined,
+        };
+      }
+
       return NextResponse.json({
         success: true,
         data: {
@@ -62,13 +105,7 @@ export async function GET(
             analise: analise || null,
             images,
             prompts: (v3Output.prompts as unknown[]) || [],
-            dicas_postagem: dicas || {
-              melhor_horario: "Entre 18h–21h",
-              hashtags: [],
-              cta: "Chama no direct!",
-              tom_legenda: "Descontraído e acolhedor",
-              caption_sugerida: "",
-            },
+            dicas_postagem: mappedDicas,
             durationMs: campaign.pipeline_duration_ms || 0,
             successCount: v3Output.success_count || images.filter(Boolean).length,
           },
