@@ -296,13 +296,13 @@ export default function Historico() {
               return (
                 <div
                   key={campaign.id}
-                  className="rounded-2xl p-4 transition-all group"
+                  className="rounded-2xl p-4 transition-all group overflow-hidden"
                   style={{
                     background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
                     border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     {/* Star favorite button */}
                     <button
                       onClick={(e) => {
@@ -311,7 +311,7 @@ export default function Historico() {
                         toggleFavorite(campaign.id, isFav);
                       }}
                       disabled={isToggling}
-                      className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                      className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-90"
                       style={{
                         background: isFav ? "var(--brand-100, rgba(236,72,153,0.12))" : "var(--surface)",
                         border: isFav ? "1px solid var(--brand-300, rgba(236,72,153,0.3))" : "1px solid var(--border)",
@@ -338,26 +338,26 @@ export default function Historico() {
                     {/* Clickable area → navigate to campaign */}
                     <Link
                       href={`/gerar/demo?id=${campaign.id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0"
+                      className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
                     >
                       {/* Status icon */}
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
                         {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
                       </div>
 
                       {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-[15px] leading-snug line-clamp-2">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <p className="font-semibold text-[15px] leading-snug truncate">
                           {headline}
                         </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <div className="flex items-center gap-2 mt-1 min-w-0">
                           <span
-                            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: objStyle.bg, color: objStyle.color }}
                           >
                             {objLabel || "—"}
                           </span>
-                          <span className="text-xs" style={{ color: "var(--muted)" }}>
+                          <span className="text-xs truncate" style={{ color: "var(--muted)" }}>
                             {campaign.price > 0 ? `R$ ${Number(campaign.price).toFixed(2).replace(".", ",")}` : ""} · {formatDate(campaign.created_at)}
                           </span>
                         </div>
