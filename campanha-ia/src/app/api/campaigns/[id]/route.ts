@@ -75,6 +75,8 @@ export async function GET(
           score: scores || null,
           status: campaign.status,
           createdAt: campaign.created_at,
+          objective: campaign.objective || null,
+          targetAudience: campaign.target_audience || null,
         },
       });
     }
