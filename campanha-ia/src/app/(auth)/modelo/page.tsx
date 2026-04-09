@@ -648,8 +648,11 @@ export default function ModeloVirtual() {
 
           {/* Error */}
           {error && (
-            <div className="p-3 rounded-xl text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
-              ❌ {error}
+            <div className="p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+              <span className="text-lg">⚠️</span>
+              <p className="text-sm font-medium" style={{ color: "#991B1B" }}>
+                Não foi possível criar a modelo. Verifique sua conexão e tente novamente.
+              </p>
             </div>
           )}
 
