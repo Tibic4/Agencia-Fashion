@@ -521,12 +521,12 @@ export default function ModeloVirtual() {
           {/* Skin tone */}
           <div>
             <label className="block text-sm font-semibold mb-3">Tom de pele</label>
-            <div className="flex gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {skinTones.map((s) => (
                 <button
                   key={s.value}
                   onClick={() => setSkin(s.value)}
-                  className="flex-1 flex flex-col items-center gap-2 p-3 rounded-xl transition-all"
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-h-[44px]"
                   style={{
                     border: skin === s.value ? "2px solid var(--brand-500)" : "1px solid var(--border)",
                     background: skin === s.value ? "var(--gradient-card)" : "var(--surface)",
@@ -565,12 +565,12 @@ export default function ModeloVirtual() {
             {!hairFromPhoto && (<>
             {/* Textura */}
             <p className="text-xs font-medium mb-2" style={{ color: "var(--muted)" }}>Textura</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+            <div className="flex flex-wrap gap-2">
               {hairTextures.map((h) => (
                 <button
                   key={h.value}
                   onClick={() => setHairTexture(h.value)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[40px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
                   style={{
                     background: hairTexture === h.value ? "var(--brand-100)" : "var(--surface)",
                     color: hairTexture === h.value ? "var(--brand-700)" : "var(--muted)",
@@ -584,12 +584,12 @@ export default function ModeloVirtual() {
 
             {/* Comprimento */}
             <p className="text-xs font-medium mb-2 mt-3" style={{ color: "var(--muted)" }}>Comprimento</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+            <div className="flex flex-wrap gap-2">
               {hairLengths.map((h) => (
                 <button
                   key={h.value}
                   onClick={() => setHairLength(h.value)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[40px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
                   style={{
                     background: hairLength === h.value ? "var(--brand-100)" : "var(--surface)",
                     color: hairLength === h.value ? "var(--brand-700)" : "var(--muted)",
@@ -603,12 +603,12 @@ export default function ModeloVirtual() {
 
             {/* Cor */}
             <p className="text-xs font-medium mb-2 mt-3" style={{ color: "var(--muted)" }}>Cor do cabelo</p>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+            <div className="flex flex-wrap gap-2">
               {hairColors.map((h) => (
                 <button
                   key={h.value}
                   onClick={() => setHairColor(h.value)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 min-h-[40px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
                   style={{
                     background: hairColor === h.value ? "var(--brand-100)" : "var(--surface)",
                     color: hairColor === h.value ? "var(--brand-700)" : "var(--muted)",
@@ -667,12 +667,12 @@ export default function ModeloVirtual() {
           {/* Age */}
           <div>
             <label className="block text-sm font-semibold mb-3">Faixa etária</label>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {ages.map((a) => (
                 <button
                   key={a.value}
                   onClick={() => setAge(a.value)}
-                  className="flex-1 p-3 rounded-xl text-sm font-medium text-center transition-all"
+                  className="p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all min-h-[44px]"
                   style={{
                     background: age === a.value ? "var(--brand-100)" : "var(--surface)",
                     color: age === a.value ? "var(--brand-700)" : "var(--muted)",
@@ -803,7 +803,7 @@ export default function ModeloVirtual() {
         </div>
 
         {/* Right — Preview */}
-        <div>
+        <div className="hidden lg:block">
           <div className="rounded-2xl overflow-hidden sticky top-8" style={{ border: "1px solid var(--border)" }}>
             <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
               <h3 className="text-sm font-semibold">Preview</h3>
