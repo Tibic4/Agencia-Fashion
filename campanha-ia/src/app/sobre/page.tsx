@@ -38,7 +38,7 @@ const steps = [
   {
     icon: <IconZap />,
     title: "IA trabalha",
-    description: "Textos, criativos com modelo virtual, hashtags e score de qualidade em 60s.",
+    description: "Textos, criativos com modelo virtual, hashtags e score de qualidade — tudo automático.",
   },
   {
     icon: <IconDownload />,
@@ -135,7 +135,7 @@ export default function Sobre() {
           </div>
 
           <p className="text-base leading-relaxed mb-10" style={{ color: "var(--muted)" }}>
-            Tudo isso em menos de 60 segundos e por uma fração do custo de uma agência tradicional.
+            Tudo isso só com uma foto e por uma fração do custo de uma agência tradicional.
           </p>
 
           {/* Contato — Issue #5: cards com ícones SVG */}

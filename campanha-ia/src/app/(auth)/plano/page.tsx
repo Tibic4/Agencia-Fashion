@@ -21,18 +21,17 @@ interface StoreData {
 }
 
 const plans = [
-  { id: "starter", name: "Starter", badge: "⭐", price: 79, campaigns: 20, models: 1, highlight: false },
-  { id: "pro", name: "Pro", badge: "🚀", price: 179, campaigns: 45, models: 3, highlight: true },
-  { id: "business", name: "Business", badge: "🏢", price: 349, campaigns: 90, models: 5, highlight: false },
-  { id: "agencia", name: "Agência", badge: "🏆", price: 699, campaigns: 180, models: 10, highlight: false },
+  { id: "essencial", name: "Essencial", badge: "💡", price: 69, campaigns: 15, models: 3, highlight: false },
+  { id: "pro", name: "Pro", badge: "🚀", price: 149, campaigns: 50, models: 10, highlight: true },
+  { id: "business", name: "Business", badge: "🏢", price: 299, campaigns: 120, models: 25, highlight: false },
 ];
 
 const extras = [
-  { label: "+1 campanha", price: "R$ 7,99", packageId: "1_campanha" },
-  { label: "+5 campanhas", price: "R$ 34,99", packageId: "5_campanhas" },
-  { label: "+10 campanhas", price: "R$ 59,99", packageId: "10_campanhas" },
-  { label: "+1 modelo virtual", price: "R$ 5,99", packageId: "1_modelo" },
-  { label: "+3 modelos virtuais", price: "R$ 14,99", packageId: "3_modelos" },
+  { label: "+5 campanhas", price: "R$ 19,90", packageId: "5_campanhas" },
+  { label: "+15 campanhas", price: "R$ 49,90", packageId: "15_campanhas" },
+  { label: "+30 campanhas", price: "R$ 89,90", packageId: "30_campanhas" },
+  { label: "+3 modelos virtuais", price: "R$ 9,90", packageId: "3_modelos" },
+  { label: "+5 modelos virtuais", price: "R$ 14,90", packageId: "5_modelos" },
 ];
 
 export default function Plano() {
@@ -154,7 +153,7 @@ export default function Plano() {
   };
 
   const campaignsUsed = usage?.campaigns_generated ?? 0;
-  const campaignsLimit = usage?.campaigns_limit ?? 3;
+  const campaignsLimit = usage?.campaigns_limit ?? 0;
   const usagePercent = campaignsLimit > 0 ? (campaignsUsed / campaignsLimit) * 100 : 0;
 
   // Detect current plan name from store data
@@ -183,8 +182,8 @@ export default function Plano() {
           </div>
           <div className="skeleton" style={{ height: '12px', width: '100%', borderRadius: '999px' }} />
         </div>
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
             <div key={i} className="skeleton-card skeleton rounded-2xl" style={{ height: '200px' }} />
           ))}
         </div>
@@ -273,7 +272,7 @@ export default function Plano() {
 
       {/* Upgrade options */}
       <h3 className="text-lg font-bold mb-4">Fazer upgrade</h3>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {plans.map((plan) => (
           <div key={plan.name} className="rounded-2xl p-5 transition-all hover:-translate-y-1 flex flex-col"
             style={{

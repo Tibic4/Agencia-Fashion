@@ -19,7 +19,7 @@ export async function GET() {
     const store = await getStoreByClerkId(session.userId);
     if (!store) {
       // Loja ainda não existe — retorna lista vazia
-      return NextResponse.json({ models: [], plan: "free", limit: 1 });
+      return NextResponse.json({ models: [], plan: "free", limit: 0 });
     }
 
     const [models, planName] = await Promise.all([

@@ -5,16 +5,15 @@ import Link from "next/link";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 
 /* ═══════════════════════════════════════
-   Plan model limits (01_ARQUITETURA_GERAL.md)
-   Grátis: 0 | Starter: 1 | Pro: 2 | Business: 3 | Agência: 5
+   Plan model limits (source: db/index.ts)
+   Grátis: 0 | Essencial: 3 | Pro: 10 | Business: 25
    ═══════════════════════════════════════ */
 const planModelLimits: Record<string, number> = {
   free: 0,
   gratis: 0,
-  starter: 1,
-  pro: 3,
-  business: 5,
-  agencia: 10,
+  essencial: 3,
+  pro: 10,
+  business: 25,
 };
 
 const skinTones = [

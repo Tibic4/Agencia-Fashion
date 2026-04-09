@@ -10,45 +10,45 @@ export const dynamic = "force-dynamic";
  */
 const CREDIT_PACKAGES = {
   // Campanhas avulso
-  "1_campanha": {
-    type: "campaigns" as const,
-    quantity: 1,
-    price: 7.99,
-    title: "+1 Campanha",
-    description: "1 campanha completa com modelo virtual",
-    trial: false,
-  },
   "5_campanhas": {
     type: "campaigns" as const,
     quantity: 5,
-    price: 34.99,
+    price: 19.90,
     title: "+5 Campanhas",
-    description: "5 campanhas extras com modelo virtual (R$ 7,00/cada)",
+    description: "5 campanhas completas com modelo virtual (R$ 3,98/cada)",
     trial: false,
   },
-  "10_campanhas": {
+  "15_campanhas": {
     type: "campaigns" as const,
-    quantity: 10,
-    price: 59.99,
-    title: "+10 Campanhas",
-    description: "10 campanhas extras com modelo virtual (R$ 6,00/cada)",
+    quantity: 15,
+    price: 49.90,
+    title: "+15 Campanhas",
+    description: "15 campanhas completas com modelo virtual (R$ 3,33/cada)",
     trial: false,
   },
-  // Modelos virtuais personalizadas
-  "1_modelo": {
-    type: "models" as const,
-    quantity: 1,
-    price: 5.99,
-    title: "+1 Modelo Virtual",
-    description: "1 modelo virtual personalizada para suas campanhas",
+  "30_campanhas": {
+    type: "campaigns" as const,
+    quantity: 30,
+    price: 89.90,
+    title: "+30 Campanhas",
+    description: "30 campanhas completas com modelo virtual (R$ 3,00/cada)",
     trial: false,
   },
+  // Modelos virtuais
   "3_modelos": {
     type: "models" as const,
     quantity: 3,
-    price: 14.99,
+    price: 9.90,
     title: "+3 Modelos Virtuais",
-    description: "3 modelos virtuais personalizadas (R$ 4,99/cada)",
+    description: "3 modelos virtuais para suas campanhas",
+    trial: false,
+  },
+  "5_modelos": {
+    type: "models" as const,
+    quantity: 5,
+    price: 14.90,
+    title: "+5 Modelos Virtuais",
+    description: "5 modelos virtuais para suas campanhas",
     trial: false,
   },
 } as const;

@@ -262,7 +262,7 @@ export default function Historico() {
           </div>
           <h2 className="text-xl font-bold mb-2">Nenhuma campanha ainda</h2>
           <p className="text-sm mb-6 max-w-xs mx-auto" style={{ color: "var(--muted)" }}>
-            Gere sua primeira campanha com IA em 60 segundos!
+            Gere sua primeira campanha com IA — só precisa de uma foto!
           </p>
           <Link href="/gerar" className="btn-primary inline-flex min-h-[48px] items-center">
             ⚡ Gerar primeira campanha
