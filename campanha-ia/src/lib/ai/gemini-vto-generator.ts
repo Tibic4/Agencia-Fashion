@@ -185,7 +185,27 @@ CAMERA:
 • Natural depth of field appropriate to the scene (studio = deeper DOF, outdoor = shallower)
 • Clean image: NO text, NO watermarks, NO split frames, NO borders, NO artifacts
 • NO duplicated elements, NO extra limbs, NO distorted proportions
-• Color output: sRGB color space, balanced exposure, no blown highlights or crushed shadows`;
+• Color output: sRGB color space, balanced exposure, no blown highlights or crushed shadows
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7: FOOTWEAR & ACCESSORIES (COMPLETE THE LOOK)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• The model MUST wear shoes/sandals that COMPLEMENT and MATCH the garment's style
+• Color harmony: shoes should coordinate with the outfit's color palette (not clash)
+• Style matching: elegant dress → heels/stilettos; casual outfit → sneakers/flats; beach dress → sandals
+• ❌ NO bare feet (unless the garment is swimwear/beachwear)
+• ❌ NO mismatched shoes (e.g., sneakers with an evening gown)
+• Shoes must be fully visible in the frame (part of the full-body requirement)
+• If the garment image shows shoes/sandals, replicate THOSE exact shoes
+• If no shoes are visible in the garment image, choose elegant neutral shoes that complement the look
+
+SECTION 8: STYLING COMPLETION & POLISH
+• Hair: styled appropriately for the outfit mood (loose waves for casual, updo for formal, etc.)
+• Minimal tasteful jewelry that complements without distracting from the garment
+• Natural makeup that matches the scene mood (soft glam for editorial, minimal for casual)
+• Nails: clean, well-groomed, matching the overall color palette
+• The overall look must feel COMPLETE — as if a professional stylist prepared every detail
+• Think: this image will be posted on Instagram by a luxury fashion brand`;
 }
 
 
@@ -284,6 +304,10 @@ async function generateSingleImage(
       imageConfig: {
         aspectRatio: geminiAspect as any,
         imageSize: IMAGE_SIZE as any,
+      },
+      thinkingConfig: {
+        thinkingLevel: "high" as any,
+        includeThoughts: false,
       },
     },
   });
