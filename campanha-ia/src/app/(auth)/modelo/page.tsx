@@ -50,9 +50,9 @@ const hairColors = [
 ];
 
 const bodyTypes = [
-  { value: "magra", label: "Magra" },
-  { value: "media", label: "Média" },
-  { value: "plus_size", label: "Plus Size" },
+  { value: "magra", label: "Slim" },
+  { value: "media", label: "Padrão" },
+  { value: "plus_size", label: "Curvilínea" },
 ];
 
 const styles = [
