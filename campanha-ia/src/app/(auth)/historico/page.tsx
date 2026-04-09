@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 
 interface Campaign {
@@ -44,6 +44,15 @@ const objectiveLabels: Record<string, string> = {
   engajamento: "💬 Engajamento",
 };
 
+const objectiveColors: Record<string, { bg: string; color: string }> = {
+  venda_imediata: { bg: "rgba(16,185,129,0.1)", color: "#10b981" },
+  lancamento: { bg: "rgba(59,130,246,0.1)", color: "#3b82f6" },
+  promocao: { bg: "rgba(239,68,68,0.1)", color: "#ef4444" },
+  engajamento: { bg: "rgba(168,85,247,0.1)", color: "#a855f7" },
+};
+
+const ITEMS_PER_PAGE = 10;
+
 function formatDate(d: string) {
   const date = new Date(d);
   const now = new Date();
@@ -55,6 +64,10 @@ function formatDate(d: string) {
   return date.toLocaleDateString("pt-BR");
 }
 
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export default function Historico() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
@@ -62,6 +75,7 @@ export default function Historico() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "favorites">("all");
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   /** Toggle favorito — optimistic UI */
   const toggleFavorite = useCallback(async (campaignId: string, currentState: boolean) => {
@@ -119,26 +133,37 @@ export default function Historico() {
     load();
   }, []);
 
+  // ── Filtered campaigns + pagination ──
+  const favCount = campaigns.filter(c => c.is_favorited).length;
+  const filteredCampaigns = useMemo(
+    () => filter === "favorites" ? campaigns.filter(c => c.is_favorited) : campaigns,
+    [campaigns, filter]
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredCampaigns.length / ITEMS_PER_PAGE));
+  const paginatedCampaigns = useMemo(
+    () => filteredCampaigns.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filteredCampaigns, currentPage]
+  );
+
+  // Reset to page 1 when filter changes
+  useEffect(() => { setCurrentPage(1); }, [filter]);
+
   if (loading) {
     return (
       <div className="animate-fade-in-up">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="skeleton skeleton-title" style={{ width: '140px' }} />
-            <div className="skeleton skeleton-text" style={{ width: '100px' }} />
-          </div>
-          <div className="skeleton" style={{ width: '140px', height: '40px' }} />
+        <div className="mb-8">
+          <div className="skeleton skeleton-title" style={{ width: '140px' }} />
+          <div className="skeleton skeleton-text" style={{ width: '160px' }} />
         </div>
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl p-4" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-2xl p-5" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-4">
-                <div className="skeleton" style={{ width: '56px', height: '56px', borderRadius: '12px' }} />
+                <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '12px' }} />
                 <div className="flex-1">
-                  <div className="skeleton skeleton-title" style={{ width: `${60 + i * 10}%` }} />
-                  <div className="skeleton skeleton-text" style={{ width: `${40 + i * 10}%` }} />
+                  <div className="skeleton skeleton-title" style={{ width: `${50 + i * 10}%` }} />
+                  <div className="skeleton skeleton-text" style={{ width: `${30 + i * 10}%` }} />
                 </div>
-                <div className="skeleton" style={{ width: '60px', height: '28px', borderRadius: '999px' }} />
               </div>
             </div>
           ))}
@@ -148,34 +173,38 @@ export default function Historico() {
   }
 
   const historyLabel = planInfo?.historyDays === 0 ? "ilimitado" : `${planInfo?.historyDays || 7} dias`;
-  const favCount = campaigns.filter(c => c.is_favorited).length;
-  const filteredCampaigns = filter === "favorites" ? campaigns.filter(c => c.is_favorited) : campaigns;
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            <span className="gradient-text">Histórico</span>
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-            {campaigns.length} campanha{campaigns.length !== 1 ? "s" : ""} gerada{campaigns.length !== 1 ? "s" : ""}
-            {favCount > 0 && (
-              <span> · <span style={{ color: "var(--brand-500)" }}>⭐ {favCount} favorita{favCount !== 1 ? "s" : ""}</span></span>
-            )}
-          </p>
+      {/* ── Header ── */}
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              <span className="gradient-text">Histórico</span>
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+              {campaigns.length} campanha{campaigns.length !== 1 ? "s" : ""} gerada{campaigns.length !== 1 ? "s" : ""}
+              {favCount > 0 && (
+                <span> · <span style={{ color: "var(--brand-500)" }}>⭐ {favCount}</span></span>
+              )}
+            </p>
+          </div>
+          <Link
+            href="/gerar"
+            className="btn-primary text-sm !py-2.5 !px-5 min-h-[44px] flex items-center justify-center flex-shrink-0"
+          >
+            + Nova
+          </Link>
         </div>
-        <Link href="/gerar" className="btn-primary text-sm !py-2.5 !px-5 min-h-[44px] flex items-center justify-center self-start flex-shrink-0" style={{ whiteSpace: 'nowrap', width: 'auto' }}>
-          + Nova
-        </Link>
       </div>
 
-      {/* Filter tabs */}
+      {/* ── Filter Tabs ── */}
       {campaigns.length > 0 && (
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-5">
           <button
             onClick={() => setFilter("all")}
-            className="text-xs font-semibold px-4 py-2 rounded-full transition-all min-h-[36px]"
+            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px]"
             style={{
               background: filter === "all" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "all" ? "white" : "var(--muted)",
@@ -186,7 +215,7 @@ export default function Historico() {
           </button>
           <button
             onClick={() => setFilter("favorites")}
-            className="text-xs font-semibold px-4 py-2 rounded-full transition-all min-h-[36px]"
+            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px]"
             style={{
               background: filter === "favorites" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "favorites" ? "white" : "var(--muted)",
@@ -200,7 +229,7 @@ export default function Historico() {
 
       {/* Aviso de expiração de histórico */}
       {planInfo && planInfo.historyDays > 0 && (
-        <div className="mb-6 p-3 rounded-xl flex items-center gap-3 text-xs" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-200)" }}>
+        <div className="mb-6 p-4 rounded-xl flex items-center gap-3 text-sm" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-200)" }}>
           <span>📅</span>
           <p>
             Seu plano mostra campanhas dos últimos <strong>{historyLabel}</strong>.{" "}
@@ -221,7 +250,6 @@ export default function Historico() {
 
       {campaigns.length === 0 ? (
         <div className="text-center py-16">
-          {/* SVG illustration instead of emoji */}
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gradient-card)' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand-400)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -239,111 +267,179 @@ export default function Historico() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <>
           {filter === "favorites" && filteredCampaigns.length === 0 && (
             <div className="text-center py-12">
               <div className="text-4xl mb-3">⭐</div>
               <p className="font-semibold mb-1">Nenhuma campanha favorita</p>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
+              <p className="text-sm" style={{ color: "var(--muted)" }}>
                 Toque na ⭐ para proteger campanhas do arquivamento automático
               </p>
             </div>
           )}
-          {filteredCampaigns.map((campaign, i) => {
-            const score = campaign.campaign_scores?.[0]?.nota_geral;
-            // v3: nome da peça vem de output.analise | v2: headline_principal de campaign_outputs
-            const v3Name = campaign.output?.analise?.tipo_peca;
-            const v3Color = campaign.output?.analise?.cor_principal?.nome;
-            const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
-            const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
-            const headline = v2Name
-              || (v3Name ? `${v3Name} ${objLabel}${v3Color ? ` — ${v3Color}` : ""}` : `Campanha ${objLabel}`);
-            const isFav = campaign.is_favorited;
-            const isToggling = togglingId === campaign.id;
 
-            return (
-              <div
-                key={campaign.id}
-                className="flex items-center gap-2 p-3 rounded-2xl transition-all group min-h-[60px]"
-                style={{
-                  background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
-                  border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Star favorite button */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleFavorite(campaign.id, isFav);
-                  }}
-                  disabled={isToggling}
-                  className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 min-h-[36px]"
+          {/* ── Campaign Cards ── */}
+          <div className="space-y-3">
+            {paginatedCampaigns.map((campaign) => {
+              const score = campaign.campaign_scores?.[0]?.nota_geral;
+              // v3: nome da peça vem de output.analise | v2: headline_principal de campaign_outputs
+              const v3Name = campaign.output?.analise?.tipo_peca;
+              const v3Color = campaign.output?.analise?.cor_principal?.nome;
+              const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
+              const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
+              const headline = v2Name
+                || (v3Name ? `${capitalize(v3Name)}${v3Color ? ` — ${capitalize(v3Color)}` : ""}` : `Campanha ${objLabel}`);
+              const isFav = campaign.is_favorited;
+              const isToggling = togglingId === campaign.id;
+              const objStyle = objectiveColors[campaign.objective || ""] || { bg: "var(--surface)", color: "var(--muted)" };
+
+              return (
+                <div
+                  key={campaign.id}
+                  className="rounded-2xl p-4 transition-all group"
                   style={{
-                    background: isFav ? "var(--brand-100, rgba(236,72,153,0.12))" : "var(--surface)",
-                    border: isFav ? "1px solid var(--brand-300, rgba(236,72,153,0.3))" : "1px solid var(--border)",
-                    opacity: isToggling ? 0.6 : 1,
-                    cursor: isToggling ? "wait" : "pointer",
+                    background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
+                    border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
                   }}
-                  title={isFav ? "Remover dos favoritos" : "Favoritar — protege do arquivamento"}
-                  aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                 >
-                  <svg
-                    width="18" height="18"
-                    viewBox="0 0 24 24"
-                    fill={isFav ? "var(--brand-500, #ec4899)" : "none"}
-                    stroke={isFav ? "var(--brand-500, #ec4899)" : "var(--muted)"}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ transition: "all 0.2s ease" }}
-                  >
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                </button>
+                  <div className="flex items-center gap-3">
+                    {/* Star favorite button */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(campaign.id, isFav);
+                      }}
+                      disabled={isToggling}
+                      className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                      style={{
+                        background: isFav ? "var(--brand-100, rgba(236,72,153,0.12))" : "var(--surface)",
+                        border: isFav ? "1px solid var(--brand-300, rgba(236,72,153,0.3))" : "1px solid var(--border)",
+                        opacity: isToggling ? 0.6 : 1,
+                        cursor: isToggling ? "wait" : "pointer",
+                      }}
+                      title={isFav ? "Remover dos favoritos" : "Favoritar — protege do arquivamento"}
+                      aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                    >
+                      <svg
+                        width="20" height="20"
+                        viewBox="0 0 24 24"
+                        fill={isFav ? "var(--brand-500, #ec4899)" : "none"}
+                        stroke={isFav ? "var(--brand-500, #ec4899)" : "var(--muted)"}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ transition: "all 0.2s ease" }}
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </button>
 
-                {/* Clickable area → navigate to campaign */}
-                <Link
-                  href={`/gerar/demo?id=${campaign.id}`}
-                  className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0"
-                >
-                  {/* Status icon */}
-                  <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-base sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
-                    {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <p className="font-semibold text-sm truncate">
-                      {headline}
-                    </p>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: "var(--muted)" }}>
-                      R$ {Number(campaign.price).toFixed(2).replace(".", ",")} · {objectiveLabels[campaign.objective || ""] || "—"} · {formatDate(campaign.created_at)}
-                    </p>
-                  </div>
-
-                  {/* Score */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {score ? (
-                      <div className="text-right">
-                        <p className="text-base sm:text-lg font-black gradient-text">{score}</p>
+                    {/* Clickable area → navigate to campaign */}
+                    <Link
+                      href={`/gerar/demo?id=${campaign.id}`}
+                      className="flex items-center gap-3 flex-1 min-w-0"
+                    >
+                      {/* Status icon */}
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                        {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
                       </div>
-                    ) : (
-                      <div className="text-right">
-                        <p className="text-[10px] sm:text-xs" style={{ color: "var(--muted)" }}>
-                          {campaign.status === "processing" ? "..." : campaign.status === "failed" ? "❌" : ""}
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[15px] leading-snug line-clamp-2">
+                          {headline}
                         </p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                            style={{ background: objStyle.bg, color: objStyle.color }}
+                          >
+                            {objLabel || "—"}
+                          </span>
+                          <span className="text-xs" style={{ color: "var(--muted)" }}>
+                            {campaign.price > 0 ? `R$ ${Number(campaign.price).toFixed(2).replace(".", ",")}` : ""} · {formatDate(campaign.created_at)}
+                          </span>
+                        </div>
                       </div>
-                    )}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+
+                      {/* Score + Arrow */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {score ? (
+                          <div className="text-right">
+                            <p className="text-lg font-black gradient-text">{score}</p>
+                          </div>
+                        ) : null}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                      </div>
+                    </Link>
                   </div>
-                </Link>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Pagination ── */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 gap-3">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Anterior
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                  // Show max 5 page buttons: first, last, current ±1
+                  if (totalPages <= 5 || page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1) {
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className="w-10 h-10 rounded-xl text-sm font-semibold transition-all flex items-center justify-center"
+                        style={{
+                          background: page === currentPage ? "var(--brand-500)" : "transparent",
+                          color: page === currentPage ? "white" : "var(--muted)",
+                        }}
+                      >
+                        {page}
+                      </button>
+                    );
+                  }
+                  // Show dots for gaps
+                  if (page === 2 && currentPage > 3) {
+                    return <span key="dots-start" className="text-sm px-1" style={{ color: "var(--muted)" }}>…</span>;
+                  }
+                  if (page === totalPages - 1 && currentPage < totalPages - 2) {
+                    return <span key="dots-end" className="text-sm px-1" style={{ color: "var(--muted)" }}>…</span>;
+                  }
+                  return null;
+                })}
               </div>
-            );
-          })}
-        </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              >
+                Próxima
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          )}
+
+          {/* Page info */}
+          {totalPages > 1 && (
+            <p className="text-center text-xs mt-3" style={{ color: "var(--muted)" }}>
+              Página {currentPage} de {totalPages} · {filteredCampaigns.length} campanha{filteredCampaigns.length !== 1 ? "s" : ""}
+            </p>
+          )}
+        </>
       )}
     </div>
   );
