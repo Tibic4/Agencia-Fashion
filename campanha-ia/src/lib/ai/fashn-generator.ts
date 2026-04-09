@@ -1,16 +1,16 @@
 /**
- * CriaLook Image Generator v4 — FASHN AI
+ * CriaLook Image Generator v4 — FASHN AI (tryon-max)
  *
- * Usa o endpoint `product-to-model` do FASHN para gerar
- * 3 fotos de modelos vestindo a peça.
+ * Usa o endpoint `tryon-max` (flagship) do FASHN para Virtual Try-On.
+ * O tryon-max é o melhor modelo para preservar identidade da modelo
+ * E fidelidade dos detalhes da peça.
  *
- * Fluxo: produto (foto) + modelo (foto do banco) → FASHN → 3 imagens
+ * Fluxo: produto (foto) + modelo (foto do banco) → FASHN tryon-max → 3 imagens
  *
- * O FASHN faz Virtual Try-On real — coloca a peça na modelo de referência.
- * Muito melhor que text-to-image para e-commerce de moda.
+ * Resolução: 2k (~4MP) — ideal para Instagram Feed (1080x1350 = 1.4MP)
+ *
+ * Como o SDK v0.13 não tem tipos para tryon-max, usamos REST direto.
  */
-
-import Fashn from "fashn";
 
 // ═══════════════════════════════════════
 // Tipos
@@ -19,10 +19,10 @@ import Fashn from "fashn";
 export interface FashnGenInput {
   /** 3 styling prompts do Sonnet (cenário/pose) */
   stylingPrompts: [string, string, string];
-  /** Base64 da foto principal do produto (com prefixo data: ou URL) */
+  /** Base64 da foto principal do produto (sem prefixo data:) */
   productImageBase64: string;
   productMediaType?: string;
-  /** Base64 da foto da modelo do banco (com prefixo data: ou URL) */
+  /** Base64 da foto da modelo do banco (sem prefixo data:) */
   modelImageBase64: string;
   modelMediaType?: string;
   /** Tipo de corpo */
@@ -36,10 +36,8 @@ export interface FashnGenInput {
 
 export interface GeneratedImage {
   conceptName: string;
-  /** URL da imagem no CDN do FASHN (72h) ou base64 */
+  /** URL da imagem no CDN do FASHN (72h) */
   imageUrl: string;
-  /** Se tiver base64 */
-  imageBase64?: string;
   mimeType: string;
   durationMs: number;
 }
@@ -51,18 +49,15 @@ export interface FashnGenResult {
 }
 
 // ═══════════════════════════════════════
-// Singleton Fashn client
+// Config
 // ═══════════════════════════════════════
 
-let _client: Fashn | null = null;
-function getClient(): Fashn {
-  if (!_client) {
-    const apiKey = process.env.FASHN_API_KEY;
-    if (!apiKey) throw new Error("FASHN_API_KEY não configurada");
-    _client = new Fashn({ apiKey });
-  }
-  return _client;
-}
+const FASHN_API_URL = process.env.FASHN_API_URL || "https://api.fashn.ai/v1";
+const FASHN_MODEL = "tryon-max";
+const FASHN_RESOLUTION = "2k";      // ~4MP, ideal para Instagram
+const FASHN_MODE = "balanced";       // balanced = 3 credits/img 2k, ~45s
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLL_ATTEMPTS = 90;        // 90 × 2s = 180s max
 
 // ═══════════════════════════════════════
 // Helpers
@@ -70,19 +65,96 @@ function getClient(): Fashn {
 
 function toBase64DataUri(base64: string, mediaType?: string): string {
   if (base64.startsWith("data:")) return base64;
+  if (base64.startsWith("http")) return base64; // já é URL
   const mt = mediaType || "image/jpeg";
   return `data:${mt};base64,${base64}`;
 }
 
+function getApiKey(): string {
+  const key = process.env.FASHN_API_KEY;
+  if (!key) throw new Error("FASHN_API_KEY não configurada");
+  return key;
+}
+
 // ═══════════════════════════════════════
-// Função principal — 3 chamadas paralelas (max concurrency 6)
+// REST API calls (tryon-max não está no SDK v0.13)
+// ═══════════════════════════════════════
+
+interface FashnRunResponse {
+  id: string;
+  error?: { name: string; message: string };
+}
+
+interface FashnStatusResponse {
+  id: string;
+  status: "starting" | "in_queue" | "processing" | "completed" | "failed";
+  output?: string[];
+  error?: { name: string; message: string };
+}
+
+async function fashnRun(inputs: Record<string, unknown>): Promise<FashnRunResponse> {
+  const resp = await fetch(`${FASHN_API_URL}/run`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${getApiKey()}`,
+    },
+    body: JSON.stringify({
+      model_name: FASHN_MODEL,
+      inputs,
+    }),
+  });
+
+  if (!resp.ok) {
+    const errBody = await resp.text().catch(() => "");
+    throw new Error(`FASHN /run falhou (${resp.status}): ${errBody}`);
+  }
+
+  return resp.json();
+}
+
+async function fashnPoll(predictionId: string): Promise<FashnStatusResponse> {
+  const resp = await fetch(`${FASHN_API_URL}/status/${predictionId}`, {
+    headers: { "Authorization": `Bearer ${getApiKey()}` },
+  });
+
+  if (!resp.ok) {
+    throw new Error(`FASHN /status falhou (${resp.status})`);
+  }
+
+  return resp.json();
+}
+
+async function fashnSubscribe(inputs: Record<string, unknown>): Promise<FashnStatusResponse> {
+  // 1. Submit
+  const run = await fashnRun(inputs);
+  if (run.error) {
+    throw new Error(`FASHN run error: ${run.error.message}`);
+  }
+
+  // 2. Poll até completar
+  for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+    const status = await fashnPoll(run.id);
+
+    if (status.status === "completed") return status;
+    if (status.status === "failed") {
+      throw new Error(`FASHN falhou: ${status.error?.message || "Unknown error"} (${status.error?.name})`);
+    }
+    // starting, in_queue, processing → continuar polling
+  }
+
+  throw new Error(`FASHN timeout após ${MAX_POLL_ATTEMPTS * POLL_INTERVAL_MS / 1000}s`);
+}
+
+// ═══════════════════════════════════════
+// Função principal — 3 chamadas paralelas
 // ═══════════════════════════════════════
 
 export async function generateWithFashn(input: FashnGenInput): Promise<FashnGenResult> {
-  const client = getClient();
   const startTime = Date.now();
 
-  console.log(`[FASHN] 🚀 Iniciando 3 chamadas paralelas ao FASHN product-to-model...`);
+  console.log(`[FASHN] 🚀 Iniciando 3 chamadas paralelas ao FASHN ${FASHN_MODEL} (${FASHN_RESOLUTION})...`);
 
   const productImage = toBase64DataUri(input.productImageBase64, input.productMediaType);
   const modelImage = toBase64DataUri(input.modelImageBase64, input.modelMediaType);
@@ -90,7 +162,7 @@ export async function generateWithFashn(input: FashnGenInput): Promise<FashnGenR
   // Disparar 3 chamadas INDEPENDENTES em paralelo
   const settled = await Promise.allSettled(
     input.stylingPrompts.map((prompt, index) =>
-      generateSingleImage(client, prompt, productImage, modelImage, input, index)
+      generateSingleImage(prompt, productImage, modelImage, index)
     )
   );
 
@@ -117,48 +189,39 @@ export async function generateWithFashn(input: FashnGenInput): Promise<FashnGenR
 }
 
 // ═══════════════════════════════════════
-// Geração individual
+// Geração individual via REST
 // ═══════════════════════════════════════
 
 async function generateSingleImage(
-  client: Fashn,
   stylingPrompt: string,
   productImage: string,
   modelImage: string,
-  input: FashnGenInput,
   index: number
 ): Promise<GeneratedImage> {
   const start = Date.now();
   const conceptName = `Look ${index + 1}`;
-  console.log(`[FASHN] 🎨 #${index + 1} "${conceptName}" — iniciando...`);
+  console.log(`[FASHN] 🎨 #${index + 1} "${conceptName}" — iniciando (${FASHN_MODEL} ${FASHN_RESOLUTION})...`);
 
-  // Usar product-to-model com model_image para try-on
-  const result = await client.predictions.subscribe({
-    model_name: "product-to-model",
-    inputs: {
-      product_image: productImage,
-      model_image: modelImage,
-      prompt: stylingPrompt,
-      resolution: "1k",
-      aspect_ratio: (input.aspectRatio || "3:4") as "3:4" | "4:5" | "2:3",
-      output_format: "jpeg",
-    },
+  const result = await fashnSubscribe({
+    product_image: productImage,
+    model_image: modelImage,
+    prompt: stylingPrompt,
+    resolution: FASHN_RESOLUTION,
+    generation_mode: FASHN_MODE,
+    num_images: 1,
+    output_format: "jpeg",
   });
 
-  if (result.status !== "completed" || !result.output?.length) {
-    const errorMsg = result.error?.message || "FASHN não retornou imagem";
-    throw new Error(`FASHN falhou para "${conceptName}": ${errorMsg}`);
+  if (!result.output?.length) {
+    throw new Error(`FASHN não retornou imagem para "${conceptName}"`);
   }
 
   const durationMs = Date.now() - start;
   console.log(`[FASHN] ✅ #${index + 1} "${conceptName}" — ${durationMs}ms`);
 
-  // result.output é array de URLs no CDN do FASHN
-  const imageUrl = result.output[0];
-
   return {
     conceptName,
-    imageUrl,
+    imageUrl: result.output[0],
     mimeType: "image/jpeg",
     durationMs,
   };
@@ -166,8 +229,7 @@ async function generateSingleImage(
 
 // ═══════════════════════════════════════
 // Log de custos
-// FASHN product-to-model quality 2k = 4 credits/image
-// Preço por credit: ~$0.05 (estimativa)
+// tryon-max balanced 2k = 3 credits/image
 // ═══════════════════════════════════════
 
 async function logFashnCosts(
@@ -187,8 +249,8 @@ async function logFashnCosts(
     // fallback
   }
 
-  // 2 credits por imagem quality 1k, ~$0.05/credit
-  const creditsPerImage = 2;
+  // tryon-max balanced 2k = 3 credits/image, ~$0.05/credit
+  const creditsPerImage = 3;
   const costPerCredit = 0.05;
   const totalCostUsd = creditsPerImage * costPerCredit * successCount;
 
@@ -196,7 +258,7 @@ async function logFashnCosts(
     store_id: storeId,
     campaign_id: campaignId || null,
     provider: "fashn",
-    model_used: "product-to-model-quality-2k",
+    model_used: `${FASHN_MODEL}-${FASHN_MODE}-${FASHN_RESOLUTION}`,
     action: "fashn_tryon_v4",
     cost_usd: totalCostUsd,
     cost_brl: totalCostUsd * exchangeRate,
