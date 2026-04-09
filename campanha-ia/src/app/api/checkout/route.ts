@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/checkout
  * 
- * Body: { planId: "starter" | "pro" | "business" | "agencia" }
+ * Body: { planId: "essencial" | "pro" | "business" }
  * 
  * Cria uma assinatura recorrente (PreApproval) no Mercado Pago.
  * O cliente é redirecionado para o checkout do MP para autorizar o cartão.
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { planId } = body;
 
-    if (!planId || !["starter", "pro", "business", "agencia"].includes(planId)) {
+    if (!planId || !["essencial", "pro", "business"].includes(planId)) {
       return NextResponse.json(
         { error: "Plano inválido", code: "INVALID_PLAN" },
         { status: 400 }

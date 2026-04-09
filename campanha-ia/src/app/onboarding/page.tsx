@@ -91,7 +91,7 @@ const howItWorksSteps = [
   {
     icon: <IconZap />,
     title: "IA trabalha",
-    desc: "Textos, modelo virtual e score em 60s",
+    desc: "Textos, modelo virtual e score — tudo automático",
   },
   {
     icon: <IconDownload />,
@@ -822,7 +822,7 @@ export default function Onboarding() {
                   Bem-vindo ao <span className="gradient-text">CriaLook</span>
                 </h1>
                 <p className="onb-subtitle">
-                  Tire uma foto da roupa, a IA cria sua campanha completa em 60 segundos.
+                  Só com uma foto, a IA cria sua campanha completa — pronta pra postar.
                   Vamos configurar tudo em 2 minutos!
                 </p>
 

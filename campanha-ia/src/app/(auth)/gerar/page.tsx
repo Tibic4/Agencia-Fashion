@@ -112,9 +112,9 @@ export default function GerarCampanha() {
   const [showSinglePhotoWarning, setShowSinglePhotoWarning] = useState(false);
 
   const planModelLimits: Record<string, number> = {
-    free: 0, gratis: 0, starter: 1, pro: 3, business: 5, agencia: 10,
+    free: 0, gratis: 0, essencial: 3, pro: 10, business: 25,
   };
-  const maxModels = planModelLimits[userPlan] || 1;
+  const maxModels = planModelLimits[userPlan] || 0;
 
   // Carregar banco de modelos (stock) + modelos personalizadas da loja
   useEffect(() => {

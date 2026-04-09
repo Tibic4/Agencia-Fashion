@@ -20,7 +20,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "CriaLook — Transforme fotos de roupa em campanhas prontas",
   description:
-    "Tire uma foto da sua peça, informe o preço e receba textos, criativos e estratégias de marketing prontas em 60 segundos. Feito para lojistas de moda brasileiros.",
+    "Só com uma foto, a IA gera textos, criativos com modelo virtual e estratégias de marketing prontas pra postar. Feito para lojistas de moda brasileiros.",
   keywords: [
     "crialook",
     "campanha moda ia",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CriaLook — Marketing de moda com inteligência artificial",
     description:
-      "Foto + preço = campanha completa em 60 segundos. Textos, criativos e estratégias para Instagram, WhatsApp e Meta Ads.",
+      "Foto da roupa → campanha completa pronta pra postar. Textos, criativos e estratégias para Instagram, WhatsApp e Meta Ads.",
     type: "website",
     locale: "pt_BR",
     url: "https://crialook.com.br",

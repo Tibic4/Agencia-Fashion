@@ -15,37 +15,29 @@ export const preApprovalClient = new PreApproval(client);
  * Planos do CriaLook — alinhados com tabela `plans` do Supabase
  */
 export const PLANS = {
-  starter: {
-    id: "starter",
-    name: "Starter",
-    price: 79.0,
-    campaigns_per_month: 20,
-    models: 1,
-    features: ["20 campanhas/mês", "4 canais", "1 modelo virtual", "Modelo + fundo profissional", "Score completo", "Histórico 90 dias"],
+  essencial: {
+    id: "essencial",
+    name: "Essencial",
+    price: 69.0,
+    campaigns_per_month: 15,
+    models: 3,
+    features: ["15 campanhas/mês", "3 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 30 dias", "Suporte por email"],
   },
   pro: {
     id: "pro",
     name: "Pro",
-    price: 179.0,
-    campaigns_per_month: 45,
-    models: 3,
-    features: ["45 campanhas/mês", "4 canais", "3 modelos virtuais", "Modelo + fundo profissional", "Score completo", "Histórico 1 ano"],
+    price: 149.0,
+    campaigns_per_month: 50,
+    models: 10,
+    features: ["50 campanhas/mês", "10 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 1 ano", "Suporte WhatsApp"],
   },
   business: {
     id: "business",
     name: "Business",
-    price: 349.0,
-    campaigns_per_month: 90,
-    models: 5,
-    features: ["90 campanhas/mês", "4 canais", "5 modelos virtuais", "Modelo + fundo profissional", "Score completo", "Histórico ilimitado", "Suporte WhatsApp"],
-  },
-  agencia: {
-    id: "agencia",
-    name: "Agência",
-    price: 699.0,
-    campaigns_per_month: 180,
-    models: 10,
-    features: ["180 campanhas/mês", "4 canais", "10 modelos virtuais", "Modelo + fundo profissional", "Marca branca", "API pública", "Histórico ilimitado", "Suporte VIP"],
+    price: 299.0,
+    campaigns_per_month: 120,
+    models: 25,
+    features: ["120 campanhas/mês", "25 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico ilimitado", "Suporte prioritário"],
   },
 } as const;
 

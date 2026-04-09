@@ -131,7 +131,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         <div className="text-center mt-12 rounded-2xl p-8" style={{ background: "var(--gradient-brand-soft)", border: "1px solid var(--border)" }}>
           <h3 className="text-xl font-bold mb-2">Quer criar campanhas assim?</h3>
           <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
-            Foto da roupa → Campanha pronta em 60 segundos.
+            Só com uma foto → Campanha pronta pra postar.
           </p>
           <Link href="/sign-up" className="btn-primary inline-block">
             Testar na prática

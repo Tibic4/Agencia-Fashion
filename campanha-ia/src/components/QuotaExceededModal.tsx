@@ -13,16 +13,15 @@ interface QuotaExceededModalProps {
 }
 
 const CREDIT_PACKAGES = [
-  { qty: 1, price: "7,99", priceNum: 7.99, perUnit: "7,99", perUnitNum: 7.99, type: "campaigns", savings: 0 },
-  { qty: 5, price: "34,99", priceNum: 34.99, perUnit: "7,00", perUnitNum: 7.0, type: "campaigns", savings: 12, popular: true },
-  { qty: 10, price: "59,99", priceNum: 59.99, perUnit: "6,00", perUnitNum: 6.0, type: "campaigns", savings: 25, best: true },
+  { qty: 5, price: "19,90", priceNum: 19.90, perUnit: "3,98", perUnitNum: 3.98, type: "campaigns", savings: 0 },
+  { qty: 15, price: "49,90", priceNum: 49.90, perUnit: "3,33", perUnitNum: 3.33, type: "campaigns", savings: 16, popular: true },
+  { qty: 30, price: "89,90", priceNum: 89.90, perUnit: "3,00", perUnitNum: 3.00, type: "campaigns", savings: 25, best: true },
 ];
 
 const PLAN_UPGRADE = [
-  { name: "Starter", price: 79, campaigns: 20 },
-  { name: "Pro", price: 179, campaigns: 45, recommended: true },
-  { name: "Business", price: 349, campaigns: 90 },
-  { name: "Agência", price: 699, campaigns: 180 },
+  { name: "Essencial", price: 69, campaigns: 15 },
+  { name: "Pro", price: 149, campaigns: 50, recommended: true },
+  { name: "Business", price: 299, campaigns: 120 },
 ];
 
 export default function QuotaExceededModal({
@@ -403,7 +402,7 @@ export default function QuotaExceededModal({
                     💡 Dica: Faça upgrade e nunca fique sem campanhas
                   </p>
                   <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
-                    Planos a partir de R$ 79/mês com até 25% de desconto/campanha
+                    Planos a partir de R$ 69/mês — pague menos por campanha
                   </p>
                 </div>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>
@@ -527,7 +526,7 @@ export default function QuotaExceededModal({
                   INCLUÍDO EM TODOS OS PLANOS:
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {["Modelo virtual IA", "Suporte prioritário", "Sem marca d'água", "Histórico completo"].map((f) => (
+                  {["Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Sem marca d'água"].map((f) => (
                     <div key={f} className="flex items-center gap-1.5 text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
