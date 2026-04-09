@@ -222,7 +222,7 @@ export default function AuthLayout({
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-16 lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
-        <div className="px-0 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
+        <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>
   );

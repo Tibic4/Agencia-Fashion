@@ -355,7 +355,7 @@ export default function ResultadoCampanha() {
     <div className="min-h-screen" style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 px-4 py-3 flex items-center gap-3"
+        className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3"
         style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
       >
         <button
@@ -372,7 +372,7 @@ export default function ResultadoCampanha() {
         </span>
       </div>
 
-      <div className="w-full max-w-5xl mx-auto px-4 py-6 space-y-8" style={{ overflowX: "hidden" }}>
+      <div className="w-full max-w-5xl mx-auto px-0 sm:px-4 py-6 space-y-8" style={{ overflowX: "hidden" }}>
 
         {/* ── Título ── */}
         <div>
