@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import FashionFactsCarousel from "./FashionFactsCarousel";
 import "./GenerationLoadingScreen.css";
 
-/* ─── Props (mantém compatibilidade com a page pai) ─── */
+/* ─── Props ─── */
 interface Step {
   label: string;
   progress: number;
@@ -29,7 +29,7 @@ interface GenerationLoadingScreenProps {
 type Phase = "analyzing" | "editorial" | "shooting" | "polishing" | "almostDone";
 
 function getPhase(elapsed: number, isComplete: boolean): Phase {
-  if (isComplete) return "polishing"; // won't render — completion area shows instead
+  if (isComplete) return "polishing";
   if (elapsed < 12) return "analyzing";
   if (elapsed < 30) return "editorial";
   if (elapsed < 60) return "shooting";
@@ -40,88 +40,66 @@ function getPhase(elapsed: number, isComplete: boolean): Phase {
 const PHASE_CONFIG: Record<Phase, {
   icon: string;
   title: string;
-  subtitle: string;
   color: string;
 }> = {
   analyzing: {
     icon: "🔍",
     title: "Analisando sua peça",
-    subtitle: "Identificando tecido, cor, modelagem e cada detalhe",
     color: "#818cf8",
   },
   editorial: {
     icon: "✍️",
     title: "Criando o editorial",
-    subtitle: "Escrevendo 3 roteiros fotográficos únicos",
     color: "#f472b6",
   },
   shooting: {
     icon: "📸",
     title: "Fotografando com IA",
-    subtitle: "Gerando fotos profissionais com modelo virtual",
     color: "#a855f7",
   },
   polishing: {
     icon: "✨",
     title: "Finalizando detalhes",
-    subtitle: "Aplicando acabamento editorial profissional",
     color: "#f59e0b",
   },
   almostDone: {
     icon: "🎯",
     title: "Quase lá...",
-    subtitle: "Salvando suas fotos em alta qualidade",
     color: "#10b981",
   },
 };
 
-/* ── Behind-the-scenes messages per phase ── */
-const BEHIND_SCENES: Record<Phase, string[]> = {
+/* ── Status messages per phase (replaces both subtitle + BTS) ── */
+const STATUS_MESSAGES: Record<Phase, string[]> = {
   analyzing: [
-    "🔍 Analisando tons e saturação da peça…",
-    "🧵 Identificando tipo de tecido pelo brilho e textura…",
-    "📐 Mapeando caimento e modelagem…",
-    "🎨 Extraindo a paleta de cores principal…",
-    "✂️ Detectando detalhes: costuras, botões, estampas…",
+    "Analisando tons e saturação da peça",
+    "Identificando tipo de tecido",
+    "Mapeando caimento e modelagem",
+    "Extraindo paleta de cores",
   ],
   editorial: [
-    "✍️ Escrevendo direção de arte para o fotógrafo…",
-    "💡 Definindo iluminação ideal para esta peça…",
-    "🎬 Criando 3 poses diferentes para a campanha…",
-    "👠 Selecionando sapatos que combinam com o look…",
-    "🪄 Montando paleta de cenário e acessórios…",
+    "Escrevendo direção de arte",
+    "Definindo iluminação ideal",
+    "Criando 3 poses para a campanha",
+    "Montando cenário e acessórios",
   ],
   shooting: [
-    "📸 Posicionando a modelo no cenário escolhido…",
-    "💫 Ajustando caimento natural do tecido no corpo…",
-    "🌟 Renderizando iluminação e sombras realistas…",
-    "✨ Aplicando acabamento editorial profissional…",
-    "🎯 Finalizando enquadramento corpo inteiro…",
+    "Posicionando modelo no cenário",
+    "Ajustando caimento do tecido",
+    "Renderizando iluminação e sombras",
+    "Finalizando enquadramento",
   ],
   polishing: [
-    "🖼️ Otimizando resolução e nitidez…",
-    "🎨 Equilibrando cores e contraste…",
-    "💎 Verificando qualidade final de cada foto…",
-    "📤 Preparando para salvar suas criações…",
-    "✅ Últimos ajustes de qualidade…",
+    "Otimizando resolução e nitidez",
+    "Equilibrando cores e contraste",
+    "Verificando qualidade final",
   ],
   almostDone: [
-    "⏳ Finalizando os últimos detalhes…",
-    "💾 Salvando em alta resolução…",
-    "🎁 Preparando suas 3 fotos editoriais…",
-    "🚀 Quase pronto, só mais um instante…",
-    "✨ Sua campanha está ficando incrível…",
+    "Salvando em alta resolução",
+    "Preparando suas 3 fotos",
+    "Quase pronto...",
   ],
 };
-
-/* ── Motivational messages ── */
-const MOTIVATIONAL = [
-  "Cada foto é feita sob medida para sua peça ✨",
-  "Resultado de estúdio profissional, direto no celular 📱",
-  "Lojas que usam fotos com modelo vendem até 3x mais 📈",
-  "Sua peça merece uma campanha de alto nível 💎",
-  "Em instantes você terá 3 fotos prontas para vender 🚀",
-];
 
 /* ── Confetti colors ── */
 const CONFETTI_COLORS = [
@@ -143,7 +121,7 @@ function formatTime(seconds: number): string {
 export default function GenerationLoadingScreen({ step, steps }: GenerationLoadingScreenProps) {
   const isComplete = step >= steps.length - 1;
 
-  // ── Elapsed timer (drives everything) ──
+  // ── Single elapsed timer (drives everything) ──
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (isComplete) return;
@@ -155,26 +133,10 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
   const phase = getPhase(elapsed, isComplete);
   const config = PHASE_CONFIG[phase];
 
-  // ── Behind-the-scenes cycling ──
-  const [btsIndex, setBtsIndex] = useState(0);
-  const btsMessages = BEHIND_SCENES[phase];
-  useEffect(() => {
-    setBtsIndex(0);
-    const interval = setInterval(() => {
-      setBtsIndex(prev => (prev + 1) % btsMessages.length);
-    }, 3200);
-    return () => clearInterval(interval);
-  }, [phase, btsMessages.length]);
-
-  // ── Motivational message cycling ──
-  const [motIndex, setMotIndex] = useState(0);
-  useEffect(() => {
-    if (isComplete) return;
-    const interval = setInterval(() => {
-      setMotIndex(prev => (prev + 1) % MOTIVATIONAL.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [isComplete]);
+  // ── Status message — derived from elapsed, no extra interval ──
+  const statusMessages = STATUS_MESSAGES[phase];
+  const statusIndex = Math.floor(elapsed / 4) % statusMessages.length;
+  const statusText = statusMessages[statusIndex];
 
   // ── Confetti (memoized) ──
   const confettiPieces = useMemo(() => {
@@ -187,9 +149,9 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
     }));
   }, []);
 
-  // ── Phase timeline for dots ──
+  // ── Phase timeline ──
   const PHASE_KEYS: Phase[] = ["analyzing", "editorial", "shooting", "polishing"];
-  const currentPhaseIdx = PHASE_KEYS.indexOf(phase);
+  const currentPhaseIdx = PHASE_KEYS.indexOf(phase === "almostDone" ? "polishing" : phase);
 
   return (
     <div className="gen-loading animate-fade-in">
@@ -198,8 +160,6 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
 
       {/* Floating particles */}
       <div className="gen-particles">
-        <div className="gen-particle" />
-        <div className="gen-particle" />
         <div className="gen-particle" />
         <div className="gen-particle" />
         <div className="gen-particle" />
@@ -227,80 +187,56 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
       )}
 
       <div className="gen-loading-content">
-        {/* ─── Breathing ring + animated emoji ─── */}
+        {/* ─── Ring with timer inside ─── */}
         <div className="gen-icon-area">
           <div
             className="gen-breathing-ring"
-            style={{ borderColor: `${config.color}40`, boxShadow: `0 0 40px ${config.color}20` }}
+            style={{ borderColor: `${config.color}40`, boxShadow: `0 0 30px ${config.color}15` }}
           />
-          <div
-            className="gen-breathing-ring gen-breathing-ring-2"
-            style={{ borderColor: `${config.color}20` }}
-          />
-          <div className="gen-emoji-icon" key={phase}>
-            <span className="gen-emoji-text">{isComplete ? "🎉" : config.icon}</span>
+          <div className="gen-emoji-icon" style={{ background: `linear-gradient(135deg, ${config.color}, ${config.color}cc)` }} key={phase}>
+            {isComplete ? (
+              <span className="gen-emoji-text">🎉</span>
+            ) : (
+              <>
+                <span className="gen-emoji-text">{config.icon}</span>
+                <span className="gen-timer-inside">{formatTime(elapsed)}</span>
+              </>
+            )}
           </div>
         </div>
 
         {/* Title */}
         <h2 className="gen-title" key={`title-${phase}`}>
-          {isComplete ? "Sua campanha está pronta! ✨" : config.title}
+          {isComplete ? "Sua campanha está pronta!" : config.title}
         </h2>
 
-        {/* Subtitle */}
-        <p className="gen-subtitle" key={`sub-${phase}`}>
-          {isComplete ? "Suas 3 fotos editoriais estão prontas para vender!" : config.subtitle}
-        </p>
-
-        {/* ── Timer ── */}
+        {/* Status message (replaces both subtitle AND behind-the-scenes) */}
         {!isComplete && (
-          <div className="gen-timer">
-            <span className="gen-timer-icon">⏱</span>
-            <span className="gen-timer-value">{formatTime(elapsed)}</span>
-            {elapsed < 10 && (
-              <span className="gen-timer-hint">Geralmente leva ~80s</span>
-            )}
-          </div>
+          <p className="gen-status" key={`status-${phase}-${statusIndex}`}>
+            {statusText}
+          </p>
         )}
 
-        {/* ── Phase dots (simple, no progress bar) ── */}
+        {/* ── Minimal phase dots ── */}
         {!isComplete && (
-          <div className="gen-phase-dots">
+          <div className="gen-dots">
             {PHASE_KEYS.map((key, i) => (
-              <div key={key} className="gen-phase-dot-group">
-                <div
-                  className={`gen-phase-dot ${
-                    i < currentPhaseIdx ? "gen-phase-done" :
-                    i === currentPhaseIdx ? "gen-phase-active" :
-                    "gen-phase-pending"
-                  }`}
-                  style={i <= currentPhaseIdx ? { background: config.color } : undefined}
-                >
-                  {i < currentPhaseIdx ? "✓" : PHASE_CONFIG[key].icon}
-                </div>
-                {i < PHASE_KEYS.length - 1 && (
-                  <div
-                    className={`gen-phase-line ${i < currentPhaseIdx ? "gen-phase-line-done" : ""}`}
-                    style={i < currentPhaseIdx ? { background: config.color } : undefined}
-                  />
-                )}
-              </div>
+              <div
+                key={key}
+                className={`gen-dot ${
+                  i < currentPhaseIdx ? "gen-dot-done" :
+                  i === currentPhaseIdx ? "gen-dot-active" :
+                  ""
+                }`}
+                style={i <= currentPhaseIdx ? { background: config.color } : undefined}
+              />
             ))}
           </div>
         )}
 
-        {/* ── Behind-the-scenes ── */}
-        {!isComplete && (
-          <div className="gen-bts" key={`${phase}-${btsIndex}`}>
-            {btsMessages[btsIndex]}
-          </div>
-        )}
-
-        {/* ── Motivational ── */}
-        {!isComplete && (
-          <div className="gen-motivational" key={`mot-${motIndex}`}>
-            {MOTIVATIONAL[motIndex]}
-          </div>
+        {/* ── Estimated time hint (only first 15s) ── */}
+        {!isComplete && elapsed < 15 && (
+          <p className="gen-hint">Geralmente leva ~80 segundos</p>
         )}
 
         {/* ── Fashion Facts Carousel ── */}
