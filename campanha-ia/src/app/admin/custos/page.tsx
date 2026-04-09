@@ -24,11 +24,11 @@ async function getCosts() {
 
   // Filter out legacy providers globally from this month's data
   const filteredThisMonth = (thisMonthCosts ?? []).filter(
-    (row) => !["fashnai", "fashn.ai", "fal", "stability", "openai"].includes((row.provider || "").toLowerCase())
+    (row) => !["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai", "anthropic"].includes((row.provider || "").toLowerCase())
   );
   
   const filteredLastMonth = (lastMonthCosts ?? []).filter(
-    (row) => !["fashnai", "fashn.ai", "fal", "stability", "openai"].includes((row.provider || "").toLowerCase())
+    (row) => !["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai", "anthropic"].includes((row.provider || "").toLowerCase())
   );
   // Group by provider
   const byProvider: Record<string, { calls: number; cost: number; tokens: number }> = {};

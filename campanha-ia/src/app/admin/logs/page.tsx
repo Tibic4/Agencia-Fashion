@@ -73,10 +73,16 @@ async function getLogs() {
     errorTypes[type] = (errorTypes[type] || 0) + 1;
   });
 
+  // Filter out legacy providers from recent API logs
+  const LEGACY_PROVIDERS = ["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai", "anthropic"];
+  const filteredCosts = (recentCosts ?? []).filter(
+    (row) => !LEGACY_PROVIDERS.includes((String(row.provider) || "").toLowerCase())
+  );
+
   return {
     failedCampaigns: failedCampaigns ?? [],
     stuckCampaigns: stuckCampaigns ?? [],
-    recentCosts: recentCosts ?? [],
+    recentCosts: filteredCosts,
     stats: {
       total24h, success24h, failed24h, processing24h, sla24h,
       total7d, success7d, sla7d,
@@ -84,6 +90,18 @@ async function getLogs() {
       errorTypes,
     },
   };
+}
+
+/** Map raw action names to human-readable v6 step labels */
+function stepLabel(action: string): string {
+  const map: Record<string, { icon: string; label: string }> = {
+    gemini_analyzer: { icon: "🔮", label: "Análise da peça (Gemini 3.1 Pro)" },
+    gemini_vto_v5: { icon: "👗", label: "Virtual Try-On (Gemini Pro Image)" },
+    image_generation_v3: { icon: "👗", label: "Virtual Try-On (Gemini Pro Image)" },
+    preview_model: { icon: "🖼️", label: "Preview de modelo" },
+  };
+  const entry = map[action];
+  return entry ? `${entry.icon} ${entry.label}` : action;
 }
 
 const slaColor = (pct: number) => {
@@ -219,7 +237,7 @@ export default async function AdminLogs() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-white capitalize font-medium">{String(log.provider || "")}</span>
-                      <span className="text-[10px] text-gray-500">{String(log.action || "—")}</span>
+                      <span className="text-[10px] text-gray-500">{stepLabel(String(log.action || ""))}</span>
                     </div>
                     <span className="text-xs font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
                   </div>
@@ -247,7 +265,7 @@ export default async function AdminLogs() {
                         {formatTimeBR(String(log.created_at))}
                       </td>
                       <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
-                      <td className="px-6 py-2.5 text-gray-400 text-xs">{String(log.action || "—")}</td>
+                      <td className="px-6 py-2.5 text-gray-400 text-xs">{stepLabel(String(log.action || ""))}</td>
                       <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
                       <td className="px-6 py-2.5 text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
                     </tr>
