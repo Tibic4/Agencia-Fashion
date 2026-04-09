@@ -142,7 +142,7 @@ export default function Historico() {
   const filteredCampaigns = filter === "favorites" ? campaigns.filter(c => c.is_favorited) : campaigns;
 
   return (
-    <div className="animate-fade-in-up">
+    <div className="animate-fade-in-up" style={{ maxWidth: '100%', overflow: 'hidden' }}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -155,7 +155,7 @@ export default function Historico() {
             )}
           </p>
         </div>
-        <Link href="/gerar" className="btn-primary text-sm !py-2 min-h-[44px] flex items-center justify-center flex-shrink-0">
+        <Link href="/gerar" className="btn-primary text-sm !py-2 min-h-[44px] flex items-center justify-center flex-shrink-0" style={{ whiteSpace: 'nowrap' }}>
           + Nova
         </Link>
       </div>
@@ -252,6 +252,8 @@ export default function Historico() {
                 style={{
                   background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
                   border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
+                  maxWidth: '100%',
+                  overflow: 'hidden',
                 }}
               >
                 {/* Star favorite button */}
@@ -289,7 +291,7 @@ export default function Historico() {
                 {/* Clickable area → navigate to campaign */}
                 <Link
                   href={`/gerar/demo?id=${campaign.id}`}
-                  className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 overflow-hidden"
+                  className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0"
                 >
                   {/* Status icon */}
                   <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-base sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
