@@ -68,7 +68,7 @@ export default function AuthLayout({
   const usagePercent = campaignsLimit > 0 ? Math.min((campaignsUsed / campaignsLimit) * 100, 100) : 0;
 
   return (
-    <div className="flex min-h-screen" style={{ background: "var(--surface)" }}>
+    <div className="flex min-h-screen" style={{ background: "var(--surface)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Sidebar — Desktop */}
       <aside
         className="hidden lg:flex flex-col w-64 fixed inset-y-0 left-0 z-30"
@@ -221,8 +221,8 @@ export default function AuthLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-16 lg:pb-0 min-h-screen">
-        <div className="p-4 md:p-8 max-w-5xl mx-auto" style={{ overflowX: 'hidden' }}>{children}</div>
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-16 lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
+        <div className="px-0 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>
   );
