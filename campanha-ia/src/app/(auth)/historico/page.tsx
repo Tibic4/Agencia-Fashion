@@ -340,10 +340,21 @@ export default function Historico() {
                       href={`/gerar/demo?id=${campaign.id}`}
                       className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
                     >
-                      {/* Status icon */}
-                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
-                        {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
-                      </div>
+                      {/* Thumbnail or status icon */}
+                      {campaign.output?.image_urls?.find(Boolean) ? (
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid var(--border)" }}>
+                          <img
+                            src={campaign.output.image_urls.find(Boolean) as string}
+                            alt={headline}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-lg sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                          {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
+                        </div>
+                      )}
 
                       {/* Info */}
                       <div className="flex-1 min-w-0 overflow-hidden">
