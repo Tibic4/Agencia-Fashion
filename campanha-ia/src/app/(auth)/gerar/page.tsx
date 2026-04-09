@@ -109,6 +109,7 @@ export default function GerarCampanha() {
   const [quotaExceeded, setQuotaExceeded] = useState<{
     used: number; limit: number; credits: number;
   } | null>(null);
+  const [showSinglePhotoWarning, setShowSinglePhotoWarning] = useState(false);
 
   const planModelLimits: Record<string, number> = {
     free: 0, gratis: 0, starter: 1, pro: 3, business: 5, agencia: 10,
@@ -1126,7 +1127,13 @@ export default function GerarCampanha() {
 
           {/* Generate button */}
           <button
-            onClick={handleGenerate}
+            onClick={() => {
+              if (preview && !closeUpFile && !secondFile) {
+                setShowSinglePhotoWarning(true);
+              } else {
+                handleGenerate();
+              }
+            }}
             disabled={!preview}
             className="btn-primary w-full !py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
             style={{
@@ -1144,6 +1151,96 @@ export default function GerarCampanha() {
           )}
         </div>
       </div>
+
+      {/* Single Photo Warning — Bottom Sheet (mobile-first) */}
+      {showSinglePhotoWarning && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+          onClick={() => setShowSinglePhotoWarning(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50" />
+
+          {/* Sheet */}
+          <div
+            className="relative w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-2xl p-6 pb-8 sm:pb-6 animate-fade-in-up"
+            style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag handle (mobile) */}
+            <div className="sm:hidden w-10 h-1 rounded-full bg-gray-300 mx-auto mb-5" />
+
+            {/* Icon + Title */}
+            <div className="text-center mb-4">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                style={{ background: "rgba(251, 191, 36, 0.12)" }}
+              >
+                <span className="text-2xl">📸</span>
+              </div>
+              <h3 className="text-lg font-bold" style={{ color: "var(--foreground)" }}>
+                Quer um resultado ainda melhor?
+              </h3>
+              <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--muted)" }}>
+                Você enviou apenas 1 foto. Com mais ângulos, a IA captura
+                melhor os detalhes e gera imagens mais fiéis à sua peça.
+              </p>
+            </div>
+
+            {/* Suggestions */}
+            <div
+              className="rounded-xl p-3.5 mb-5 space-y-2"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            >
+              <p className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>
+                💡 Sugestões para melhores resultados:
+              </p>
+              <ul className="space-y-1.5">
+                {[
+                  "Adicione um close do tecido (campo \"Detalhe\")",
+                  "Envie outro ângulo da peça (campo \"Compor o look\")",
+                ].map((tip) => (
+                  <li
+                    key={tip}
+                    className="text-xs flex items-start gap-2"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    <span className="text-amber-400 mt-0.5 shrink-0">•</span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Actions — stacked on mobile */}
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => {
+                  setShowSinglePhotoWarning(false);
+                  handleGenerate();
+                }}
+                className="btn-primary w-full !py-3.5 text-sm"
+                style={{ minHeight: "48px" }}
+              >
+                ⚡ Gerar mesmo assim
+              </button>
+              <button
+                onClick={() => setShowSinglePhotoWarning(false)}
+                className="w-full py-3 text-sm font-medium rounded-xl transition-colors"
+                style={{
+                  color: "var(--brand-600)",
+                  background: "var(--brand-50)",
+                  border: "1px solid var(--brand-100)",
+                  minHeight: "48px",
+                }}
+              >
+                Voltar e adicionar mais fotos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
