@@ -174,15 +174,15 @@ const RESPONSE_SCHEMA = {
     },
     dicas_postagem: {
       type: "object",
-      description: "Dicas de postagem em português brasileiro",
+      description: "Dicas de postagem em português brasileiro. REGRA ABSOLUTA: NUNCA mencione tipo de peça (calça, blusa, vestido, saia, sapato, tênis, sandália etc.), cor, tecido, estampa, material ou qualquer detalhe da roupa. Use termos genéricos como 'esse visual', 'esse look', 'essa novidade', 'essa escolha'.",
       properties: {
         melhor_dia: { type: "string", description: "Melhor dia da semana para postar" },
         melhor_horario: { type: "string", description: "Melhor horário para postar (ex: '19h', '18h às 21h')" },
-        sequencia_sugerida: { type: "string", description: "Como usar as 3 fotos em sequência no feed/stories" },
-        caption_sugerida: { type: "string", description: "Legenda pronta para Instagram com emojis, entre 100-200 caracteres. Deve ser envolvente e gerar desejo pela peça sem mencionar preço." },
-        tom_legenda: { type: "string", description: "Tom da voz da legenda em 3-5 palavras (ex: 'Elegante e sofisticado', 'Jovem e descolado', 'Casual e acolhedor')" },
-        cta: { type: "string", description: "Call-to-action curto e criativo, max 8 palavras (ex: 'Garanta a sua antes que acabe!', 'Chama no direct pra garantir')" },
-        hashtags: { type: "array", items: { type: "string" }, description: "10-15 hashtags relevantes sem # (mix de alcance e nicho)" },
+        sequencia_sugerida: { type: "string", description: "Como usar as 3 fotos em sequência no feed/stories. NÃO mencione tipo de roupa, cor ou tecido." },
+        caption_sugerida: { type: "string", description: "Legenda pronta para Instagram com emojis, 100-200 chars. PROIBIDO mencionar tipo de peça, cor, tecido ou sapato. Use 'esse visual', 'essa novidade'. Foque no mood/estilo/atitude." },
+        tom_legenda: { type: "string", description: "Tom da voz em 3-5 palavras (ex: 'Elegante e sofisticado', 'Jovem e descolado'). Sem referência a roupa." },
+        cta: { type: "string", description: "Call-to-action curto, max 8 palavras. Sem mencionar tipo de peça. Ex: 'Garanta antes que acabe!', 'Chama no direct!'" },
+        hashtags: { type: "array", items: { type: "string" }, description: "10-15 hashtags sem #. Pode incluir hashtags de moda genéricas mas NUNCA hashtags com tipo específico de peça ou cor." },
         legendas: {
           type: "array",
           items: {
@@ -190,9 +190,9 @@ const RESPONSE_SCHEMA = {
             properties: {
               foto: { type: "integer", description: "Número da foto (1, 2 ou 3)" },
               plataforma: { type: "string", description: "Plataforma alvo (Instagram Feed, WhatsApp, Stories)" },
-              legenda: { type: "string", description: "Legenda pronta com emojis" },
+              legenda: { type: "string", description: "Legenda pronta com emojis. PROIBIDO mencionar tipo de roupa, cor, tecido ou sapato." },
               hashtags: { type: "array", items: { type: "string" } },
-              dica: { type: "string", description: "Dica de como usar essa legenda" },
+              dica: { type: "string", description: "Dica de como usar essa legenda. Sem referência a peça específica." },
             },
             required: ["foto", "plataforma", "legenda"],
           },
