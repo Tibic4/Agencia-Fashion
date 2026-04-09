@@ -1,16 +1,16 @@
 /**
- * CriaLook Campaign Pipeline v5
+ * CriaLook Campaign Pipeline v6
  *
- * Fluxo:
- * 1. Claude Sonnet — Análise visual + scene/styling prompts + dicas de postagem
- * 2. Gemini 3.1 Flash Image — 3 chamadas VTO em paralelo (multi-image fusion)
+ * Fluxo 100% Google:
+ * 1. Gemini 3.1 Pro — Análise visual + scene/styling prompts + dicas de postagem
+ * 2. Gemini 3 Pro Image — 3 chamadas VTO em paralelo (multi-image fusion)
  *
  * Contexto rico: dados da modelo (skin_tone, body_type, hair, etc.) e
- * cenário preferido são passados ao Sonnet para prompts ultra-detalhados.
+ * cenário preferido são passados ao Gemini 3.1 Pro para prompts ultra-detalhados.
  */
 
-import type { SonnetAnalise, SonnetDicasPostagem, SonnetVTOHint } from "./sonnet-analyzer";
-import { analyzeWithSonnet } from "./sonnet-analyzer";
+import type { SonnetAnalise, SonnetDicasPostagem, SonnetVTOHint } from "./gemini-analyzer";
+import { analyzeWithSonnet } from "./gemini-analyzer";
 import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 
@@ -86,7 +86,7 @@ export async function runCampaignPipeline(
 ): Promise<PipelineResult> {
   const startTime = Date.now();
 
-  // — Etapa 1: Sonnet analisa o produto ——————————————————————
+  // — Etapa 1: Gemini 3.1 Pro analisa o produto ————————————————
   await onProgress?.("sonnet", "Analisando fotos do produto...", 8);
 
   const sonnetStart = Date.now();
@@ -101,12 +101,12 @@ export async function runCampaignPipeline(
     brandColor: input.brandColor,
     modelInfo: input.modelInfo,
   });
-  const sonnetDurationMs = Date.now() - sonnetStart;
+  const analyzerDurationMs = Date.now() - sonnetStart;
 
-  // Log de custo do Sonnet (fire-and-forget)
+  // Log de custo do Gemini Analyzer (fire-and-forget)
   if (input.storeId) {
-    logSonnetCost(input.storeId, input.campaignId, sonnetDurationMs).catch((e) =>
-      console.warn("[Pipeline] Erro ao salvar custo Sonnet:", e)
+    logAnalyzerCost(input.storeId, input.campaignId, analyzerDurationMs).catch((e) =>
+      console.warn("[Pipeline] Erro ao salvar custo Analyzer:", e)
     );
   }
 
@@ -159,10 +159,10 @@ export async function runCampaignPipeline(
 }
 
 // ═══════════════════════════════════════
-// Log de custo do Sonnet
+// Log de custo do Gemini Analyzer
 // ═══════════════════════════════════════
 
-async function logSonnetCost(
+async function logAnalyzerCost(
   storeId: string,
   campaignId: string | undefined,
   responseTimeMs: number,
@@ -178,17 +178,19 @@ async function logSonnetCost(
     // fallback
   }
 
-  const avgInputTokens = 4400;
-  const avgOutputTokens = 2500;
+  // Gemini 3.1 Pro pricing: $1.25/MTok input, $10/MTok output
+  // Thinking tokens: ~2K budget (incluído no output pricing)
+  const avgInputTokens = 5000;  // imagens + prompt
+  const avgOutputTokens = 3000; // JSON + thinking
   const costUsd =
-    (avgInputTokens / 1_000_000) * 3 + (avgOutputTokens / 1_000_000) * 15;
+    (avgInputTokens / 1_000_000) * 1.25 + (avgOutputTokens / 1_000_000) * 10;
 
   const { error } = await supabase.from("api_cost_logs").insert({
     store_id: storeId,
     campaign_id: campaignId || null,
-    provider: "anthropic",
-    model_used: "claude-sonnet-4",
-    action: "sonnet_analyzer",
+    provider: "google",
+    model_used: "gemini-3.1-pro-preview",
+    action: "gemini_analyzer",
     cost_usd: costUsd,
     cost_brl: costUsd * exchangeRate,
     exchange_rate: exchangeRate,
@@ -197,6 +199,6 @@ async function logSonnetCost(
   });
 
   if (error) {
-    console.warn("[Pipeline] ⚠️ Falha ao logar custo Sonnet:", error.message);
+    console.warn("[Pipeline] ⚠️ Falha ao logar custo Analyzer:", error.message);
   }
 }
