@@ -91,22 +91,9 @@ export default function ResultadoCampanha() {
   const [loadingFromApi, setLoadingFromApi] = useState(false);
 
   useEffect(() => {
-    // 1. Try sessionStorage first (fresh generation)
-    try {
-      const raw = sessionStorage.getItem("campaignResult");
-      if (raw) {
-        const parsed = JSON.parse(raw) as V3Result;
-        setResult(parsed);
-        const firstValid = parsed.data?.images?.findIndex(img => img !== null) ?? -1;
-        if (firstValid >= 0) setSelectedIndex(firstValid);
-        return;
-      }
-    } catch {
-      // ignore
-    }
-
-    // 2. If no sessionStorage, try loading by campaign ID from URL
     const campaignId = searchParams.get("id");
+
+    // 1. If URL has ?id=, ALWAYS load from API (history / shared links)
     if (campaignId) {
       setLoadingFromApi(true);
       fetch(`/api/campaigns/${campaignId}`)
@@ -122,6 +109,20 @@ export default function ResultadoCampanha() {
           // Campaign not found or error — will show empty state
         })
         .finally(() => setLoadingFromApi(false));
+      return;
+    }
+
+    // 2. No ?id= → fresh generation, use sessionStorage
+    try {
+      const raw = sessionStorage.getItem("campaignResult");
+      if (raw) {
+        const parsed = JSON.parse(raw) as V3Result;
+        setResult(parsed);
+        const firstValid = parsed.data?.images?.findIndex(img => img !== null) ?? -1;
+        if (firstValid >= 0) setSelectedIndex(firstValid);
+      }
+    } catch {
+      // ignore
     }
   }, [searchParams]);
 
