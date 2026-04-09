@@ -5,7 +5,7 @@ import Link from "next/link";
 import FashionFactsCarousel from "./FashionFactsCarousel";
 import "./GenerationLoadingScreen.css";
 
-/* ─── Step Icons (SVG inline) ─── */
+/* ─── Icons (SVG inline — compact for mobile perf) ─── */
 const IconSearch = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
@@ -47,19 +47,27 @@ interface GenerationLoadingScreenProps {
   steps: Step[];
 }
 
-/**
- * Map step index to which icon group to show:
- * 0-2 → search, 3-5 → pen, 6-8 → camera, 9+ → check
+/*
+ * Derive phase from ELAPSED TIME — not from step index.
+ * This ensures the icon/title rotate naturally regardless of
+ * where the progress bar is stuck waiting for the API.
+ *
+ * Timeline:
+ *  0-15s  → search (analysing the garment)
+ * 15-40s  → pen    (writing editorials)
+ * 40s+    → camera (shooting photos) — until done
  */
-function getIconPhase(stepIdx: number): "search" | "pen" | "camera" | "check" {
-  if (stepIdx <= 2) return "search";
-  if (stepIdx <= 5) return "pen";
-  if (stepIdx <= 8) return "camera";
-  return "check";
+type Phase = "search" | "pen" | "camera" | "check";
+
+function getPhaseFromTime(elapsed: number, isComplete: boolean): Phase {
+  if (isComplete) return "check";
+  if (elapsed < 15) return "search";
+  if (elapsed < 40) return "pen";
+  return "camera";
 }
 
 /** Dynamic title per phase */
-function getPhaseTitle(phase: string, isComplete: boolean): string {
+function getPhaseTitle(phase: Phase, isComplete: boolean): string {
   if (isComplete) return "Sua campanha está pronta! ✨";
   switch (phase) {
     case "search": return "Analisando sua peça";
@@ -70,7 +78,7 @@ function getPhaseTitle(phase: string, isComplete: boolean): string {
 }
 
 /** Dynamic subtitle per phase */
-function getPhaseSubtitle(phase: string, isComplete: boolean): string {
+function getPhaseSubtitle(phase: Phase, isComplete: boolean): string {
   if (isComplete) return "Suas 3 fotos editoriais estão prontas para vender!";
   switch (phase) {
     case "search": return "Identificando tecido, cor, modelagem e cada detalhe";
@@ -106,12 +114,14 @@ const behindTheScenes: Record<string, string[]> = {
 };
 
 /* ── Pipeline phases for visual timeline ── */
-const pipelinePhases = [
+const pipelinePhases: { key: Phase; emoji: string; label: string }[] = [
   { key: "search", emoji: "🔍", label: "Análise" },
   { key: "pen", emoji: "✍️", label: "Editorial" },
   { key: "camera", emoji: "📸", label: "Fotos" },
   { key: "check", emoji: "✨", label: "Pronto" },
 ];
+
+const phaseOrder: Phase[] = ["search", "pen", "camera", "check"];
 
 /* ─── Confetti colors ─── */
 const confettiColors = [
@@ -129,8 +139,18 @@ function formatTime(seconds: number): string {
 
 export default function GenerationLoadingScreen({ step, steps }: GenerationLoadingScreenProps) {
   const currentStep = steps[step];
-  const phase = getIconPhase(step);
   const isComplete = step >= steps.length - 1;
+
+  // ── Elapsed timer (drives phase transitions) ──
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (isComplete) return;
+    const timer = setInterval(() => setElapsed(prev => prev + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isComplete]);
+
+  // Phase derived from TIME, not step (solves the "stuck on pen" problem)
+  const phase = getPhaseFromTime(elapsed, isComplete);
 
   // ── Smooth progress interpolation (no jumps) ──
   const [displayProgress, setDisplayProgress] = useState(currentStep.progress);
@@ -139,7 +159,6 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
     const interval = setInterval(() => {
       setDisplayProgress(prev => {
         if (prev >= target) { clearInterval(interval); return target; }
-        // Smooth ease toward target — never jumps more than 0.5% per tick
         const gap = target - prev;
         const increment = Math.max(0.15, gap * 0.06);
         return Math.min(prev + increment, target);
@@ -159,20 +178,10 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
     return () => clearInterval(interval);
   }, [phase, btsMessages.length]);
 
-  // ── Elapsed timer ──
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    if (isComplete) return;
-    const timer = setInterval(() => setElapsed(prev => prev + 1), 1000);
-    return () => clearInterval(timer);
-  }, [isComplete]);
-
-  // ── Photo count ──
-  const photosReady = phase === "check"
+  // ── Photo count (from actual step, not time) ──
+  const photosReady = isComplete
     ? 3
-    : phase === "camera"
-      ? Math.max(0, step - 5)
-      : 0;
+    : step >= 7 ? 2 : step >= 6 ? 1 : 0;
 
   // ── Confetti ──
   const confettiPieces = useMemo(() => {
@@ -189,7 +198,7 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
 
   return (
     <div className="gen-loading animate-fade-in">
-      {/* Animated background */}
+      {/* Animated gradient background */}
       <div className="gen-loading-bg" />
 
       {/* Floating particles */}
@@ -223,7 +232,7 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
       )}
 
       <div className="gen-loading-content">
-        {/* Dynamic icon */}
+        {/* ─── Premium animated icon ─── */}
         <div className="gen-icon-container">
           <div className="gen-icon-ring" />
           <div className="gen-icon-stage" data-active={phase === "search"}><IconSearch /></div>
@@ -260,10 +269,9 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
           </div>
         </div>
 
-        {/* ── Visual Pipeline (replaces boring step list) ── */}
+        {/* ── Visual Pipeline ── */}
         <div className="gen-pipeline">
           {pipelinePhases.map((p, i) => {
-            const phaseOrder = ["search", "pen", "camera", "check"];
             const currentIdx = phaseOrder.indexOf(phase);
             const thisIdx = phaseOrder.indexOf(p.key);
             const state = thisIdx < currentIdx ? "done" : thisIdx === currentIdx ? "active" : "pending";
@@ -288,9 +296,9 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
           </div>
         )}
 
-        {/* ── Photo counter (appears during camera phase) ── */}
-        {phase === "camera" && !isComplete && photosReady > 0 && (
-          <div className="gen-photo-counter animate-fade-in-up">
+        {/* ── Photo counter pills (during camera phase) ── */}
+        {phase === "camera" && !isComplete && (
+          <div className="gen-photo-counter">
             <div className="gen-photo-pills">
               {[1, 2, 3].map(n => (
                 <div
@@ -305,7 +313,7 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
           </div>
         )}
 
-        {/* ── Fashion Facts Carousel (already exists — keep as-is) ── */}
+        {/* ── Fashion Facts Carousel (mantido) ── */}
         {!isComplete && <FashionFactsCarousel />}
 
         {/* ── Completion area ── */}
