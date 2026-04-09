@@ -373,71 +373,133 @@ export default function ResultadoCampanha() {
           </p>
         </div>
 
-        {/* ── Grid 3 fotos ── */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          {images.map((img, idx) => (
-            <div key={idx} className="space-y-2">
-              <button
-                onClick={() => img && setSelectedIndex(idx)}
-                disabled={!img}
-                className="w-full relative rounded-2xl overflow-hidden transition-all"
+        {/* ── Foto Principal (mobile: hero + thumbs) ── */}
+        <div>
+          {/* Hero Image — mobile: full width, desktop: hidden (uses grid below) */}
+          <div className="block sm:hidden">
+            {selectedImage ? (
+              <div
+                className="relative rounded-2xl overflow-hidden w-full"
                 style={{
                   aspectRatio: "3/4",
-                  border: selectedIndex === idx
-                    ? "3px solid var(--brand-500)"
-                    : "2px solid var(--border)",
+                  border: "3px solid var(--brand-500)",
+                  boxShadow: "0 0 0 4px var(--brand-100)",
                   background: "var(--surface)",
-                  boxShadow: selectedIndex === idx ? "0 0 0 4px var(--brand-100)" : "none",
-                  opacity: img ? 1 : 0.4,
-                  cursor: img ? "pointer" : "not-allowed",
                 }}
               >
-                {img ? (
-                  <img
-                    src={getImageSrc(img)}
-                    alt={`Foto ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                    <span className="text-xl sm:text-3xl">❌</span>
-                    <span className="text-[10px] sm:text-xs" style={{ color: "var(--muted)" }}>Falhou</span>
-                  </div>
-                )}
-
-                {/* Selecionado badge */}
-                {selectedIndex === idx && img && (
-                  <div
-                    className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: "var(--brand-500)", color: "white" }}
-                  >
-                    <IconCheck />
-                  </div>
-                )}
-
-                {/* Número */}
+                <img
+                  src={getImageSrc(selectedImage)}
+                  alt={`Foto ${(selectedIndex ?? 0) + 1}`}
+                  className="w-full h-full object-cover"
+                />
                 <div
-                  className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold"
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: "var(--brand-500)", color: "white" }}
+                >
+                  <IconCheck />
+                </div>
+                <div
+                  className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold"
                   style={{ background: "rgba(0,0,0,0.55)", color: "white" }}
                 >
-                  {idx + 1}
+                  Foto {(selectedIndex ?? 0) + 1} de {validImages.length}
                 </div>
-              </button>
+              </div>
+            ) : validImages[0] ? (
+              <div
+                className="relative rounded-2xl overflow-hidden w-full"
+                style={{ aspectRatio: "3/4", background: "var(--surface)" }}
+              >
+                <img src={getImageSrc(validImages[0])} alt="Foto 1" className="w-full h-full object-cover" />
+              </div>
+            ) : null}
 
-              {/* Download individual — hidden on small mobile */}
-              {img && (
+            {/* Thumbnail row — mobile only */}
+            <div className="flex gap-2 mt-3 justify-center">
+              {images.map((img, idx) => (
                 <button
-                  onClick={() => downloadImage(img, idx)}
-                  className="w-full hidden sm:flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                  key={idx}
+                  onClick={() => img && setSelectedIndex(idx)}
+                  disabled={!img}
+                  className="relative rounded-xl overflow-hidden transition-all flex-shrink-0"
+                  style={{
+                    width: "72px",
+                    height: "96px",
+                    border: selectedIndex === idx
+                      ? "3px solid var(--brand-500)"
+                      : "2px solid var(--border)",
+                    boxShadow: selectedIndex === idx ? "0 0 0 3px var(--brand-100)" : "none",
+                    opacity: img ? 1 : 0.35,
+                    cursor: img ? "pointer" : "not-allowed",
+                  }}
                 >
-                  <IconDownload />
-                  Baixar #{idx + 1}
+                  {img ? (
+                    <img src={getImageSrc(img)} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center" style={{ background: "var(--surface)" }}>
+                      <span className="text-sm">❌</span>
+                    </div>
+                  )}
+                  <div
+                    className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                    style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
+                  >
+                    {idx + 1}
+                  </div>
                 </button>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Desktop grid — 3 cols, hidden on mobile */}
+          <div className="hidden sm:grid grid-cols-3 gap-4">
+            {images.map((img, idx) => (
+              <div key={idx} className="space-y-2">
+                <button
+                  onClick={() => img && setSelectedIndex(idx)}
+                  disabled={!img}
+                  className="w-full relative rounded-2xl overflow-hidden transition-all"
+                  style={{
+                    aspectRatio: "3/4",
+                    border: selectedIndex === idx
+                      ? "3px solid var(--brand-500)"
+                      : "2px solid var(--border)",
+                    background: "var(--surface)",
+                    boxShadow: selectedIndex === idx ? "0 0 0 4px var(--brand-100)" : "none",
+                    opacity: img ? 1 : 0.4,
+                    cursor: img ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {img ? (
+                    <img src={getImageSrc(img)} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                      <span className="text-3xl">❌</span>
+                      <span className="text-xs" style={{ color: "var(--muted)" }}>Falhou</span>
+                    </div>
+                  )}
+                  {selectedIndex === idx && img && (
+                    <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "var(--brand-500)", color: "white" }}>
+                      <IconCheck />
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: "rgba(0,0,0,0.55)", color: "white" }}>
+                    {idx + 1}
+                  </div>
+                </button>
+                {img && (
+                  <button
+                    onClick={() => downloadImage(img, idx)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                  >
+                    <IconDownload />
+                    Baixar #{idx + 1}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Foto selecionada + Formato + Download ── */}
@@ -485,9 +547,9 @@ export default function ResultadoCampanha() {
 
             {/* Preview + download */}
             <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-              {/* Cropped preview */}
+              {/* Cropped preview — hidden on mobile (hero already shows the photo) */}
               <div
-                className="relative rounded-xl overflow-hidden flex-shrink-0 bg-black/5"
+                className="relative rounded-xl overflow-hidden flex-shrink-0 bg-black/5 hidden sm:block"
                 style={{
                   width: 90,
                   aspectRatio: `${FORMAT_PRESETS.find(f => f.id === activeFormat)?.w || 1080} / ${FORMAT_PRESETS.find(f => f.id === activeFormat)?.h || 1920}`,
@@ -499,7 +561,6 @@ export default function ResultadoCampanha() {
                   alt="Preview do formato"
                   className="w-full h-full object-cover"
                 />
-                {/* Format badge overlay */}
                 <div
                   className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
                   style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
@@ -509,8 +570,8 @@ export default function ResultadoCampanha() {
               </div>
 
               {/* Info + button */}
-              <div className="flex-1 w-full min-w-0 space-y-3">
-                <div>
+              <div className="flex-1 w-full min-w-0 space-y-2 sm:space-y-3">
+                <div className="text-center sm:text-left">
                   <p className="text-sm font-semibold truncate">
                     {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} — {FORMAT_PRESETS.find(f => f.id === activeFormat)?.w}×{FORMAT_PRESETS.find(f => f.id === activeFormat)?.h}px
                   </p>
@@ -584,29 +645,29 @@ export default function ResultadoCampanha() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "var(--brand-100)", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Dicas por IA</span>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-2xl p-4 space-y-1 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-2xl p-3 sm:p-4 space-y-1 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
                 {tipsLoading ? (
                   <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "60%" }} />
                 ) : (
-                  <p className="text-sm font-semibold">{smartTips?.poste_as || dicas.melhor_horario || "Entre 18h–21h"}</p>
+                  <p className="text-xs sm:text-sm font-semibold">{smartTips?.poste_as || dicas.melhor_horario || "Entre 18h–21h"}</p>
                 )}
               </div>
-              <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
+              <div className="rounded-2xl p-3 sm:p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
                 {tipsLoading ? (
                   <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "80%" }} />
                 ) : (
-                  <p className="text-sm font-semibold">{smartTips?.tom_da_voz || dicas.tom_legenda || "Descontraído e acolhedor"}</p>
+                  <p className="text-xs sm:text-sm font-semibold">{smartTips?.tom_da_voz || dicas.tom_legenda || "Descontraído e acolhedor"}</p>
                 )}
               </div>
-              <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
+              <div className="rounded-2xl p-3 sm:p-4 space-y-1 col-span-2 sm:col-span-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
                 {tipsLoading ? (
                   <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "70%" }} />
                 ) : (
-                  <p className="text-sm font-semibold">{smartTips?.cta || dicas.cta || "Chama no direct!"}</p>
+                  <p className="text-xs sm:text-sm font-semibold">{smartTips?.cta || dicas.cta || "Chama no direct!"}</p>
                 )}
               </div>
             </div>
@@ -658,10 +719,11 @@ export default function ResultadoCampanha() {
         )}
 
         {/* ── Nova campanha ── */}
-        <div className="flex justify-center pb-8">
+        <div className="flex justify-center pb-24 sm:pb-8">
           <button
             onClick={() => router.push("/gerar")}
             className="btn-secondary px-8 py-3 text-sm font-semibold"
+            style={{ minHeight: 48 }}
           >
             ✨ Criar mais fotos
           </button>
