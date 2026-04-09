@@ -19,8 +19,8 @@ import { checkRateLimit } from "@/lib/rate-limit";
 export const maxDuration = 180;
 export const dynamic = "force-dynamic";
 
-// v2: Pipeline híbrido precisa de pelo menos uma key. Demo mode se nenhuma key existe.
-const IS_DEMO_MODE = !process.env.GOOGLE_AI_API_KEY && !process.env.ANTHROPIC_API_KEY;
+// v4: Pipeline Sonnet + FASHN. Demo mode se nenhuma key existe.
+const IS_DEMO_MODE = !process.env.FASHN_API_KEY && !process.env.ANTHROPIC_API_KEY;
 
 /**
  * POST /api/campaign/generate
@@ -337,7 +337,7 @@ export async function POST(request: NextRequest) {
             }
           );
 
-          const { successCount, images, analise, prompts, dicas_postagem, durationMs } = pipelineResult;
+          const { successCount, images, analise, fashn_hints, dicas_postagem, durationMs } = pipelineResult;
 
           // ── Regra de negócio: cobrar crédito SÓ se ≥1 imagem gerada ──
           if (successCount === 0) {
@@ -352,7 +352,8 @@ export async function POST(request: NextRequest) {
 
           // ✅ ≥1 imagem gerada — cobrar crédito
           if (campaignRecord) {
-            // Upload das imagens geradas para Supabase Storage
+            // FASHN retorna URLs do CDN (expiram em 72h)
+            // Download e re-upload para Supabase Storage (permanente)
             const imageUrls: (string | null)[] = [];
             try {
               const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -361,14 +362,21 @@ export async function POST(request: NextRequest) {
                 const img = images[i];
                 if (!img) { imageUrls.push(null); continue; }
                 try {
-                  const path = `campaigns/${campaignRecord.id}/v3_image_${i + 1}.webp`;
-                  const buf = Buffer.from(img.imageBase64, "base64");
+                  // Download da URL FASHN CDN
+                  const resp = await fetch(img.imageUrl);
+                  if (!resp.ok) {
+                    console.warn(`[Generate] ⚠️ Download FASHN imagem ${i + 1} falhou: ${resp.status}`);
+                    imageUrls.push(img.imageUrl); // fallback: usar URL original
+                    continue;
+                  }
+                  const buf = Buffer.from(await resp.arrayBuffer());
+                  const path = `campaigns/${campaignRecord.id}/v4_look_${i + 1}.jpg`;
                   const { error: upErr } = await supabase.storage
                     .from("generated-images")
-                    .upload(path, buf, { contentType: "image/webp", upsert: true });
+                    .upload(path, buf, { contentType: "image/jpeg", upsert: true });
                   if (upErr) {
                     console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} falhou:`, upErr.message);
-                    imageUrls.push(null);
+                    imageUrls.push(img.imageUrl); // fallback: URL FASHN
                   } else {
                     const { data: urlData } = supabase.storage
                       .from("generated-images")
@@ -378,12 +386,12 @@ export async function POST(request: NextRequest) {
                   }
                 } catch (uploadErr) {
                   console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} exception:`, uploadErr);
-                  imageUrls.push(null);
+                  imageUrls.push(img.imageUrl); // fallback: URL FASHN
                 }
               }
             } catch (e) {
               console.warn("[Generate] Upload parcial falhou:", e);
-              images.forEach(img => imageUrls.push(img ? "pending" : null));
+              images.forEach(img => imageUrls.push(img?.imageUrl || null));
             }
 
             await savePipelineResultV3({
@@ -391,7 +399,7 @@ export async function POST(request: NextRequest) {
               durationMs,
               analise: analise as unknown as Record<string, unknown>,
               imageUrls,
-              prompts: prompts as unknown as Record<string, unknown>[],
+              prompts: (fashn_hints?.styling_prompts || []) as unknown as Record<string, unknown>[],
               dicas_postagem: dicas_postagem as unknown as Record<string, unknown>,
               successCount,
             });
@@ -405,13 +413,19 @@ export async function POST(request: NextRequest) {
           }
 
           // Enviar resultado final via SSE
+          // FASHN retorna URLs — enviar para o frontend
           await sendSSE("done", {
             success: true,
             campaignId: campaignRecord?.id || null,
             data: {
               analise,
-              images,   // array de 3: GeneratedImage | null
-              prompts,  // para permitir regeneração individual no frontend
+              images: images.map(img => img ? {
+                imageUrl: img.imageUrl,
+                mimeType: img.mimeType,
+                conceptName: img.conceptName,
+                durationMs: img.durationMs,
+              } : null),
+              prompts: fashn_hints?.styling_prompts || [],
               dicas_postagem,
               durationMs,
               successCount,
@@ -419,7 +433,7 @@ export async function POST(request: NextRequest) {
           });
         } catch (pipelineError: unknown) {
           if (campaignRecord) {
-            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v3 error";
+            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v4 error";
             await failCampaign(campaignRecord.id, msg);
           }
           const errMsg = pipelineError instanceof Error ? pipelineError.message : "Erro ao gerar campanha";

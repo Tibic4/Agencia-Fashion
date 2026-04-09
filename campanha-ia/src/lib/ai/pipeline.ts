@@ -1,17 +1,17 @@
 /**
- * CriaLook Campaign Pipeline v3
+ * CriaLook Campaign Pipeline v4
  *
- * Novo fluxo simplificado de 2 etapas:
- * 1. Claude Opus — Análise visual profunda + 3 prompts + dicas de postagem
- * 2. Gemini Image — 3 chamadas INDEPENDENTES em paralelo
+ * Fluxo:
+ * 1. Claude Sonnet — Análise visual + styling hints + dicas de postagem
+ * 2. FASHN AI — 3 chamadas product-to-model em paralelo (Virtual Try-On)
  *
- * Substitui o pipeline v2.1 (Vision → Strategy → Copywriter → Scorer → Konva).
+ * Substitui pipeline v3 (Opus + Gemini Image).
  */
 
-import type { OpusAnalise, OpusDicasPostagem, OpusPrompt } from "./opus-analyzer";
-import { analyzeWithOpus } from "./opus-analyzer";
-import type { GeneratedImage } from "./image-generator";
-import { generateImages } from "./image-generator";
+import type { SonnetAnalise, SonnetDicasPostagem, SonnetFashnHint } from "./sonnet-analyzer";
+import { analyzeWithSonnet } from "./sonnet-analyzer";
+import type { GeneratedImage } from "./fashn-generator";
+import { generateWithFashn } from "./fashn-generator";
 
 // ═══════════════════════════════════════
 // Tipos públicos
@@ -26,14 +26,14 @@ export interface PipelineInput {
   /** Foto da modelo do banco (base64) — obrigatória */
   modelImageBase64: string;
   modelMediaType?: string;
-  /** Informações de contexto para o Opus */
+  /** Informações de contexto para o Sonnet */
   price?: string;
   storeName?: string;
   bodyType?: "normal" | "plus";
   backgroundType?: string;
   /** Cor da marca da loja (hex) */
   brandColor?: string;
-  /** Campos legados — mantidos para não quebrar a route, mas não usados pelo v3 */
+  /** Campos legados — mantidos para compatibilidade com a route */
   objective?: string;
   targetAudience?: string;
   toneOverride?: string;
@@ -47,9 +47,9 @@ export interface PipelineInput {
 }
 
 export interface PipelineResult {
-  analise: OpusAnalise;
-  prompts: [OpusPrompt, OpusPrompt, OpusPrompt];
-  dicas_postagem: OpusDicasPostagem;
+  analise: SonnetAnalise;
+  fashn_hints: SonnetFashnHint;
+  dicas_postagem: SonnetDicasPostagem;
   /** Array de 3 — null significa que aquela imagem falhou */
   images: (GeneratedImage | null)[];
   successCount: number;
@@ -72,11 +72,11 @@ export async function runCampaignPipeline(
 ): Promise<PipelineResult> {
   const startTime = Date.now();
 
-  // — Etapa 1: Opus analisa o produto ——————————————————————
-  await onProgress?.("opus", "Analisando fotos do produto...", 8);
+  // — Etapa 1: Sonnet analisa o produto ——————————————————————
+  await onProgress?.("sonnet", "Analisando fotos do produto...", 8);
 
-  const opusStart = Date.now();
-  const opusResult = await analyzeWithOpus({
+  const sonnetStart = Date.now();
+  const sonnetResult = await analyzeWithSonnet({
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType as any,
     extraImages: input.extraImages as any,
@@ -86,28 +86,28 @@ export async function runCampaignPipeline(
     backgroundType: input.backgroundType,
     brandColor: input.brandColor,
   });
-  const opusDurationMs = Date.now() - opusStart;
+  const sonnetDurationMs = Date.now() - sonnetStart;
 
-  // Log de custo do Opus (fire-and-forget)
+  // Log de custo do Sonnet (fire-and-forget)
   if (input.storeId) {
-    logOpusCost(input.storeId, input.campaignId, opusDurationMs).catch((e) =>
-      console.warn("[Pipeline] Erro ao salvar custo Opus:", e)
+    logSonnetCost(input.storeId, input.campaignId, sonnetDurationMs).catch((e) =>
+      console.warn("[Pipeline] Erro ao salvar custo Sonnet:", e)
     );
   }
 
-  await onProgress?.("opus_done", "Análise completa! Criando prompts...", 30);
+  await onProgress?.("sonnet_done", "Análise completa! Gerando looks...", 30);
 
-  // — Etapa 2: Gemini gera 3 imagens em paralelo ————————————
-  await onProgress?.("images_start", "Gerando foto 1 com IA...", 45);
+  // — Etapa 2: FASHN gera 3 imagens em paralelo (Virtual Try-On) ————
+  await onProgress?.("images_start", "Vestindo a modelo com IA...", 45);
 
-  const imageResult = await generateImages({
-    prompts: opusResult.prompts,
+  const imageResult = await generateWithFashn({
+    stylingPrompts: sonnetResult.fashn_hints.styling_prompts,
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
-    extraImages: input.extraImages as any,
     modelImageBase64: input.modelImageBase64,
     modelMediaType: input.modelMediaType,
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
+    aspectRatio: sonnetResult.fashn_hints.aspect_ratio,
     storeId: input.storeId,
     campaignId: input.campaignId,
   });
@@ -117,13 +117,13 @@ export async function runCampaignPipeline(
 
   const durationMs = Date.now() - startTime;
   console.log(
-    `[Pipeline v3] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${opusResult.analise.tipo_peca}`
+    `[Pipeline v4] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${sonnetResult.analise.tipo_peca}`
   );
 
   return {
-    analise: opusResult.analise,
-    prompts: opusResult.prompts,
-    dicas_postagem: opusResult.dicas_postagem,
+    analise: sonnetResult.analise,
+    fashn_hints: sonnetResult.fashn_hints,
+    dicas_postagem: sonnetResult.dicas_postagem,
     images: imageResult.images,
     successCount: imageResult.successCount,
     durationMs,
@@ -131,13 +131,13 @@ export async function runCampaignPipeline(
 }
 
 // ═══════════════════════════════════════
-// Log de custo do Opus
-// Pricing claude-opus-4-6: $15 / 1M input, $75 / 1M output
-// Imagem ~1600 tokens, prompt ~1000 tokens, resposta ~5000 tokens
-// Estimativa conservadora por chamada: ~$0.48 (6.6K in + 5.2K out)
+// Log de custo do Sonnet
+// Pricing claude-sonnet-4: $3 / 1M input, $15 / 1M output
+// Imagem ~1600 tokens, prompt ~800 tokens, resposta ~2500 tokens
+// Estimativa por chamada: ~$0.04 (4.4K in + 2.5K out)
 // ═══════════════════════════════════════
 
-async function logOpusCost(
+async function logSonnetCost(
   storeId: string,
   campaignId: string | undefined,
   responseTimeMs: number,
@@ -153,18 +153,18 @@ async function logOpusCost(
     // fallback
   }
 
-  // Estimativa baseada nos logs médios: input=6700, output=5200
-  const avgInputTokens = 6700;
-  const avgOutputTokens = 5200;
+  // Estimativa: input=4400, output=2500
+  const avgInputTokens = 4400;
+  const avgOutputTokens = 2500;
   const costUsd =
-    (avgInputTokens / 1_000_000) * 15 + (avgOutputTokens / 1_000_000) * 75;
+    (avgInputTokens / 1_000_000) * 3 + (avgOutputTokens / 1_000_000) * 15;
 
   const { error } = await supabase.from("api_cost_logs").insert({
     store_id: storeId,
     campaign_id: campaignId || null,
     provider: "anthropic",
-    model_used: "claude-opus-4-6",
-    action: "opus_analyzer",
+    model_used: "claude-sonnet-4",
+    action: "sonnet_analyzer",
     cost_usd: costUsd,
     cost_brl: costUsd * exchangeRate,
     exchange_rate: exchangeRate,
@@ -173,7 +173,6 @@ async function logOpusCost(
   });
 
   if (error) {
-    console.warn("[Pipeline] ⚠️ Falha ao logar custo Opus:", error.message);
+    console.warn("[Pipeline] ⚠️ Falha ao logar custo Sonnet:", error.message);
   }
 }
-
