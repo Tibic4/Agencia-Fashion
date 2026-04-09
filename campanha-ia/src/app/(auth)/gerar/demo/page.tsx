@@ -342,7 +342,7 @@ export default function ResultadoCampanha() {
   const selectedImage = selectedIndex !== null ? images[selectedIndex] : null;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--background)" }}>
+    <div className="min-h-screen" style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Header */}
       <div
         className="sticky top-0 z-40 px-4 py-3 flex items-center gap-3"
@@ -350,7 +350,7 @@ export default function ResultadoCampanha() {
       >
         <button
           onClick={() => router.push("/gerar")}
-          className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70"
+          className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70 min-h-[44px]"
           style={{ color: "var(--muted)" }}
         >
           <IconBack />
@@ -362,12 +362,12 @@ export default function ResultadoCampanha() {
         </span>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-8">
+      <div className="w-full max-w-5xl mx-auto px-4 py-6 space-y-8" style={{ overflowX: "hidden" }}>
 
         {/* ── Título ── */}
         <div>
-          <h1 className="text-2xl font-bold mb-1">Suas fotos ficaram incríveis! 🎉</h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
+          <h1 className="text-xl sm:text-2xl font-bold mb-1">Suas fotos ficaram incríveis! 🎉</h1>
+          <p className="text-xs sm:text-sm" style={{ color: "var(--muted)", wordBreak: "break-word" }}>
             {analise?.produto?.nome_generico && `${analise.produto.nome_generico} · `}
             Escolha a sua favorita e baixe para postar{data?.durationMs ? ` · gerado em ${(data.durationMs / 1000).toFixed(0)}s` : ""}
           </p>
@@ -460,8 +460,8 @@ export default function ResultadoCampanha() {
 
             {/* Format selector — horizontal scroll, mobile-first */}
             <div
-              className="px-4 py-3 flex gap-2 overflow-x-auto"
-              style={{ borderBottom: "1px solid var(--border)", WebkitOverflowScrolling: "touch" }}
+              className="px-3 sm:px-4 py-3 flex gap-2 overflow-x-auto"
+              style={{ borderBottom: "1px solid var(--border)", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
             >
               {FORMAT_PRESETS.map(fmt => (
                 <button
@@ -484,7 +484,7 @@ export default function ResultadoCampanha() {
             </div>
 
             {/* Preview + download */}
-            <div className="p-4 flex flex-col sm:flex-row items-center gap-4">
+            <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
               {/* Cropped preview */}
               <div
                 className="relative rounded-xl overflow-hidden flex-shrink-0 bg-black/5"
@@ -509,9 +509,9 @@ export default function ResultadoCampanha() {
               </div>
 
               {/* Info + button */}
-              <div className="flex-1 w-full space-y-3">
+              <div className="flex-1 w-full min-w-0 space-y-3">
                 <div>
-                  <p className="text-sm font-semibold">
+                  <p className="text-sm font-semibold truncate">
                     {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} — {FORMAT_PRESETS.find(f => f.id === activeFormat)?.w}×{FORMAT_PRESETS.find(f => f.id === activeFormat)?.h}px
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
@@ -556,7 +556,7 @@ export default function ResultadoCampanha() {
                 {copiedCaption ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
               </button>
             </div>
-            <pre className="text-sm whitespace-pre-wrap break-words font-sans" style={{ color: "var(--foreground)", lineHeight: 1.65 }}>
+            <pre className="text-xs sm:text-sm whitespace-pre-wrap break-words font-sans" style={{ color: "var(--foreground)", lineHeight: 1.65, overflowWrap: "anywhere", maxWidth: "100%" }}>
               {dicas.caption_sugerida}
             </pre>
             {dicas.hashtags && dicas.hashtags.length > 0 && (
@@ -581,7 +581,7 @@ export default function ResultadoCampanha() {
             {/* AI badge */}
             {smartTips && (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>✨ Dicas personalizadas por IA</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "var(--brand-100)", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Dicas por IA</span>
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -648,9 +648,9 @@ export default function ResultadoCampanha() {
                   ))}
               </div>
               {analise.negative_prompt && (
-                <div className="rounded-xl p-3" style={{ background: "var(--background)", border: "1px dashed var(--border)" }}>
+                <div className="rounded-xl p-3" style={{ background: "var(--background)", border: "1px dashed var(--border)", overflowX: "hidden" }}>
                   <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Negative prompt usado</p>
-                  <p className="text-xs font-mono" style={{ color: "var(--muted)" }}>{analise.negative_prompt}</p>
+                  <p className="text-xs font-mono" style={{ color: "var(--muted)", wordBreak: "break-all" }}>{analise.negative_prompt}</p>
                 </div>
               )}
             </div>
