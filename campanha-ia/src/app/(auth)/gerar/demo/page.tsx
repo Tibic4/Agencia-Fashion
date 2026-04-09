@@ -544,7 +544,8 @@ export default function ResultadoCampanha() {
                     minHeight: 48,
                     background: activeFormat === fmt.id ? "var(--gradient-brand)" : "var(--background)",
                     color: activeFormat === fmt.id ? "white" : "var(--muted)",
-                    border: activeFormat === fmt.id ? "2px solid transparent" : "1px solid var(--border)",
+                    border: activeFormat === fmt.id ? "2px solid var(--brand-400)" : "1px solid var(--border)",
+                    boxShadow: activeFormat === fmt.id ? "0 2px 8px rgba(var(--brand-rgb, 168, 85, 247), 0.3)" : "none",
                     transform: activeFormat === fmt.id ? "scale(1.03)" : "scale(1)",
                   }}
                 >
@@ -616,12 +617,12 @@ export default function ResultadoCampanha() {
 
         {/* ── Caption sugerida ── */}
         {dicas?.caption_sugerida && (
-          <div className="rounded-2xl p-5 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between">
+          <div className="rounded-2xl p-4 sm:p-5 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="font-bold text-sm">📝 Legenda pronta para copiar</h2>
               <button
                 onClick={copyCaption}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-80"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-80 self-start sm:self-auto flex-shrink-0"
                 style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}
               >
                 {copiedCaption ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
