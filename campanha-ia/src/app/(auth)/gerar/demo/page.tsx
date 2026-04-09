@@ -7,7 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
    Types — v3 payload
 ───────────────────────────────────────── */
 interface GeneratedImage {
-  imageBase64: string;
+  imageBase64?: string;
+  imageUrl?: string;
   mimeType: string;
   prompt: string;
   durationMs: number;
@@ -123,11 +124,31 @@ export default function ResultadoCampanha() {
     }
   }, [searchParams]);
 
-  const downloadImage = (img: GeneratedImage, idx: number) => {
-    const link = document.createElement("a");
-    link.href = `data:${img.mimeType};base64,${img.imageBase64}`;
-    link.download = `crialook_foto_${idx + 1}.png`;
-    link.click();
+  const getImageSrc = (img: GeneratedImage) =>
+    img.imageUrl || `data:${img.mimeType};base64,${img.imageBase64}`;
+
+  const downloadImage = async (img: GeneratedImage, idx: number) => {
+    const src = getImageSrc(img);
+    if (img.imageUrl) {
+      // Download from URL
+      try {
+        const resp = await fetch(img.imageUrl);
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `crialook_foto_${idx + 1}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        window.open(img.imageUrl, "_blank");
+      }
+    } else {
+      const link = document.createElement("a");
+      link.href = src;
+      link.download = `crialook_foto_${idx + 1}.png`;
+      link.click();
+    }
   };
 
   const copyCaption = async () => {
@@ -229,7 +250,7 @@ export default function ResultadoCampanha() {
               >
                 {img ? (
                   <img
-                    src={`data:${img.mimeType};base64,${img.imageBase64}`}
+                    src={getImageSrc(img)}
                     alt={`Foto ${idx + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -281,7 +302,7 @@ export default function ResultadoCampanha() {
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
             <img
-              src={`data:${selectedImage.mimeType};base64,${selectedImage.imageBase64}`}
+              src={getImageSrc(selectedImage)}
               alt="Foto selecionada"
               className="w-32 h-40 object-cover rounded-xl flex-shrink-0"
             />

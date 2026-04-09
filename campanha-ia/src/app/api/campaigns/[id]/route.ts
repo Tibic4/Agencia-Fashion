@@ -37,9 +37,50 @@ export async function GET(
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    // Transform to v3 result format for the demo page
-    const outputs = campaign.campaign_outputs?.[0];
+    // ── v3 pipeline output (new format) ──
+    const v3Output = campaign.output as Record<string, unknown> | null;
     const scores = campaign.campaign_scores?.[0];
+
+    if (v3Output && v3Output.version === "v3") {
+      // Build images array from stored URLs
+      const imageUrls = (v3Output.image_urls as (string | null)[]) || [];
+      const images = imageUrls.map((url) =>
+        url && url !== "pending"
+          ? { imageUrl: url, mimeType: "image/png", prompt: "", durationMs: 0 }
+          : null
+      );
+
+      const dicas = v3Output.dicas_postagem as Record<string, unknown> | null;
+      const analise = v3Output.analise as Record<string, unknown> | null;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          success: true,
+          campaignId: campaign.id,
+          data: {
+            analise: analise || null,
+            images,
+            prompts: (v3Output.prompts as unknown[]) || [],
+            dicas_postagem: dicas || {
+              melhor_horario: "Entre 18h–21h",
+              hashtags: [],
+              cta: "Chama no direct!",
+              tom_legenda: "Descontraído e acolhedor",
+              caption_sugerida: "",
+            },
+            durationMs: campaign.pipeline_duration_ms || 0,
+            successCount: v3Output.success_count || images.filter(Boolean).length,
+          },
+          score: scores || null,
+          status: campaign.status,
+          createdAt: campaign.created_at,
+        },
+      });
+    }
+
+    // ── v2 legacy fallback ──
+    const outputs = campaign.campaign_outputs?.[0];
 
     return NextResponse.json({
       success: true,
@@ -48,7 +89,7 @@ export async function GET(
         campaignId: campaign.id,
         data: {
           analise: outputs?.vision_analysis || null,
-          images: [], // Images are not stored in DB (base64 too large)
+          images: [],
           prompts: [],
           dicas_postagem: {
             melhor_horario: "Entre 18h–21h",
