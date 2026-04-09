@@ -394,6 +394,9 @@ function buildSonnetPrompt(input: AnalyzerInput): string {
   } else if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
     sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;
+  } else {
+    // FALLBACK: nenhum cenário selecionado — forçar consistência
+    sceneInstruction = `\n\n🎬 CENÁRIO (NENHUM SELECIONADO — ESCOLHA AUTOMÁTICA):\nA lojista NÃO selecionou um cenário. Você DEVE:\n1. Escolher UM único cenário que melhor combine com a peça (estúdio clean, urbano, lifestyle, etc)\n2. Usar esse MESMO cenário nos 3 prompts (scene_prompts[0], [1] e [2])\n3. O ambiente, fundo e iluminação devem ser IDÊNTICOS nos 3 prompts\n4. Varie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts\n5. ❌ PROIBIDO: usar cenários diferentes entre os prompts`;
   }
 
   // ── Model description for prompts ──
