@@ -189,15 +189,15 @@ export default function FashionFactsCarousel() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "12px",
+        gap: "8px",
         marginTop: "8px",
       }}>
         <button
           onClick={() => goTo(-1)}
           aria-label="Dica anterior"
           style={{
-            width: "32px",
-            height: "32px",
+            width: "44px",
+            height: "44px",
             borderRadius: "50%",
             border: "1px solid var(--border)",
             background: "var(--surface)",
@@ -206,9 +206,11 @@ export default function FashionFactsCarousel() {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            fontSize: "14px",
-            transition: "all 0.2s",
+            fontSize: "18px",
+            fontWeight: "bold",
+            transition: "all 0.15s",
             flexShrink: 0,
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           ‹
@@ -234,8 +236,8 @@ export default function FashionFactsCarousel() {
           onClick={() => goTo(1)}
           aria-label="Próxima dica"
           style={{
-            width: "32px",
-            height: "32px",
+            width: "44px",
+            height: "44px",
             borderRadius: "50%",
             border: "1px solid var(--border)",
             background: "var(--surface)",
@@ -244,9 +246,11 @@ export default function FashionFactsCarousel() {
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
-            fontSize: "14px",
-            transition: "all 0.2s",
+            fontSize: "18px",
+            fontWeight: "bold",
+            transition: "all 0.15s",
             flexShrink: 0,
+            WebkitTapHighlightColor: "transparent",
           }}
         >
           ›
