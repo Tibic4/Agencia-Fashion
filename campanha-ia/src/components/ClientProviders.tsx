@@ -6,10 +6,6 @@ const PostHogProvider = dynamic(
   () => import("@/lib/analytics/posthog").then((m) => m.PostHogProvider),
   { ssr: false }
 );
-const FloatingWhatsApp = dynamic(
-  () => import("@/components/FloatingWhatsApp"),
-  { ssr: false }
-);
 
 export default function ClientProviders({
   children,
@@ -19,7 +15,6 @@ export default function ClientProviders({
   return (
     <PostHogProvider>
       {children}
-      <FloatingWhatsApp />
     </PostHogProvider>
   );
 }
