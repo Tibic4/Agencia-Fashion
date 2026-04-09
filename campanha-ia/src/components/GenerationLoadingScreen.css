@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════
-   Generation Loading Screen v2 — Mobile-First
-   GPU-accelerated, battery-friendly
+   Generation Loading Screen v3 — Clean Mobile-First
+   Zero layout shifts, minimal elements, GPU-friendly
    ═══════════════════════════════════════ */
 
 /* ── Main Container ── */
@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   min-height: 80vh;
-  padding: 24px 16px;
+  padding: 24px 20px;
   overflow: hidden;
 }
 
@@ -37,8 +37,8 @@
 .gen-loading-bg::before {
   top: -20%;
   left: -10%;
-  width: 400px;
-  height: 400px;
+  width: 300px;
+  height: 300px;
   background: var(--brand-400);
   opacity: 0.06;
 }
@@ -46,8 +46,8 @@
 .gen-loading-bg::after {
   bottom: -20%;
   right: -10%;
-  width: 500px;
-  height: 500px;
+  width: 350px;
+  height: 350px;
   background: var(--accent-400);
   opacity: 0.05;
   animation-delay: -3s;
@@ -63,266 +63,153 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 380px;
+  max-width: 340px;
   text-align: center;
-}
-
-@media (min-width: 768px) {
-  .gen-loading-content {
-    max-width: 440px;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 
 /* ═══════════════════════════════════════
-   Breathing Ring + Emoji Icon
+   Ring + Icon + Timer Inside (mobile: 80px)
    ═══════════════════════════════════════ */
 
 .gen-icon-area {
   position: relative;
-  width: 96px;
-  height: 96px;
-  margin: 0 auto 24px;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
 }
 
 .gen-breathing-ring {
   position: absolute;
-  inset: -8px;
+  inset: -6px;
   border-radius: 50%;
   border: 2px solid rgba(168, 85, 247, 0.3);
   will-change: transform, opacity;
   animation: breathe 3s ease-in-out infinite;
 }
 
-.gen-breathing-ring-2 {
-  inset: -16px;
-  animation-delay: -1.5s;
-  animation-duration: 4s;
-}
-
 @keyframes breathe {
   0%, 100% { transform: scale(1) translate3d(0,0,0); opacity: 0.6; }
-  50% { transform: scale(1.12) translate3d(0,0,0); opacity: 0.2; }
+  50% { transform: scale(1.08) translate3d(0,0,0); opacity: 0.2; }
 }
 
 .gen-emoji-icon {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--gradient-brand);
-  border-radius: 28px;
+  gap: 2px;
+  border-radius: 22px;
   box-shadow:
-    0 8px 30px rgba(236, 72, 153, 0.25),
-    0 0 60px rgba(236, 72, 153, 0.1);
+    0 6px 24px rgba(236, 72, 153, 0.2),
+    0 0 40px rgba(236, 72, 153, 0.08);
   animation: emoji-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .gen-emoji-text {
-  font-size: 36px;
+  font-size: 28px;
   line-height: 1;
-  animation: emoji-pulse 2s ease-in-out infinite;
+}
+
+.gen-timer-inside {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.5px;
+  line-height: 1;
 }
 
 @keyframes emoji-enter {
-  0% { transform: scale(0.5) rotate(-20deg); opacity: 0; }
+  0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-@keyframes emoji-pulse {
-  0%, 100% { transform: scale(1) translate3d(0,0,0); }
-  50% { transform: scale(1.1) translate3d(0,0,0); }
-}
-
 /* ═══════════════════════════════════════
-   Title & Subtitle
+   Title & Status
    ═══════════════════════════════════════ */
 
 .gen-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--foreground);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: -0.3px;
   animation: text-fade-in 0.4s ease-out forwards;
 }
 
-.gen-subtitle {
+.gen-status {
   font-size: 13px;
   color: var(--muted);
-  margin-bottom: 20px;
-  line-height: 1.5;
-  animation: text-fade-in 0.4s ease-out 0.1s forwards;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  min-height: 20px; /* fixed height — no jumps */
+  animation: text-fade-in 0.35s ease-out forwards;
   opacity: 0;
 }
 
+.gen-hint {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.6;
+  margin-bottom: 12px;
+  animation: hint-fade 12s ease forwards;
+}
+
 @keyframes text-fade-in {
-  0% { opacity: 0; transform: translateY(8px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* ═══════════════════════════════════════
-   Timer
-   ═══════════════════════════════════════ */
-
-.gen-timer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.gen-timer-icon {
-  font-size: 14px;
-}
-
-.gen-timer-value {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--foreground);
-  min-width: 40px;
-  letter-spacing: 0.5px;
-}
-
-.gen-timer-hint {
-  font-size: 11px;
-  color: var(--muted);
-  opacity: 0.7;
-  padding-left: 4px;
-  border-left: 1px solid var(--border);
-  margin-left: 4px;
-  animation: hint-fade 8s ease forwards;
-}
-
-@keyframes hint-fade {
-  0%, 80% { opacity: 0.7; }
-  100% { opacity: 0; }
-}
-
-/* ═══════════════════════════════════════
-   Phase Dots (simple, no progress bar)
-   ═══════════════════════════════════════ */
-
-.gen-phase-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  margin-bottom: 24px;
-}
-
-.gen-phase-dot-group {
-  display: flex;
-  align-items: center;
-}
-
-.gen-phase-dot {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  flex-shrink: 0;
-}
-
-.gen-phase-pending {
-  background: var(--surface);
-  border: 2px solid var(--border);
-  opacity: 0.5;
-  font-size: 12px;
-}
-
-.gen-phase-active {
-  transform: scale(1.15);
-  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3);
-  color: white;
-  font-size: 16px;
-  animation: dot-active 1.5s ease-in-out infinite;
-}
-
-.gen-phase-done {
-  color: white;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.gen-phase-line {
-  width: 24px;
-  height: 2px;
-  background: var(--border);
-  transition: background 0.4s ease;
-  flex-shrink: 0;
-}
-
-.gen-phase-line-done {
-  opacity: 0.5;
-}
-
-@keyframes dot-active {
-  0%, 100% { box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3); }
-  50% { box-shadow: 0 4px 30px rgba(168, 85, 247, 0.5); }
-}
-
-@media (min-width: 768px) {
-  .gen-phase-dot {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-  .gen-phase-line {
-    width: 32px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   Behind-the-scenes
-   ═══════════════════════════════════════ */
-
-.gen-bts {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  margin-bottom: 16px;
-  animation: bts-slide 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  will-change: transform, opacity;
-}
-
-@keyframes bts-slide {
   0% { opacity: 0; transform: translateY(6px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes hint-fade {
+  0%, 80% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
 /* ═══════════════════════════════════════
-   Motivational message
+   Minimal Phase Dots (8px circles)
    ═══════════════════════════════════════ */
 
-.gen-motivational {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--brand-500);
-  opacity: 0.8;
+.gen-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   margin-bottom: 20px;
-  animation: mot-fade 0.6s ease forwards;
-  font-style: italic;
 }
 
-@keyframes mot-fade {
-  0% { opacity: 0; transform: translateY(4px); }
-  100% { opacity: 0.8; transform: translateY(0); }
+.gen-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+
+.gen-dot-active {
+  width: 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+  animation: dot-pulse 1.5s ease-in-out infinite;
+}
+
+.gen-dot-done {
+  opacity: 0.5;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* ═══════════════════════════════════════
-   Floating Particles
+   Floating Particles (reduced to 4)
    ═══════════════════════════════════════ */
 
 .gen-particles {
@@ -335,8 +222,8 @@
 
 .gen-particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   border-radius: 50%;
   background: var(--brand-400);
   opacity: 0;
@@ -344,18 +231,16 @@
   animation: particle-float 8s ease-in-out infinite;
 }
 
-.gen-particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
-.gen-particle:nth-child(2) { left: 80%; top: 15%; animation-delay: -1.5s; width: 3px; height: 3px; }
-.gen-particle:nth-child(3) { left: 25%; top: 70%; animation-delay: -3s; width: 5px; height: 5px; }
-.gen-particle:nth-child(4) { left: 70%; top: 60%; animation-delay: -4.5s; }
-.gen-particle:nth-child(5) { left: 50%; top: 40%; animation-delay: -6s; width: 3px; height: 3px; }
-.gen-particle:nth-child(6) { left: 90%; top: 80%; animation-delay: -7s; }
+.gen-particle:nth-child(1) { left: 15%; top: 25%; animation-delay: 0s; }
+.gen-particle:nth-child(2) { left: 80%; top: 20%; animation-delay: -2s; }
+.gen-particle:nth-child(3) { left: 20%; top: 70%; animation-delay: -4s; width: 4px; height: 4px; }
+.gen-particle:nth-child(4) { left: 75%; top: 65%; animation-delay: -6s; }
 
 @keyframes particle-float {
   0%, 100% { opacity: 0; transform: translateY(0) translate3d(0,0,0); }
-  20% { opacity: 0.4; }
-  50% { opacity: 0.15; transform: translateY(-40px) translateX(10px) translate3d(0,0,0); }
-  80% { opacity: 0.3; }
+  20% { opacity: 0.3; }
+  50% { opacity: 0.1; transform: translateY(-30px) translateX(8px) translate3d(0,0,0); }
+  80% { opacity: 0.2; }
 }
 
 /* ═══════════════════════════════════════
@@ -379,14 +264,8 @@
 }
 
 @keyframes confetti-fall {
-  0% {
-    transform: translateY(0) rotate(0deg) translate3d(0,0,0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg) translate3d(0,0,0);
-    opacity: 0;
-  }
+  0% { transform: translateY(0) rotate(0deg) translate3d(0,0,0); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) translate3d(0,0,0); opacity: 0; }
 }
 
 /* ═══════════════════════════════════════
@@ -394,7 +273,8 @@
    ═══════════════════════════════════════ */
 
 .gen-result-area {
-  margin-top: 24px;
+  margin-top: 20px;
+  width: 100%;
   animation: result-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
@@ -407,30 +287,30 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  padding: 16px 20px;
+  gap: 16px;
+  padding: 14px 16px;
   border-radius: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .gen-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .gen-stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--foreground);
   letter-spacing: -0.5px;
 }
 
 .gen-stat-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -439,7 +319,7 @@
 
 .gen-stat-divider {
   width: 1px;
-  height: 32px;
+  height: 28px;
   background: var(--border);
 }
 
@@ -452,10 +332,90 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 32px;
-  font-size: 15px;
+  padding: 14px 28px;
+  font-size: 14px;
   font-weight: 700;
   min-height: 48px;
+}
+
+/* ═══════════════════════════════════════
+   Desktop Enhancements (≥768px)
+   ═══════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .gen-loading-content {
+    max-width: 440px;
+  }
+
+  .gen-icon-area {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 24px;
+  }
+
+  .gen-emoji-icon {
+    border-radius: 28px;
+  }
+
+  .gen-emoji-text {
+    font-size: 34px;
+  }
+
+  .gen-timer-inside {
+    font-size: 11px;
+  }
+
+  .gen-breathing-ring {
+    inset: -8px;
+  }
+
+  .gen-title {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .gen-status {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .gen-dots {
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .gen-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .gen-dot-active {
+    width: 28px;
+  }
+
+  .gen-loading-bg::before {
+    width: 400px;
+    height: 400px;
+  }
+
+  .gen-loading-bg::after {
+    width: 500px;
+    height: 500px;
+  }
+
+  .gen-result-stats {
+    gap: 24px;
+    padding: 16px 24px;
+  }
+
+  .gen-stat-value {
+    font-size: 22px;
+  }
+
+  .gen-result-btn .btn-primary {
+    padding: 14px 36px;
+    font-size: 15px;
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -476,12 +436,14 @@
    ═══════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .gen-breathing-ring,
-  .gen-emoji-text,
   .gen-particle,
   .gen-confetti-piece {
     animation: none !important;
   }
   .gen-breathing-ring {
     opacity: 0.3;
+  }
+  .gen-dot-active {
+    animation: none !important;
   }
 }

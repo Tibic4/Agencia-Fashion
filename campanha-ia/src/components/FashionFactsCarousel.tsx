@@ -98,7 +98,6 @@ export default function FashionFactsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Fetch dynamic facts from DB and merge with static
   useEffect(() => {
@@ -106,7 +105,6 @@ export default function FashionFactsCarousel() {
       .then(res => res.json())
       .then(data => {
         if (data.facts && data.facts.length > 0) {
-          // Merge: DB facts first, then static (deduplicate by text)
           const dbFacts: FashionFact[] = data.facts;
           const staticTexts = new Set(dbFacts.map((f: FashionFact) => f.text));
           const uniqueStatic = fashionFacts.filter(f => !staticTexts.has(f.text));
@@ -126,16 +124,16 @@ export default function FashionFactsCarousel() {
         return next;
       });
       setIsVisible(true);
-    }, 250);
+    }, 200);
   }, [facts.length]);
 
-  // Auto-rotate every 4s
+  // Auto-rotate every 5s (longer = less jarring)
   useEffect(() => {
-    const interval = setInterval(() => goTo(1), 4000);
+    const interval = setInterval(() => goTo(1), 5000);
     return () => clearInterval(interval);
   }, [goTo]);
 
-  // Swipe support for mobile
+  // Swipe support for mobile — no arrows needed
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
   };
@@ -159,102 +157,115 @@ export default function FashionFactsCarousel() {
     Social: "#8b5cf6",
   };
 
+  // Show max 5 dots, cycling
+  const totalDots = Math.min(facts.length, 5);
+  const activeDot = currentIndex % totalDots;
+
   return (
-    <div className="fashion-facts-wrapper">
+    <div
+      style={{
+        width: "100%",
+        minHeight: "120px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "8px",
+      }}
+    >
+      {/* Card — fixed height container */}
       <div
-        ref={cardRef}
-        className="fashion-fact-card"
         style={{
+          width: "100%",
+          minHeight: "100px",
+          padding: "14px 16px",
+          borderRadius: "14px",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: "6px",
           opacity: isVisible ? 1 : 0,
-          transform: isVisible ? "translateY(0)" : "translateY(8px)",
+          transform: isVisible ? "translateY(0)" : "translateY(6px)",
+          transition: "opacity 0.2s ease, transform 0.2s ease",
+          cursor: "grab",
+          WebkitTapHighlightColor: "transparent",
+          userSelect: "none" as const,
         }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <span className="fashion-fact-emoji">{fact.emoji}</span>
-        <span
-          className="fashion-fact-category"
-          style={{ color: categoryColors[fact.category] || "var(--muted)" }}
+        {/* Category badge */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "16px", lineHeight: 1 }}>{fact.emoji}</span>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.5px",
+              color: categoryColors[fact.category] || "var(--muted)",
+            }}
+          >
+            {fact.category}
+          </span>
+        </div>
+
+        {/* Fact text */}
+        <p
+          style={{
+            fontSize: "13px",
+            lineHeight: 1.5,
+            color: "var(--foreground)",
+            fontWeight: 500,
+            margin: 0,
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical" as const,
+            overflow: "hidden",
+          }}
         >
-          {fact.category}
-        </span>
-        <p className="fashion-fact-text">{fact.text}</p>
+          {fact.text}
+        </p>
+
+        {/* Source */}
         {fact.source && (
-          <span className="fashion-fact-source">— {fact.source}</span>
+          <span
+            style={{
+              fontSize: "10px",
+              color: "var(--muted)",
+              opacity: 0.7,
+              fontStyle: "italic",
+            }}
+          >
+            — {fact.source}
+          </span>
         )}
       </div>
 
-      {/* Navigation arrows + dots */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "8px",
-        marginTop: "8px",
-      }}>
-        <button
-          onClick={() => goTo(-1)}
-          aria-label="Dica anterior"
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            color: "var(--muted)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            fontSize: "18px",
-            fontWeight: "bold",
-            transition: "all 0.15s",
-            flexShrink: 0,
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          ‹
-        </button>
-
-        <div className="fashion-fact-dots">
-          {Array.from({ length: Math.min(facts.length, 6) }).map((_, i) => {
-            const isActive = currentIndex % 6 === i;
-            return (
-              <span
-                key={i}
-                className="fashion-fact-dot"
-                style={{
-                  background: isActive ? "var(--brand-500)" : "var(--border)",
-                  transform: isActive ? "scale(1.3)" : "scale(1)",
-                }}
-              />
-            );
-          })}
-        </div>
-
-        <button
-          onClick={() => goTo(1)}
-          aria-label="Próxima dica"
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            color: "var(--muted)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            fontSize: "18px",
-            fontWeight: "bold",
-            transition: "all 0.15s",
-            flexShrink: 0,
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          ›
-        </button>
+      {/* Minimal dots — inside wrapper, no arrows */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          height: "12px",
+        }}
+      >
+        {Array.from({ length: totalDots }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              width: activeDot === i ? "16px" : "4px",
+              height: "4px",
+              borderRadius: "2px",
+              background: activeDot === i ? "var(--brand-500)" : "var(--border)",
+              transition: "all 0.3s ease",
+              opacity: activeDot === i ? 1 : 0.5,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
