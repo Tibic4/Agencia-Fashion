@@ -119,7 +119,7 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
               </p>
               <ul className="space-y-1.5">
                 {[
-                  "Foto em manequim (a IA confunde com modelo)",
+                  "Outras peças ao lado ou atrás da principal",
                   "Várias peças juntas na mesma foto",
                   "Peça amassada, dobrada ou enrolada",
                   "Foto escura ou com sombras pesadas",
