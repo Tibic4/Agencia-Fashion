@@ -184,25 +184,74 @@ export default function FashionFactsCarousel() {
         )}
       </div>
 
-      {/* Progress dots + swipe hint */}
-      <div className="fashion-fact-dots">
-        {Array.from({ length: Math.min(facts.length, 6) }).map((_, i) => {
-          const isActive = currentIndex % 6 === i;
-          return (
-            <span
-              key={i}
-              className="fashion-fact-dot"
-              style={{
-                background: isActive ? "var(--brand-500)" : "var(--border)",
-                transform: isActive ? "scale(1.3)" : "scale(1)",
-              }}
-            />
-          );
-        })}
-      </div>
+      {/* Navigation arrows + dots */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "12px",
+        marginTop: "8px",
+      }}>
+        <button
+          onClick={() => goTo(-1)}
+          aria-label="Dica anterior"
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "50%",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            color: "var(--muted)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "14px",
+            transition: "all 0.2s",
+            flexShrink: 0,
+          }}
+        >
+          ‹
+        </button>
 
-      {/* Mobile swipe hint (shows only first few seconds) */}
-      <p className="fashion-fact-swipe-hint">← deslize para mais dicas →</p>
+        <div className="fashion-fact-dots">
+          {Array.from({ length: Math.min(facts.length, 6) }).map((_, i) => {
+            const isActive = currentIndex % 6 === i;
+            return (
+              <span
+                key={i}
+                className="fashion-fact-dot"
+                style={{
+                  background: isActive ? "var(--brand-500)" : "var(--border)",
+                  transform: isActive ? "scale(1.3)" : "scale(1)",
+                }}
+              />
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => goTo(1)}
+          aria-label="Próxima dica"
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "50%",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            color: "var(--muted)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "14px",
+            transition: "all 0.2s",
+            flexShrink: 0,
+          }}
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }
