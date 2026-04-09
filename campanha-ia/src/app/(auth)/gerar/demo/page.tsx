@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /* ─────────────────────────────────────────
-   Types — v3 payload
+   Types — v4 payload (Sonnet + FASHN)
 ───────────────────────────────────────── */
 interface GeneratedImage {
   imageBase64?: string;
   imageUrl?: string;
   mimeType: string;
-  prompt: string;
+  conceptName?: string;
+  prompt?: string;
   durationMs: number;
 }
 
