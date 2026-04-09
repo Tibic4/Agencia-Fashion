@@ -50,6 +50,8 @@ interface DicasPostagem {
 interface V3Result {
   success: boolean;
   campaignId?: string | null;
+  objective?: string | null;
+  targetAudience?: string | null;
   data?: {
     analise: OpusAnalise;
     images: (GeneratedImage | null)[];
@@ -147,6 +149,18 @@ export default function ResultadoCampanha() {
   const [activeFormat, setActiveFormat] = useState<FormatId>("stories");
   const [downloadingHQ, setDownloadingHQ] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+
+  // ── AI Tips (Gemini Flash Vision) ──
+  interface SmartTips {
+    poste_as: string;
+    tom_da_voz: string;
+    cta: string;
+    dica_extra: string;
+    hashtags: string[];
+  }
+  const [smartTips, setSmartTips] = useState<SmartTips | null>(null);
+  const [tipsLoading, setTipsLoading] = useState(false);
+  const [tipsFetched, setTipsFetched] = useState<string | null>(null); // track which image was analyzed
 
   useEffect(() => {
     const campaignId = searchParams.get("id");
@@ -247,6 +261,39 @@ export default function ResultadoCampanha() {
 
     return () => { cancelled = true; };
   }, [selectedIndex, activeFormat, result]);
+
+  /** Fetch AI tips when a photo is selected (lazy, once per image) */
+  useEffect(() => {
+    if (selectedIndex === null) return;
+    const img = result?.data?.images?.[selectedIndex];
+    if (!img) return;
+    const src = img.imageUrl;
+    if (!src) return;
+    if (tipsFetched === src) return; // already fetched for this image
+
+    const campaignId = searchParams.get("id") || result?.campaignId;
+    if (!campaignId) return;
+
+    setTipsLoading(true);
+    fetch(`/api/campaign/${campaignId}/tips`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        imageUrl: src,
+        objective: result?.objective || undefined,
+        targetAudience: result?.targetAudience || undefined,
+      }),
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.data) {
+          setSmartTips(data.data);
+          setTipsFetched(src);
+        }
+      })
+      .catch(() => { /* silent fallback to static tips */ })
+      .finally(() => setTipsLoading(false));
+  }, [selectedIndex, result, tipsFetched, searchParams]);
 
   const copyCaption = async () => {
     const caption = result?.data?.dicas_postagem?.caption_sugerida;
@@ -528,21 +575,48 @@ export default function ResultadoCampanha() {
           </div>
         )}
 
-        {/* ── Dicas adicionais ── */}
+        {/* ── Dicas adicionais (AI-powered) ── */}
         {dicas && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
-              <p className="text-sm font-semibold">{dicas.melhor_horario || "Entre 18h–21h"}</p>
+          <div className="space-y-3">
+            {/* AI badge */}
+            {smartTips && (
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>✨ Dicas personalizadas por IA</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-2xl p-4 space-y-1 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
+                {tipsLoading ? (
+                  <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "60%" }} />
+                ) : (
+                  <p className="text-sm font-semibold">{smartTips?.poste_as || dicas.melhor_horario || "Entre 18h–21h"}</p>
+                )}
+              </div>
+              <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
+                {tipsLoading ? (
+                  <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "80%" }} />
+                ) : (
+                  <p className="text-sm font-semibold">{smartTips?.tom_da_voz || dicas.tom_legenda || "Descontraído e acolhedor"}</p>
+                )}
+              </div>
+              <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
+                {tipsLoading ? (
+                  <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "70%" }} />
+                ) : (
+                  <p className="text-sm font-semibold">{smartTips?.cta || dicas.cta || "Chama no direct!"}</p>
+                )}
+              </div>
             </div>
-            <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
-              <p className="text-sm font-semibold">{dicas.tom_legenda || "Descontraído e acolhedor"}</p>
-            </div>
-            <div className="rounded-2xl p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
-              <p className="text-sm font-semibold">{dicas.cta || "Chama no direct!"}</p>
-            </div>
+            {/* Dica extra do AI */}
+            {smartTips?.dica_extra && (
+              <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-100)" }}>
+                <span className="text-sm flex-shrink-0">💡</span>
+                <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{smartTips.dica_extra}</p>
+              </div>
+            )}
           </div>
         )}
 
