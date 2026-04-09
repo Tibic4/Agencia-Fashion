@@ -41,8 +41,7 @@ function ShowcaseSkeleton() {
           <div
             className="skeleton rounded-2xl"
             style={{
-              aspectRatio: "9 / 16",
-              maxHeight: "min(65vh, 540px)",
+              aspectRatio: "3 / 4",
               width: "100%",
             }}
           />

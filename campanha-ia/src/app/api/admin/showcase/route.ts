@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
+import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,67 @@ export const dynamic = "force-dynamic";
 function extractStoragePath(publicUrl: string): string | null {
   const match = publicUrl.match(/\/showcase\/(.+)$/);
   return match ? match[1] : null;
+}
+
+/* ═══════════════════════════════════════
+   Redimensionamento automático para 3:4
+   - Max 1200px wide (otimiza storage + load time)
+   - Crop inteligente: prioriza topo (rosto da modelo)
+   - Output JPEG 85% (bom equilíbrio qualidade/tamanho)
+   ═══════════════════════════════════════ */
+const TARGET_RATIO = 3 / 4; // largura / altura
+const MAX_WIDTH = 1200;
+const JPEG_QUALITY = 85;
+
+async function processImage(fileBuffer: Buffer): Promise<Buffer> {
+  const img = sharp(fileBuffer);
+  const metadata = await img.metadata();
+
+  const srcW = metadata.width ?? 800;
+  const srcH = metadata.height ?? 1067;
+  const srcRatio = srcW / srcH;
+
+  let resized: sharp.Sharp;
+
+  if (Math.abs(srcRatio - TARGET_RATIO) < 0.05) {
+    // Já está perto de 3:4 — só redimensionar
+    resized = img.resize({
+      width: Math.min(srcW, MAX_WIDTH),
+      withoutEnlargement: true,
+    });
+  } else if (srcRatio > TARGET_RATIO) {
+    // Foto mais larga que 3:4 (ex: 16:9) — crop lateral, manter altura
+    const targetW = Math.round(srcH * TARGET_RATIO);
+    resized = img
+      .resize({
+        width: targetW,
+        height: srcH,
+        fit: "cover",
+        position: "centre", // centraliza o crop horizontal
+      })
+      .resize({
+        width: Math.min(targetW, MAX_WIDTH),
+        withoutEnlargement: true,
+      });
+  } else {
+    // Foto mais alta que 3:4 (ex: 9:16) — crop vertical, priorizar topo (rosto)
+    const targetH = Math.round(srcW / TARGET_RATIO);
+    resized = img
+      .resize({
+        width: srcW,
+        height: targetH,
+        fit: "cover",
+        position: "top", // prioriza rosto da modelo
+      })
+      .resize({
+        width: Math.min(srcW, MAX_WIDTH),
+        withoutEnlargement: true,
+      });
+  }
+
+  return resized
+    .jpeg({ quality: JPEG_QUALITY, progressive: true })
+    .toBuffer();
 }
 
 /**
@@ -36,6 +98,11 @@ export async function GET() {
 /**
  * POST /api/admin/showcase — criar novo item com upload de fotos (admin only)
  * Body: FormData com before_photo, after_photo, caption?
+ * 
+ * ✨ Auto-processa as imagens para 3:4 (retrato moda) antes do upload:
+ *    - Redimensiona para max 1200px de largura
+ *    - Crop inteligente priorizando o topo (rosto)
+ *    - Converte para JPEG progressivo 85% quality
  */
 export async function POST(request: NextRequest) {
   const admin = await requireAdmin();
@@ -56,23 +123,27 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
     const timestamp = Date.now();
 
-    // Upload ANTES
-    const beforePath = `before_${timestamp}.${beforeFile.type.split("/")[1] || "jpg"}`;
-    const beforeBuffer = Buffer.from(await beforeFile.arrayBuffer());
+    // Processar + Upload ANTES
+    const beforeRaw = Buffer.from(await beforeFile.arrayBuffer());
+    const beforeProcessed = await processImage(beforeRaw);
+    const beforePath = `before_${timestamp}.jpg`;
     const { error: beforeErr } = await supabase.storage
       .from("showcase")
-      .upload(beforePath, beforeBuffer, { contentType: beforeFile.type, upsert: true });
+      .upload(beforePath, beforeProcessed, { contentType: "image/jpeg", upsert: true });
 
     if (beforeErr) throw new Error(`Upload ANTES falhou: ${beforeErr.message}`);
 
-    // Upload DEPOIS
-    const afterPath = `after_${timestamp}.${afterFile.type.split("/")[1] || "jpg"}`;
-    const afterBuffer = Buffer.from(await afterFile.arrayBuffer());
+    // Processar + Upload DEPOIS
+    const afterRaw = Buffer.from(await afterFile.arrayBuffer());
+    const afterProcessed = await processImage(afterRaw);
+    const afterPath = `after_${timestamp}.jpg`;
     const { error: afterErr } = await supabase.storage
       .from("showcase")
-      .upload(afterPath, afterBuffer, { contentType: afterFile.type, upsert: true });
+      .upload(afterPath, afterProcessed, { contentType: "image/jpeg", upsert: true });
 
     if (afterErr) throw new Error(`Upload DEPOIS falhou: ${afterErr.message}`);
+
+    console.log(`[API:admin/showcase] ✅ Fotos processadas — antes: ${(beforeRaw.length / 1024).toFixed(0)}KB→${(beforeProcessed.length / 1024).toFixed(0)}KB, depois: ${(afterRaw.length / 1024).toFixed(0)}KB→${(afterProcessed.length / 1024).toFixed(0)}KB`);
 
     // Get public URLs
     const { data: beforeUrl } = supabase.storage.from("showcase").getPublicUrl(beforePath);

@@ -84,6 +84,15 @@ function BeforeAfterSlider({
     updatePosition(clientX);
   };
 
+  /*
+   * Estilos de imagem compartilhados — TODAS as fotos usam o mesmo tratamento.
+   * object-cover com object-position top garante que o rosto nunca é cortado.
+   */
+  const sharedImgStyle: React.CSSProperties = {
+    objectFit: "cover",
+    objectPosition: "top center",
+  };
+
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -93,13 +102,12 @@ function BeforeAfterSlider({
         boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
       }}
     >
-      {/* Slider area — 9:16 mobile-optimized */}
+      {/* Slider area — 3:4 portrait (melhor fit para fotos de moda corpo inteiro) */}
       <div
         ref={containerRef}
         className="relative select-none overflow-hidden touch-none"
         style={{
-          aspectRatio: "9 / 16",
-          maxHeight: "min(65vh, 540px)",
+          aspectRatio: "3 / 4",
           width: "100%",
           background: "#1a1a1a",
           cursor: isDragging ? "grabbing" : "grab",
@@ -113,8 +121,8 @@ function BeforeAfterSlider({
           alt="Depois — modelo IA"
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
-          quality={75}
-          className="object-contain"
+          quality={80}
+          style={sharedImgStyle}
           draggable={false}
           onError={() => setImgError("after")}
         />
@@ -139,9 +147,9 @@ function BeforeAfterSlider({
             alt="Antes — foto original"
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
-            quality={75}
-            className="object-contain"
+            quality={80}
             style={{
+              ...sharedImgStyle,
               width: containerWidth > 0 ? `${containerWidth}px` : "100%",
               maxWidth: "none",
             }}
