@@ -85,9 +85,7 @@ const IconStar = () => (
 const FORMAT_PRESETS = [
   { id: "stories",   label: "Stories",       icon: "📱", w: 1080, h: 1920, ratio: "9:16" },
   { id: "feed45",    label: "Feed 4:5",      icon: "📸", w: 1080, h: 1350, ratio: "4:5" },
-  { id: "feed11",    label: "Quadrado",      icon: "⬜", w: 1080, h: 1080, ratio: "1:1" },
   { id: "whatsapp",  label: "WhatsApp",      icon: "💬", w: 1080, h: 1920, ratio: "9:16" },
-  { id: "feed169",   label: "Paisagem",      icon: "🖥️", w: 1920, h: 1080, ratio: "16:9" },
 ] as const;
 
 type FormatId = typeof FORMAT_PRESETS[number]["id"];
@@ -329,7 +327,7 @@ export default function ResultadoCampanha() {
         </div>
 
         {/* ── Grid 3 fotos ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {images.map((img, idx) => (
             <div key={idx} className="space-y-2">
               <button
@@ -352,11 +350,12 @@ export default function ResultadoCampanha() {
                     src={getImageSrc(img)}
                     alt={`Foto ${idx + 1}`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                    <span className="text-3xl">❌</span>
-                    <span className="text-xs" style={{ color: "var(--muted)" }}>Falhou</span>
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                    <span className="text-xl sm:text-3xl">❌</span>
+                    <span className="text-[10px] sm:text-xs" style={{ color: "var(--muted)" }}>Falhou</span>
                   </div>
                 )}
 
@@ -372,22 +371,22 @@ export default function ResultadoCampanha() {
 
                 {/* Número */}
                 <div
-                  className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold"
                   style={{ background: "rgba(0,0,0,0.55)", color: "white" }}
                 >
                   {idx + 1}
                 </div>
               </button>
 
-              {/* Download individual */}
+              {/* Download individual — hidden on small mobile */}
               {img && (
                 <button
                   onClick={() => downloadImage(img, idx)}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80"
+                  className="w-full hidden sm:flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition hover:opacity-80"
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
                 >
                   <IconDownload />
-                  Baixar foto #{idx + 1}
+                  Baixar #{idx + 1}
                 </button>
               )}
             </div>
@@ -443,9 +442,9 @@ export default function ResultadoCampanha() {
               <div
                 className="relative rounded-xl overflow-hidden flex-shrink-0 bg-black/5"
                 style={{
-                  width: activeFormat === "feed169" ? 160 : 100,
+                  width: 90,
                   aspectRatio: `${FORMAT_PRESETS.find(f => f.id === activeFormat)?.w || 1080} / ${FORMAT_PRESETS.find(f => f.id === activeFormat)?.h || 1920}`,
-                  maxHeight: 200,
+                  maxHeight: 160,
                 }}
               >
                 <img
@@ -471,9 +470,7 @@ export default function ResultadoCampanha() {
                   <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
                     {activeFormat === "stories" && "Ideal para Instagram Stories e Reels"}
                     {activeFormat === "feed45" && "Formato recomendado para Feed do Instagram"}
-                    {activeFormat === "feed11" && "Feed quadrado, catálogo e marketplace"}
                     {activeFormat === "whatsapp" && "WhatsApp Status e catálogo pelo celular"}
-                    {activeFormat === "feed169" && "Capa de site, banner e desktop"}
                   </p>
                 </div>
                 <button
