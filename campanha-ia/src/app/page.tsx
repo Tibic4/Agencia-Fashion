@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import ShowcaseSectionLoader from "@/components/ShowcaseSectionLoader";
+import Footer from "@/components/Footer";
+import ThemeToggle from "@/components/ThemeToggle";
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
@@ -8,51 +10,7 @@ import ShowcaseSectionLoader from "@/components/ShowcaseSectionLoader";
    ═══════════════════════════════════════ */
 export const revalidate = 3600;
 
-/* ═══════════════════════════════════════
-   Icons (inline SVGs to avoid deps)
-   ═══════════════════════════════════════ */
-const IconCamera = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-);
-const IconZap = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-);
-const IconDownload = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-);
-const IconSparkles = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-);
-const IconShirt = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
-);
-const IconTarget = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-);
-const IconBarChart = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-);
-
-const IconShield = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-);
-const IconUsers = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
-);
-const IconCheck = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-);
-
-const IconArrowRight = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-);
-const IconInstagram = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-);
-const IconWhatsApp = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-);
-
+import { IconCamera, IconZap, IconDownload, IconSparkles, IconShirt, IconTarget, IconBarChart, IconShield, IconUsers, IconCheck, IconArrowRight, IconInstagram, IconWhatsApp, IconChevronUp } from "@/components/Icons";
 
 /* ═══════════════════════════════════════
    Plans data
@@ -68,6 +26,7 @@ const plans = [
     models: 3,
     tagline: "Pra quem tá começando com IA",
     unitPrice: "R$ 4,60 por campanha",
+    cta: "Começar com Essencial",
     features: ["15 campanhas/mês", "3 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 30 dias", "Suporte por email"],
   },
   {
@@ -80,6 +39,7 @@ const plans = [
     models: 10,
     tagline: "O favorito das lojistas que crescem",
     unitPrice: "R$ 2,98 por campanha",
+    cta: "Assinar Pro ⭐",
     features: ["50 campanhas/mês", "10 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 1 ano", "Suporte WhatsApp"],
   },
   {
@@ -92,6 +52,7 @@ const plans = [
     models: 25,
     tagline: "Pra quem posta todo dia e não quer limite",
     unitPrice: "R$ 2,49 por campanha — melhor custo",
+    cta: "Ir pro Business",
     features: ["120 campanhas/mês", "25 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico ilimitado", "Suporte prioritário"],
   },
 ];
@@ -172,10 +133,11 @@ export default function Home() {
             <a href="#precos" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Preços</a>
           </nav>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/sign-in" className="hidden sm:inline-flex text-sm font-medium px-4 py-2 rounded-full transition" style={{ color: 'var(--muted)' }}>
+            <ThemeToggle />
+            <Link href="/sign-in" className="text-sm font-medium px-3 py-2 rounded-full transition min-h-[44px] flex items-center" style={{ color: 'var(--muted)' }}>
               Entrar
             </Link>
-            <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-3 sm:!py-2.5 sm:!px-5">
+            <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px]">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
             </Link>
@@ -185,7 +147,7 @@ export default function Home() {
 
       <main className="flex-1">
         {/* ═══ HERO ═══ */}
-        <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
+        <section className="relative pt-24 pb-16 md:pt-40 md:pb-28 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
           {/* Decorative elements */}
           <div className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 blur-3xl" style={{ background: 'var(--brand-400)' }} />
           <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-400)' }} />
@@ -193,26 +155,26 @@ export default function Home() {
           <div className="container relative z-10">
             <div className="max-w-3xl mx-auto text-center stagger-children">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 badge badge-brand mb-6">
+              <div className="inline-flex items-center gap-2 badge badge-brand mb-4 md:mb-6">
                 <IconSparkles />
                 <span>Feito para lojistas de moda</span>
               </div>
 
               {/* Headline */}
-              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
-                Foto da roupa.{" "}
-                <span className="gradient-text">Campanha pronta.</span>
+              <h1 className="text-[32px] sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-5">
+                Sua roupa no corpo de uma{" "}
+                <span className="gradient-text">modelo IA.</span>
               </h1>
 
               {/* Subheadline */}
               <p className="text-lg md:text-xl leading-relaxed mb-10 max-w-2xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Só com uma foto. Sem fotógrafo, sem designer, sem complicação. A IA gera textos, criativos com modelo virtual, 
-                hashtags e score de qualidade — <strong style={{ color: 'var(--foreground)' }}>pronta pra postar</strong>.
+                Só com uma foto da peça. A IA veste a modelo virtual, gera textos, hashtags e score de qualidade —{" "}
+                <strong style={{ color: 'var(--foreground)' }}>campanha pronta pra postar</strong>.
               </p>
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 animate-pulse-glow">
+                <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
                   <IconZap />
                   <span className="sm:hidden">Testar por R$ 9,90</span>
                   <span className="hidden sm:inline">Testar por R$ 9,90 — 5 campanhas completas</span>
@@ -224,23 +186,45 @@ export default function Home() {
               </div>
 
               {/* Social proof */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-10 text-sm" style={{ color: 'var(--muted)' }}>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-8 text-sm" style={{ color: 'var(--muted)' }}>
                 <div className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--success)' }}>●</span>
+                  <span style={{ color: 'var(--success)' }}>✔</span>
+                  <span>Modelo virtual inclusa</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span style={{ color: 'var(--success)' }}>✔</span>
                   <span>Pague via PIX</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--success)' }}>●</span>
-                  <span>Setup em 2 minutos</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--success)' }}>●</span>
+                  <span style={{ color: 'var(--success)' }}>✔</span>
                   <span>Cancele quando quiser</span>
                 </div>
               </div>
             </div>
 
             {/* Hero Visual — App Preview Mockup */}
+            {/* Mobile: compact result preview */}
+            <div className="md:hidden mt-10 max-w-sm mx-auto animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+              <div className="rounded-xl p-4" style={{ background: 'var(--gradient-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
+                    <IconSparkles />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold">Resultado da IA</p>
+                    <p className="text-[10px]" style={{ color: 'var(--muted)' }}>Campanha gerada automaticamente</p>
+                  </div>
+                  <span className="ml-auto text-xs font-bold gradient-text">87/100</span>
+                </div>
+                <p className="text-xs leading-relaxed mb-2" style={{ color: 'var(--muted)' }}>
+                  ✨ Ela chegou pra roubar a cena! Vestido floral perfeito pro verão — confortável, estiloso e por apenas R$ 89,90 💕
+                </p>
+                <p className="text-[10px]" style={{ color: 'var(--brand-500)' }}>
+                  #modafeminina #vestidofloral #looknovo #fashionstyle
+                </p>
+              </div>
+            </div>
+            {/* Desktop: full browser mockup */}
             <div className="hidden md:block mt-16 md:mt-20 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
               <div className="relative rounded-2xl overflow-hidden" style={{ 
                 background: 'var(--gradient-card)', 
@@ -341,10 +325,14 @@ export default function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto stagger-children">
-              {steps.map((step) => (
+              {steps.map((step, i) => (
                 <div key={step.number} className="relative text-center group">
+                  {/* N5: Connector line between steps (mobile) */}
+                  {i < steps.length - 1 && (
+                    <div className="md:hidden absolute left-1/2 -translate-x-1/2 -bottom-5 w-px h-6" style={{ borderLeft: '2px dashed var(--brand-300)', opacity: 0.4 }} />
+                  )}
                   {/* Step number */}
-                  <div className="text-7xl font-black mb-4 opacity-[0.06] md:opacity-[0.12]" style={{ color: 'var(--brand-500)' }}>
+                  <div className="text-5xl md:text-7xl font-black mb-4 opacity-[0.06] md:opacity-[0.12]" style={{ color: 'var(--brand-500)' }}>
                     {step.number}
                   </div>
                   {/* Icon */}
@@ -378,17 +366,17 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto stagger-children">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 max-w-5xl mx-auto stagger-children">
               {benefits.map((benefit) => (
                 <div key={benefit.title} className="card-brand group cursor-default">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110" style={{
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 md:mb-4 transition-transform group-hover:scale-110" style={{
                     background: 'var(--brand-100)',
                     color: 'var(--brand-600)',
                   }}>
                     {benefit.icon}
                   </div>
-                  <h3 className="text-lg font-bold mb-2">{benefit.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  <h3 className="text-base md:text-lg font-bold mb-1 md:mb-2">{benefit.title}</h3>
+                  <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
                     {benefit.description}
                   </p>
                 </div>
@@ -414,28 +402,27 @@ export default function Home() {
             </div>
 
             {/* Trial Pack */}
-            <div className="max-w-lg mx-auto mb-12">
-              <div className="rounded-2xl p-6 text-center transition-all hover:-translate-y-1" style={{
+            <div className="max-w-md mx-auto mb-10">
+              <div className="rounded-2xl p-5 text-center transition-all" style={{
                 background: 'var(--gradient-brand-soft)',
-                border: '2px solid var(--brand-300)',
-                boxShadow: 'var(--shadow-lg)',
+                border: '1px solid var(--brand-200)',
+                boxShadow: 'var(--shadow-md)',
               }}>
-                <div className="text-2xl mb-2">🎯</div>
-                <h3 className="text-xl font-bold mb-1">Teste na Prática</h3>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-xl">🎯</span>
+                  <h3 className="text-lg font-bold">Teste na Prática</h3>
+                </div>
                 <div className="flex items-baseline justify-center gap-1 mb-2">
-                  <span className="text-3xl font-black">R$ 9,90</span>
+                  <span className="text-2xl font-black">R$ 9,90</span>
                   <span className="text-sm" style={{ color: 'var(--muted)' }}>único</span>
                 </div>
-                <p className="text-sm mb-4" style={{ color: 'var(--muted)' }}>
-                  5 campanhas completas com modelo virtual • Sem mensalidade
+                <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
+                  5 campanhas completas • Sem mensalidade
                 </p>
-                <Link href="/sign-up" className="btn-primary w-full !py-3 text-base animate-pulse-glow">
+                <Link href="/sign-up" className="btn-primary w-full !py-2.5 text-sm">
                   <IconZap />
                   Testar por R$ 9,90
                 </Link>
-                <p className="text-xs mt-3" style={{ color: 'var(--muted)' }}>
-                  Paga uma vez. Sem compromisso, sem mensalidade
-                </p>
               </div>
             </div>
 
@@ -446,11 +433,11 @@ export default function Home() {
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
-            <div className="flex md:grid md:grid-cols-3 gap-5 max-w-5xl mx-auto overflow-x-auto snap-x snap-mandatory pb-4 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-5 max-w-5xl mx-auto overflow-x-auto snap-x snap-mandatory pb-6 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4" style={{ WebkitOverflowScrolling: "touch" }}>
               {plans.map((plan) => (
                 <div
                   key={plan.name}
-                  className="relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 snap-center min-w-[280px] md:min-w-0 flex-shrink-0"
+                  className="relative flex flex-col rounded-2xl p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 snap-center min-w-[260px] md:min-w-0 flex-shrink-0"
                   style={{
                     background: plan.popular ? 'var(--gradient-brand)' : 'var(--surface)',
                     border: plan.popular ? 'none' : '1px solid var(--border)',
@@ -482,7 +469,7 @@ export default function Home() {
                     )}
                   </div>
 
-                  <p className="text-xs mb-1 opacity-60">
+                  <p className="text-xs mb-1 opacity-80">
                     {plan.tagline}
                   </p>
                   <p className="text-xs mb-5 font-medium" style={{ opacity: 0.8 }}>
@@ -497,7 +484,7 @@ export default function Home() {
                       color: plan.popular ? 'var(--brand-600)' : 'white',
                     }}
                   >
-                    Assinar agora
+                    {plan.cta}
                   </Link>
 
                   <div className="flex-1 space-y-2.5">
@@ -514,6 +501,10 @@ export default function Home() {
                 </div>
               ))}
             </div>
+            {/* Mobile scroll hint */}
+            <p className="md:hidden text-center text-xs mt-2" style={{ color: 'var(--muted)' }}>
+              ← Deslize para ver todos os planos →
+            </p>
           </div>
         </section>
 
@@ -524,12 +515,13 @@ export default function Home() {
           
           <div className="container relative z-10 text-center">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-              Pronto para vender <span className="gradient-text">mais</span>?
+              Sua próxima campanha está a uma{" "}
+              <span className="gradient-text">foto de distância</span>.
             </h2>
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Teste por R$ 9,90 — 5 campanhas completas. Sem compromisso, sem mensalidade.
+              Comece com 5 campanhas por R$ 9,90. Modelo virtual, textos, hashtags — tudo incluso.
             </p>
-            <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 animate-pulse-glow">
+            <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 hover:animate-pulse-glow" aria-label="Criar minha primeira campanha com IA">
               <IconZap />
               Criar minha primeira campanha
               <IconArrowRight />
@@ -538,42 +530,17 @@ export default function Home() {
         </section>
       </main>
 
-      {/* ═══ FOOTER ═══ */}
-      <footer className="py-12" style={{ background: 'var(--gray-950)', color: 'var(--gray-400)' }}>
-        <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
-                <span className="text-lg font-bold text-white">CriaLook</span>
-              </div>
-              <p className="text-sm leading-relaxed">
-                Transforme fotos de roupa em campanhas de marketing completas com inteligência artificial.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Produto</h4>
-              <div className="space-y-3 text-sm">
-                <a href="#como-funciona" className="block hover:text-white transition py-1">Como funciona</a>
-                <a href="#precos" className="block hover:text-white transition py-1">Preços</a>
-                <a href="#beneficios" className="block hover:text-white transition py-1">Benefícios</a>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-3">Legal & Contato</h4>
-              <div className="space-y-3 text-sm">
-                <Link href="/termos" className="block hover:text-white transition py-1">Termos de Uso</Link>
-                <Link href="/privacidade" className="block hover:text-white transition py-1">Privacidade</Link>
-                <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition py-1">contato@crialook.com.br</a>
-                <Link href="/sobre" className="block hover:text-white transition py-1">Sobre nós</Link>
-              </div>
-            </div>
-          </div>
-          <div className="pt-8 text-center text-xs" style={{ borderTop: '1px solid var(--gray-800)' }}>
-            © {new Date().getFullYear()} CriaLook. Todos os direitos reservados.
-          </div>
-        </div>
-      </footer>
+      {/* N3: Scroll-to-top FAB (mobile) */}
+      <a
+        href="#"
+        className="fixed bottom-6 right-6 z-40 md:hidden w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
+        style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 4px 15px rgba(236,72,153,0.3)' }}
+        aria-label="Voltar ao topo"
+      >
+        <IconChevronUp />
+      </a>
+
+      <Footer />
     </div>
   );
 }
