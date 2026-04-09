@@ -110,10 +110,16 @@ export async function runCampaignPipeline(
     );
   }
 
-  await onProgress?.("sonnet_done", "Análise completa! Gerando looks...", 30);
+  await onProgress?.("sonnet_done", "Análise completa! Criando looks...", 30);
 
   // — Etapa 2: Gemini VTO gera 3 imagens em paralelo ————
-  await onProgress?.("images_start", "Vestindo a modelo com IA...", 45);
+  await onProgress?.("prompts_ready", "Montando editoriais de moda...", 40);
+
+  // Track per-image completion for granular progress (45→55→68→80%)
+  let imagesCompleted = 0;
+  const imageProgressBase = 45;  // starting progress
+  const imageProgressEnd = 85;   // ending progress after all images
+  const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
   const imageResult = await generateWithGeminiVTO({
     stylingPrompts: sonnetResult.vto_hints.scene_prompts,
@@ -125,6 +131,13 @@ export async function runCampaignPipeline(
     aspectRatio: sonnetResult.vto_hints.aspect_ratio,
     storeId: input.storeId,
     campaignId: input.campaignId,
+    onImageComplete: async (index, success) => {
+      imagesCompleted++;
+      const progressNow = Math.round(imageProgressBase + (imagesCompleted * imageProgressPerImage));
+      const emoji = success ? "✅" : "⚠️";
+      const label = `Foto ${imagesCompleted}/3 ${emoji} ${imagesCompleted < 3 ? "— próxima saindo..." : "— finalizando!"}`;
+      await onProgress?.(`image_${index}_done`, label, progressNow);
+    },
   });
 
   await onProgress?.("saving", "Salvando resultados...", 92);

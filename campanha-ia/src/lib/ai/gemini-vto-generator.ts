@@ -37,6 +37,8 @@ export interface GeminiVTOInput {
   /** Store ID para tracking de custos */
   storeId?: string;
   campaignId?: string;
+  /** Callback chamado quando cada imagem individual termina (index 0-2) */
+  onImageComplete?: (index: number, success: boolean) => void | Promise<void>;
 }
 
 export interface GeneratedImage {
@@ -271,19 +273,27 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
   console.log(`[Gemini VTO] 🚀 Iniciando 3 chamadas paralelas ao ${MODEL} (${IMAGE_SIZE})...`);
 
   // Disparar 3 chamadas INDEPENDENTES em paralelo
+  // Cada chamada notifica o callback quando termina para progresso granular
   const settled = await Promise.allSettled(
-    input.stylingPrompts.map((prompt, index) =>
-      generateSingleImage(
-        prompt,
-        input.productImageBase64,
-        input.productMediaType || "image/jpeg",
-        input.modelImageBase64,
-        input.modelMediaType || "image/jpeg",
-        input.bodyType || "normal",
-        input.aspectRatio || DEFAULT_ASPECT,
-        index
-      )
-    )
+    input.stylingPrompts.map(async (prompt, index) => {
+      try {
+        const result = await generateSingleImage(
+          prompt,
+          input.productImageBase64,
+          input.productMediaType || "image/jpeg",
+          input.modelImageBase64,
+          input.modelMediaType || "image/jpeg",
+          input.bodyType || "normal",
+          input.aspectRatio || DEFAULT_ASPECT,
+          index
+        );
+        await input.onImageComplete?.(index, true);
+        return result;
+      } catch (err) {
+        await input.onImageComplete?.(index, false);
+        throw err;
+      }
+    })
   );
 
   const images: (GeneratedImage | null)[] = settled.map((r, i) => {
