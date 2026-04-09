@@ -1038,12 +1038,29 @@ export default function GerarCampanha() {
                   >
                     {bg.value === "minha_marca" && storeBrandColor ? (
                       <div
-                        className="w-full aspect-square flex items-center justify-center"
+                        className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative"
                         style={{
-                          background: `linear-gradient(135deg, ${storeBrandColor}33 0%, ${storeBrandColor} 50%, ${storeBrandColor}CC 100%)`,
+                          background: `linear-gradient(145deg, ${storeBrandColor}15 0%, ${storeBrandColor}40 100%)`,
                         }}
                       >
-                        <span className="text-lg">🎨</span>
+                        <div
+                          className="w-8 h-8 rounded-full shadow-sm"
+                          style={{
+                            background: `linear-gradient(135deg, ${storeBrandColor}, ${storeBrandColor}CC)`,
+                            border: "2px solid white",
+                          }}
+                        />
+                        <span className="text-[9px] font-bold tracking-wide uppercase" style={{ color: storeBrandColor }}>Marca</span>
+                      </div>
+                    ) : bg.value === "personalizado" ? (
+                      <div
+                        className="w-full aspect-square flex flex-col items-center justify-center gap-1"
+                        style={{ background: "linear-gradient(135deg, var(--surface) 0%, var(--brand-50) 100%)" }}
+                      >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-400)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                        <span className="text-[9px] font-medium" style={{ color: "var(--muted)" }}>Descreva</span>
                       </div>
                     ) : bg.thumb ? (
                       <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover" />
@@ -1053,7 +1070,9 @@ export default function GerarCampanha() {
                       </div>
                     )}
                     <div className="py-1.5 px-1" style={{ background: "var(--surface)" }}>
-                      <p className="text-xs font-medium">{bg.label}</p>
+                      <p className="text-[10px] sm:text-xs font-medium truncate">
+                        {bg.value === "personalizado" ? "Personalizar" : bg.label}
+                      </p>
                     </div>
                   </button>
                 ));
