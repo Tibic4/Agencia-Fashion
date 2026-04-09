@@ -51,7 +51,7 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
       <div
         className="overflow-hidden transition-all duration-300 ease-out"
         style={{
-          maxHeight: open ? "400px" : "0",
+          maxHeight: open ? "600px" : "0",
           opacity: open ? 1 : 0,
           marginTop: open ? "8px" : "0",
         }}
@@ -88,10 +88,11 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
               </p>
               <ul className="space-y-1.5">
                 {[
+                  "Envie mais de uma foto (frente + detalhe)",
                   "Peça esticada sobre superfície lisa",
-                  "Luz natural ou bem iluminada",
-                  "Foto de frente, mostrando inteira",
-                  "Fundo neutro (branco, cinza, madeira)",
+                  "Luz natural ou ambiente bem iluminado",
+                  "Mostre a peça inteira, sem cortar",
+                  "Fundo limpo (branco, cinza, madeira)",
                 ].map((tip) => (
                   <li
                     key={tip}
@@ -118,10 +119,11 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
               </p>
               <ul className="space-y-1.5">
                 {[
-                  "Peça amassada ou dobrada",
-                  "Foto escura ou com sombras fortes",
-                  "Peça cortada na imagem",
-                  "Fundo poluído com objetos",
+                  "Foto em manequim (a IA confunde com modelo)",
+                  "Várias peças juntas na mesma foto",
+                  "Peça amassada, dobrada ou enrolada",
+                  "Foto escura ou com sombras pesadas",
+                  "Fundo poluído com objetos ao redor",
                 ].map((tip) => (
                   <li
                     key={tip}
@@ -134,6 +136,17 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
                 ))}
               </ul>
             </div>
+          </div>
+
+          {/* Pro tip */}
+          <div
+            className="rounded-lg px-3 py-2 flex items-start gap-2"
+            style={{ background: "var(--brand-50)", border: "1px solid var(--brand-100)" }}
+          >
+            <span className="text-sm shrink-0">💡</span>
+            <p className="text-[11px]" style={{ color: "var(--brand-700)" }}>
+              <strong>Dica pro:</strong> Quanto mais fotos e ângulos, melhor a IA entende sua peça. Use o campo &quot;Detalhe do tecido&quot; para enviar um close — o resultado fica muito mais realista!
+            </p>
           </div>
         </div>
       </div>
