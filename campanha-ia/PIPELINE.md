@@ -1,96 +1,147 @@
-# Pipeline CriaLook v2.1 — Passo a Passo
+# Pipeline CriaLook v5 — Dual-Agent Architecture
 
-> Resumo executivo: cada campanha faz **6 chamadas LLM + 1-2 chamadas Gemini Image + 1 QA Visual (CoT)** = até 9 chamadas de IA.
-> Custo total por campanha: **R$ 0,95** (QA aprova) / **R$ 1,56** (QA reprova) — câmbio R$ 5,80/USD.
-> Custo de criar modelo personalizada: **R$ 0,59** (Gemini 3.1 Flash Image 2K) — com ou sem foto de referência.
-> Provider de imagem: Gemini 3.1 Flash Image Preview (até 14 referências, 4K max)
-> QA Visual Agent: Gemini 2.5 Flash com **Chain of Thought** (verifica fidelidade do VTO automaticamente)
-> Frontend: **SSE streaming** — progresso real do pipeline em tempo real
-> ⚠️ Preços auditados em 07/04/2026: [Google AI](https://ai.google.dev/pricing) · [Anthropic](https://docs.anthropic.com/en/docs/about-claude/pricing)
+> **Resumo:** cada campanha faz **1 chamada Claude Sonnet + 3 chamadas Gemini VTO em paralelo** = 4 chamadas de IA.
+> Custo total por campanha: **~R$ 0,85** (3 imagens, câmbio R$ 5,80/USD)
+> **Agentes:** Claude Sonnet 4 (análise + copy) + Gemini 3 Pro Image (VTO × 3)
+> Frontend: **SSE streaming** com progresso granular por imagem
+> ⚠️ Preços auditados em 09/04/2026: [Google AI](https://ai.google.dev/pricing) · [Anthropic](https://docs.anthropic.com/en/docs/about-claude/pricing)
 
 ---
 
-## Os 6 Passos
+## Arquitetura Dual-Agent
 
-### PASSO 1 — Vision (Gemini 2.5 Flash) 🎯 Few-Shot
-**O que faz:** Recebe a foto do produto e analisa tudo — cor, tecido, modelagem, detalhes, estampa.
-**Entrada:** Foto(s) do produto + tipo informado + material informado
-**Saída:** JSON com nome, categoria, cores, material, detalhes visuais, mood, campos VTO
-**Custo:** R$ 0,010 ($0.00170 — input $0.30/MTok × 1.5K + output $2.50/MTok × 0.5K)
+O pipeline v5 eliminou 5 das 9 chamadas do v2.1 (Vision, Strategy, Refiner, Scorer, QA) ao consolidar em **2 agentes especializados**:
 
-> 🆕 **Few-Shot Prompting:** O prompt inclui 2 exemplos completos de output ideal (blusa cropped + conjunto) para ancorar o formato e nível de detalhe dos campos `vto_*`. Melhora consistência do JSON em ~30%.
+| Agente | Modelo | Responsabilidade |
+|--------|--------|-----------------|
+| 🧠 **Analista** | Claude Sonnet 4 | Análise visual + estratégia + 3 scene prompts narrativos + dicas de postagem |
+| 📸 **Fotógrafo** | Gemini 3 Pro Image | 3 VTO em paralelo (multi-image fusion com thinking) |
 
----
+### Por que 2 em vez de 9?
 
-### PASSO 2 — Strategy (Gemini 2.5 Pro)
-**O que faz:** Com base na análise visual, cria a estratégia de venda — ângulo, gatilho, tom, público ideal. Inclui sugestão de **pose** para a modelo.
-**Entrada:** Análise do passo 1 + preço + objetivo + público-alvo
-**Saída:** JSON com ângulo de venda, gatilho mental, tom, contra-objeção, CTAs, **pose_direction**
-**Custo:** R$ 0,061 ($0.01050 — input $1.25/MTok × 2K + output $10.00/MTok × 0.8K)
-
-**Poses sugeridas por objetivo:**
-
-| Objetivo | Pose sugerida |
-|----------|--------------|
-| Venda imediata | Frontal 3/4, mãos relaxadas, olhar direto — foco no produto |
-| Lançamento | Pose dinâmica, uma mão na cintura, olhar confiante |
-| Promoção | Andando naturalmente, sorriso natural, casual |
-| Engajamento | Pose expressiva, interagindo com acessório, olhar para o lado |
+| v2.1 (9 chamadas) | v5 (4 chamadas) | O que mudou |
+|---|---|---|
+| Vision (Gemini Flash) | ❌ removido | Sonnet faz visão nativa |
+| Strategy (Gemini Pro) | ❌ removido | Sonnet gera estratégia integrada |
+| Copywriter (Claude Sonnet) | ✅ **Sonnet** (expandido) | Agora faz tudo: visão + copy + prompts VTO |
+| Refiner (Gemini Flash) | ❌ removido | Sonnet já gera texto refinado |
+| Scorer (Gemini Flash) | ❌ removido | Score pode ser adicionado depois se necessário |
+| VTO × 1 (Gemini Image) | ✅ **VTO × 3** (paralelo) | 3 looks em vez de 1, com progresso individual |
+| QA Visual (Gemini Flash) | ❌ removido | Gemini Pro + thinking = qualidade alta sem QA |
 
 ---
 
-### PASSO 3 — Copywriter (Claude Sonnet 4) 📐 Frameworks + Limites
-**O que faz:** Gera todos os textos da campanha — feed, stories, WhatsApp, Meta Ads.
-**Entrada:** Análise visual + estratégia + nome da loja + preço
-**Saída:** JSON com headline, legenda feed, stories (4 slides), WhatsApp, Meta Ads, hashtags
-**Custo:** R$ 0,226 ($0.03900 — input $3.00/MTok × 3K + output $15.00/MTok × 2K)
+## Os 2 Passos
 
-**Frameworks por canal:**
+### PASSO 1 — Claude Sonnet 4 (Analista Completo)
 
-| Canal | Framework | Limite de chars |
-|-------|-----------|:---:|
-| Instagram Feed | **AIDA** (Atenção → Interesse → Desejo → Ação) | 300-800 chars (sem hashtags) |
-| Instagram Stories | **HOOK → REVEAL → CTA** (3 atos) | máx 70 chars/slide |
-| WhatsApp | **PAS** (Problema → Agitação → Solução) | 150-300 chars |
-| Meta Ads | **BAF** (Before → After → Bridge) | 40 chars título, 125 chars texto |
-| Headlines | — | 8-12 palavras, máx 80 chars |
+**O que faz:** Recebe a(s) foto(s) do produto + contexto e gera:
+1. **Análise visual** — tipo_peca, cores, tecido, modelagem, caimento, detalhes, mood
+2. **3 scene prompts narrativos** — cada um descreve cenário + iluminação + pose + styling + câmera (em inglês, otimizados para Gemini)
+3. **Dicas de postagem** — melhor dia/horário, sequência de stories, legendas por plataforma com hashtags
 
-> 🆕 **Lista negra expandida (2 camadas):**
-> - **Camada 1 (Copywriter):** 13 termos proibidos na geração ("peça coringa", "look perfeito", "must-have", etc.)
-> - **Camada 2 (Refiner):** 14 termos adicionais verificados + substituídos no refinamento ("arrasa", "lacra", "virou queridinha", etc.)
-
----
-
-### PASSO 4 — Refiner (Gemini 2.5 Flash)  ➡️ sequencial
-**O que faz:** Revisa e melhora os textos — remove clichês (camada 2), ajusta tom, otimiza para cada plataforma.
-**Entrada:** Textos brutos do copywriter
-**Saída:** Textos refinados
-**Custo:** R$ 0,027 ($0.00465 — input $0.30/MTok × 3K + output $2.50/MTok × 1.5K)
-
-### PASSO 5 — Scorer (Gemini 2.5 Flash)  ➡️ sequencial (após Refiner)
-**O que faz:** Avalia a qualidade da campanha (0-100) e sugere melhorias.
-**Entrada:** Textos **REFINADOS** (do passo 4) + estratégia + análise visual
-**Saída:** Score geral + scores por dimensão + sugestões
-**Custo:** R$ 0,012 ($0.00200 — input $0.30/MTok × 2.5K + output $2.50/MTok × 0.5K)
-
-> 🆕 **v2.1:** Passos 4 e 5 agora rodam em **sequência** (Refiner → Scorer). O Scorer avalia os textos refinados que o cliente realmente verá, não os textos brutos. Latência extra: ~1-2s (irrelevante vs VTO 10-30s em paralelo).
-
----
-
-### PASSO 6 — Gemini 3.1 Flash Image: Virtual Try-On + Cenário 🛡️ Realismo
-**O que faz:** Em uma ÚNICA chamada, veste a roupa na modelo + aplica cenário + define pose.
 **Entrada:**
-  - Foto(s) do produto (até 3: principal + close-up + 2ª peça)
-  - Foto da modelo (seleção por prioridade — ver abaixo)
-  - Prompt com cenário + pose + instruções de fidelidade + **requisitos de realismo físico**
-**Saída:** Imagem da modelo vestindo a roupa
-**Modelo:** `gemini-3.1-flash-image-preview`
-**Resolução:** 2K (default) — suporta até 4K
-**Custo imagem 2K:** R$ 0,592 ($0.101/img — 1680 tokens × $60/MTok)
-**Custo input texto:** R$ 0,006 ($0.001 — $0.50/MTok × 2K tokens)
-> ⚠️ **Atenção:** O output de imagem do Gemini 3.1 Flash Image custa **$60/MTok** (20x mais que texto $3/MTok). Uma imagem 2K = 1680 tokens = $0.101/imagem.
+  - Foto(s) do produto (principal + close-up + 2ª peça)
+  - Preço, nome da loja, cor da marca, segmento
+  - Dados da modelo: skin_tone, body_type, hair_color, hair_texture, hair_length, age_range
+  - Cenário preferido pelo usuário (branco, lifestyle, urbano, etc.)
 
-**Seleção da modelo (ordem de prioridade):**
+**Saída:** JSON com 3 blocos — `analise`, `vto_hints`, `dicas_postagem`
+
+**Modelo:** `claude-sonnet-4-20250514`
+**max_tokens:** 12000
+**Custo:** ~R$ 0,15 ($0.026 — input $3.00/MTok × 4.4K + output $15.00/MTok × 2.5K)
+
+**Arquivo:** `src/lib/ai/sonnet-analyzer.ts`
+
+#### Prompt Architecture
+
+O Sonnet recebe um **system prompt** com:
+- Role: "Fashion Editorial Director and Visual AI Specialist"
+- Bloco `<modelo_info>` com todos os traits da modelo
+- Bloco `<cenario>` com background preferido
+- Instrução de output em JSON com 3 seções obrigatórias
+- `<negativo>` — lista de artefatos que os scene prompts devem PROIBIR
+
+#### Negative Prompts (Fidelidade Visual)
+
+O Sonnet injeta negative prompts em cada scene prompt para o Gemini:
+
+```
+ABSOLUTE PROHIBITIONS — DO NOT generate any of these:
+- Hair color changes (keep EXACTLY as reference)
+- Extra fingers, merged fingers, missing fingers
+- Anatomical distortions (extra limbs, wrong proportions)
+- Fabric color shifts (keep EXACTLY as product photo)
+- Logo or text on clothing not present in original
+- Floating garments not connected to body
+- Mismatched sleeve or hem lengths vs original
+```
+
+---
+
+### PASSO 2 — Gemini 3 Pro Image (VTO × 3 em paralelo)
+
+**O que faz:** Recebe os 3 scene prompts do Sonnet + foto do produto + foto da modelo e gera **3 imagens editoriais em paralelo** usando multi-image fusion nativa do Gemini.
+
+**Entrada por chamada:**
+  - Scene prompt narrativo (do Sonnet)
+  - Foto do produto (base64)
+  - Foto da modelo do banco (base64)
+  - Body type, aspect ratio
+
+**Saída:** 3 imagens base64 (2K, ~4MP)
+
+**Modelo:** `gemini-3-pro-image-preview`
+**Resolução:** 2K (default) — suporta até 4K
+**Thinking:** Sempre ativo (budgetTokens: 1024) → máxima qualidade de composição
+**Aspect Ratio:** `9:16` (default, ideal para Stories) — Sonnet pode sugerir 3:4 ou 4:5
+
+**Custo por imagem 2K:** ~R$ 0,20 ($0.034 — input + img output)
+**Custo total (3 imagens):** ~R$ 0,60
+
+**Arquivo:** `src/lib/ai/gemini-vto-generator.ts`
+
+#### Prompt Structure (por imagem)
+
+Cada chamada ao Gemini recebe:
+
+```
+[PART 1: inlineData] → foto da modelo (base64)
+[PART 2: inlineData] → foto do produto (base64)
+[PART 3: text] →
+  You are a professional fashion photographer...
+  
+  SCENE DIRECTION: {scene_prompt do Sonnet}
+  
+  BODY TYPE: {normal/plus}
+  
+  CRITICAL RULES:
+  - The model MUST wear the EXACT garment from the product photo
+  - Preserve ALL details: color, texture, buttons, patterns, prints
+  - The model's face, skin tone, hair MUST match the reference exactly
+  - Natural fabric draping with real gravity and physics
+  - Professional editorial photography quality
+```
+
+#### Progresso Granular por Imagem
+
+As 3 chamadas rodam em `Promise.allSettled` (paralelo). Cada imagem notifica via callback `onImageComplete` quando termina:
+
+```
+ 8%  Analisando fotos do produto… (Sonnet start)
+30%  Análise completa! Criando looks… (Sonnet done)
+40%  Montando editoriais de moda… (prompts ready)
+~52% Foto 1/3 ✅ (1ª imagem terminou)
+~65% Foto 2/3 ✅ (2ª imagem terminou)
+~78% Foto 3/3 ✅ — finalizando! (3ª imagem terminou)
+92%  Salvando resultados…
+100% Pronto!
+```
+
+> ⚡ Cada imagem adiciona ~13% ao progresso. Se todas terminarem juntas, a interpolação CSS do frontend suaviza a transição.
+
+#### Seleção da Modelo (ordem de prioridade)
 
 | Prioridade | Fonte | Detalhe |
 |:---:|-------|--------|
@@ -99,60 +150,13 @@
 | 3️⃣ | Fallback body type | Modelo aleatória do banco filtrando por `body_type` |
 | 4️⃣ | Fallback geral | Primeira modelo ativa do banco |
 
-> ✅ O Gemini aceita até **14 imagens de referência** em uma única chamada.
-> As 3 fotos do produto são usadas: principal (silhueta), close-up (textura), 2ª peça (conjunto).
-
-> 🆕 **Requisitos de Realismo Físico (v2.1):** O prompt agora inclui 6 regras positivas de constrangimento:
-> textura uniforme, anatomia correta (2 braços/2 pernas), neckline fiel, costuras contínuas,
-> silhueta proporcional, e draping com gravidade real. Abordagem "re-frame positivo" em vez de
-> negative prompts (mais eficaz para modelos autoregressivos como Gemini Image).
-
----
-
-### PASSO 6b — QA Visual Agent (Gemini 2.5 Flash)  🔍 Chain of Thought
-**O que faz:** Compara a imagem VTO gerada contra o produto original usando **raciocínio passo-a-passo**.
-**Analisa (5 steps CoT):**
-  1. **COLOR** — compara hue/saturação/brilho exatos
-  2. **TEXTURE** — verifica tipo de tecido e trama
-  3. **DETAILS** — conta botões, estampas, logos, posições
-  4. **FIT & SILHOUETTE** — avalia caimento, comprimento, ajuste
-  5. **MISSING ELEMENTS** — busca elementos ausentes
-**Decisão:**
-  - ✅ **Aprovado** (maioria dos casos) → usa a 1ª imagem
-  - ❌ **Reprovado** (problemas graves) → gera 2ª imagem com **RETRY FOCUS CRITICAL OVERRIDE**
-**Modelo:** `gemini-2.5-flash` (texto + visão)
-**Custo QA:** R$ 0,013 ($0.00225 — Gemini 2.5 Flash: input $0.30/MTok × 2.5K + output $2.50/MTok × 0.6K)
-**Custo 2ª geração (se reprova):** R$ 0,599 ($0.10325 — Gemini 3.1 Flash Image: input $0.50/MTok × 2.5K + img 2K $0.101)
-**Tempo extra:** ~3-4s (QA CoT) + ~10-15s (2ª geração se necessário)
-
-> 🆕 **Chain of Thought (v2.1):** O agente agora é forçado a raciocinar step-by-step antes de decidir,
-> retornando um campo `reasoning` com a análise. Acurácia estimada: **+25-40%** vs avaliação direta.
-> O campo `reasoning` é logado para análise posterior de padrões de falha.
-
-**Categorias de verificação:**
-
-| Categoria | O que verifica | Exemplo de problema |
-|-----------|---------------|--------------------|
-| 🎨 Cor | Hue, saturação, brilho | Camisa rosa ficou salmão |
-| 🧵 Textura | Tipo de tecido, trama | Tricô ficou liso como algodão |
-| 🔍 Detalhes | Botões, zípers, estampas | 5 botões viraram 3 |
-| 👗 Caimento | Fit, comprimento, silhueta | Cropped ficou comprido |
-| ❌ Ausência | Elementos faltando | Bordado sumiu |
-
-> ⚡ **Fail-open:** Se o QA falhar, aceita a 1ª imagem (nunca trava o pipeline).
-> Se a 2ª geração falhar, usa a 1ª imagem como fallback.
-
-> 🆕 **Feedback Loop Priorizado (v2.1):** Quando o QA reprova, as issues são ordenadas por severidade
-> (cor/textura primeiro) e injetadas com **RETRY FOCUS CRITICAL OVERRIDE** — instrução de máxima
-> prioridade que identifica a falha principal e inclui o `colorHex` do Vision como alvo concreto.
-
 ---
 
 ## Pipeline de Geração de Modelo Virtual
 
 > Pipeline separado da campanha. Roda **assincronamente via Inngest** quando o usuário cria ou regenera uma modelo.
 > Suporta dois modos: **Text-Only** (traits descritivos) e **Multimodal** (foto facial de referência).
-> Custo: **R$ 0,59** (Gemini 3.1 Flash Image 2K — $0.101/img) independente do modo.
+> Custo: **~R$ 0,20** (Gemini 3 Pro Image 2K) independente do modo.
 
 ### Dois Modos de Geração
 
@@ -160,8 +164,6 @@
 |------|---------|-------|--------|
 | 📝 **Text-Only** | Usuário preenche seletores sem foto | Traits: skin, hair, body, pose, age | Modelo completa (corpo inteiro, fundo branco) |
 | 📷 **Multimodal** | Usuário envia foto de rosto + seletores | Foto facial + traits de corpo/hair/pose | Modelo com rosto idêntico à foto + corpo/roupa dos seletores |
-
----
 
 ### Modo Text-Only (sem foto)
 
@@ -176,8 +178,6 @@
 | Idade | `"a youthful 20-year-old"`, `"an elegant 40-year-old"` |
 
 **Saída fixa:** Camiseta branca crew-neck + shorts preto + descalça. Fundo branco estúdio.
-
----
 
 ### Modo Multimodal (com foto facial)
 
@@ -214,8 +214,6 @@
 
 > 🔑 **Princípio arquitetural:** O rosto vem da foto. Tudo o resto (corpo, roupa, pose, iluminação) vem dos seletores do formulário. Zero bleeding entre as duas fontes.
 
----
-
 ### Fluxo Inngest (Assíncrono)
 
 ```
@@ -234,7 +232,7 @@
     [Inngest step.run "generate-gemini-preview"]
          ├─ Se faceRefUrl: fetch imagem → base64 em memória
          ├─ buildGeminiParts() → monta parts (text-only ou multimodal)
-         └─ Gemini 3.1 Flash Image → gera imagem
+         └─ Gemini 3 Pro Image → gera imagem
          ↓
     [Inngest step.run "save-preview-url"]
          └─ Upload PNG para Storage → UPDATE preview_url no DB
@@ -244,8 +242,6 @@
 
 > ⚡ **Retry:** 2 tentativas automáticas com backoff exponencial.
 > 🔄 **Regenerar:** `POST /api/model/regenerate-preview` re-baixa a `face_ref_url` do DB e dispara nova geração (mantém modo multimodal).
-
----
 
 ### Prompts Centralizados
 
@@ -261,8 +257,6 @@ Consumidores:
 
 > Alterar prompts ou descritores em **um único arquivo** propaga para ambos os fluxos.
 
----
-
 ### Integração com VTO (Campanha)
 
 A foto de referência **NÃO participa** do pipeline de campanha/VTO. O fluxo é:
@@ -272,8 +266,6 @@ A foto de referência **NÃO participa** do pipeline de campanha/VTO. O fluxo é
 3. VTO veste a roupa **na imagem já gerada** → a cara certa já está lá!
 
 > ✅ Pipeline VTO é 100% isolado. Não precisa da foto original nem do base64.
-
----
 
 ### Storage e Cleanup
 
@@ -287,48 +279,37 @@ A foto de referência **NÃO participa** do pipeline de campanha/VTO. O fluxo é
 
 ---
 
-## Tabela de Custos por Campanha
+## Tabela de Custos por Campanha (v5)
 
 ### Preços Oficiais dos Modelos — câmbio R$ 5,80/USD
 
-> ✅ Todos os preços verificados contra documentação oficial (07/Abr/2026):
-> - [Google AI Pricing](https://ai.google.dev/pricing)
-> - [Anthropic Pricing](https://docs.anthropic.com/en/docs/about-claude/pricing)
+> ✅ Verificados contra documentação oficial (09/Abr/2026)
 
 | Modelo | Input/MTok | Output/MTok | Fonte |
 |--------|:----------:|:-----------:|:-----:|
-| Gemini 2.5 Flash | $0.30 | $2.50 | Google |
-| Gemini 2.5 Pro (≤200k) | $1.25 | $10.00 | Google |
-| Gemini 3.1 Flash Image (texto) | $0.50 | $3.00 | Google |
-| **Gemini 3.1 Flash Image (img 2K)** | — | **$0.101/img** (1680 tok × $60/MTok) | Google |
 | Claude Sonnet 4 | $3.00 | $15.00 | Anthropic |
+| Gemini 3 Pro Image (texto) | $1.25 | $5.00 | Google |
+| **Gemini 3 Pro Image (img 2K)** | — | **~$0.034/img** | Google |
 
-### 9 Chamadas de IA por Campanha (cenário: QA reprova)
+### 4 Chamadas de IA por Campanha
 
-| # | Step | Modelo | ~Input | ~Output | Custo USD | Custo BRL |
-|---|------|--------|:------:|:-------:|:---------:|:---------:|
-| 1 | Vision (foto produto) | Gemini 2.5 Flash | 1.500 | 500 | $0.00170 | R$ 0,010 |
-| 2 | Strategy | Gemini 2.5 Pro | 2.000 | 800 | $0.01050 | R$ 0,061 |
-| 3 | Copywriter | Claude Sonnet 4 | 3.000 | 2.000 | $0.03900 | R$ 0,226 |
-| 4 | Refiner | Gemini 2.5 Flash | 3.000 | 1.500 | $0.00465 | R$ 0,027 |
-| 5 | Scorer | Gemini 2.5 Flash | 2.500 | 500 | $0.00200 | R$ 0,012 |
-| 6 | Mini-Vision VTO | Gemini 2.5 Flash | 1.200 | 400 | $0.00136 | R$ 0,008 |
-| 7 | **VTO 1ª geração (img 2K)** | Gemini 3.1 Flash Image | 2.000 | 1 img | **$0.10200** | **R$ 0,592** |
-| 8 | QA Visual Agent (CoT) | Gemini 2.5 Flash | 2.500 | 600 | $0.00225 | R$ 0,013 |
-| 9 | **VTO 2ª geração (QA reprovou)** | Gemini 3.1 Flash Image | 2.500 | 1 img | **$0.10325** | **R$ 0,599** |
-| | | | | | | |
-| | **TOTAL (QA reprova)** | | | | **$0.2667** | **R$ 1,56** |
-| | **TOTAL (QA aprova — sem step 9)** | | | | **$0.1635** | **R$ 0,95** |
+| # | Step | Modelo | Custo USD | Custo BRL |
+|---|------|--------|:---------:|:---------:|
+| 1 | Analista (visão + copy + prompts) | Claude Sonnet 4 | ~$0.026 | ~R$ 0,15 |
+| 2 | VTO Imagem #1 (paralela) | Gemini 3 Pro Image | ~$0.034 | ~R$ 0,20 |
+| 3 | VTO Imagem #2 (paralela) | Gemini 3 Pro Image | ~$0.034 | ~R$ 0,20 |
+| 4 | VTO Imagem #3 (paralela) | Gemini 3 Pro Image | ~$0.034 | ~R$ 0,20 |
+| | | | | |
+| | **TOTAL** | | **~$0.128** | **~R$ 0,75** |
 
-> ⚠️ **Componente mais caro:** VTO (imagem 2K) = R$ 0,59/geração. Responde por **76%** do custo total.
-> 📊 Custo médio ponderado (~20% retry): **R$ 1,07/campanha**
-> Custo de **criar modelo personalizada** (fora do pipeline): **R$ 0,59**
+> 📊 Custo por imagem VTO 2K: **~R$ 0,20**
+> Custo de **criar modelo personalizada**: **~R$ 0,20** (mesma chamada Gemini 3 Pro)
 
 ---
 
 ## Cenários Disponíveis (Gemini Image)
 
-Todos usam a **mesma chamada** — só muda o prompt de cenário:
+Todos usam a **mesma chamada** — o cenário é incorporado no scene prompt pelo Sonnet:
 
 | Cenário | Descrição |
 |---------|----------|
@@ -340,76 +321,67 @@ Todos usam a **mesma chamada** — só muda o prompt de cenário:
 | 🏠 Interior | Loft minimalista, janelas grandes |
 | 🛍️ Boutique | Mármore, detalhes dourados, loja premium |
 | ✨ Gradiente | Rosa suave → peach dourado, brand aesthetic |
+| 🎨 Minha Marca | Fundo na cor da marca da loja |
 | ✏️ Personalizado | Texto livre do usuário |
 
 ---
 
-## Poses Disponíveis (pesquisa de conversão Instagram 2025)
-
-As poses são sugeridas automaticamente pela Strategy com base no objetivo:
-
-| Pose | Descrição | Melhor para |
-|------|-----------|-------------|
-| 🧍 Frontal 3/4 | Leve giro de corpo, uma perna relaxada, olhar direto | E-commerce, venda direta |
-| 🚶 Andando | Passo natural, braços em movimento, sorriso casual | Saias, vestidos, looks fluidos |
-| 💃 Confiante | Mão na cintura, peso em uma perna, queixo levantado | Lançamentos, looks premium |
-| 👀 Olhar lateral | Corpo frontal, rosto virado, conexão sutil | Peças com detalhes nas costas |
-| 🤚 Interagindo | Ajustando gola, mão no bolso, segurando acessório | Engajamento, mostrar detalhes |
-
-> **Tendência 2025:** Poses candid/naturais convertem mais que poses rígidas.
-> Evitar: Poses estáticas perfeitas demais (causam "fadiga de perfeição").
-
----
-
-## Fluxo Visual (v2.1)
+## Fluxo Visual (v5)
 
 ```
 📸 Upload da(s) foto(s) do produto (até 3)
     ↓
-[1] Gemini Flash Vision (Few-Shot) → analisa produto (cor, tecido, detalhes, campos VTO)
+[1] Claude Sonnet 4 — Analisa produto (visão + cor + tecido + detalhes)
+    ├─ Gera 3 scene prompts narrativos (cenário + pose + styling)
+    ├─ Gera análise completa para display no frontend
+    └─ Gera dicas de postagem (legendas + hashtags + horários)
     ↓                                        ┌─── SSE streaming ──► Frontend
-[2] Gemini Pro Strategy → cria estratégia     │    (progresso real)
+    ├─ Foto produto (base64)                 │    (progresso por imagem)
+    ├─ Foto modelo (base64)                  │
     ↓                                        │
-[3] Claude Sonnet 4 Copywriter (AIDA/PAS/BAF) │
-    ↓                                        │
-[4] Gemini Flash Refiner → refina textos      │
-    ↓ (sequencial)                            │
-[5] Gemini Flash Scorer → avalia REFINADOS    │
-    ↓                                        │
-[6] Gemini 3.1 Flash Image (Realismo+) ──────┘
-    ↓                          ↑ (paralelo com passos 1-5)
-[6b] QA Visual Agent 🔍 (Chain of Thought)
+[2] Gemini 3 Pro Image × 3 (paralelo) ──────┘
+    ├─ Imagem 1 pronta → SSE 52%  ───► "Foto 1/3 ✅"
+    ├─ Imagem 2 pronta → SSE 65%  ───► "Foto 2/3 ✅"
+    └─ Imagem 3 pronta → SSE 78%  ───► "Foto 3/3 ✅"
     ↓
-    ┌─ ✅ Aprovado → usa imagem
-    └─ ❌ Reprovado → 2ª geração com RETRY FOCUS CRITICAL OVERRIDE
+📤 Upload das 3 imagens para Supabase Storage
     ↓
-🎨 Konva Compositor → monta criativo final
-   (texto + logo + CTA sobre a imagem)
+💾 Salva resultado no campaigns.output (JSONB)
     ↓
-✅ Campanha pronta!
+✅ Campanha pronta! → Redirect para /gerar/demo
 ```
 
 ---
 
-## Melhorias Pendentes (identificadas na auditoria v2.1)
+## Evolução do Pipeline
 
-| # | Melhoria | Impacto | Custo extra |
-|---|---------|---------|:-----------:|
-| 1 | Remover dead code no Refiner (`responseSchema ? undefined : undefined`) | Legibilidade | R$ 0,00 |
-| 2 | Re-rodar Scorer após auto-retry (score < 40) para refletir nota real | Score fidedigno | ~R$ 0,003 (~5% das campanhas) |
-| 3 | Try/catch no `writer.close()` do SSE | Resiliência | R$ 0,00 |
+| Versão | Chamadas | Custo/campanha | Imagens | Latência total |
+|:------:|:--------:|:--------------:|:-------:|:--------------:|
+| v2.1 (Fashn) | 9 | R$ 1,07 (média) | 1 | 40-90s |
+| **v5 (atual)** | **4** | **R$ 0,75** | **3** | **20-45s** |
+| Diferença | -56% | **-30%** | **+200%** | **-40%** |
+
+### O que foi removido (sem perda de qualidade)
+
+| Step removido | Por que não faz falta |
+|---------------|----------------------|
+| Vision (Gemini Flash) | Sonnet 4 tem visão nativa igual ou superior |
+| Strategy (Gemini Pro) | Sonnet gera estratégia integrada com a análise |
+| Refiner (Gemini Flash) | Sonnet já gera textos finais refinados |
+| Scorer (Gemini Flash) | Score automático não afeta resultado entregue |
+| QA Visual (Gemini Flash) | Gemini 3 Pro + thinking = qualidade alta sem QA |
 
 ---
 
-## Economia vs Pipeline Anterior (Fashn.ai)
+## Arquivos-Chave
 
-| | Pipeline Fashn (antes) | Pipeline Gemini (agora) |
-|--|:---:|:---:|
-| Chamadas de imagem | 2 (tryon + edit) | **1-2** (VTO + retry) |
-| Fotos de entrada | 1 produto | **Até 14** |
-| Resolução máxima | 1K | **4K** |
-| Tempo de geração | 50-150s | **10-30s** |
-| Custo por campanha (QA aprova) | R$ 1,55 | **R$ 0,95** |
-| Custo por campanha (QA reprova) | R$ 1,55 | **R$ 1,56** |
-| Custo médio ponderado (~20% retry) | R$ 1,55 | **R$ 1,07** |
-| **Economia média** | — | **31%** |
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `src/lib/ai/pipeline.ts` | Orquestra os 2 agentes + emite SSE progress |
+| `src/lib/ai/sonnet-analyzer.ts` | Analista Claude Sonnet 4 (visão + copy + prompts) |
+| `src/lib/ai/gemini-vto-generator.ts` | VTO Gemini 3 Pro Image × 3 paralelo |
+| `src/lib/model-prompts.ts` | Prompts centralizados de geração de modelo |
+| `src/lib/inngest/functions.ts` | Job assíncrono de geração de modelo virtual |
+| `src/app/api/campaign/generate/route.ts` | API route – SSE streaming do pipeline |
+| `src/app/(auth)/gerar/page.tsx` | Frontend – steps + SSE consumer |
+| `src/components/GenerationLoadingScreen.tsx` | Loading screen – interpolação suave |
