@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /* ─────────────────────────────────────────
@@ -80,6 +80,63 @@ const IconStar = () => (
 );
 
 /* ─────────────────────────────────────────
+   Format Presets — client-side Canvas crop
+───────────────────────────────────────── */
+const FORMAT_PRESETS = [
+  { id: "stories",   label: "Stories",       icon: "📱", w: 1080, h: 1920, ratio: "9:16" },
+  { id: "feed45",    label: "Feed 4:5",      icon: "📸", w: 1080, h: 1350, ratio: "4:5" },
+  { id: "feed11",    label: "Quadrado",      icon: "⬜", w: 1080, h: 1080, ratio: "1:1" },
+  { id: "whatsapp",  label: "WhatsApp",      icon: "💬", w: 1080, h: 1920, ratio: "9:16" },
+  { id: "feed169",   label: "Paisagem",      icon: "🖥️", w: 1920, h: 1080, ratio: "16:9" },
+] as const;
+
+type FormatId = typeof FORMAT_PRESETS[number]["id"];
+
+/** Crop & resize image using offscreen canvas (zero API cost) */
+async function cropToFormat(
+  imageSrc: string,
+  targetW: number,
+  targetH: number,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const srcW = img.naturalWidth;
+      const srcH = img.naturalHeight;
+      const targetRatio = targetW / targetH;
+      const srcRatio = srcW / srcH;
+
+      let cropX = 0, cropY = 0, cropW = srcW, cropH = srcH;
+
+      if (srcRatio > targetRatio) {
+        // Source is wider → crop sides
+        cropW = Math.round(srcH * targetRatio);
+        cropX = Math.round((srcW - cropW) / 2);
+      } else {
+        // Source is taller → crop top/bottom
+        cropH = Math.round(srcW / targetRatio);
+        cropY = Math.round((srcH - cropH) / 2);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas not supported")); return; }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+
+      resolve(canvas.toDataURL("image/png", 1.0));
+    };
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = imageSrc;
+  });
+}
+
+/* ─────────────────────────────────────────
    Main Page
 ───────────────────────────────────────── */
 export default function ResultadoCampanha() {
@@ -89,6 +146,9 @@ export default function ResultadoCampanha() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [copiedCaption, setCopiedCaption] = useState(false);
   const [loadingFromApi, setLoadingFromApi] = useState(false);
+  const [activeFormat, setActiveFormat] = useState<FormatId>("stories");
+  const [downloadingHQ, setDownloadingHQ] = useState(false);
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const campaignId = searchParams.get("id");
@@ -132,7 +192,6 @@ export default function ResultadoCampanha() {
   const downloadImage = async (img: GeneratedImage, idx: number) => {
     const src = getImageSrc(img);
     if (img.imageUrl) {
-      // Download from URL
       try {
         const resp = await fetch(img.imageUrl);
         const blob = await resp.blob();
@@ -152,6 +211,44 @@ export default function ResultadoCampanha() {
       link.click();
     }
   };
+
+  /** Download with format crop (Canvas) */
+  const downloadFormatted = useCallback(async (img: GeneratedImage, idx: number, formatId: FormatId) => {
+    setDownloadingHQ(true);
+    try {
+      const format = FORMAT_PRESETS.find(f => f.id === formatId) || FORMAT_PRESETS[0];
+      const src = getImageSrc(img);
+      const croppedDataUrl = await cropToFormat(src, format.w, format.h);
+
+      const link = document.createElement("a");
+      link.download = `crialook_foto_${idx + 1}_${format.id}_${format.w}x${format.h}.png`;
+      link.href = croppedDataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Crop error:", err);
+      // Fallback: download original
+      downloadImage(img, idx);
+    } finally {
+      setDownloadingHQ(false);
+    }
+  }, []);
+
+  /** Update preview when format or selected image changes */
+  useEffect(() => {
+    if (selectedIndex === null) { setPreviewDataUrl(null); return; }
+    const img = result?.data?.images?.[selectedIndex];
+    if (!img) { setPreviewDataUrl(null); return; }
+
+    const format = FORMAT_PRESETS.find(f => f.id === activeFormat) || FORMAT_PRESETS[0];
+    const src = getImageSrc(img);
+    let cancelled = false;
+
+    cropToFormat(src, format.w, format.h)
+      .then(dataUrl => { if (!cancelled) setPreviewDataUrl(dataUrl); })
+      .catch(() => { if (!cancelled) setPreviewDataUrl(null); });
+
+    return () => { cancelled = true; };
+  }, [selectedIndex, activeFormat, result]);
 
   const copyCaption = async () => {
     const caption = result?.data?.dicas_postagem?.caption_sugerida;
@@ -297,32 +394,107 @@ export default function ResultadoCampanha() {
           ))}
         </div>
 
-        {/* ── Foto selecionada em destaque + botão principal ── */}
+        {/* ── Foto selecionada + Formato + Download ── */}
         {selectedImage && (
           <div
-            className="rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-5"
+            className="rounded-2xl overflow-hidden"
             style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
           >
-            <img
-              src={getImageSrc(selectedImage)}
-              alt="Foto selecionada"
-              className="w-32 h-40 object-cover rounded-xl flex-shrink-0"
-            />
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center gap-2">
-                <IconStar />
-                <span className="font-bold text-sm">Foto {(selectedIndex ?? 0) + 1} selecionada</span>
-              </div>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
-                Ideal para Instagram, WhatsApp Status e catálogo online.
-              </p>
-              <button
-                onClick={() => downloadImage(selectedImage, selectedIndex ?? 0)}
-                className="btn-primary flex items-center gap-2 w-full sm:w-auto px-6 py-3"
+            {/* Header */}
+            <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border)" }}>
+              <IconStar />
+              <span className="font-bold text-sm">Foto {(selectedIndex ?? 0) + 1} selecionada</span>
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full font-semibold ml-auto"
+                style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}
               >
-                <IconDownload />
-                Baixar em alta qualidade
-              </button>
+                {FORMAT_PRESETS.find(f => f.id === activeFormat)?.ratio}
+              </span>
+            </div>
+
+            {/* Format selector — horizontal scroll, mobile-first */}
+            <div
+              className="px-4 py-3 flex gap-2 overflow-x-auto"
+              style={{ borderBottom: "1px solid var(--border)", WebkitOverflowScrolling: "touch" }}
+            >
+              {FORMAT_PRESETS.map(fmt => (
+                <button
+                  key={fmt.id}
+                  onClick={() => setActiveFormat(fmt.id)}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
+                  style={{
+                    minHeight: 48,
+                    background: activeFormat === fmt.id ? "var(--gradient-brand)" : "var(--background)",
+                    color: activeFormat === fmt.id ? "white" : "var(--muted)",
+                    border: activeFormat === fmt.id ? "2px solid transparent" : "1px solid var(--border)",
+                    transform: activeFormat === fmt.id ? "scale(1.03)" : "scale(1)",
+                  }}
+                >
+                  <span className="text-base">{fmt.icon}</span>
+                  <span>{fmt.label}</span>
+                  <span className="text-[10px] opacity-70">{fmt.w}×{fmt.h}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Preview + download */}
+            <div className="p-4 flex flex-col sm:flex-row items-center gap-4">
+              {/* Cropped preview */}
+              <div
+                className="relative rounded-xl overflow-hidden flex-shrink-0 bg-black/5"
+                style={{
+                  width: activeFormat === "feed169" ? 160 : 100,
+                  aspectRatio: `${FORMAT_PRESETS.find(f => f.id === activeFormat)?.w || 1080} / ${FORMAT_PRESETS.find(f => f.id === activeFormat)?.h || 1920}`,
+                  maxHeight: 200,
+                }}
+              >
+                <img
+                  src={previewDataUrl || getImageSrc(selectedImage)}
+                  alt="Preview do formato"
+                  className="w-full h-full object-cover"
+                />
+                {/* Format badge overlay */}
+                <div
+                  className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
+                  style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
+                >
+                  {FORMAT_PRESETS.find(f => f.id === activeFormat)?.ratio}
+                </div>
+              </div>
+
+              {/* Info + button */}
+              <div className="flex-1 w-full space-y-3">
+                <div>
+                  <p className="text-sm font-semibold">
+                    {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} — {FORMAT_PRESETS.find(f => f.id === activeFormat)?.w}×{FORMAT_PRESETS.find(f => f.id === activeFormat)?.h}px
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                    {activeFormat === "stories" && "Ideal para Instagram Stories e Reels"}
+                    {activeFormat === "feed45" && "Formato recomendado para Feed do Instagram"}
+                    {activeFormat === "feed11" && "Feed quadrado, catálogo e marketplace"}
+                    {activeFormat === "whatsapp" && "WhatsApp Status e catálogo pelo celular"}
+                    {activeFormat === "feed169" && "Capa de site, banner e desktop"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => downloadFormatted(selectedImage, selectedIndex ?? 0, activeFormat)}
+                  disabled={downloadingHQ}
+                  className="btn-primary flex items-center justify-center gap-2 w-full px-6 py-3.5 text-sm"
+                  style={{ minHeight: 48, opacity: downloadingHQ ? 0.6 : 1 }}
+                >
+                  {downloadingHQ ? (
+                    <>
+                      <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                      Recortando...
+                    </>
+                  ) : (
+                    <>
+                      <IconDownload />
+                      Baixar {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} HD
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
