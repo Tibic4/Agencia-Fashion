@@ -364,17 +364,22 @@ export async function POST(request: NextRequest) {
                   const path = `campaigns/${campaignRecord.id}/v3_image_${i + 1}.webp`;
                   const buf = Buffer.from(img.imageBase64, "base64");
                   const { error: upErr } = await supabase.storage
-                    .from("campaign-outputs")
+                    .from("generated-images")
                     .upload(path, buf, { contentType: "image/webp", upsert: true });
                   if (upErr) {
+                    console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} falhou:`, upErr.message);
                     imageUrls.push(null);
                   } else {
                     const { data: urlData } = supabase.storage
-                      .from("campaign-outputs")
+                      .from("generated-images")
                       .getPublicUrl(path);
                     imageUrls.push(urlData.publicUrl);
+                    console.log(`[Generate] ✅ Imagem ${i + 1} salva: ${path}`);
                   }
-                } catch { imageUrls.push(null); }
+                } catch (uploadErr) {
+                  console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} exception:`, uploadErr);
+                  imageUrls.push(null);
+                }
               }
             } catch (e) {
               console.warn("[Generate] Upload parcial falhou:", e);
