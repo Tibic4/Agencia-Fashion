@@ -226,8 +226,8 @@ function BeforeAfterSlider({
       {/* Caption */}
       {item.caption && (
         <div className="px-4 py-3 text-center" style={{ borderTop: "1px solid var(--border)" }}>
-          <p className="text-xs font-medium" style={{ color: "var(--muted)" }}>
-            {item.caption}
+          <p className="text-xs font-medium italic" style={{ color: "var(--muted)" }}>
+            &ldquo;{item.caption}&rdquo;
           </p>
         </div>
       )}
