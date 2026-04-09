@@ -20,20 +20,20 @@ interface GenerationLoadingScreenProps {
    Phases — 100% baseado em TEMPO
    
    Pipeline real:
-   • Gemini Analyzer: ~5-10s
-   • VTO Generation (3 paralelas): ~30-60s
-   • Upload + save: ~5s
-   Total: ~45-75s
+   • Gemini Analyzer: ~10-15s
+   • VTO Generation (3 paralelas): ~50-60s
+   • Upload + save: ~5-10s
+   Total: ~65-90s (média ~80s)
    ═══════════════════════════════════════ */
 
 type Phase = "analyzing" | "editorial" | "shooting" | "polishing" | "almostDone";
 
 function getPhase(elapsed: number, isComplete: boolean): Phase {
   if (isComplete) return "polishing"; // won't render — completion area shows instead
-  if (elapsed < 8)  return "analyzing";
-  if (elapsed < 20) return "editorial";
-  if (elapsed < 45) return "shooting";
-  if (elapsed < 70) return "polishing";
+  if (elapsed < 12) return "analyzing";
+  if (elapsed < 30) return "editorial";
+  if (elapsed < 60) return "shooting";
+  if (elapsed < 85) return "polishing";
   return "almostDone";
 }
 
@@ -258,7 +258,7 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
             <span className="gen-timer-icon">⏱</span>
             <span className="gen-timer-value">{formatTime(elapsed)}</span>
             {elapsed < 10 && (
-              <span className="gen-timer-hint">Geralmente leva ~45s</span>
+              <span className="gen-timer-hint">Geralmente leva ~80s</span>
             )}
           </div>
         )}
