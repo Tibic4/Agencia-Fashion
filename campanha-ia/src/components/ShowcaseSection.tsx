@@ -10,16 +10,25 @@ interface ShowcaseItem {
   caption: string | null;
 }
 
-/**
- * Componente de comparação interativa antes/depois com slider arrastável.
- * Usa height fixa baseada em viewport para garantir consistência.
- */
-function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
+// ═══════════════════════════════════════
+// BeforeAfterSlider — comparador interativo
+// Mobile-first: touch events + thumb-zone handle
+// ═══════════════════════════════════════
+
+function BeforeAfterSlider({
+  item,
+  onInteract,
+}: {
+  item: ShowcaseItem;
+  /** Callback quando o usuário interage (pausa autoplay) */
+  onInteract?: () => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sliderPos, setSliderPos] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
   const [imgError, setImgError] = useState<"before" | "after" | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Track container width via ResizeObserver
   useEffect(() => {
@@ -67,6 +76,10 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      onInteract?.();
+    }
     const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     updatePosition(clientX);
   };
@@ -77,16 +90,16 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
       style={{
         background: "var(--background)",
         border: "1px solid var(--border)",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
       }}
     >
-      {/* Slider area — preserves full 9:16 proportion */}
+      {/* Slider area — 9:16 mobile-optimized */}
       <div
         ref={containerRef}
-        className="relative select-none overflow-hidden"
+        className="relative select-none overflow-hidden touch-none"
         style={{
           aspectRatio: "9 / 16",
-          maxHeight: "min(75vh, 640px)",
+          maxHeight: "min(65vh, 540px)",
           width: "100%",
           background: "#1a1a1a",
           cursor: isDragging ? "grabbing" : "grab",
@@ -94,12 +107,13 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
         onMouseDown={handleStart}
         onTouchStart={handleStart}
       >
-        {/* DEPOIS — full background, preserve proportions */}
+        {/* DEPOIS — full background */}
         <Image
           src={item.after_photo_url}
           alt="Depois — modelo IA"
           fill
-          sizes="(max-width: 768px) 100vw, 768px"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
+          quality={75}
           className="object-contain"
           draggable={false}
           onError={() => setImgError("after")}
@@ -115,7 +129,7 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
           </div>
         )}
 
-        {/* ANTES — clipped by slider position, preserve proportions */}
+        {/* ANTES — clipped by slider position */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ width: `${sliderPos}%` }}
@@ -124,7 +138,8 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
             src={item.before_photo_url}
             alt="Antes — foto original"
             fill
-            sizes="(max-width: 768px) 100vw, 768px"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
+            quality={75}
             className="object-contain"
             style={{
               width: containerWidth > 0 ? `${containerWidth}px` : "100%",
@@ -153,15 +168,15 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
               boxShadow: "0 0 12px rgba(0,0,0,0.4)",
             }}
           />
-          {/* Draggable handle — always vertically centered */}
+          {/* Draggable handle — 48px touch target (mobile-design minimum) */}
           <div
             style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: "44px",
-              height: "44px",
+              width: "48px",
+              height: "48px",
               borderRadius: "50%",
               background: "rgba(255,255,255,0.95)",
               boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
@@ -181,26 +196,26 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
 
         {/* Labels */}
         <span
-          className="absolute bottom-3 left-3 md:bottom-4 md:left-4 text-[11px] md:text-sm font-bold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full z-20 pointer-events-none"
+          className="absolute bottom-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
           style={{ background: "rgba(0,0,0,0.5)", color: "white", backdropFilter: "blur(8px)" }}
         >
           📷 Antes
         </span>
         <span
-          className="absolute bottom-3 right-3 md:bottom-4 md:right-4 text-[11px] md:text-sm font-bold px-2.5 py-1 md:px-3 md:py-1.5 rounded-full z-20 pointer-events-none"
+          className="absolute bottom-3 right-3 text-[11px] font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
           style={{ background: "var(--gradient-brand, linear-gradient(135deg, #A855F7, #EC4899))", color: "white", backdropFilter: "blur(8px)" }}
         >
           ✨ Depois
         </span>
 
-        {/* Hint — disappears when user interacts */}
+        {/* Hint — only when untouched */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 text-[10px] md:text-xs font-medium px-3 py-1.5 rounded-full z-20 pointer-events-none transition-opacity duration-500"
+          className="absolute left-1/2 -translate-x-1/2 text-[10px] font-medium px-3 py-1.5 rounded-full z-20 pointer-events-none transition-opacity duration-500"
           style={{
             top: "12px",
-            background: "rgba(0,0,0,0.4)",
-            color: "rgba(255,255,255,0.8)",
-            opacity: sliderPos === 50 ? 1 : 0,
+            background: "rgba(0,0,0,0.45)",
+            color: "rgba(255,255,255,0.85)",
+            opacity: hasInteracted ? 0 : 1,
             backdropFilter: "blur(8px)",
           }}
         >
@@ -210,8 +225,8 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
 
       {/* Caption */}
       {item.caption && (
-        <div className="px-4 py-3 md:px-6 md:py-4 text-center" style={{ borderTop: "1px solid var(--border)" }}>
-          <p className="text-xs md:text-sm font-medium" style={{ color: "var(--muted)" }}>
+        <div className="px-4 py-3 text-center" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-xs font-medium" style={{ color: "var(--muted)" }}>
             {item.caption}
           </p>
         </div>
@@ -220,11 +235,21 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
   );
 }
 
+
+// ═══════════════════════════════════════
+// ShowcaseSection — vitrine com autoplay
+// ═══════════════════════════════════════
+
+const AUTOPLAY_INTERVAL = 5000; // 5s entre trocas
+
 export default function ShowcaseSection() {
   const [items, setItems] = useState<ShowcaseItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const autoplayRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch vitrine data
   useEffect(() => {
     fetch("/api/showcase")
       .then((r) => r.json())
@@ -235,13 +260,35 @@ export default function ShowcaseSection() {
       .finally(() => setLoaded(true));
   }, []);
 
+  // ── Autoplay — troca a cada 5s, pausa ao interagir ──
+  useEffect(() => {
+    if (isPaused || items.length <= 1) return;
+
+    autoplayRef.current = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % items.length);
+    }, AUTOPLAY_INTERVAL);
+
+    return () => {
+      if (autoplayRef.current) clearInterval(autoplayRef.current);
+    };
+  }, [isPaused, items.length]);
+
+  /** Pausa autoplay ao interagir e retoma após 15s */
+  const handleUserInteraction = useCallback(() => {
+    setIsPaused(true);
+    // Retomar autoplay após 15s de inatividade
+    const timeout = setTimeout(() => setIsPaused(false), 15000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const goTo = useCallback((i: number) => {
+    setActiveIndex(Math.max(0, Math.min(items.length - 1, i)));
+    handleUserInteraction();
+  }, [items.length, handleUserInteraction]);
+
   // Não renderiza nada se não tem itens
   if (loaded && items.length === 0) return null;
   if (!loaded) return null;
-
-  const goTo = (i: number) => {
-    setActiveIndex(Math.max(0, Math.min(items.length - 1, i)));
-  };
 
   const activeItem = items[activeIndex];
 
@@ -249,9 +296,9 @@ export default function ShowcaseSection() {
     <section className="section" style={{ background: "var(--surface)" }}>
       <div className="container">
         {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
-          <div className="badge badge-brand mb-4 inline-flex">Resultado Real</div>
-          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-3 md:mb-4">
+        <div className="text-center mb-6 md:mb-12">
+          <div className="badge badge-brand mb-3 md:mb-4 inline-flex">Resultado Real</div>
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2 md:mb-4">
             Veja a <span className="gradient-text">transformação</span>
           </h2>
           <p className="text-sm md:text-lg max-w-xl mx-auto" style={{ color: "var(--muted)" }}>
@@ -259,7 +306,7 @@ export default function ShowcaseSection() {
           </p>
         </div>
 
-        {/* Single active slider — NO STACKING */}
+        {/* Slider container */}
         <div className="max-w-3xl mx-auto relative">
           {/* Counter badge (multiple items) */}
           {items.length > 1 && (
@@ -275,7 +322,7 @@ export default function ShowcaseSection() {
             </div>
           )}
 
-          {/* Navigation arrows (desktop) */}
+          {/* Navigation arrows (desktop only) */}
           {items.length > 1 && (
             <>
               <button
@@ -317,25 +364,30 @@ export default function ShowcaseSection() {
             </>
           )}
 
-          {/* ONLY ONE SLIDER RENDERED AT A TIME — prevents stacking */}
+          {/* ONLY ONE SLIDER RENDERED AT A TIME */}
           {activeItem && (
-            <BeforeAfterSlider key={activeItem.id} item={activeItem} />
+            <BeforeAfterSlider
+              key={activeItem.id}
+              item={activeItem}
+              onInteract={handleUserInteraction}
+            />
           )}
 
-          {/* Mobile navigation (below slider) */}
+          {/* ── Navigation dots (unified mobile + desktop) ── */}
           {items.length > 1 && (
-            <div className="flex items-center justify-center gap-3 mt-6 md:hidden">
+            <div className="flex items-center justify-center gap-3 mt-5">
+              {/* Prev button (mobile) */}
               <button
                 onClick={() => goTo(activeIndex - 1)}
                 disabled={activeIndex === 0}
-                className="flex items-center justify-center transition-all disabled:opacity-20"
+                className="md:hidden flex items-center justify-center transition-all disabled:opacity-20"
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: "44px",
+                  height: "44px",
                   borderRadius: "50%",
                   background: "var(--background)",
                   border: "1px solid var(--border)",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                 }}
                 aria-label="Anterior"
               >
@@ -344,7 +396,7 @@ export default function ShowcaseSection() {
                 </svg>
               </button>
 
-              {/* Dots */}
+              {/* Dots — autoplay progress indicator */}
               <div className="flex items-center gap-2">
                 {items.map((_, i) => (
                   <button
@@ -352,8 +404,9 @@ export default function ShowcaseSection() {
                     onClick={() => goTo(i)}
                     className="transition-all duration-300 rounded-full"
                     style={{
-                      width: i === activeIndex ? "20px" : "8px",
+                      width: i === activeIndex ? "24px" : "8px",
                       height: "8px",
+                      minHeight: "8px",
                       background: i === activeIndex
                         ? "var(--brand-500, #A855F7)"
                         : "var(--border, #e5e5e5)",
@@ -364,17 +417,18 @@ export default function ShowcaseSection() {
                 ))}
               </div>
 
+              {/* Next button (mobile) */}
               <button
                 onClick={() => goTo(activeIndex + 1)}
                 disabled={activeIndex === items.length - 1}
-                className="flex items-center justify-center transition-all disabled:opacity-20"
+                className="md:hidden flex items-center justify-center transition-all disabled:opacity-20"
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: "44px",
+                  height: "44px",
                   borderRadius: "50%",
                   background: "var(--background)",
                   border: "1px solid var(--border)",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                 }}
                 aria-label="Próximo"
               >
@@ -385,25 +439,12 @@ export default function ShowcaseSection() {
             </div>
           )}
 
-          {/* Desktop dots */}
-          {items.length > 1 && (
-            <div className="hidden md:flex items-center justify-center gap-2 mt-6">
-              {items.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goTo(i)}
-                  className="transition-all duration-300 rounded-full"
-                  style={{
-                    width: i === activeIndex ? "24px" : "8px",
-                    height: "8px",
-                    background: i === activeIndex
-                      ? "var(--brand-500, #A855F7)"
-                      : "var(--border, #e5e5e5)",
-                    opacity: i === activeIndex ? 1 : 0.4,
-                  }}
-                  aria-label={`Vitrine ${i + 1}`}
-                />
-              ))}
+          {/* ── Autoplay status indicator ── */}
+          {items.length > 1 && !isPaused && (
+            <div className="flex justify-center mt-2">
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ color: "var(--muted)", background: "var(--surface)" }}>
+                ▶ Trocando automaticamente
+              </span>
             </div>
           )}
         </div>
