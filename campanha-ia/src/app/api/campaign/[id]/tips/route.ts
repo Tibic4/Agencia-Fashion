@@ -9,14 +9,14 @@
  * Input:  { imageUrl: string, objective?: string, targetAudience?: string }
  * Output: { poste_as, tom_da_voz, cta, dica_extra, hashtags }
  * 
- * Custo: ~R$ 0,001 por chamada (Flash 2.0 + 1 imagem)
+ * Custo: ~R$ 0,001 por chamada (Flash 3.0 + 1 imagem)
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenAI } from "@google/genai";
 
-const TIPS_MODEL = "gemini-2.5-flash-preview-05-20";
+const TIPS_MODEL = "gemini-3-flash-preview";
 
 interface TipsResponse {
   poste_as: string;
@@ -26,36 +26,37 @@ interface TipsResponse {
   hashtags: string[];
 }
 
-const SYSTEM_PROMPT = `Você é um consultor de marketing digital especializado em moda feminina brasileira no Instagram.
+const SYSTEM_PROMPT = `Você é um consultor sênior de marketing digital para moda feminina brasileira no Instagram.
+Você recebe fotos de campanha e dá dicas ESPECÍFICAS e ACIONÁVEIS baseadas no que vê.
 
 REGRA ABSOLUTA — PROIBIDO:
-- NUNCA mencione tipo de peça (calça, blusa, vestido, saia, conjunto, macacão etc.)
-- NUNCA mencione cor da roupa (azul, vermelho, nude, preto etc.)
-- NUNCA mencione tecido (algodão, viscose, crepe etc.)
-- NUNCA mencione estampa, modelagem ou caimento
-- NUNCA use a palavra "peça", "roupa", "look" ou "outfit" para descrever o que vê
-- Se quebrar QUALQUER regra acima, a resposta será descartada
+- NUNCA mencione tipo de peça (calça, blusa, vestido, saia etc.)
+- NUNCA mencione cor/tecido/estampa da roupa
+- NUNCA use "peça", "roupa", "look" ou "outfit"
 
-O QUE VOCÊ PODE ANALISAR:
-- Cenário/ambiente (estúdio, rua, loja, natureza)
-- Iluminação (natural, artificial, dourada, suave)
-- Composição fotográfica (close, corpo inteiro, ângulo)
-- Mood/energia visual (editorial, casual, sofisticado, vibrante)
-- Paleta de cores da CENA (não da roupa)
-- Postura e expressão da modelo
+O QUE VOCÊ ANALISA para personalizar as dicas:
+- Cenário (estúdio branco? rua urbana? loja? natureza?)
+- Iluminação (natural dourada? flash? suave? dramática?)
+- Mood visual (editorial minimalista? casual vibrante? sofisticado? jovem?)
+- Postura da modelo (confiança? movimento? olhar direto?)
+- Composição (corpo inteiro? meio corpo? close?)
 
-Responda SEMPRE em JSON válido, sem markdown, sem code blocks.`;
+SEJA ESPECÍFICO — não dê dicas genéricas como "poste entre 18h-21h".
+Baseie tudo no que VÊ na foto. Ex: se o cenário é urbano e jovem, sugira horário de pico jovem (21h-23h).
+Se é sofisticado em estúdio, sugira tom elegante.
+
+Responda SEMPRE em JSON válido puro, sem markdown, sem \`\`\`.`;
 
 function buildUserPrompt(objective?: string, targetAudience?: string): string {
-  let prompt = `Analise esta foto de moda e gere dicas de marketing personalizadas.
+  let prompt = `Olhe esta foto de campanha de moda e me dê dicas PERSONALIZADAS para essa imagem específica.
 
 Responda neste JSON exato:
 {
-  "poste_as": "horário ideal ex: '19h' ou '12h–14h'",
-  "tom_da_voz": "tom ideal para caption (max 5 palavras)",
-  "cta": "call-to-action curto e criativo (max 8 palavras)",
-  "dica_extra": "1 dica prática de marketing (max 20 palavras)",
-  "hashtags": ["8 hashtags relevantes sem #"]
+  "poste_as": "horário específico (ex: '21h' ou '12h às 14h') — justifique brevemente pelo mood da foto",
+  "tom_da_voz": "tom da caption em 3-5 palavras que COMBINE com a energia da foto",
+  "cta": "call-to-action criativo e curto (max 8 palavras) que conecte com a vibe da imagem",
+  "dica_extra": "1 dica prática e específica de marketing baseada no que você vê na foto (max 25 palavras)",
+  "hashtags": ["8 hashtags relevantes sem # — mix de alcance e nicho"]
 }`;
 
   if (objective) {
@@ -100,7 +101,7 @@ async function logTipsCost(
 
     if (inputTokens > 0 || outputTokens > 0) {
       const pricing = await getModelPricing();
-      const modelPrice = pricing[TIPS_MODEL] || pricing["gemini-2.5-flash"] || { inputPerMTok: 0.15, outputPerMTok: 0.60 };
+      const modelPrice = pricing[TIPS_MODEL] || pricing["gemini-3-flash-preview"] || { inputPerMTok: 0.50, outputPerMTok: 3.00 };
       costUsd = (inputTokens * modelPrice.inputPerMTok) / 1_000_000
               + (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
     }
