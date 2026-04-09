@@ -46,8 +46,8 @@ export default function Sobre() {
             <Link href="/#precos" className="text-sm font-medium" style={{ color: "var(--muted)" }}>Preços</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Link href="/sign-in" className="text-sm font-medium min-h-[44px] flex items-center px-3" style={{ color: "var(--muted)" }}>Entrar</Link>
+            <ThemeToggle />
             <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-3 sm:!py-2.5 sm:!px-5 min-h-[44px] flex items-center">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
