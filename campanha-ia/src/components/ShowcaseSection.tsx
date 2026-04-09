@@ -80,24 +80,27 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
         boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
       }}
     >
-      {/* Slider area */}
+      {/* Slider area — preserves full 9:16 proportion */}
       <div
         ref={containerRef}
         className="relative select-none overflow-hidden"
         style={{
-          height: "clamp(320px, 55vw, 560px)",
+          aspectRatio: "9 / 16",
+          maxHeight: "min(75vh, 640px)",
+          width: "100%",
+          background: "#1a1a1a",
           cursor: isDragging ? "grabbing" : "grab",
         }}
         onMouseDown={handleStart}
         onTouchStart={handleStart}
       >
-        {/* DEPOIS — full background image */}
+        {/* DEPOIS — full background, preserve proportions */}
         <Image
           src={item.after_photo_url}
           alt="Depois — modelo IA"
           fill
           sizes="(max-width: 768px) 100vw, 768px"
-          className="object-cover"
+          className="object-contain"
           draggable={false}
           onError={() => setImgError("after")}
         />
@@ -112,7 +115,7 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
           </div>
         )}
 
-        {/* ANTES — imagem cortada pelo slider position */}
+        {/* ANTES — clipped by slider position, preserve proportions */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ width: `${sliderPos}%` }}
@@ -122,7 +125,7 @@ function BeforeAfterSlider({ item }: { item: ShowcaseItem }) {
             alt="Antes — foto original"
             fill
             sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
+            className="object-contain"
             style={{
               width: containerWidth > 0 ? `${containerWidth}px` : "100%",
               maxWidth: "none",
