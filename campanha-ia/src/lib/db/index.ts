@@ -511,7 +511,7 @@ export async function listCampaigns(storeId: string, limit = 20, historyDays = 0
   
   let query = supabase
     .from("campaigns")
-    .select("id, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, is_favorited, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
+    .select("id, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, is_favorited, output, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
     .eq("store_id", storeId)
     .eq("is_archived", false)
     .order("created_at", { ascending: false })
