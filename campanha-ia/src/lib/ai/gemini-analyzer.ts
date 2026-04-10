@@ -1,13 +1,13 @@
 /**
  * CriaLook Gemini Analyzer v6 — Gemini 3.1 Pro Preview
  *
- * Substitui o Claude Sonnet como analista da pipeline.
+ * Analista principal da pipeline.
  * Usa o modelo mais avançado do Google para:
  * 1. Análise visual do produto (cor, tecido, modelagem, caimento)
  * 2. 3 scene prompts narrativos ULTRA-DETALHADOS para o Gemini VTO
  * 3. Dicas de postagem premium para lojistas brasileiras
  *
- * Vantagens sobre o Sonnet:
+ * Características:
  * - Structured Output nativo (JSON Schema) → zero parsing errors
  * - Thinking mode → raciocínio profundo sobre moda e composição
  * - 1M tokens de contexto → nunca trunca
@@ -19,10 +19,10 @@ import { GoogleGenAI } from "@google/genai";
 import type { ModelInfo } from "./pipeline";
 
 // ═══════════════════════════════════════
-// Tipos de retorno (compatíveis com o Sonnet)
+// Tipos de retorno (tipos de retorno do analyzer)
 // ═══════════════════════════════════════
 
-export interface SonnetAnalise {
+export interface GeminiAnalise {
   tipo_peca: string;
   pecas: string[];
   tecido: string;
@@ -36,7 +36,7 @@ export interface SonnetAnalise {
   publico: string;
 }
 
-export interface SonnetVTOHint {
+export interface GeminiVTOHint {
   /** 3 scene+styling prompts para o Gemini VTO (em inglês) */
   scene_prompts: [string, string, string];
   /** Aspect ratio sugerido */
@@ -45,7 +45,7 @@ export interface SonnetVTOHint {
   category: string;
 }
 
-export interface SonnetDicaLegenda {
+export interface GeminiDicaLegenda {
   foto: number;
   plataforma: string;
   legenda: string;
@@ -53,7 +53,7 @@ export interface SonnetDicaLegenda {
   dica?: string;
 }
 
-export interface SonnetDicasPostagem {
+export interface GeminiDicasPostagem {
   melhor_dia: string;
   melhor_horario: string;
   sequencia_sugerida: string;
@@ -61,13 +61,13 @@ export interface SonnetDicasPostagem {
   tom_legenda: string;
   cta: string;
   hashtags: string[];
-  legendas: SonnetDicaLegenda[];
+  legendas: GeminiDicaLegenda[];
 }
 
-export interface SonnetAnalyzerResult {
-  analise: SonnetAnalise;
-  vto_hints: SonnetVTOHint;
-  dicas_postagem: SonnetDicasPostagem;
+export interface GeminiAnalyzerResult {
+  analise: GeminiAnalise;
+  vto_hints: GeminiVTOHint;
+  dicas_postagem: GeminiDicasPostagem;
 }
 
 // ═══════════════════════════════════════
@@ -91,7 +91,7 @@ function getAI(): GoogleGenAI {
 const MODEL = "gemini-3.1-pro-preview";
 
 // ═══════════════════════════════════════
-// Input (mesma interface do Sonnet)
+// Input (mesma interface do analyzer original)
 // ═══════════════════════════════════════
 
 export interface AnalyzerInput {
@@ -214,7 +214,7 @@ const RESPONSE_SCHEMA = {
  * Chama Gemini 3.1 Pro para análise visual do produto.
  * Retorna: análise + hints para Gemini VTO + dicas de postagem.
  */
-export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAnalyzerResult> {
+export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAnalyzerResult> {
   const ai = getAI();
   const startTime = Date.now();
 
@@ -268,7 +268,7 @@ export async function analyzeWithSonnet(input: AnalyzerInput): Promise<SonnetAna
   }
 
   // Parse JSON — structured output garante JSON válido
-  let result: SonnetAnalyzerResult;
+  let result: GeminiAnalyzerResult;
   try {
     result = JSON.parse(text);
   } catch {
@@ -570,7 +570,7 @@ Gere a análise completa, os 3 scene prompts narrativos em inglês, e as dicas d
 // Parser JSON de fallback (raro com structured output)
 // ═══════════════════════════════════════
 
-function repairAndParse(raw: string): SonnetAnalyzerResult {
+function repairAndParse(raw: string): GeminiAnalyzerResult {
   let cleaned = raw.trim();
 
   // Remove ```json ... ```
