@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
+import { haptics } from "@/lib/utils/haptics";
 
 
 
@@ -401,136 +402,144 @@ export default function ModeloVirtual() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {models.map((model) => (
-            <div
-              key={model.id}
-              className="rounded-2xl overflow-hidden transition-all group"
-              style={{
-                border: model.is_active
-                  ? "2px solid var(--brand-500)"
-                  : "1px solid var(--border)",
-                background: "var(--background)",
-                boxShadow: model.is_active ? "0 4px 20px rgba(236,72,153,0.15)" : "none",
-              }}
-            >
-              {/* Model visual */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {models.map((model) => {
+            // Helpers to dynamically resolve strings based on what exists in the arrays
+            const labelSkin = skinTones.find((s) => s.value === model.skin_tone)?.label || model.skin_tone;
+            const labelHair = hairTextures.find((h) => h.value === (model.hair_texture || model.hair_style))?.label || model.hair_style;
+            const labelBodyFem = bodyTypesFem.find((b) => b.value === model.body_type)?.label;
+            const labelBodyMasc = bodyTypesMasc.find((b) => b.value === model.body_type)?.label;
+            const labelBody = labelBodyFem || labelBodyMasc || model.body_type;
+
+            return (
               <div
-                className="aspect-[3/4] flex items-center justify-center relative overflow-hidden"
-                style={{ background: "var(--gradient-brand-soft)" }}
+                key={model.id}
+                className="relative rounded-2xl overflow-hidden transition-all group flex flex-col hover:scale-[1.02] cursor-default"
+                style={{
+                  border: model.is_active ? "2px solid var(--brand-500)" : "1px solid var(--border)",
+                  background: "var(--surface)",
+                  boxShadow: model.is_active ? "0 4px 20px rgba(236,72,153,0.15)" : "0 2px 10px rgba(0,0,0,0.05)",
+                  aspectRatio: "3/4",
+                }}
               >
-                {model.photo_url ? (
-                  <img
-                    src={model.photo_url}
-                    alt={model.name}
-                    className="w-full h-full object-cover"
-                    style={{ animation: "fadeIn 0.5s ease-in" }}
-                  />
-                ) : (
-                  <ModelPlaceholder
-                    skinTone={model.skin_tone}
-                    bodyType={model.body_type}
-                    name={model.name}
-                    isGenerating={!model.preview_failed && new Date(model.created_at).getTime() > Date.now() - 5 * 60 * 1000}
-                    showRetry={model.preview_failed || new Date(model.created_at).getTime() <= Date.now() - 5 * 60 * 1000}
-                    onRetry={() => handleRetryPreview(model.id)}
-                  />
-                )}
+                {/* Background Image Area */}
+                <div className="absolute inset-0 z-0">
+                  {model.photo_url ? (
+                    <img
+                      src={model.photo_url}
+                      alt={model.name}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    />
+                  ) : (
+                    <ModelPlaceholder
+                      skinTone={model.skin_tone}
+                      bodyType={model.body_type}
+                      name={model.name}
+                      isGenerating={!model.preview_failed && new Date(model.created_at).getTime() > Date.now() - 5 * 60 * 1000}
+                      showRetry={model.preview_failed || new Date(model.created_at).getTime() <= Date.now() - 5 * 60 * 1000}
+                      onRetry={() => handleRetryPreview(model.id)}
+                    />
+                  )}
+                </div>
+
+                {/* Ativa Badge */}
                 {model.is_active && (
-                  <div
-                    className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ background: "var(--gradient-brand)", color: "white" }}
-                  >
-                    ✅ Ativa
+                  <div className="absolute top-2 right-2 z-10">
+                    <div 
+                      className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md transition-transform active:scale-95"
+                      style={{ background: "rgba(236,72,153,0.85)", color: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      ATIVA
+                    </div>
                   </div>
                 )}
-              </div>
 
-              {/* Model info */}
-              <div className="p-4">
-                <h3 className="font-semibold mb-1">{model.name}</h3>
-                <div className="flex flex-wrap gap-1 mb-3">
-                  <span className="badge badge-brand text-xs">
-                    {skinTones.find((s) => s.value === model.skin_tone)?.label || model.skin_tone}
-                  </span>
-                  <span className="badge badge-brand text-xs">
-                    {hairTextures.find((h) => h.value === (model.hair_texture || model.hair_style))?.label || model.hair_style}
-                  </span>
-                  <span className="badge badge-brand text-xs">
-                    {bodyTypes.find((b) => b.value === model.body_type)?.label || model.body_type}
-                  </span>
-                  <span className="badge badge-brand text-xs">
-                    {styles.find((s) => s.value === model.style)?.label || model.style}
-                  </span>
-                </div>
+                {/* Bottom Overlay Gradient & Content */}
+                <div 
+                  className="absolute inset-x-0 bottom-0 z-10 p-3 pt-16 flex flex-col justify-end pointer-events-none"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)" }}
+                >
+                  <h3 className="font-bold text-white truncate text-sm leading-tight mb-0.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+                    {model.name}
+                  </h3>
+                  <p className="text-[10px] text-white/85 line-clamp-1 mb-2.5 font-medium tracking-wide">
+                    {labelSkin} • {labelHair} • {labelBody}
+                  </p>
 
-                {/* Actions */}
-                <div className="flex gap-2">
-                  {!model.is_active && (
-                    <button
-                      onClick={() => handleSetActive(model.id)}
-                      className="flex-1 text-xs font-medium py-2.5 rounded-lg transition-all min-h-[44px]"
-                      style={{
-                        background: "var(--brand-100)",
-                        color: "var(--brand-700)",
-                        border: "1px solid var(--brand-200)",
-                      }}
-                    >
-                      Usar esta
-                    </button>
-                  )}
-                  {confirmDeleteId === model.id ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px]" style={{ color: "var(--muted)" }}>Excluir?</span>
+                  {/* Actions row */}
+                  <div className="flex gap-1.5 mt-auto pointer-events-auto">
+                    {!model.is_active && (
                       <button
-                        onClick={() => handleDelete(model.id)}
-                        disabled={deletingId === model.id}
-                        className="text-xs font-bold py-2 px-3 rounded-lg min-h-[44px]"
-                        style={{ background: "var(--error)", color: "white", opacity: deletingId === model.id ? 0.5 : 1 }}
+                        onClick={(e) => { e.stopPropagation(); haptics.medium(); handleSetActive(model.id); }}
+                        className="flex-1 text-[11px] font-bold py-2 px-2 rounded-lg transition-all active:scale-95 backdrop-blur-md"
+                        style={{
+                          background: "var(--brand-500)",
+                          color: "white",
+                          border: "1px solid rgba(255,255,255,0.15)",
+                          boxShadow: "0 2px 8px rgba(236,72,153,0.3)"
+                        }}
                       >
-                        {deletingId === model.id ? "..." : "Sim"}
+                        Usar
                       </button>
+                    )}
+                    {confirmDeleteId === model.id ? (
+                      <div className="flex gap-1.5 flex-1 animate-fade-in">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); haptics.heavy(); handleDelete(model.id); }}
+                          disabled={deletingId === model.id}
+                          className="flex-1 text-[11px] font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center shadow-lg"
+                          style={{ background: "#EF4444", color: "white", opacity: deletingId === model.id ? 0.5 : 1 }}
+                        >
+                          {deletingId === model.id ? "..." : "Sim"}
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); haptics.light(); setConfirmDeleteId(null); }}
+                          className="flex-1 text-[11px] font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center backdrop-blur-md"
+                          style={{ background: "rgba(255,255,255,0.15)", color: "white" }}
+                        >
+                          Não
+                        </button>
+                      </div>
+                    ) : (
                       <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-xs font-medium py-2 px-3 rounded-lg min-h-[44px]"
-                        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                        onClick={(e) => { e.stopPropagation(); haptics.medium(); setConfirmDeleteId(model.id); }}
+                        className="text-[11px] font-bold py-2 px-2.5 rounded-lg transition-all active:scale-95 backdrop-blur-sm"
+                        style={{
+                          background: "rgba(0,0,0,0.4)",
+                          color: "#FCA5A5",
+                          border: "1px solid rgba(255,255,255,0.1)"
+                        }}
                       >
-                        Não
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        </svg>
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmDeleteId(model.id)}
-                      className="text-xs font-medium py-2.5 px-4 rounded-lg transition-all min-h-[44px]"
-                      style={{
-                        background: "var(--surface)",
-                        color: "var(--error)",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Add more card (if within limits) */}
           {canCreate && (
             <button
-              onClick={() => setShowCreateForm(true)}
-              className="rounded-2xl flex flex-col items-center justify-center aspect-[4/3] transition-all hover:scale-[1.02]"
+              onClick={() => { haptics.medium(); setShowCreateForm(true); }}
+              className="rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] group"
               style={{
                 border: "2px dashed var(--border)",
                 background: "var(--surface)",
                 color: "var(--muted)",
+                aspectRatio: "3/4"
               }}
             >
-              <div className="text-4xl mb-2">+</div>
-              <span className="text-sm font-medium">Nova modelo</span>
-              <span className="text-xs mt-1">
-                {models.length}/{maxModels}
+              <div className="w-12 h-12 rounded-full mb-3 flex items-center justify-center group-hover:bg-brand-50 transition-colors" style={{ border: "2px solid var(--border)" }}>
+                <span className="text-xl font-bold group-hover:text-brand-500 transition-colors">+</span>
+              </div>
+              <span className="text-xs font-semibold group-hover:text-brand-500 transition-colors">Nova modelo</span>
+              <span className="text-[10px] mt-1 opacity-70">
+                {models.length}/{maxModels} slots
               </span>
             </button>
           )}
@@ -789,9 +798,9 @@ export default function ModeloVirtual() {
 
           {/* Error */}
           {error && !quotaError && (
-            <div className="p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+            <div className="p-4 rounded-xl flex items-center gap-3" style={{ background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", color: "var(--error, #EF4444)" }}>
               <span className="text-lg">⚠️</span>
-              <p className="text-sm font-medium" style={{ color: "#991B1B" }}>
+              <p className="text-sm font-medium" style={{ color: "var(--error, #EF4444)" }}>
                 {error}
               </p>
             </div>

@@ -212,23 +212,29 @@ export default function AuthLayout({
         <div className="p-4" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm"
+              style={{ background: "var(--gradient-brand)", color: "white" }}
             >
               {userInitial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{userName}</p>
-              <p className="text-xs truncate" style={{ color: "var(--muted)" }}>
+              <p className="text-sm font-bold truncate">{userName}</p>
+              <p className="text-xs truncate font-medium" style={{ color: "var(--muted)" }}>
                 {userEmail}
               </p>
             </div>
             <ThemeToggle />
             <button
               onClick={() => signOut()}
-              className="p-2 rounded-lg transition hover:bg-red-50 min-h-[44px] flex items-center justify-center"
-              style={{ color: "var(--muted)" }}
+              className="p-2 rounded-xl transition-all duration-300 min-h-[44px] flex items-center justify-center hover:scale-105 active:scale-95"
+              style={{ 
+                color: "var(--foreground)", 
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+              }}
               aria-label="Sair da conta"
+              title="Sair da conta"
             >
               <IconLogOut />
             </button>
