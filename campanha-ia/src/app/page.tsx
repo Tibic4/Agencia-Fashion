@@ -133,11 +133,13 @@ export default function Home() {
             <a href="#precos" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Preços</a>
           </nav>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/sign-in" className="text-sm font-medium px-3 py-2 rounded-full transition min-h-[44px] flex items-center" style={{ color: 'var(--muted)' }}>
+            <Link href="/sign-in" className="hidden sm:flex text-sm font-medium px-3 py-2 rounded-full transition min-h-[44px] items-center" style={{ color: 'var(--muted)' }}>
               Entrar
             </Link>
-            <ThemeToggle />
-            <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px]">
+            <div className="hidden sm:block">
+              <ThemeToggle />
+            </div>
+            <Link href="/sign-up" className="btn-primary w-full sm:w-auto text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px]">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
             </Link>
@@ -173,13 +175,13 @@ export default function Home() {
               </p>
 
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
+                <Link href="/sign-up" className="btn-primary w-full sm:w-auto text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
                   <IconZap />
                   <span className="sm:hidden">Testar por R$ 9,90</span>
                   <span className="hidden sm:inline">Testar por R$ 9,90 — 5 campanhas completas</span>
                 </Link>
-                <a href="#como-funciona" className="btn-secondary text-base !py-3.5 !px-8">
+                <a href="#como-funciona" className="btn-secondary w-full sm:w-auto text-base !py-3.5 !px-8">
                   Ver como funciona
                   <IconArrowRight />
                 </a>
@@ -530,15 +532,15 @@ export default function Home() {
         </section>
       </main>
 
-      {/* N3: Scroll-to-top FAB (mobile) */}
-      <a
-        href="#"
-        className="fixed bottom-6 right-6 z-40 md:hidden w-11 h-11 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
-        style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 4px 15px rgba(236,72,153,0.3)' }}
-        aria-label="Voltar ao topo"
+      {/* N3: Sticky CTA de Conversão (mobile) */}
+      <Link
+        href="/sign-up"
+        className="fixed bottom-6 left-4 right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold"
+        style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 8px 25px rgba(236,72,153,0.4)' }}
       >
-        <IconChevronUp />
-      </a>
+        <IconZap />
+        Testar CriaLook por R$ 9,90
+      </Link>
 
       <Footer />
     </div>
