@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useClerk } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 
 const BrandColorPicker = dynamic(() => import("@/components/BrandColorPicker"), { ssr: false });
 
 export default function Configuracoes() {
+  const { signOut } = useClerk();
   const [storeName, setStoreName] = useState("");
   const [city, setCity] = useState("");
   const [stateUF, setStateUF] = useState("");
@@ -331,6 +333,24 @@ export default function Configuracoes() {
           className="btn-primary !py-3.5 w-full disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ background: saved ? "var(--success)" : undefined }}>
           {saving ? "Salvando..." : saved ? "✅ Salvo!" : !storeLoaded ? "Carregando..." : "Salvar alterações"}
+        </button>
+
+        {/* ── Logout (mobile only — desktop sidebar already has it) ── */}
+        <button
+          onClick={() => signOut({ redirectUrl: "/" })}
+          className="lg:hidden w-full mt-8 py-3 rounded-xl text-sm font-medium transition-all hover:opacity-80 flex items-center justify-center gap-2"
+          style={{
+            background: "rgba(239,68,68,0.08)",
+            color: "#EF4444",
+            border: "1px solid rgba(239,68,68,0.15)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sair da conta
         </button>
       </div>
     </div>
