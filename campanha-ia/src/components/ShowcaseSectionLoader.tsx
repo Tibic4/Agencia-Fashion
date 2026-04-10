@@ -20,41 +20,20 @@ function ShowcaseSkeleton() {
   return (
     <section className="section" style={{ background: "var(--surface)" }}>
       <div className="container">
-        {/* Header skeleton */}
-        <div className="text-center mb-8 md:mb-12">
-          <div
-            className="skeleton mx-auto mb-4"
-            style={{ width: "120px", height: "28px", borderRadius: "999px" }}
-          />
-          <div
-            className="skeleton mx-auto mb-3"
-            style={{ width: "min(280px, 70%)", height: "36px", borderRadius: "8px" }}
-          />
-          <div
-            className="skeleton mx-auto"
-            style={{ width: "min(240px, 60%)", height: "18px", borderRadius: "6px" }}
-          />
+        {/* Header real (para evitar reflow e shift de fonte) */}
+        <div className="text-center mb-6 md:mb-12">
+          <div className="badge badge-brand mb-3 md:mb-4 inline-flex">Virtual Try-On</div>
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2 md:mb-4">
+            Foto real → <span className="gradient-text">modelo IA</span>
+          </h2>
+          <p className="text-sm md:text-lg max-w-xl mx-auto" style={{ color: "var(--muted)" }}>
+            Arraste para comparar. A peça real, vestida numa modelo gerada por IA.
+          </p>
         </div>
 
         {/* Slider skeleton — matches 9:16 aspect ratio */}
-        <div className="max-w-3xl mx-auto">
-          <div
-            className="skeleton rounded-2xl"
-            style={{
-              aspectRatio: "3 / 4",
-              width: "100%",
-            }}
-          />
-          {/* Dots skeleton */}
-          <div className="flex items-center justify-center gap-2 mt-6">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="skeleton rounded-full"
-                style={{ width: i === 1 ? "20px" : "8px", height: "8px" }}
-              />
-            ))}
-          </div>
+        <div className="w-full max-w-[400px] mx-auto relative rounded-2xl overflow-hidden" style={{ aspectRatio: "9/16", background: "var(--background)", border: "1px solid var(--border)" }}>
+           <div className="absolute inset-0 animate-pulse bg-zinc-800/40" />
         </div>
       </div>
     </section>

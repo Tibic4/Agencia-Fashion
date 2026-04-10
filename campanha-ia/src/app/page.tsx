@@ -106,10 +106,10 @@ export default function Home() {
             <Link href="/sign-in" className="hidden sm:flex text-sm font-medium px-3 py-2 rounded-full transition min-h-[44px] items-center" style={{ color: 'var(--muted)' }}>
               Entrar
             </Link>
-            <div className="hidden sm:block">
+            <div>
               <ThemeToggle />
             </div>
-            <Link href="/sign-up" className="btn-primary w-full sm:w-auto text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px]">
+            <Link href="/sign-up" className="btn-primary w-full sm:w-auto text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px] whitespace-nowrap">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
             </Link>
@@ -117,7 +117,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0">
         {/* ═══ HERO — VTO-first above the fold ═══ */}
         <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
           {/* Mesh gradient orbs */}
@@ -349,12 +349,12 @@ export default function Home() {
         </section>
 
         {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
-        <div id="vitrine">
+        <div id="vitrine" className="scroll-mt-20">
           <ShowcaseSectionLoader />
         </div>
 
         {/* ═══ COMO FUNCIONA ═══ */}
-        <section id="como-funciona" className="section" style={{ background: 'var(--background)' }}>
+        <section id="como-funciona" className="section scroll-mt-20" style={{ background: 'var(--background)' }}>
           <div className="container">
             <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">3 passos simples</div>
@@ -396,7 +396,7 @@ export default function Home() {
         </section>
 
         {/* ═══ BENEFÍCIOS — Bento Grid ═══ */}
-        <section id="beneficios" className="section" style={{ background: 'var(--surface)' }}>
+        <section id="beneficios" className="section scroll-mt-20" style={{ background: 'var(--surface)' }}>
           <div className="container">
             <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Tudo incluso</div>
@@ -500,7 +500,7 @@ export default function Home() {
         </section>
 
         {/* ═══ PRICING ═══ */}
-        <section id="precos" className="section" style={{ background: 'var(--gradient-brand-soft)' }}>
+        <section id="precos" className="section scroll-mt-20" style={{ background: 'var(--gradient-brand-soft)' }}>
           <div className="container">
             <div className="text-center mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Planos</div>
