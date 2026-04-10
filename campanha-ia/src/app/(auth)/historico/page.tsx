@@ -251,7 +251,7 @@ export default function Historico() {
       )}
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", color: "var(--error, #EF4444)" }}>
           <span className="text-lg">⚠️</span>
           <p className="text-sm font-medium" style={{ color: "#991B1B" }}>
             Não foi possível carregar o histórico. Tente recarregar a página.

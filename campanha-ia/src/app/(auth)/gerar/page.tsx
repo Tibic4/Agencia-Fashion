@@ -486,19 +486,19 @@ export default function GerarCampanha() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Visual header */}
-            <div className="flex flex-col items-center pt-8 pb-4 px-6" style={{ background: "linear-gradient(135deg, #FEF2F2 0%, #FFF1F2 100%)" }}>
+            <div className="flex flex-col items-center pt-8 pb-4 px-6" style={{ background: "linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)" }}>
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-                style={{ background: "#FEE2E2", boxShadow: "0 4px 16px rgba(220,38,38,0.15)" }}
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 border"
+                style={{ background: "rgba(239, 68, 68, 0.15)", borderColor: "rgba(239, 68, 68, 0.2)", boxShadow: "0 4px 16px rgba(220,38,38,0.15)" }}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--error, #DC2626)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
               </div>
-              <h3 className="text-lg font-bold" style={{ color: "#991B1B" }}>
+              <h3 className="text-lg font-bold" style={{ color: "var(--error, #EF4444)" }}>
                 Não foi possível gerar
               </h3>
-              <p className="text-sm mt-1 text-center" style={{ color: "#B91C1C" }}>
+              <p className="text-sm mt-1 text-center font-medium" style={{ color: "var(--error, #EF4444)", opacity: 0.9 }}>
                 Houve uma instabilidade temporária. Isso pode acontecer em horários de pico.
               </p>
             </div>
@@ -1036,6 +1036,15 @@ export default function GerarCampanha() {
                   )}
                 </div>
               ))}
+
+              {customModels.filter(m => matchesFilter(m.body_type, modelFilter)).length === 0 && 
+               modelBank.filter(m => matchesFilter(m.body_type, modelFilter)).length === 0 && (
+                <div className="col-span-2 sm:col-span-3 aspect-[3/4] max-h-[160px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all mx-1" style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
+                  <span className="text-xl mb-1 opacity-70">📭</span>
+                  <span className="text-xs font-semibold">Nenhuma modelo salva.</span>
+                  <Link href="/modelo" className="text-[10px] mt-1 font-bold underline transition-opacity hover:opacity-70" style={{ color: "var(--brand-500)" }}>Criar personalizada</Link>
+                </div>
+              )}
 
               {/* + Criar nova modelo / Upgrade CTA */}
               {customModels.length < maxModels ? (
