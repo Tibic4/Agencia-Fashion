@@ -19,10 +19,16 @@ export interface ModelPreviewParams {
   storeId: string;
   skinTone: string;
   hairStyle: string;
+  /** Campos granulares de cabelo (opcionais para backward compat) */
+  hairTexture?: string;
+  hairLength?: string;
+  hairColor?: string;
   bodyType: string;
   style: string;
   ageRange: string;
   name: string;
+  /** Gênero: feminino | masculino (default feminino) */
+  gender?: string;
   /** Base64 do crop facial de referência (opcional) */
   faceRefBase64?: string | null;
   /** MIME type do crop facial */
@@ -47,7 +53,17 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
 
     // ── Montar parts via builder centralizado (fonte única de verdade) ──
     const parts = buildGeminiParts(
-      { skinTone: data.skinTone, hairStyle: data.hairStyle, bodyType: data.bodyType, style: data.style, ageRange: data.ageRange },
+      {
+        skinTone: data.skinTone,
+        hairStyle: data.hairStyle,
+        hairTexture: data.hairTexture,
+        hairLength: data.hairLength,
+        hairColor: data.hairColor,
+        bodyType: data.bodyType,
+        style: data.style,
+        ageRange: data.ageRange,
+        gender: (data.gender as any) || "feminino",
+      },
       data.faceRefBase64,
       data.faceRefMimeType,
     );
@@ -145,6 +161,15 @@ export async function generatePreviewDirect(data: ModelPreviewParams): Promise<v
 
   if (!url) {
     console.error(`[Preview] ❌ Geração de preview falhou para "${data.name}"`);
+    // Marcar como failed para o polling detectar imediatamente
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      await supabase
+        .from("store_models")
+        .update({ preview_status: "failed" })
+        .eq("id", data.modelId);
+    } catch {}
     return;
   }
 

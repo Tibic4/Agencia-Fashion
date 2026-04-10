@@ -20,12 +20,19 @@ const hairTextures = [
   { value: "crespo", label: "Crespo", emoji: "✨" },
 ];
 
-const hairLengths = [
+const hairLengthsFem = [
   { value: "joaozinho", label: "Joãozinho", emoji: "✂️" },
   { value: "chanel", label: "Chanel / Bob", emoji: "💈" },
   { value: "ombro", label: "Ombro", emoji: "👤" },
   { value: "medio", label: "Médio", emoji: "🙎‍♀️" },
   { value: "longo", label: "Longo", emoji: "💁‍♀️" },
+];
+
+const hairLengthsMasc = [
+  { value: "raspado", label: "Raspado", emoji: "🧑‍🦲" },
+  { value: "joaozinho", label: "Curto", emoji: "✂️" },
+  { value: "ombro", label: "Médio", emoji: "👤" },
+  { value: "longo", label: "Longo", emoji: "🧔" },
 ];
 
 const hairColors = [
@@ -38,23 +45,42 @@ const hairColors = [
   { value: "platinado", label: "Platinado", emoji: "🤍" },
 ];
 
-const bodyTypes = [
+const bodyTypesFem = [
   { value: "magra", label: "Slim" },
   { value: "media", label: "Padrão" },
-  { value: "plus_size", label: "Curvilínea" },
+  { value: "plus_size", label: "Curvilinea" },
 ];
 
-const styles = [
+const bodyTypesMasc = [
+  { value: "atletico", label: "Atlético" },
+  { value: "medio", label: "Padrão" },
+  { value: "robusto", label: "Robusto" },
+];
+
+const stylesFem = [
   { value: "casual_natural", label: "Casual", emoji: "👟" },
   { value: "elegante", label: "Elegante", emoji: "👠" },
   { value: "esportivo", label: "Esportivo", emoji: "🏃‍♀️" },
   { value: "urbano", label: "Urbano", emoji: "🏙️" },
 ];
 
-const ages = [
+const stylesMasc = [
+  { value: "casual_natural", label: "Casual", emoji: "👟" },
+  { value: "elegante", label: "Elegante", emoji: "👔" },
+  { value: "esportivo", label: "Esportivo", emoji: "🏃‍♂️" },
+  { value: "urbano", label: "Urbano", emoji: "🏙️" },
+];
+
+const agesFem = [
   { value: "jovem_18_25", label: "18-25 anos" },
   { value: "adulta_26_35", label: "26-35 anos" },
   { value: "madura_36_50", label: "36-50 anos" },
+];
+
+const agesMasc = [
+  { value: "jovem_18_25", label: "18-25 anos" },
+  { value: "adulto_26_35", label: "26-35 anos" },
+  { value: "maduro_36_50", label: "36-50 anos" },
 ];
 
 /* ═══════════════════════════════════════
@@ -71,11 +97,22 @@ interface StoreModel {
   body_type: string;
   style: string;
   age_range: string;
+  gender?: string;
   is_active: boolean;
   created_at: string;
   photo_url?: string | null;
   face_ref_url?: string | null;
+  preview_failed?: boolean;
 }
+
+// Helper: traduz nome do plano para exibição
+const planDisplayName: Record<string, string> = {
+  gratis: "Gratuito",
+  free: "Gratuito",
+  essencial: "Essencial",
+  pro: "Pro",
+  business: "Business",
+};
 
 export default function ModeloVirtual() {
   // ── Existing models list ──
@@ -85,8 +122,10 @@ export default function ModeloVirtual() {
   const [modelLimit, setModelLimit] = useState(0);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // ── Create form state ──
+  const [gender, setGender] = useState<"feminino" | "masculino">("feminino");
   const [skin, setSkin] = useState("morena_clara");
   const [hairTexture, setHairTexture] = useState("ondulado");
   const [hairLength, setHairLength] = useState("ombro");
@@ -96,12 +135,18 @@ export default function ModeloVirtual() {
   const [age, setAge] = useState("adulta_26_35");
   const [name, setName] = useState("");
 
+  // Dynamic arrays based on gender
+  const hairLengths = gender === "masculino" ? hairLengthsMasc : hairLengthsFem;
+  const bodyTypes = gender === "masculino" ? bodyTypesMasc : bodyTypesFem;
+  const styles = gender === "masculino" ? stylesMasc : stylesFem;
+  const ages = gender === "masculino" ? agesMasc : agesFem;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [quotaError, setQuotaError] = useState<{ current: number; limit: number; plan: string } | null>(null);
 
   const maxModels = modelLimit;
-  const canCreate = models.length < maxModels;
+  const canCreate = !loadingModels && models.length < maxModels;
 
   // ── Load existing models ──
   useEffect(() => {
@@ -139,7 +184,10 @@ export default function ModeloVirtual() {
         setModels(prev => prev.map(m => {
           const status = statuses?.[m.id];
           if (status?.url && !m.photo_url) {
-            return { ...m, photo_url: status.url };
+            return { ...m, photo_url: status.url, preview_failed: false };
+          }
+          if (status?.status === "failed" && !m.preview_failed) {
+            return { ...m, preview_failed: true };
           }
           return m;
         }));
@@ -150,7 +198,7 @@ export default function ModeloVirtual() {
 
     const timeout = setTimeout(() => clearInterval(interval), 3 * 60 * 1000);
     return () => { clearInterval(interval); clearTimeout(timeout); };
-  }, [models.filter(m => !m.photo_url).map(m => m.id).join(",")]);
+  }, [models]);
 
   // ── Retry manual de preview ──
   const handleRetryPreview = useCallback(async (modelId: string) => {
@@ -180,6 +228,7 @@ export default function ModeloVirtual() {
       formData.append("style", style);
       formData.append("ageRange", age);
       formData.append("name", name || "Modelo");
+      formData.append("gender", gender);
 
       const res = await fetch("/api/model/create", {
         method: "POST",
@@ -210,6 +259,7 @@ export default function ModeloVirtual() {
         body_type: body,
         style: style,
         age_range: age,
+        gender,
         is_active: true,
         created_at: new Date().toISOString(),
         photo_url: json.data?.previewUrl || null,
@@ -228,16 +278,20 @@ export default function ModeloVirtual() {
   async function handleDelete(modelId: string) {
     setDeletingId(modelId);
     try {
-      await fetch(`/api/model/${modelId}`, { method: "DELETE" });
-      setModels((prev) => prev.filter((m) => m.id !== modelId));
+      const res = await fetch(`/api/model/${modelId}`, { method: "DELETE" });
+      if (res.ok) {
+        setModels((prev) => prev.filter((m) => m.id !== modelId));
+      }
     } catch {
       // Silent fail
     } finally {
       setDeletingId(null);
+      setConfirmDeleteId(null);
     }
   }
 
   async function handleSetActive(modelId: string) {
+    const prevModels = [...models];
     setModels((prev) =>
       prev.map((m) => ({
         ...m,
@@ -245,15 +299,21 @@ export default function ModeloVirtual() {
       }))
     );
     try {
-      await fetch(`/api/model/${modelId}/activate`, { method: "POST" });
+      const res = await fetch(`/api/model/${modelId}/activate`, { method: "POST" });
+      if (!res.ok) {
+        // Rollback em caso de falha
+        setModels(prevModels);
+      }
     } catch {
-      // Silent fail
+      // Rollback
+      setModels(prevModels);
     }
   }
 
   // handleRegeneratePreview moved to autoGeneratePreview above
 
   function resetForm() {
+    setGender("feminino");
     setName("");
     setSkin("morena_clara");
     setHairTexture("ondulado");
@@ -278,8 +338,8 @@ export default function ModeloVirtual() {
             Modelos <span className="gradient-text">Virtuais</span>
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-            {models.length}/{maxModels} criadas · Plano{" "}
-            <span className="font-semibold capitalize">{userPlan}</span>
+            {loadingModels ? "Carregando..." : `${models.length}/${maxModels} criadas`} · Plano{" "}
+            <span className="font-semibold">{planDisplayName[userPlan] || userPlan}</span>
           </p>
         </div>
         {canCreate ? (
@@ -371,8 +431,8 @@ export default function ModeloVirtual() {
                     skinTone={model.skin_tone}
                     bodyType={model.body_type}
                     name={model.name}
-                    isGenerating={new Date(model.created_at).getTime() > Date.now() - 5 * 60 * 1000}
-                    showRetry={new Date(model.created_at).getTime() <= Date.now() - 5 * 60 * 1000}
+                    isGenerating={!model.preview_failed && new Date(model.created_at).getTime() > Date.now() - 5 * 60 * 1000}
+                    showRetry={model.preview_failed || new Date(model.created_at).getTime() <= Date.now() - 5 * 60 * 1000}
                     onRetry={() => handleRetryPreview(model.id)}
                   />
                 )}
@@ -419,19 +479,38 @@ export default function ModeloVirtual() {
                       Usar esta
                     </button>
                   )}
-                  <button
-                    onClick={() => handleDelete(model.id)}
-                    disabled={deletingId === model.id}
-                    className="text-xs font-medium py-2.5 px-4 rounded-lg transition-all min-h-[44px]"
-                    style={{
-                      background: "var(--surface)",
-                      color: "var(--error)",
-                      border: "1px solid var(--border)",
-                      opacity: deletingId === model.id ? 0.5 : 1,
-                    }}
-                  >
-                    {deletingId === model.id ? "..." : "🗑️"}
-                  </button>
+                  {confirmDeleteId === model.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px]" style={{ color: "var(--muted)" }}>Excluir?</span>
+                      <button
+                        onClick={() => handleDelete(model.id)}
+                        disabled={deletingId === model.id}
+                        className="text-xs font-bold py-2 px-3 rounded-lg min-h-[44px]"
+                        style={{ background: "var(--error)", color: "white", opacity: deletingId === model.id ? 0.5 : 1 }}
+                      >
+                        {deletingId === model.id ? "..." : "Sim"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-xs font-medium py-2 px-3 rounded-lg min-h-[44px]"
+                        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                      >
+                        Não
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(model.id)}
+                      className="text-xs font-medium py-2.5 px-4 rounded-lg transition-all min-h-[44px]"
+                      style={{
+                        background: "var(--surface)",
+                        color: "var(--error)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -472,7 +551,7 @@ export default function ModeloVirtual() {
           ← Voltar para modelos
         </button>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Nova Modelo <span className="gradient-text">Virtual</span>
+          {gender === "masculino" ? "Novo Modelo" : "Nova Modelo"} <span className="gradient-text">Virtual</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
           Personalize tom de pele, cabelo e estilo — a IA fará o resto.
@@ -483,6 +562,45 @@ export default function ModeloVirtual() {
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Left — Configuration */}
         <div className="space-y-6">
+          {/* Gender toggle */}
+          <div>
+            <label className="block text-sm font-semibold mb-3">Gênero</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setGender("feminino");
+                  setBody("media");
+                  setAge("adulta_26_35");
+                  setHairLength("ombro");
+                }}
+                className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
+                style={{
+                  background: gender === "feminino" ? "var(--gradient-brand)" : "var(--surface)",
+                  color: gender === "feminino" ? "white" : "var(--muted)",
+                  border: gender === "feminino" ? "none" : "1px solid var(--border)",
+                }}
+              >
+                <span className="text-lg">♀️</span> Feminino
+              </button>
+              <button
+                onClick={() => {
+                  setGender("masculino");
+                  setBody("medio");
+                  setAge("adulto_26_35");
+                  setHairLength("joaozinho");
+                }}
+                className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
+                style={{
+                  background: gender === "masculino" ? "var(--gradient-brand)" : "var(--surface)",
+                  color: gender === "masculino" ? "white" : "var(--muted)",
+                  border: gender === "masculino" ? "none" : "1px solid var(--border)",
+                }}
+              >
+                <span className="text-lg">♂️</span> Masculino
+              </button>
+            </div>
+          </div>
+
           {/* Skin tone */}
           <div>
             <label className="block text-sm font-semibold mb-3">Tom de pele</label>
@@ -632,7 +750,7 @@ export default function ModeloVirtual() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-semibold mb-2">Nome da modelo (opcional)</label>
+            <label className="block text-sm font-semibold mb-2">Nome {gender === "masculino" ? "do modelo" : "da modelo"} (opcional)</label>
             <input
               type="text"
               value={name}
@@ -680,7 +798,7 @@ export default function ModeloVirtual() {
           )}
 
           {/* Generate (Sticky no Mobile) */}
-          <div className="lg:static sticky bottom-16 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "rgba(var(--background-rgb, 255, 255, 255), 0.8)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0" }}>
+          <div className="lg:static sticky bottom-20 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "rgba(var(--background-rgb, 255, 255, 255), 0.8)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0" }}>
             <button
               className="btn-primary w-full !py-3.5"
               onClick={handleCreate}
@@ -737,7 +855,7 @@ export default function ModeloVirtual() {
   );
 
   return (
-    <div className="animate-fade-in-up pb-24 md:pb-0">
+    <div className="animate-fade-in-up pb-32 md:pb-0">
       {showCreateForm ? renderCreateForm() : renderModelsList()}
     </div>
   );

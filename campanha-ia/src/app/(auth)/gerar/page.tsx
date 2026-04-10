@@ -196,7 +196,7 @@ export default function GerarCampanha() {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [customModels.filter(m => !m.photo_url).map(m => m.id).join(",")]);
+  }, [customModels]);
 
   const generationSteps = [
     { label: "Observando sua peça de roupa…", progress: 8 },
@@ -269,11 +269,22 @@ export default function GerarCampanha() {
       const bgFinal = background === "personalizado" ? `personalizado:${customBg}` : background;
       formData.append("backgroundType", bgFinal);
       if (storeBrandColor) formData.append("brandColor", storeBrandColor);
-      if (selectedModelId !== "random") {
+      // Modelo selecionada: custom da loja ou stock do banco
+      const isCustomModel = customModels.some(m => m.id === selectedModelId);
+      if (selectedModelId !== "random" && isCustomModel) {
+        // Modelo customizada da loja — backend buscará em store_models
+        formData.append("customModelId", selectedModelId);
+      } else if (selectedModelId !== "random") {
+        // Modelo stock do banco
         formData.append("modelBankId", selectedModelId);
-      } else if (modelBank.length > 0) {
-        const randomModel = modelBank[Math.floor(Math.random() * modelBank.length)];
-        formData.append("modelBankId", randomModel.id);
+      } else {
+        // "Aleatória" — se tem modelo ativa personalizada, deixar backend usar
+        const hasActiveCustom = customModels.some(m => m.is_active && m.photo_url);
+        if (!hasActiveCustom && modelBank.length > 0) {
+          const randomModel = modelBank[Math.floor(Math.random() * modelBank.length)];
+          formData.append("modelBankId", randomModel.id);
+        }
+        // Se hasActiveCustom: não envia nada → backend usa getActiveModel()
       }
 
       // Call API — expects SSE (text/event-stream) response
