@@ -274,28 +274,36 @@ export function getHistoryDaysForPlan(planName: string): number {
   return limits[planName] ?? 7;
 }
 
-/** Incrementa o contador de regenerações de uma campanha */
+/** Incrementa o contador de regenerações de uma campanha (ATÔMICO via RPC) */
 export async function incrementRegenCount(campaignId: string): Promise<number> {
   const supabase = createAdminClient();
-  
-  // Buscar contagem atual
-  const { data } = await supabase
-    .from("campaigns")
-    .select("regen_count")
-    .eq("id", campaignId)
-    .single();
-  
-  const newCount = (data?.regen_count || 0) + 1;
-  
-  await supabase
-    .from("campaigns")
-    .update({ regen_count: newCount })
-    .eq("id", campaignId);
-  
-  return newCount;
+
+  const { data, error } = await supabase.rpc("increment_regen_count", {
+    p_campaign_id: campaignId,
+  });
+
+  if (error) {
+    console.warn(`[DB] ⚠️ incrementRegenCount RPC falhou, usando fallback: ${error.message}`);
+    // Fallback para read-modify-write (melhor que quebrar)
+    const { data: campaign } = await supabase
+      .from("campaigns")
+      .select("regen_count")
+      .eq("id", campaignId)
+      .single();
+    const newCount = (campaign?.regen_count || 0) + 1;
+    await supabase.from("campaigns").update({ regen_count: newCount }).eq("id", campaignId);
+    return newCount;
+  }
+
+  return data ?? 0;
 }
 
-/** Verifica se a campanha pode regenerar (desabilitado — todos os planos limit = 0) */
+/**
+ * Verifica se a campanha pode regenerar.
+ * NOTA: Regeneração está INTENCIONALMENTE desabilitada em todos os planos (BUG 7 audit).
+ * A rota /api/campaign/[id]/regenerate ainda existe mas sempre retorna 403.
+ * Quando for reabilitada, implementar lógica de limite por plano aqui.
+ */
 export async function canRegenerate(campaignId: string, _storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const supabase = createAdminClient();
   
@@ -308,7 +316,7 @@ export async function canRegenerate(campaignId: string, _storeId: string): Promi
   const used = campaign?.regen_count || 0;
   
   return {
-    allowed: false,
+    allowed: false, // Desabilitado intencionalmente
     used,
     limit: 0,
   };
@@ -339,19 +347,9 @@ export interface CreateCampaignInput {
   objective: string;
   targetAudience?: string;
   toneOverride?: string;
-
 }
 
-export interface SavePipelineResultInput {
-  campaignId: string;
-  durationMs: number;
-  vision: Record<string, unknown>;
-  strategy: Record<string, unknown>;
-  output: Record<string, unknown>;
-  score: Record<string, unknown>;
-}
-
-/** Cria uma campanha com status pending */
+/** Cria uma campanha com status processing */
 export async function createCampaign(input: CreateCampaignInput) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -373,55 +371,6 @@ export async function createCampaign(input: CreateCampaignInput) {
 
   if (error) throw new Error(`Erro ao criar campanha: ${error.message}`);
   return data;
-}
-
-/** Salva os resultados do pipeline na campanha */
-export async function savePipelineResult(input: SavePipelineResultInput) {
-  const supabase = createAdminClient();
-
-  // 1. Atualizar status da campanha
-  await supabase
-    .from("campaigns")
-    .update({
-      status: "completed",
-      pipeline_completed_at: new Date().toISOString(),
-      pipeline_duration_ms: input.durationMs,
-    })
-    .eq("id", input.campaignId);
-
-  // 2. Salvar outputs
-  const output = input.output as Record<string, unknown>;
-  await supabase.from("campaign_outputs").insert({
-    campaign_id: input.campaignId,
-    vision_analysis: input.vision,
-    strategy: input.strategy,
-    headline_principal: (output.headline_principal as string) || null,
-    headline_variacao_1: (output.headline_variacao_1 as string) || null,
-    headline_variacao_2: (output.headline_variacao_2 as string) || null,
-    instagram_feed: (output.instagram_feed as string) || null,
-    instagram_stories: (output.instagram_stories as Record<string, unknown>) || null,
-    whatsapp: (output.whatsapp as string) || null,
-    meta_ads: (output.meta_ads as Record<string, unknown>) || null,
-    hashtags: (output.hashtags as string[]) || [],
-    refinements: (output.refinements as Record<string, unknown>) || null,
-  });
-
-  // 3. Salvar score
-  const score = input.score as Record<string, unknown>;
-  await supabase.from("campaign_scores").insert({
-    campaign_id: input.campaignId,
-    nota_geral: Number(score.nota_geral) || 0,
-    conversao: Number(score.conversao) || 0,
-    clareza: Number(score.clareza) || 0,
-    urgencia: Number(score.urgencia) || 0,
-    naturalidade: Number(score.naturalidade) || 0,
-    aprovacao_meta: Number(score.aprovacao_meta) || 0,
-    nivel_risco: (score.nivel_risco as string) || "medio",
-    resumo: (score.resumo as string) || null,
-    pontos_fortes: (score.pontos_fortes as unknown) || null,
-    melhorias: (score.melhorias as unknown) || null,
-    alertas_meta: (score.alertas_meta as unknown) || null,
-  });
 }
 
 /** Marca campanha como falha */
@@ -459,16 +408,25 @@ export async function getCurrentUsage(storeId: string) {
   return data;
 }
 
-/** Incrementa o contador de campanhas geradas */
+/** Incrementa o contador de campanhas geradas (ATÔMICO via RPC) */
 export async function incrementCampaignsUsed(storeId: string) {
   const usage = await getCurrentUsage(storeId);
   if (!usage) return;
 
   const supabase = createAdminClient();
-  await supabase
-    .from("store_usage")
-    .update({ campaigns_generated: (usage.campaigns_generated || 0) + 1 })
-    .eq("id", usage.id);
+
+  const { error } = await supabase.rpc("increment_campaigns_used", {
+    p_usage_id: usage.id,
+  });
+
+  if (error) {
+    console.warn(`[DB] ⚠️ increment_campaigns_used RPC falhou, usando fallback: ${error.message}`);
+    // Fallback para read-modify-write
+    await supabase
+      .from("store_usage")
+      .update({ campaigns_generated: (usage.campaigns_generated || 0) + 1 })
+      .eq("id", usage.id);
+  }
 }
 
 /** Verifica se a loja pode gerar mais campanhas neste período */
@@ -663,7 +621,8 @@ export async function addCreditsToStore(
 }
 
 /**
- * Consome 1 crédito avulso (retorna true se tinha crédito, false se não)
+ * Consome 1 crédito avulso (ATÔMICO via RPC).
+ * Retorna true se consumiu, false se não tinha crédito.
  */
 export async function consumeCredit(
   storeId: string,
@@ -679,22 +638,30 @@ export async function consumeCredit(
 
   const column = columnMap[type];
 
-  const { data: store } = await supabase
-    .from("stores")
-    .select(column)
-    .eq("id", storeId)
-    .single();
+  const { data, error } = await supabase.rpc("consume_credit_atomic", {
+    p_store_id: storeId,
+    p_column: column,
+  });
 
-  const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
+  if (error) {
+    console.warn(`[Credits] ⚠️ consume_credit_atomic RPC falhou, usando fallback: ${error.message}`);
+    // Fallback para read-modify-write
+    const { data: store } = await supabase
+      .from("stores")
+      .select(column)
+      .eq("id", storeId)
+      .single();
+    const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
+    if (currentValue <= 0) return false;
+    await supabase.from("stores").update({ [column]: currentValue - 1 }).eq("id", storeId);
+    console.log(`[Credits] 🔻 -1 ${type} consumido da loja ${storeId} (fallback, restam: ${currentValue - 1})`);
+    return true;
+  }
 
-  if (currentValue <= 0) return false;
+  const newVal = data as number;
+  if (newVal < 0) return false; // RPC retorna -1 se não tinha crédito
 
-  await supabase
-    .from("stores")
-    .update({ [column]: currentValue - 1 })
-    .eq("id", storeId);
-
-  console.log(`[Credits] 🔻 -1 ${type} consumido da loja ${storeId} (restam: ${currentValue - 1})`);
+  console.log(`[Credits] 🔻 -1 ${type} consumido da loja ${storeId} (atômico, restam: ${newVal})`);
   return true;
 }
 

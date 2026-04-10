@@ -5,6 +5,10 @@
  * Limites:
  * - Máx 5 campanhas por IP por hora
  * - Máx 15 campanhas por IP por dia
+ * 
+ * NOTA (D3 audit): Este rate limiter é IN-MEMORY e perde estado no restart
+ * do servidor. Para produção de alta escala, migrar para Redis ou usar
+ * Supabase Edge Functions com KV store. Aceitável para o volume atual.
  */
 
 interface RateEntry {
