@@ -32,6 +32,8 @@ export interface GeminiVTOInput {
   modelMediaType?: string;
   /** Tipo de corpo */
   bodyType?: "normal" | "plus";
+  /** Gênero do modelo */
+  gender?: string;
   /** Aspect ratio sugerido */
   aspectRatio?: string;
   /** Store ID para tracking de custos */
@@ -83,21 +85,54 @@ function getAI(): GoogleGenAI {
 // Prompt de VTO (narrativo — força do Gemini)
 // ═══════════════════════════════════════
 
-function buildVTOPrompt(stylingPrompt: string, bodyType: string): string {
+function buildVTOPrompt(stylingPrompt: string, bodyType: string, gender?: string): string {
+  const isMale = gender === 'masculino' || gender === 'male' || gender === 'm';
+
   const fitContext = bodyType === "plus"
-    ? `BODY TYPE: Plus-size / curvy figure with full bust, soft defined waist, and wide hips.
+    ? (isMale
+      ? `BODY TYPE: Robust/heavy-set male build with broad shoulders and stocky frame.
+FIT DIRECTIVES:
+- The garment must accommodate his build without ANY pulling at seams, stretching, or bunching
+- Fabric should drape smoothly over shoulders and chest, following the natural torso shape
+- Show how the garment flatters his strong build with confidence
+- Ensure armholes are comfortable and necklines sit correctly on a broader chest
+- If the garment has a waistband, it should sit naturally without digging in
+- Choose angles that project confidence and masculine strength`
+      : `BODY TYPE: Plus-size / curvy figure with full bust, soft defined waist, and wide hips.
 FIT DIRECTIVES:
 - The garment must accommodate her curves without ANY pulling at seams, stretching, or bunching
 - Fabric should drape smoothly over bust, follow the natural waist curve, and flow over hips
 - Show how the garment flatters her figure — emphasize the silhouette, not hide it
 - Ensure armholes are comfortable and necklines sit correctly on a fuller bust
 - If the garment has a waistband, it should sit naturally at her waist without digging in
-- Choose angles that celebrate her body shape with confidence and beauty`
-    : `BODY TYPE: Standard/slim build with naturally proportioned frame.
+- Choose angles that celebrate her body shape with confidence and beauty`)
+    : (isMale
+      ? `BODY TYPE: Standard/athletic male build with naturally proportioned frame.
+FIT DIRECTIVES:
+- Garment should fit with appropriate ease — not vacuum-sealed to the body, not overly loose
+- Fabric falls cleanly along his frame, following natural contours
+- Show natural body movement suggesting the garment is comfortable and worn-in`
+      : `BODY TYPE: Standard/slim build with naturally proportioned frame.
 FIT DIRECTIVES:
 - Garment should fit with appropriate ease — not vacuum-sealed to the body, not overly loose
 - Fabric falls cleanly along her frame, following natural contours
-- Show natural body movement suggesting the garment is comfortable and lived-in`;
+- Show natural body movement suggesting the garment is comfortable and lived-in`);
+
+  const stylingSection = isMale
+    ? `SECTION 8: STYLING COMPLETION & POLISH
+• Hair: styled appropriately for the outfit mood (textured/swept back for formal, natural/tousled for casual)
+• Minimal accessories if appropriate (watch, simple bracelet, sunglasses)
+• Clean, well-groomed facial hair — maintain EXACTLY as in IMAGE 1 (beard, stubble, clean-shaven — whatever is shown)
+• Nails: clean and well-groomed
+• The overall look must feel COMPLETE — as if a professional stylist prepared every detail
+• Think: this image will be posted on Instagram by a premium men's fashion brand`
+    : `SECTION 8: STYLING COMPLETION & POLISH
+• Hair: styled appropriately for the outfit mood (loose waves for casual, updo for formal, etc.)
+• Minimal tasteful jewelry that complements without distracting from the garment
+• Natural makeup that matches the scene mood (soft glam for editorial, minimal for casual)
+• Nails: clean, well-groomed, matching the overall color palette
+• The overall look must feel COMPLETE — as if a professional stylist prepared every detail
+• Think: this image will be posted on Instagram by a luxury fashion brand`;
 
   return `You are an elite commercial fashion photographer with 20 years of experience shooting campaigns for Vogue, ELLE, and luxury e-commerce brands.
 
@@ -214,13 +249,7 @@ SECTION 7: FOOTWEAR & ACCESSORIES (COMPLETE THE LOOK)
 • If the garment image shows shoes/sandals, replicate THOSE exact shoes
 • If no shoes are visible in the garment image, choose elegant neutral shoes that complement the look
 
-SECTION 8: STYLING COMPLETION & POLISH
-• Hair: styled appropriately for the outfit mood (loose waves for casual, updo for formal, etc.)
-• Minimal tasteful jewelry that complements without distracting from the garment
-• Natural makeup that matches the scene mood (soft glam for editorial, minimal for casual)
-• Nails: clean, well-groomed, matching the overall color palette
-• The overall look must feel COMPLETE — as if a professional stylist prepared every detail
-• Think: this image will be posted on Instagram by a luxury fashion brand
+${stylingSection}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
@@ -285,7 +314,8 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
           input.modelMediaType || "image/jpeg",
           input.bodyType || "normal",
           input.aspectRatio || DEFAULT_ASPECT,
-          index
+          index,
+          input.gender
         );
         await input.onImageComplete?.(index, true);
         return result;
@@ -330,14 +360,15 @@ async function generateSingleImage(
   modelMime: string,
   bodyType: string,
   aspectRatio: string,
-  index: number
+  index: number,
+  gender?: string
 ): Promise<GeneratedImage> {
   const start = Date.now();
   const conceptName = `Look ${index + 1}`;
   console.log(`[Gemini VTO] 🎨 #${index + 1} "${conceptName}" — iniciando (${MODEL} ${IMAGE_SIZE})...`);
 
   const ai = getAI();
-  const vtoPrompt = buildVTOPrompt(stylingPrompt, bodyType);
+  const vtoPrompt = buildVTOPrompt(stylingPrompt, bodyType, gender);
 
   // Map aspect ratio to Gemini format
   const geminiAspect = mapAspectRatio(aspectRatio);
