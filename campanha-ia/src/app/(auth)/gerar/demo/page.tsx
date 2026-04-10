@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { haptics } from "@/lib/utils/haptics";
 
 /* ─────────────────────────────────────────
    Types — v4 payload (Sonnet + FASHN)
@@ -562,7 +564,7 @@ export default function ResultadoCampanha() {
               {/* Mobile: button trigger for Bottom Sheet */}
               <div className="sm:hidden">
                 <button
-                  onClick={() => setShowFormatSheet(true)}
+                  onClick={() => { haptics.light(); setShowFormatSheet(true); }}
                   className="w-full flex items-center justify-between p-3 rounded-xl transition-all"
                   style={{ background: "var(--background)", border: "1px solid var(--border)" }}
                 >
@@ -768,6 +770,77 @@ export default function ResultadoCampanha() {
           </button>
         </div>
       </div>
+
+      {/* Format Selector Bottom Sheet (Mobile only) */}
+      <AnimatePresence>
+        {showFormatSheet && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:hidden pointer-events-auto"
+            style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setShowFormatSheet(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50"
+            />
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full rounded-t-3xl p-5 pb-8"
+              style={{ background: "var(--card)", borderTop: "1px solid var(--border)", boxShadow: "0 -10px 40px rgba(0,0,0,0.5)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-10 h-1 rounded-full bg-gray-300 mx-auto mb-5" />
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Escolha o Aspect Ratio</h3>
+                <button onClick={() => setShowFormatSheet(false)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface)] text-[var(--muted)]">
+                  ✕
+                </button>
+              </div>
+              <div className="space-y-3">
+                {FORMAT_PRESETS.map(fmt => (
+                  <button
+                    key={fmt.id}
+                    onClick={() => {
+                      haptics.selection();
+                      setActiveFormat(fmt.id);
+                      setShowFormatSheet(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl transition-all"
+                    style={{
+                      background: activeFormat === fmt.id ? "var(--brand-50)" : "var(--background)",
+                      border: activeFormat === fmt.id ? "2px solid var(--brand-500)" : "1px solid var(--border)"
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl bg-[var(--surface)]">
+                        {fmt.icon}
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-bold" style={{ color: activeFormat === fmt.id ? "var(--brand-700)" : "var(--foreground)" }}>
+                          {fmt.label}
+                        </p>
+                        <p className="text-[10px] uppercase font-bold" style={{ color: "var(--muted)" }}>
+                          {fmt.w} × {fmt.h} pixels
+                        </p>
+                      </div>
+                    </div>
+                    {activeFormat === fmt.id && (
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[var(--brand-500)] text-white">
+                        ✓
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

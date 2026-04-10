@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { haptics } from "@/lib/utils/haptics";
 import QuotaExceededModal from "@/components/QuotaExceededModal";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 import GenerationLoadingScreen from "@/components/GenerationLoadingScreen";
@@ -1231,6 +1233,7 @@ export default function GerarCampanha() {
             ) : (
               <button
                 onClick={() => {
+                  haptics.medium();
                   if (preview && !closeUpFile && !secondFile) {
                     setShowSinglePhotoWarning(true);
                   } else {
@@ -1258,21 +1261,31 @@ export default function GerarCampanha() {
       </div>
 
       {/* Single Photo Warning — Bottom Sheet (mobile-first) */}
-      {showSinglePhotoWarning && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-          onClick={() => setShowSinglePhotoWarning(false)}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50" />
-
-          {/* Sheet */}
+      <AnimatePresence>
+        {showSinglePhotoWarning && (
           <div
-            className="relative w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-2xl p-6 pb-8 sm:pb-6 animate-fade-in-up"
-            style={{ background: "var(--card)", border: "1px solid var(--border)" }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-auto"
+            style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setShowSinglePhotoWarning(false)}
           >
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50"
+            />
+
+            {/* Sheet */}
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-2xl p-6 pb-8 sm:pb-6"
+              style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "0 -10px 40px rgba(0,0,0,0.5)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Drag handle (mobile) */}
             <div className="sm:hidden w-10 h-1 rounded-full bg-gray-300 mx-auto mb-5" />
 
@@ -1343,9 +1356,10 @@ export default function GerarCampanha() {
                 Voltar e adicionar mais fotos
               </button>
             </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
