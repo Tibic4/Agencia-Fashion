@@ -160,15 +160,15 @@ export default function Configuracoes() {
 
       {/* Error */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
+        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.2)", color: "var(--error, #EF4444)" }}>
           <span className="text-lg">⚠️</span>
-          <p className="text-sm font-medium flex-1" style={{ color: "#991B1B" }}>
+          <p className="text-sm font-medium flex-1" style={{ color: "var(--error, #EF4444)" }}>
             Não foi possível salvar. Verifique sua conexão e tente novamente.
           </p>
           <button
             onClick={() => setError(null)}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition hover:bg-red-100"
-            style={{ color: "#DC2626" }}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition hover:opacity-70"
+            style={{ color: "var(--error, #EF4444)" }}
           >
             ✕
           </button>
