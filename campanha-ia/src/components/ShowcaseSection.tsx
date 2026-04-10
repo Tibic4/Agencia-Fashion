@@ -95,11 +95,11 @@ function BeforeAfterSlider({
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden transition-shadow duration-500"
       style={{
         background: "var(--background)",
         border: "1px solid var(--border)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+        boxShadow: "0 8px 40px rgba(236,72,153,0.08), 0 4px 24px rgba(0,0,0,0.06)",
       }}
     >
       {/* Slider area — 3:4 portrait (melhor fit para fotos de moda corpo inteiro) */}
@@ -121,7 +121,7 @@ function BeforeAfterSlider({
           alt="Depois — modelo IA"
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
-          quality={80}
+          quality={75}
           style={sharedImgStyle}
           draggable={false}
           onError={() => setImgError("after")}
@@ -147,10 +147,10 @@ function BeforeAfterSlider({
             alt="Antes — foto original"
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
-            quality={80}
+            quality={75}
             style={{
               ...sharedImgStyle,
-              width: containerWidth > 0 ? `${containerWidth}px` : "100%",
+              minWidth: containerWidth > 0 ? `${containerWidth}px` : "100vw",
               maxWidth: "none",
             }}
             draggable={false}
@@ -205,15 +205,15 @@ function BeforeAfterSlider({
         {/* Labels */}
         <span
           className="absolute bottom-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
-          style={{ background: "rgba(0,0,0,0.5)", color: "white", backdropFilter: "blur(8px)" }}
+          style={{ background: "rgba(0,0,0,0.55)", color: "white", backdropFilter: "blur(12px)" }}
         >
-          📷 Antes
+          📷 Foto original
         </span>
         <span
           className="absolute bottom-3 right-3 text-[11px] font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
-          style={{ background: "var(--gradient-brand, linear-gradient(135deg, #A855F7, #EC4899))", color: "white", backdropFilter: "blur(8px)" }}
+          style={{ background: "var(--gradient-brand, linear-gradient(135deg, #A855F7, #EC4899))", color: "white", backdropFilter: "blur(12px)" }}
         >
-          ✨ Depois
+          ✨ Modelo IA
         </span>
 
         {/* Hint — only when untouched */}
@@ -231,12 +231,16 @@ function BeforeAfterSlider({
         </div>
       </div>
 
-      {/* Caption */}
+      {/* Caption + quality badges */}
       {item.caption && (
-        <div className="px-4 py-3 text-center" style={{ borderTop: "1px solid var(--border)" }}>
-          <p className="text-xs font-medium italic" style={{ color: "var(--muted)" }}>
+        <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-xs font-medium italic text-center mb-2" style={{ color: "var(--muted)" }}>
             &ldquo;{item.caption}&rdquo;
           </p>
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>Virtual Try-On</span>
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#16a34a" }}>IA Generativa</span>
+          </div>
         </div>
       )}
     </div>
@@ -305,12 +309,12 @@ export default function ShowcaseSection() {
       <div className="container">
         {/* Header */}
         <div className="text-center mb-6 md:mb-12">
-          <div className="badge badge-brand mb-3 md:mb-4 inline-flex">Resultado Real</div>
+          <div className="badge badge-brand mb-3 md:mb-4 inline-flex">Virtual Try-On</div>
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2 md:mb-4">
-            Veja a <span className="gradient-text">transformação</span>
+            Foto real → <span className="gradient-text">modelo IA</span>
           </h2>
           <p className="text-sm md:text-lg max-w-xl mx-auto" style={{ color: "var(--muted)" }}>
-            Arraste para comparar — foto real vs. modelo IA
+            Arraste para comparar. A peça real, vestida numa modelo gerada por IA.
           </p>
         </div>
 
