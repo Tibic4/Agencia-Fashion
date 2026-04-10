@@ -161,7 +161,7 @@ const RESPONSE_SCHEMA = {
         },
         aspect_ratio: {
           type: "string",
-          enum: ["3:4", "4:5", "2:3"],
+          enum: ["9:16", "3:4", "4:5", "2:3"],
           description: "Aspect ratio sugerido para as imagens",
         },
         category: {
@@ -348,9 +348,11 @@ function buildSystemPrompt(input: AnalyzerInput): string {
     longo: "long flowing",
   };
   const ageMap: Record<string, string> = {
-    jovem_18_25: "young woman (18-25)",
+    jovem_18_25: "young person (18-25)",
     adulta_26_35: "adult woman (26-35)",
+    adulto_26_35: "adult man (26-35)",
     madura_36_50: "mature woman (36-50)",
+    maduro_36_50: "mature man (36-50)",
   };
 
   // Construir descrição da modelo
@@ -365,8 +367,12 @@ function buildSystemPrompt(input: AnalyzerInput): string {
   if (mi?.hairColor && hairColorMap[mi.hairColor]) hairParts.push(hairColorMap[mi.hairColor]);
   if (hairParts.length > 0) modelParts.push(hairParts.join(" "));
 
+  // Determinar gênero
+  const isMale = mi?.gender === 'masculino' || mi?.gender === 'male' || mi?.gender === 'm';
+  const genderLabel = isMale ? 'male model' : 'female model';
+
   const modelDescription = modelParts.length > 0
-    ? `\n\n🧍 MODELO SELECIONADA PELA LOJISTA:\nA modelo na foto de referência é: ${modelParts.join(", ")}.\nUse esses detalhes nos scene_prompts para que o Gemini VTO (que vai executar esses prompts) entenda exatamente QUE PESSOA reproduzir — isso melhora a fidelidade da identidade. Incorpore a cor de pele, cabelo e tipo de corpo NATURALMENTE na descrição da cena (ex: "warm golden-hour light complementing her deep skin tone", "her long wavy auburn hair flowing naturally").`
+    ? `\n\n🧍 MODELO SELECIONAD${isMale ? 'O' : 'A'} PELA LOJISTA:\n${isMale ? 'O modelo' : 'A modelo'} na foto de referência é: ${genderLabel}, ${modelParts.join(", ")}.\nUse esses detalhes nos scene_prompts para que o Gemini VTO (que vai executar esses prompts) entenda exatamente QUE PESSOA reproduzir — isso melhora a fidelidade da identidade. Incorpore a cor de pele, cabelo e tipo de corpo NATURALMENTE na descrição da cena (ex: ${isMale ? '"warm golden-hour light complementing his deep skin tone", "his short textured dark hair styled naturally"' : '"warm golden-hour light complementing her deep skin tone", "her long wavy auburn hair flowing naturally"'}).`
     : "";
 
   return `Você é o Fashion Editorial Director mais experiente do Brasil — especializado em fotografia de e-commerce, campanhas para Instagram e virtual try-on com IA.
