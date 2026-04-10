@@ -5,6 +5,9 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+const ThemeToggle = dynamic(() => import("@/components/ThemeToggle"), { ssr: false });
 
 const IconPlus = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
@@ -220,9 +223,10 @@ export default function AuthLayout({
                 {userEmail}
               </p>
             </div>
+            <ThemeToggle />
             <button
               onClick={() => signOut()}
-              className="p-2 rounded-lg transition hover:bg-red-50 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg transition hover:bg-red-50 min-h-[44px] flex items-center justify-center"
               style={{ color: "var(--muted)" }}
               aria-label="Sair da conta"
             >
@@ -244,6 +248,7 @@ export default function AuthLayout({
           </span>
         </Link>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {usage && campaignsLimit === 0 ? (
             <Link href="/plano" className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: "rgba(251,146,60,0.15)", color: "#FB923C", border: "1px solid rgba(251,146,60,0.2)" }}>
               Sem plano
