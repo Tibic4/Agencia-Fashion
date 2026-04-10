@@ -364,7 +364,7 @@ export default function Configuracoes() {
           
           <button
             onClick={() => {
-              haptics.heavy();
+              haptics.error();
               signOut({ redirectUrl: "/" });
             }}
             className="w-full py-3.5 px-4 rounded-xl text-[15px] font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] flex items-center justify-center gap-2.5"

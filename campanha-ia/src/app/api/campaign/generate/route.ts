@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
     const material = formData.get("material") as string | null;
     const material2 = formData.get("material2") as string | null;
     const modelBankId = formData.get("modelBankId") as string | null;
+    const customModelId = formData.get("customModelId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
     const brandColor = formData.get("brandColor") as string | null;
 
@@ -255,8 +256,36 @@ export async function POST(request: NextRequest) {
       try {
         let modelImageUrl: string | null = null;
 
+        // Prioridade 0: modelo customizada selecionada explicitamente pelo usuário
+        if (customModelId && store) {
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const supabase = createAdminClient();
+          const { data: customModel } = await supabase
+            .from("store_models")
+            .select("*")
+            .eq("id", customModelId)
+            .eq("store_id", store.id)
+            .single();
+          if (customModel) {
+            const cusUrl = customModel.preview_url || customModel.image_url;
+            if (cusUrl) {
+              modelImageUrl = cusUrl;
+              modelInfo = {
+                skinTone: customModel.skin_tone || undefined,
+                bodyType: customModel.body_type || undefined,
+                hairColor: customModel.hair_color || undefined,
+                hairTexture: customModel.hair_texture || undefined,
+                hairLength: customModel.hair_length || undefined,
+                ageRange: customModel.age_range || undefined,
+                style: customModel.style || undefined,
+              };
+              console.log(`[Generate] ⭐ Modelo customizada selecionada: ${customModelId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
+            }
+          }
+        }
+
         // Prioridade 1: modelo do banco selecionado pelo usuário
-        if (modelBankId) {
+        if (!modelImageUrl && modelBankId) {
           const { createAdminClient } = await import("@/lib/supabase/admin");
           const supabase = createAdminClient();
           const { data: bankModel } = await supabase

@@ -1,5 +1,5 @@
 /**
- * CriaLook Model Prompt Builder v5.1 — Ultra-Realistic Model Generation
+ * CriaLook Model Prompt Builder v6.0 — Gender-Aware Ultra-Realistic Model Generation
  *
  * Prompts centralizados para geração de preview de modelo virtual.
  * Usados tanto pelo model-preview.ts (fallback direto) quanto pelo Inngest (background job).
@@ -10,14 +10,15 @@
  *   1. MULTIMODAL (com foto) — Gemini replica a face da foto + corpo/cabelo conforme specs
  *   2. TEXT-ONLY (sem foto) — Gemini gera modelo 100% do zero, fotorrealista
  *
- * Otimizado para Gemini 3.1 Flash Image Preview (Nano Banana 2):
- * — Prompts narrativos detalhados → Gemini entende linguagem de fotógrafo
- * — Descrições de anatomia realista → evita "uncanny valley"
- * — Instruções de iluminação profissional → qualidade de estúdio
+ * v6.0 — Novidades:
+ *   - Suporte a modelos masculinos (gender-aware)
+ *   - Poses simplificadas (A-Pose) para menos alucinações
+ *   - Anatomia reforçada (5 dedos, mãos abertas)
+ *   - Outfit unissex (camiseta branca + bermuda preta + descalço)
  */
 
 // ═══════════════════════════════════════
-// Descritores composicionais
+// Descritores composicionais — COMUNS
 // ═══════════════════════════════════════
 
 export const SKIN_DESC: Record<string, string> = {
@@ -35,6 +36,7 @@ export const HAIR_TEXTURE_DESC: Record<string, string> = {
 };
 
 export const HAIR_LENGTH_DESC: Record<string, string> = {
+  raspado: "buzz cut / very short cropped close to the scalp",
   joaozinho: "close-cropped pixie cut framing the face",
   chanel: "chin-length structured bob cut",
   ombro: "shoulder-length with subtle layers",
@@ -72,28 +74,73 @@ export function buildHairDescription(texture?: string, length?: string, color?: 
   return `${t} ${c} hair, ${l}`;
 }
 
-export const BODY_DESC: Record<string, string> = {
+// ═══════════════════════════════════════
+// Descritores — FEMININO
+// ═══════════════════════════════════════
+
+export const BODY_DESC_F: Record<string, string> = {
   magra: "slim petite build with graceful proportions, naturally slender frame",
   media: "naturally proportioned average build with balanced figure, healthy and fit",
   plus_size: "confident plus-size curvy figure with full bust, defined waist, wide hips, and natural voluminous curves — beautiful and proportional",
 };
 
-export const AGE_DESC: Record<string, string> = {
-  jovem_18_25: "a youthful 21-year-old with fresh, vibrant skin and a bright youthful energy",
+export const AGE_DESC_F: Record<string, string> = {
+  jovem_18_25: "a youthful 21-year-old woman with fresh, vibrant skin and a bright youthful energy",
   adulta_26_35: "a 30-year-old woman with refined features and an air of self-assured confidence",
   madura_36_50: "an elegant 42-year-old woman with graceful maturity, fine laugh lines adding character",
 };
 
+// ═══════════════════════════════════════
+// Descritores — MASCULINO
+// ═══════════════════════════════════════
+
+export const BODY_DESC_M: Record<string, string> = {
+  atletico: "athletic lean muscular build with defined shoulders and torso, natural V-taper",
+  medio: "naturally proportioned average male build with balanced frame, healthy and fit",
+  robusto: "strong broad-shouldered husky build with solid frame, naturally large and powerful",
+};
+
+export const AGE_DESC_M: Record<string, string> = {
+  jovem_18_25: "a youthful 21-year-old man with fresh features and energetic presence",
+  adulto_26_35: "a 30-year-old man with defined jawline and self-assured confidence",
+  maduro_36_50: "a distinguished 42-year-old man with mature features, subtle crow's feet adding character",
+};
+
+// ═══════════════════════════════════════
+// POSE — simplificada (A-Pose) para menos alucinação
+// Mesma pose para ambos os gêneros
+// ═══════════════════════════════════════
+
+export const POSE_SIMPLE = `POSE (A-POSE — CRITICAL for anatomical accuracy):
+The model stands in a SIMPLE, RELAXED A-POSE facing the camera directly:
+- Feet hip-width apart, flat on the ground, weight evenly distributed
+- Arms relaxed at sides, slightly away from the body (~15 degrees), palms facing inward
+- Fingers naturally slightly curled and SEPARATED — do NOT clench fists or interlock fingers
+- Chin level, eyes looking directly at camera with a natural, relaxed expression (slight closed-lip smile)
+- Shoulders relaxed and level, back straight, natural upright posture
+- This is a NEUTRAL pose — do NOT put hands on hips, do NOT bend arms, do NOT cross legs`;
+
+// ═══════════════════════════════════════
+// Descritores legado — backward compat
+// ═══════════════════════════════════════
+
+/** @deprecated Use BODY_DESC_F */
+export const BODY_DESC = BODY_DESC_F;
+/** @deprecated Use AGE_DESC_F */
+export const AGE_DESC = AGE_DESC_F;
+/** @deprecated Use POSE_SIMPLE */
 export const POSE_DESC: Record<string, string> = {
-  casual_natural: "She stands in a relaxed, natural pose with weight shifted slightly to her left leg. Her arms hang loosely at her sides with fingers gently curled. Her chin is level, eyes looking directly at camera with a warm, genuine smile showing just a hint of teeth. Her shoulders are relaxed and level, conveying approachability.",
-  elegante: "She stands tall with impeccable posture, one hand gently resting on her hip with fingers elegantly spread. Her chin is slightly lifted, creating a poised silhouette. She has a sophisticated closed-lip smile with a subtle raise of one eyebrow, radiating quiet confidence. Her free arm falls gracefully at her side.",
-  esportivo: "She stands in an energetic, dynamic stance with feet shoulder-width apart and a slight forward lean suggesting readiness and movement. Her arms are relaxed but active, one slightly bent. She wears a bright, beaming smile with a spark of vitality in her eyes. Her body language exudes health and energy.",
-  urbano: "She stands with cool street-style attitude — one shoulder slightly forward, asymmetric stance, weight on her back foot. Her expression is a confident, knowing half-smile with a slightly lowered chin and direct eye contact. One hand casually in her pocket or hooked into a waistband. The overall vibe is effortlessly cool.",
+  casual_natural: POSE_SIMPLE,
+  elegante: POSE_SIMPLE,
+  esportivo: POSE_SIMPLE,
+  urbano: POSE_SIMPLE,
 };
 
 // ═══════════════════════════════════════
 // Types
 // ═══════════════════════════════════════
+
+export type Gender = "feminino" | "masculino";
 
 export interface PromptTraits {
   skinTone: string;
@@ -108,7 +155,61 @@ export interface PromptTraits {
   bodyType: string;
   style: string;
   ageRange: string;
+  /** Gênero do modelo (default: feminino) */
+  gender?: Gender;
 }
+
+// ═══════════════════════════════════════
+// Helpers de gênero
+// ═══════════════════════════════════════
+
+function getBodyDesc(gender: Gender, bodyType: string): string {
+  if (gender === "masculino") {
+    return BODY_DESC_M[bodyType] || "average male build";
+  }
+  return BODY_DESC_F[bodyType] || "average build";
+}
+
+function getAgeDesc(gender: Gender, ageRange: string): string {
+  if (gender === "masculino") {
+    return AGE_DESC_M[ageRange] || AGE_DESC_M["adulto_26_35"] || "a 30-year-old man";
+  }
+  return AGE_DESC_F[ageRange] || "a 30-year-old woman";
+}
+
+function getGenderWord(gender: Gender): { person: string; pronoun: string; possessive: string; nationality: string } {
+  if (gender === "masculino") {
+    return { person: "man", pronoun: "he", possessive: "his", nationality: "Brazilian man" };
+  }
+  return { person: "woman", pronoun: "she", possessive: "her", nationality: "Brazilian woman" };
+}
+
+function getOutfitDesc(gender: Gender): string {
+  if (gender === "masculino") {
+    return `• Plain white crew-neck t-shirt: slightly relaxed fit, soft cotton fabric with visible weave texture, natural small wrinkles at the hem and sleeves, no graphics/logos/text
+• Simple black shorts: above-the-knee length, clean hem, matte fabric
+• Completely barefoot: natural toes, visible toenails, feet flat on the ground
+• NO accessories whatsoever: no rings, bracelets, necklaces, watches, glasses, hats, belts, or bags`;
+  }
+  return `• Plain white crew-neck t-shirt: slightly relaxed fit, soft cotton fabric with visible weave texture, natural small wrinkles at the hem and sleeves, no graphics/logos/text
+• Simple black shorts: mid-thigh length, clean hem, matte fabric
+• Completely barefoot: natural toes, visible toenails, feet flat on the ground
+• NO accessories whatsoever: no rings, bracelets, necklaces, earrings, watches, glasses, hair ties, belts, or bags`;
+}
+
+// ═══════════════════════════════════════
+// Anatomia — guard contra alucinações
+// ═══════════════════════════════════════
+
+const ANATOMY_GUARD = `━━━ ANATOMY VERIFICATION (MANDATORY — check before finalizing) ━━━
+• EXACTLY 5 fingers on EACH hand — count them carefully. No extra, no missing, no fused fingers.
+• EXACTLY 5 toes on EACH foot — all visible, natural, correctly proportioned.
+• Both hands fully visible with fingers SEPARATED and relaxed — do NOT hide hands behind body.
+• Palms face inward toward the thighs in a natural resting position.
+• Two arms, two legs — anatomically correct proportions and positions.
+• Natural nail beds on both fingers and toes.
+• Subtle body asymmetry (as in real humans) — not perfectly symmetrical.
+• The body transitions SEAMLESSLY from the face — no visible "seam" at the neck.`;
 
 // ═══════════════════════════════════════
 // Prompt Builder principal
@@ -124,6 +225,7 @@ export function buildGeminiParts(
   faceBase64?: string | null,
   faceMimeType?: string,
 ): Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> {
+  const gender: Gender = traits.gender || "feminino";
   const skin = SKIN_DESC[traits.skinTone] || "warm medium complexion";
   const useHairFromPhoto = traits.hairFromPhoto && faceBase64;
   const hair = useHairFromPhoto
@@ -131,28 +233,22 @@ export function buildGeminiParts(
     : (traits.hairTexture && traits.hairLength && traits.hairColor)
       ? buildHairDescription(traits.hairTexture, traits.hairLength, traits.hairColor)
       : HAIR_DESC[traits.hairStyle] || "soft wavy dark brown hair, shoulder-length";
-  const body = BODY_DESC[traits.bodyType] || "average build";
-  const age = AGE_DESC[traits.ageRange] || "a 30-year-old woman";
-  const pose = POSE_DESC[traits.style] || POSE_DESC.casual_natural;
+  const body = getBodyDesc(gender, traits.bodyType);
+  const age = getAgeDesc(gender, traits.ageRange);
+  const g = getGenderWord(gender);
 
   const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
 
   if (faceBase64) {
-    // ══════════════════════════════════════════════════
-    // Modo MULTIMODAL: foto facial + prompt referencial
-    // ══════════════════════════════════════════════════
     parts.push({
       inlineData: {
         mimeType: faceMimeType || "image/jpeg",
         data: faceBase64,
       },
     });
-    parts.push({ text: buildMultimodalPrompt(skin, hair, body, age, pose, !!useHairFromPhoto) });
+    parts.push({ text: buildMultimodalPrompt(skin, hair, body, age, g, !!useHairFromPhoto) });
   } else {
-    // ══════════════════════════════════════════════════
-    // Modo TEXT-ONLY: prompt descritivo (sem foto)
-    // ══════════════════════════════════════════════════
-    parts.push({ text: buildTextOnlyPrompt(skin, hair!, body, age, pose) });
+    parts.push({ text: buildTextOnlyPrompt(skin, hair!, body, age, g) });
   }
 
   return parts;
@@ -162,12 +258,19 @@ export function buildGeminiParts(
 // Prompt MULTIMODAL (com foto de referência)
 // ═══════════════════════════════════════
 
+interface GenderWords {
+  person: string;
+  pronoun: string;
+  possessive: string;
+  nationality: string;
+}
+
 function buildMultimodalPrompt(
   skin: string,
   hair: string | null,
   body: string,
   age: string,
-  pose: string,
+  g: GenderWords,
   useHairFromPhoto: boolean,
 ): string {
   return `You are an elite fashion and portrait photographer specializing in photorealistic model photography for premium e-commerce brands.
@@ -186,9 +289,8 @@ I am providing ONE reference photo showing a person's face. Your task is to gene
 • Build: ${body}
 • Age context: ${age}
 • This body type is MANDATORY regardless of what the reference photo may suggest
-• Proportions must be anatomically realistic and natural for a Brazilian woman
-• Visible collarbones, natural arm/hand proportions, realistic finger detail (5 fingers per hand, natural nail beds)
-• Subtle body asymmetry (as in real humans) — not perfectly symmetrical
+• Proportions must be anatomically realistic and natural for a ${g.nationality}
+• Visible collarbones, natural arm/hand proportions, realistic finger detail
 • The body should transition SEAMLESSLY from the face — no visible "seam" at the neck
 
 ━━━ HAIR ━━━${useHairFromPhoto ? `
@@ -203,14 +305,12 @@ I am providing ONE reference photo showing a person's face. Your task is to gene
 • Volume and movement should match the specified texture`}
 
 ━━━ OUTFIT (strict specification) ━━━
-• Plain white crew-neck t-shirt: slightly relaxed fit, soft cotton fabric with visible weave texture, natural small wrinkles at the hem and sleeves, no graphics/logos/text
-• Simple black shorts: mid-thigh length, clean hem, matte fabric
-• Completely barefoot: natural toes, visible toenails, feet flat on the ground
-• NO accessories whatsoever: no rings, bracelets, necklaces, earrings, watches, glasses, hair ties, belts, or bags
+${getOutfitDesc(g.person === "man" ? "masculino" : "feminino")}
 • DO NOT carry over ANY clothing or accessories from the reference photo
 
-━━━ POSE & EXPRESSION ━━━
-${pose}
+━━━ ${POSE_SIMPLE} ━━━
+
+${ANATOMY_GUARD}
 
 ━━━ STUDIO LIGHTING & PHOTOGRAPHY (CRITICAL) ━━━
 • COMPLETELY DISREGARD any lighting from the reference photo — apply fresh professional studio lighting
@@ -244,30 +344,27 @@ function buildTextOnlyPrompt(
   hair: string,
   body: string,
   age: string,
-  pose: string,
+  g: GenderWords,
 ): string {
-  return `You are an elite fashion and portrait photographer. Generate a PHOTOREALISTIC full-body studio photograph of a Brazilian fashion model. This image must be indistinguishable from a real photograph taken in a professional studio — NOT a digital illustration, painting, 3D render, or AI-looking image.
+  return `You are an elite fashion and portrait photographer. Generate a PHOTOREALISTIC full-body studio photograph of a ${g.nationality} fashion model. This image must be indistinguishable from a real photograph taken in a professional studio — NOT a digital illustration, painting, 3D render, or AI-looking image.
 
 ━━━ THE PERSON ━━━
-• ${age} Brazilian woman — her features should reflect the rich ethnic diversity of Brazil
+• ${age} — ${g.possessive} features should reflect the rich ethnic diversity of Brazil
 • Skin: ${skin}
 • Hair: ${hair}
 • Build: ${body}
-• She has a unique, memorable face with individual character — NOT a generic "AI pretty face"
-• Natural beauty: subtle imperfections that make her look REAL (a small mole, slightly asymmetric eyebrows, natural skin texture with visible pores)
-• Her eyes have depth and life — visible iris detail, natural moisture, genuine catchlights
-• Her lips have natural color variation and subtle texture
+• ${g.pronoun.charAt(0).toUpperCase() + g.pronoun.slice(1)} has a unique, memorable face with individual character — NOT a generic "AI pretty face"
+• Natural beauty: subtle imperfections that make ${g.pronoun} look REAL (a small mole, slightly asymmetric eyebrows, natural skin texture with visible pores)
+• ${g.possessive.charAt(0).toUpperCase() + g.possessive.slice(1)} eyes have depth and life — visible iris detail, natural moisture, genuine catchlights
 • Realistic hands with 5 well-defined fingers each, natural nail beds with clean short nails
 • Natural body proportions with subtle asymmetry (as in real humans)
 
 ━━━ OUTFIT (strict specification) ━━━
-• Plain white crew-neck t-shirt: soft cotton with visible fabric texture, slight natural wrinkles at the hem and where the body moves, relaxed comfortable fit — NOT skin-tight, NOT oversized
-• Simple black shorts: mid-thigh length, clean matte fabric
-• Completely barefoot: realistic feet with natural toes, visible toenails, feet flat on the ground
-• NO accessories: no jewelry, no glasses, no watches, no hair accessories, no bags — absolutely nothing extra
+${getOutfitDesc(g.person === "man" ? "masculino" : "feminino")}
 
-━━━ POSE & EXPRESSION ━━━
-${pose}
+━━━ ${POSE_SIMPLE} ━━━
+
+${ANATOMY_GUARD}
 
 ━━━ STUDIO LIGHTING & PHOTOGRAPHY ━━━
 • Large octagonal softbox key light positioned 45° above-left, creating soft directional shadows that sculpt the face and body
@@ -279,7 +376,7 @@ ${pose}
 • Camera: 85mm portrait lens at f/5.6, positioned at the model's eye level
 • Full body framing: from 10cm above the head to 5cm below the feet — ENTIRE body visible
 • Sharp focus across the entire figure with just a hint of natural depth falloff
-• Subtle natural shadow beneath her feet grounding her in the space
+• Subtle natural shadow beneath feet grounding the person in the space
 • Very slight natural vignette at extreme corners (as in real photography)
 
 ━━━ SKIN & REALISM DIRECTIVES ━━━
@@ -288,13 +385,12 @@ ${pose}
 • Subtle veins visible on the backs of hands and inner wrists
 • Natural skin color variation: slightly pinker on knuckles, elbows, and knees
 • Genuine body hair (fine, barely visible arm hair, natural eyebrows)
-• If her skin tone is deeper, show how the studio light creates beautiful warm highlights on her cheekbones and shoulders
 • NO airbrushing, NO plastic smoothing, NO uncanny valley perfection
 
 ━━━ OUTPUT REQUIREMENTS ━━━
 • A SINGLE photorealistic studio photograph
 • The person must look ALIVE and PRESENT — natural breathing pose, weight distributed realistically
-• She should feel like a real person standing in a real studio — not a generated avatar
+• ${g.pronoun.charAt(0).toUpperCase() + g.pronoun.slice(1)} should feel like a real person standing in a real studio — not a generated avatar
 • Portrait orientation (3:4 aspect ratio)
 • No text, watermarks, logos, frames, or borders
 • No background elements — only the clean white studio backdrop`;

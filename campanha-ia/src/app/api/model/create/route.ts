@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     const style = formData.get("style") as string;
     const ageRange = formData.get("ageRange") as string;
     const name = (formData.get("name") as string) || "Modelo";
+    const gender = (formData.get("gender") as string) || "feminino";
 
     if (!skinTone || (!hairStyle && !hairTexture) || !bodyType) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios" }, { status: 400 });
@@ -141,6 +142,7 @@ export async function POST(request: NextRequest) {
       style,
       ageRange,
       name,
+      gender,
     });
 
     // Salvar campos granulares de cabelo
@@ -181,6 +183,7 @@ export async function POST(request: NextRequest) {
           style: style || "casual_natural",
           ageRange: ageRange || "adulta_26_35",
           name,
+          gender,
           faceRefUrl: faceRefUrl || null,
         },
       });
@@ -197,7 +200,7 @@ export async function POST(request: NextRequest) {
         previewUrl: null,
         previewStatus: "pending",
         hasFaceRef: !!faceRefUrl,
-        traits: { skinTone, hairStyle: hairTexture || hairStyle, hairTexture, hairLength, hairColor, bodyType, style, ageRange },
+        traits: { skinTone, hairStyle: hairTexture || hairStyle, hairTexture, hairLength, hairColor, bodyType, style, ageRange, gender },
       },
     });
   } catch (error: unknown) {

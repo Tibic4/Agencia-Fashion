@@ -145,13 +145,17 @@ function BeforeAfterSlider({
           <Image
             src={item.before_photo_url}
             alt="Antes — foto original"
-            fill
+            width={containerWidth || 400}
+            height={Math.round((containerWidth || 400) * (16 / 9))}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 768px"
             quality={75}
             style={{
               ...sharedImgStyle,
-              minWidth: containerWidth > 0 ? `${containerWidth}px` : "100vw",
-              maxWidth: "none",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: containerWidth > 0 ? `${containerWidth}px` : "100%",
+              height: "100%",
             }}
             draggable={false}
             onError={() => setImgError("before")}

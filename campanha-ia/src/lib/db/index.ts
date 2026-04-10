@@ -103,10 +103,20 @@ export interface CreateModelInput {
   style?: string;
   ageRange?: string;
   name?: string;
+  gender?: string;
 }
 
 export async function createStoreModel(input: CreateModelInput) {
   const supabase = createAdminClient();
+
+  // Auto-ativar se for a primeira modelo da loja
+  const { count } = await supabase
+    .from("store_models")
+    .select("id", { count: "exact", head: true })
+    .eq("store_id", input.storeId);
+
+  const isFirst = (count ?? 0) === 0;
+
   const { data, error } = await supabase
     .from("store_models")
     .insert({
@@ -117,6 +127,8 @@ export async function createStoreModel(input: CreateModelInput) {
       style: input.style || "casual",
       age_range: input.ageRange || "25-35",
       name: input.name || "Modelo",
+      gender: input.gender || "feminino",
+      is_active: isFirst,
     })
     .select()
     .single();

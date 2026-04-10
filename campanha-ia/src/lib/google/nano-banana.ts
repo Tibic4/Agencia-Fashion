@@ -299,6 +299,8 @@ export interface NanoBananaTryOnParams {
     colorHex?: string;
     criticalDetails?: string[];
   };
+  /** Gênero do modelo: feminino | masculino */
+  gender?: string;
 }
 
 // ═══════════════════════════════════════
@@ -330,6 +332,7 @@ function buildTryOnPrompt(params: {
   hasCloseUp?: boolean;
   hasSecondPiece?: boolean;
   hasCustomBackground?: boolean;
+  gender?: string;
   visionData?: {
     fabricDescriptor?: string;
     garmentStructure?: string;
@@ -356,6 +359,10 @@ function buildTryOnPrompt(params: {
   }
   const isPlus = params.bodyType === "plus";
 
+  // Gender-aware descriptors
+  const isMale = params.gender === "masculino";
+  const personWord = isMale ? "Brazilian man" : "Brazilian woman";
+
   const closeUpInstruction = params.hasCloseUp
     ? "\n- The THIRD image is a CLOSE-UP of the fabric texture. Examine it carefully to reproduce the EXACT same texture (ribbed, knit, woven, smooth, etc.) on the generated garment. This is the most important reference for material accuracy."
     : "";
@@ -369,15 +376,19 @@ function buildTryOnPrompt(params: {
     : "";
 
   const bodyTypeInstruction = isPlus
-    ? "The model should have a plus-size/curvy body type (Brazilian GG/XGG sizing, approximately US size 14-22). Voluptuous, confident, beautiful curves."
-    : "The model should have a standard/slim body type (Brazilian P/M sizing, approximately US size 4-8). Slim, athletic build.";
+    ? isMale
+      ? "The model should have a large/husky body type (Brazilian GG/XGG sizing). Strong, broad-shouldered, naturally large build."
+      : "The model should have a plus-size/curvy body type (Brazilian GG/XGG sizing, approximately US size 14-22). Voluptuous, confident, beautiful curves."
+    : isMale
+      ? "The model should have a standard/athletic body type (Brazilian P/M sizing). Lean, fit build with natural proportions."
+      : "The model should have a standard/slim body type (Brazilian P/M sizing, approximately US size 4-8). Slim, athletic build.";
 
   const basePrompt = `You are a world-class fashion photography editor specializing in Brazilian e-commerce.
 
-TASK: Generate a SINGLE photorealistic image of a real-looking Brazilian woman model wearing the EXACT garment shown in the product photos.
+TASK: Generate a SINGLE photorealistic image of a real-looking ${personWord} model wearing the EXACT garment shown in the product photos.
 
 IMAGE INPUTS (in order):
-- The FIRST image is the REFERENCE MODEL — match her EXACT face, skin tone, hair style, and body proportions.
+- The FIRST image is the REFERENCE MODEL — match ${isMale ? "his" : "her"} EXACT face, skin tone, hair style, and body proportions.
 - The SECOND image is the MAIN PRODUCT on a mannequin — this is the garment to recreate EXACTLY.${closeUpInstruction}${secondPieceInstruction}${customBgInstruction}
 
 MODEL BODY TYPE (CRITICAL):
@@ -396,15 +407,15 @@ ${params.visionData?.criticalDetails?.length ? `5e. CRITICAL DETAILS TO PRESERVE
 7. DO NOT add, remove, or modify ANY garment detail
 8. EMBROIDERY/PRINTS COUNT: If the garment has embroidered elements (stars, flowers, etc.), reproduce the EXACT SAME NUMBER and SPACING as shown in the product photo. Do NOT add extra elements or make the pattern denser than the original.
 9. Match the EXACT proportions of the garment relative to the body — if the top is cropped, it should end at exactly the same point
-10. If the garment is a TOP (blouse, shirt, crop top), pair it with stylish high-waisted jeans or the bottom shown in the product photo
+10. If the garment is a TOP (blouse, shirt, crop top), pair it with stylish high-waisted ${isMale ? "dark jeans or chinos" : "jeans or the bottom shown in the product photo"}
 11. DO NOT alter the garment in any way: no color shifts, no texture changes, no added or removed patterns, no simplified embroidery
 
 FOOTWEAR (MANDATORY):
 10. The model must ALWAYS wear appropriate footwear — NEVER barefoot
 11. Choose footwear that complements the outfit:
-   - For casual looks: clean white sneakers or stylish sandals
-   - For elegant/formal looks: nude heels or strappy sandals
-   - For bohemian/relaxed looks: espadrilles or flat sandals
+   - For casual looks: clean white sneakers or ${isMale ? "casual loafers" : "stylish sandals"}
+   - For elegant/formal looks: ${isMale ? "dark leather shoes or clean boots" : "nude heels or strappy sandals"}
+   - For bohemian/relaxed looks: ${isMale ? "canvas shoes or sandals" : "espadrilles or flat sandals"}
    - For sporty looks: fashionable sneakers
 
 BACKGROUND:
@@ -412,7 +423,7 @@ BACKGROUND:
 
 PHOTOGRAPHY:
 13. Full body photo from head to feet including shoes, vertical portrait orientation
-14. Natural confident pose, one hand slightly on hip or relaxed, looking at camera with a natural smile
+14. Natural confident pose, ${isMale ? "arms relaxed at sides" : "one hand slightly on hip or relaxed"}, looking at camera with a natural smile
 15. Professional fashion photography lighting with subtle shadows
 16. The model should look like a REAL person, not AI-generated
 17. Output ONLY the image, absolutely no text or watermarks
@@ -511,6 +522,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
         hasCloseUp: !!params.closeUpBase64,
         hasSecondPiece: !!params.secondPieceBase64,
         hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
+        gender: params.gender,
         visionData: params.visionData,
       }),
     });
@@ -607,6 +619,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
               hasCloseUp: !!params.closeUpBase64,
               hasSecondPiece: !!params.secondPieceBase64,
               hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
+              gender: params.gender,
               visionData: params.visionData,
             });
 

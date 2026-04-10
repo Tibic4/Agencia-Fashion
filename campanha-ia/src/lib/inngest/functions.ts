@@ -83,6 +83,8 @@ interface ModelPreviewEvent {
   style: string;
   ageRange: string;
   name: string;
+  /** Gênero: feminino | masculino (default feminino) */
+  gender?: string;
   /** URL do crop facial no Supabase Storage (leve — evita limite do Inngest) */
   faceRefUrl?: string | null;
 }
@@ -134,6 +136,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
         bodyType: data.bodyType,
         style: data.style,
         ageRange: data.ageRange,
+        gender: (data.gender as any) || "feminino",
       },
       faceBase64,
       faceMime,
