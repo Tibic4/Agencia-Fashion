@@ -521,7 +521,7 @@ function buildUserPrompt(input: AnalyzerInput): string {
       sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO PELA LOJISTA:\n"${customText}"\nUse este cenário como fundo para TODOS os 3 prompts (scene_prompts[0], [1] e [2]).\nTODOS os prompts devem ter o MESMO ambiente e iluminação — varie apenas POSE e ÂNGULO DE CÂMERA.`;
     }
   } else if (bgType === "minha_marca" && input.brandColor) {
-    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca\nA lojista quer fotos com a identidade visual da marca. Cor principal: ${input.brandColor}.\nTODOS os 3 prompts devem usar backdrop com gradiente ou tom sólido na cor ${input.brandColor} (ou complementar) com iluminação que valorize a cor da marca.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o fundo é SEMPRE o mesmo.`;
+    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca\nA lojista quer fotos com a identidade visual da marca. Cor principal: ${input.brandColor}.\nTODOS os 3 prompts devem usar: "softly textured studio wall in warm ${input.brandColor} tones with professional directional lighting creating natural depth and subtle shadows".\nO fundo deve parecer um ESTÚDIO REAL de fotografia de moda — NÃO um quadro sólido plano.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o fundo é SEMPRE o mesmo.`;
   } else if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
     sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;
