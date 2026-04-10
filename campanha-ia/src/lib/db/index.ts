@@ -39,7 +39,13 @@ export interface StoreRecord {
 export async function createStore(input: CreateStoreInput): Promise<StoreRecord> {
   const supabase = createAdminClient();
 
-  // Novo usuário começa sem plano — precisa comprar créditos ou assinar
+  // Buscar plano grátis para atribuir automaticamente
+  const { data: freePlan } = await supabase
+    .from("plans")
+    .select("id, campaigns_per_month")
+    .eq("name", "gratis")
+    .single();
+
   const { data: store, error } = await supabase
     .from("stores")
     .insert({
@@ -50,7 +56,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
       state: input.state || null,
       instagram_handle: input.instagramHandle || null,
       brand_colors: input.brandColor ? { primary: input.brandColor } : null,
-      plan_id: null,
+      plan_id: freePlan?.id || null,
       onboarding_completed: true,
     })
     .select()
@@ -58,7 +64,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
 
   if (error) throw new Error(`Erro ao criar loja: ${error.message}`);
 
-  // Criar período de usage do mês atual — começa com 0 campanhas
+  // Criar período de usage do mês atual com limite do plano grátis
   const now = new Date();
   const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -68,7 +74,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
     period_start: periodStart.toISOString().split("T")[0],
     period_end: periodEnd.toISOString().split("T")[0],
     campaigns_generated: 0,
-    campaigns_limit: 0,
+    campaigns_limit: freePlan?.campaigns_per_month ?? 0,
   });
 
   return store;
@@ -535,8 +541,8 @@ export async function logApiCost(input: LogApiCostInput) {
     campaign_id: input.campaignId || null,
     provider: input.provider,
     endpoint: input.endpoint,
-    model: input.model || null,
-    pipeline_step: input.pipelineStep || null,
+    model_used: input.model || null,
+    action: input.pipelineStep || null,
     input_tokens: input.inputTokens || null,
     output_tokens: input.outputTokens || null,
     cost_usd: input.costUsd,

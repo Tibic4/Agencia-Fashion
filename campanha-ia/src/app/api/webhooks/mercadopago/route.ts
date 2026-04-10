@@ -126,6 +126,18 @@ async function handlePaymentEvent(paymentId: string) {
             paymentId
           );
 
+          // Trial bonus: se o external_reference contém bonusModels, creditar modelos também
+          // Format estendido: credit|storeId|type|quantity|bonusModels:N
+          const parts = ref.split("|");
+          const bonusPart = parts.find(p => p.startsWith("bonusModels:"));
+          if (bonusPart) {
+            const bonusQty = parseInt(bonusPart.split(":")[1], 10);
+            if (bonusQty > 0) {
+              await addCreditsToStore(storeId, "models", bonusQty, 0, paymentId);
+              console.log(`[Webhook:MercadoPago] 🎁 Bônus trial: +${bonusQty} modelo(s) para store ${storeId}`);
+            }
+          }
+
           console.log(`[Webhook:MercadoPago] ✅ Créditos adicionados com sucesso`);
         } else {
           console.error(`[Webhook:MercadoPago] ❌ Tipo de crédito inválido: ${creditType}`);
@@ -205,14 +217,41 @@ async function handleSubscriptionEvent(subscriptionId: string) {
         break;
 
       case "cancelled":
-        console.log(`[Webhook:MercadoPago] ❌ Assinatura cancelada. Store: ${storeId} — Downgrade para free`);
+        console.log(`[Webhook:MercadoPago] ❌ Assinatura cancelada. Store: ${storeId} — Downgrade para grátis`);
 
-        // Downgrade: remover plano da loja
+        // Downgrade: buscar plano grátis e atribuir (não deixar null)
+        const { data: freePlan } = await supabase
+          .from("plans")
+          .select("id, campaigns_per_month")
+          .eq("name", "gratis")
+          .single();
+
         await supabase.from("stores").update({
-          plan_id: null,
+          plan_id: freePlan?.id || null,
           mercadopago_subscription_id: null,
           updated_at: new Date().toISOString(),
         }).eq("id", storeId);
+
+        // Resetar store_usage para limites do plano grátis
+        if (freePlan) {
+          const today = new Date().toISOString().split("T")[0];
+          const { data: currentUsage } = await supabase
+            .from("store_usage")
+            .select("id")
+            .eq("store_id", storeId)
+            .lte("period_start", today)
+            .gte("period_end", today)
+            .limit(1)
+            .single();
+
+          if (currentUsage) {
+            await supabase.from("store_usage").update({
+              campaigns_limit: freePlan.campaigns_per_month,
+            }).eq("id", currentUsage.id);
+          }
+        }
+
+        console.log(`[Webhook:MercadoPago] ✅ Store ${storeId} downgraded para plano grátis (${freePlan?.id})`);
         break;
 
       default:

@@ -149,6 +149,7 @@ export default function ResultadoCampanha() {
   const [activeFormat, setActiveFormat] = useState<FormatId>("stories");
   const [downloadingHQ, setDownloadingHQ] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+  const [showFormatSheet, setShowFormatSheet] = useState(false);
 
   // ── AI Tips (Gemini Flash Vision) ──
   interface SmartTips {
@@ -530,30 +531,57 @@ export default function ResultadoCampanha() {
               </span>
             </div>
 
-            {/* Format selector — horizontal scroll, mobile-first */}
-            <div
-              className="px-3 sm:px-4 py-3 flex gap-2 overflow-x-auto"
-              style={{ borderBottom: "1px solid var(--border)", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
-            >
-              {FORMAT_PRESETS.map(fmt => (
+            {/* Format selector — BottomSheet trigger on mobile, horizontal list on desktop */}
+            <div className="px-3 sm:px-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+              {/* Desktop: horizontal scroll */}
+              <div
+                className="hidden sm:flex gap-2 overflow-x-auto"
+                style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+              >
+                {FORMAT_PRESETS.map(fmt => (
+                  <button
+                    key={fmt.id}
+                    onClick={() => setActiveFormat(fmt.id)}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
+                    style={{
+                      minHeight: 48,
+                      background: activeFormat === fmt.id ? "var(--gradient-brand)" : "var(--background)",
+                      color: activeFormat === fmt.id ? "white" : "var(--muted)",
+                      border: activeFormat === fmt.id ? "2px solid var(--brand-400)" : "1px solid var(--border)",
+                      boxShadow: activeFormat === fmt.id ? "0 2px 8px rgba(var(--brand-rgb, 168, 85, 247), 0.3)" : "none",
+                      transform: activeFormat === fmt.id ? "scale(1.03)" : "scale(1)",
+                    }}
+                  >
+                    <span className="text-base">{fmt.icon}</span>
+                    <span>{fmt.label}</span>
+                    <span className="text-[10px] opacity-70">{fmt.w}×{fmt.h}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Mobile: button trigger for Bottom Sheet */}
+              <div className="sm:hidden">
                 <button
-                  key={fmt.id}
-                  onClick={() => setActiveFormat(fmt.id)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
-                  style={{
-                    minHeight: 48,
-                    background: activeFormat === fmt.id ? "var(--gradient-brand)" : "var(--background)",
-                    color: activeFormat === fmt.id ? "white" : "var(--muted)",
-                    border: activeFormat === fmt.id ? "2px solid var(--brand-400)" : "1px solid var(--border)",
-                    boxShadow: activeFormat === fmt.id ? "0 2px 8px rgba(var(--brand-rgb, 168, 85, 247), 0.3)" : "none",
-                    transform: activeFormat === fmt.id ? "scale(1.03)" : "scale(1)",
-                  }}
+                  onClick={() => setShowFormatSheet(true)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl transition-all"
+                  style={{ background: "var(--background)", border: "1px solid var(--border)" }}
                 >
-                  <span className="text-base">{fmt.icon}</span>
-                  <span>{fmt.label}</span>
-                  <span className="text-[10px] opacity-70">{fmt.w}×{fmt.h}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style={{ background: "var(--surface)" }}>
+                      {FORMAT_PRESETS.find(f => f.id === activeFormat)?.icon}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-bold tracking-wider uppercase mb-0.5" style={{ color: "var(--muted)" }}>Proporção e Crop</p>
+                      <p className="text-sm font-bold leading-none" style={{ color: "var(--brand-600)" }}>
+                        {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} ({FORMAT_PRESETS.find(f => f.id === activeFormat)?.ratio})
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-lg text-xs font-bold" style={{ background: "var(--brand-50)", color: "var(--brand-600)" }}>
+                    Alterar
+                  </div>
                 </button>
-              ))}
+              </div>
             </div>
 
             {/* Preview + download */}

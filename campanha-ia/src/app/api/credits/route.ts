@@ -9,6 +9,16 @@ export const dynamic = "force-dynamic";
  * Pacotes de créditos avulsos
  */
 const CREDIT_PACKAGES = {
+  // ── Trial (landing page) ──
+  "trial": {
+    type: "campaigns" as const,
+    quantity: 5,
+    price: 9.90,
+    title: "Teste na Prática",
+    description: "5 campanhas completas com modelo virtual + 1 modelo incluso",
+    trial: true,
+    bonusModels: 1,
+  },
   // Campanhas avulso
   "5_campanhas": {
     type: "campaigns" as const,
@@ -17,6 +27,7 @@ const CREDIT_PACKAGES = {
     title: "+5 Campanhas",
     description: "5 campanhas completas com modelo virtual (R$ 3,98/cada)",
     trial: false,
+    bonusModels: 0,
   },
   "15_campanhas": {
     type: "campaigns" as const,
@@ -25,6 +36,7 @@ const CREDIT_PACKAGES = {
     title: "+15 Campanhas",
     description: "15 campanhas completas com modelo virtual (R$ 3,33/cada)",
     trial: false,
+    bonusModels: 0,
   },
   "30_campanhas": {
     type: "campaigns" as const,
@@ -33,6 +45,7 @@ const CREDIT_PACKAGES = {
     title: "+30 Campanhas",
     description: "30 campanhas completas com modelo virtual (R$ 3,00/cada)",
     trial: false,
+    bonusModels: 0,
   },
   // Modelos virtuais
   "3_modelos": {
@@ -42,6 +55,7 @@ const CREDIT_PACKAGES = {
     title: "+3 Modelos Virtuais",
     description: "3 modelos virtuais para suas campanhas",
     trial: false,
+    bonusModels: 0,
   },
   "5_modelos": {
     type: "models" as const,
@@ -50,6 +64,7 @@ const CREDIT_PACKAGES = {
     title: "+5 Modelos Virtuais",
     description: "5 modelos virtuais para suas campanhas",
     trial: false,
+    bonusModels: 0,
   },
 } as const;
 
@@ -139,8 +154,8 @@ export async function POST(request: NextRequest) {
           pending: `${appUrl}/plano?credits=pending`,
         },
         auto_return: "approved",
-        // Format: credit|storeId|packageType|quantity
-        external_reference: `credit|${store.id}|${pkg.type}|${pkg.quantity}`,
+        // Format: credit|storeId|packageType|quantity[|bonusModels:N]
+        external_reference: `credit|${store.id}|${pkg.type}|${pkg.quantity}${pkg.bonusModels > 0 ? `|bonusModels:${pkg.bonusModels}` : ""}`,
         notification_url: `${appUrl}/api/webhooks/mercadopago`,
         statement_descriptor: "CRIALOOK",
       },
