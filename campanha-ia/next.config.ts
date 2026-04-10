@@ -4,6 +4,22 @@ const nextConfig: NextConfig = {
   experimental: {
     cpus: 1,
   },
+
+  // Redirects permanentes para rotas legadas
+  async redirects() {
+    return [
+      {
+        source: "/login",
+        destination: "/sign-in",
+        permanent: true,
+      },
+      {
+        source: "/cadastro",
+        destination: "/sign-up",
+        permanent: true,
+      },
+    ];
+  },
   // Prevent native 'canvas' module from breaking the build on Linux VPS
   serverExternalPackages: ["canvas"],
 

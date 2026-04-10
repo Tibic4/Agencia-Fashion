@@ -218,7 +218,12 @@ export default function Plano() {
             <div>
               <h2 className="text-xl font-bold">Plano {currentPlanName}</h2>
               <p className="text-xs" style={{ color: "var(--muted)" }}>
-                {store?.mercadopago_subscription_id ? "🔄 Assinatura ativa — " : ""}Renova em {renewalStr}
+                {store?.mercadopago_subscription_id 
+                  ? `🔄 Assinatura ativa — Renova em ${renewalStr}` 
+                  : currentPlanName === "Avulso" 
+                    ? "Sem assinatura — compre créditos ou assine um plano"
+                    : `Renova em ${renewalStr}`
+                }
               </p>
             </div>
           </div>

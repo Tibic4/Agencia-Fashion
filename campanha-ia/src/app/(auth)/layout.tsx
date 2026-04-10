@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 
@@ -47,16 +47,38 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user } = useUser();
+  const router = useRouter();
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [usage, setUsage] = useState<UsageData | null>(null);
+  const [storeChecked, setStoreChecked] = useState(false);
 
+  // Verificar se usuário tem loja (onboarding completo)
   useEffect(() => {
+    if (!isLoaded) return;
+
     fetch("/api/store/usage")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (data?.data) setUsage(data.data); })
-      .catch(() => {});
-  }, []);
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.data) setUsage(data.data);
+          setStoreChecked(true);
+        } else if (res.status === 404) {
+          const data = await res.json().catch(() => ({}));
+          if (data?.code === "NO_STORE") {
+            // Usuário novo — redirecionar para onboarding
+            router.replace("/onboarding");
+            return;
+          }
+          setStoreChecked(true);
+        } else {
+          setStoreChecked(true);
+        }
+      })
+      .catch(() => {
+        setStoreChecked(true);
+      });
+  }, [isLoaded, router]);
 
   const userName = user?.firstName || user?.fullName || "Minha Loja";
   const userEmail = user?.primaryEmailAddress?.emailAddress || "";
@@ -64,7 +86,7 @@ export default function AuthLayout({
   const userInitial = userName.charAt(0).toUpperCase();
 
   const campaignsUsed = usage?.campaigns_generated ?? 0;
-  const campaignsLimit = usage?.campaigns_limit ?? 3;
+  const campaignsLimit = usage?.campaigns_limit ?? 0;
   const usagePercent = campaignsLimit > 0 ? Math.min((campaignsUsed / campaignsLimit) * 100, 100) : 0;
 
   return (
@@ -128,26 +150,51 @@ export default function AuthLayout({
         {/* Usage indicator — real data */}
         <div className="p-4" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="rounded-xl p-3" style={{ background: "var(--gradient-card)" }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
-                Campanhas usadas
-              </span>
-              <span className="text-xs font-bold gradient-text">
-                {usage ? `${campaignsUsed}/${campaignsLimit}` : "..."}
-              </span>
-            </div>
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${usagePercent}%`,
-                  background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)",
-                }}
-              />
-            </div>
-            <p className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>
-              Créditos avulsos · Não expiram
-            </p>
+            {usage && campaignsLimit === 0 ? (
+              /* Sem plano — CTA para comprar */
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🎯</span>
+                  <span className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>
+                    Sem créditos
+                  </span>
+                </div>
+                <Link
+                  href="/plano"
+                  className="block w-full text-center text-xs font-bold py-2 rounded-lg transition-all hover:scale-[1.02]"
+                  style={{
+                    background: "var(--gradient-brand)",
+                    color: "white",
+                  }}
+                >
+                  Comece agora →
+                </Link>
+              </>
+            ) : (
+              /* Com plano — barra de progresso */
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
+                    Campanhas usadas
+                  </span>
+                  <span className="text-xs font-bold gradient-text">
+                    {usage ? `${campaignsUsed}/${campaignsLimit}` : "..."}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${usagePercent}%`,
+                      background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>
+                  Créditos avulsos · Não expiram
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -190,9 +237,15 @@ export default function AuthLayout({
           </span>
         </Link>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold gradient-text">
-            {usage ? `${campaignsUsed}/${campaignsLimit}` : ""}
-          </span>
+          {usage && campaignsLimit === 0 ? (
+            <Link href="/plano" className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: "rgba(251,146,60,0.15)", color: "#FB923C", border: "1px solid rgba(251,146,60,0.2)" }}>
+              Sem plano
+            </Link>
+          ) : (
+            <span className="text-[10px] font-bold gradient-text">
+              {usage ? `${campaignsUsed}/${campaignsLimit}` : ""}
+            </span>
+          )}
         </div>
       </header>
 

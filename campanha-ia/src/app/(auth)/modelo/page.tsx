@@ -107,8 +107,9 @@ export default function ModeloVirtual() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [quotaError, setQuotaError] = useState<{ current: number; limit: number; plan: string } | null>(null);
 
-  const maxModels = planModelLimits[userPlan] || 1;
+  const maxModels = planModelLimits[userPlan] ?? 0;
   const canCreate = models.length < maxModels;
 
   // ── Load existing models ──
@@ -196,8 +197,14 @@ export default function ModeloVirtual() {
       const json = await res.json();
 
       if (!res.ok) {
+        if (json.code === "QUOTA_EXCEEDED") {
+          setQuotaError({ current: json.current, limit: json.limit, plan: json.plan });
+          setLoading(false);
+          return;
+        }
         throw new Error(json.error || "Erro ao criar modelo");
       }
+      setQuotaError(null);
 
       // Add new model to list
       const newModel: StoreModel = {
@@ -264,6 +271,7 @@ export default function ModeloVirtual() {
     setStyle("casual_natural");
     setAge("adulta_26_35");
     setError("");
+    setQuotaError(null);
   }
 
 
@@ -645,12 +653,36 @@ export default function ModeloVirtual() {
           </div>
 
 
+          {/* Quota exceeded */}
+          {quotaError && (
+            <div className="p-4 rounded-xl" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.08), rgba(236,72,153,0.06))", border: "1px solid rgba(139,92,246,0.2)" }}>
+              <div className="flex items-start gap-3">
+                <span className="text-xl mt-0.5">🎯</span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: "var(--foreground)" }}>
+                    Limite de modelos atingido ({quotaError.current}/{quotaError.limit})
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                    Compre créditos avulsos de modelos ou faça upgrade do plano.
+                  </p>
+                  <Link
+                    href="/plano"
+                    className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
+                    style={{ background: "var(--gradient-brand)", color: "white" }}
+                  >
+                    ⬆️ Ver planos e créditos
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Error */}
-          {error && (
+          {error && !quotaError && (
             <div className="p-4 rounded-xl flex items-center gap-3" style={{ background: "#FEF2F2", border: "1px solid #FECACA" }}>
               <span className="text-lg">⚠️</span>
               <p className="text-sm font-medium" style={{ color: "#991B1B" }}>
-                Não foi possível criar a modelo. Verifique sua conexão e tente novamente.
+                {error}
               </p>
             </div>
           )}

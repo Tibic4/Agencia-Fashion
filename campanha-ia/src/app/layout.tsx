@@ -54,6 +54,8 @@ export default function RootLayout({
   return (
     <ClerkProvider
       localization={ptBR}
+      signInFallbackRedirectUrl="/gerar"
+      signUpFallbackRedirectUrl="/onboarding"
       appearance={{
         layout: {
           logoImageUrl: "/clerk-logo.png",
