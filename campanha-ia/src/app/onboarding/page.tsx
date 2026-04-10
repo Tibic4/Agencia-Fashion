@@ -141,6 +141,10 @@ export default function Onboarding() {
 
   function goNext() {
     setDirection("forward");
+    if (step === 1) {
+      saveOnboarding(true); // Skip model creation for new free accounts
+      return;
+    }
     setStep((s) => Math.min(s + 1, 3));
   }
 
@@ -992,15 +996,15 @@ export default function Onboarding() {
 
                    {/* Buttons */}
                    <div className="onb-btn-row">
-                     <button onClick={goBack} className="btn-secondary flex-1 !py-3">
+                     <button onClick={goBack} className="btn-secondary flex-1 !py-3" disabled={saving}>
                        <IconArrowLeft /> Voltar
                      </button>
                      <button
                        onClick={goNext}
-                       disabled={!storeName || !segment}
+                       disabled={!storeName || !segment || saving}
                        className="btn-primary flex-1 !py-3 disabled:opacity-40 disabled:cursor-not-allowed"
                      >
-                       Continuar <IconArrowRight />
+                       {saving ? "Salvando..." : <>Continuar <IconArrowRight /></>}
                      </button>
                    </div>
                  </div>
