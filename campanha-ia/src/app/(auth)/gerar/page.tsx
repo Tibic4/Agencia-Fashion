@@ -99,14 +99,15 @@ export default function GerarCampanha() {
   const [dragOverCloseUp, setDragOverCloseUp] = useState(false);
   const [dragOverSecond, setDragOverSecond] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
+  const [bodyType, setBodyType] = useState<"normal" | "plus" | "masculino">("normal");
 
   // Helper: mapeia filtro UI → body_types reais no DB
   // DB values: media (f-normal), medio (m-normal), plus_size (f-plus), robusto (m-plus)
   const matchesFilter = (dbBodyType: string, filter: string): boolean => {
     if (filter === "all") return true;
-    if (filter === "padrao") return ["media", "medio", "normal"].includes(dbBodyType);
-    if (filter === "curvilinea") return ["plus_size", "robusto", "plus"].includes(dbBodyType);
+    if (filter === "padrao") return ["media", "normal"].includes(dbBodyType);
+    if (filter === "curvilinea") return ["plus_size", "plus"].includes(dbBodyType);
+    if (filter === "homem") return ["medio", "robusto", "masculino"].includes(dbBodyType);
     // Fallback exact match
     return dbBodyType === filter;
   };
@@ -823,10 +824,10 @@ export default function GerarCampanha() {
           {/* Body Type — Biotipo */}
           <div className="animate-fade-in">
             <label className="block text-sm font-semibold mb-2">Biotipo da modelo</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => { setBodyType("normal"); setModelFilter("padrao"); setShowAllModels(false); }}
-                className="p-3 rounded-xl text-center transition-all"
+                className="p-2 md:p-3 rounded-xl text-center transition-all"
                 style={{
                   border: bodyType === "normal"
                     ? "2px solid var(--brand-500)"
@@ -835,12 +836,12 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">👤</span>
-                <p className="text-sm font-semibold mt-1">Padrão</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>P · M · G</p>
+                <p className="text-sm font-semibold mt-1 leading-none">Padrão</p>
+                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</p>
               </button>
               <button
                 onClick={() => { setBodyType("plus"); setModelFilter("curvilinea"); setShowAllModels(false); }}
-                className="p-3 rounded-xl text-center transition-all"
+                className="p-2 md:p-3 rounded-xl text-center transition-all"
                 style={{
                   border: bodyType === "plus"
                     ? "2px solid var(--brand-500)"
@@ -849,8 +850,22 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">💃</span>
-                <p className="text-sm font-semibold mt-1">Curvilínea</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>GG · XGG · EGG</p>
+                <p className="text-sm font-semibold mt-1 leading-none">Curvilínea</p>
+                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</p>
+              </button>
+              <button
+                onClick={() => { setBodyType("masculino"); setModelFilter("homem"); setShowAllModels(false); }}
+                className="p-2 md:p-3 rounded-xl text-center transition-all"
+                style={{
+                  border: bodyType === "masculino"
+                    ? "2px solid var(--brand-500)"
+                    : "1px solid var(--border)",
+                  background: bodyType === "masculino" ? "var(--brand-50)" : "var(--surface)",
+                }}
+              >
+                <span className="text-2xl">🧍‍♂️</span>
+                <p className="text-sm font-semibold mt-1 leading-none">Homem</p>
+                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M · G</p>
               </button>
             </div>
           </div>
@@ -867,7 +882,7 @@ export default function GerarCampanha() {
                 )}
               </div>
               <div className="flex gap-1">
-                {["all", "padrao", "curvilinea"].map((f) => (
+                {["all", "padrao", "curvilinea", "homem"].map((f) => (
                   <button
                     key={f}
                     onClick={() => {
@@ -875,15 +890,16 @@ export default function GerarCampanha() {
                       // Sync biotipo selector
                       if (f === "padrao") setBodyType("normal");
                       else if (f === "curvilinea") setBodyType("plus");
+                      else if (f === "homem") setBodyType("masculino");
                       setShowAllModels(false);
                     }}
-                    className="px-3 py-2 rounded-md text-xs font-medium transition-all min-h-[36px]"
+                    className="px-2.5 py-1.5 md:px-3 md:py-2 rounded-md text-xs font-medium transition-all min-h-[36px]"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
                     }}
                   >
-                    {f === "all" ? "Todas" : f === "padrao" ? "Padrão" : "Curvilínea"}
+                    {f === "all" ? "Todas" : f === "padrao" ? "Padrão" : f === "curvilinea" ? "Curvilínea" : "Homem"}
                   </button>
                 ))}
               </div>
