@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { haptics } from "@/lib/utils/haptics";
 
 interface QuotaExceededModalProps {
   used: number;
@@ -41,6 +43,7 @@ export default function QuotaExceededModal({
   // Animate in on mount
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
+    haptics.light();
   }, []);
 
   // Calcular dias até renovação (próximo dia 1)
@@ -74,39 +77,41 @@ export default function QuotaExceededModal({
   });
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
-      style={{
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-      }}
-    >
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 transition-opacity duration-300"
-        style={{
-          background: "rgba(0,0,0,0.65)",
-          opacity: visible && !closing ? 1 : 0,
-        }}
-        onClick={handleClose}
-      />
+    <AnimatePresence>
+      {!closing && (
+        <div
+          className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+          style={{
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          }}
+        >
+          {/* Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.65)" }}
+            onClick={handleClose}
+          />
 
-      {/* Modal — Bottom sheet on mobile, centered on desktop */}
-      <div
-        className="relative w-full md:max-w-lg md:mx-4 overflow-hidden"
-        style={{
-          background: "linear-gradient(145deg, #1a1a2e 0%, #16162a 50%, #0f0f23 100%)",
-          borderRadius: "24px 24px 0 0",
-          maxHeight: "92vh",
-          overflowY: "auto",
-          boxShadow: "0 -8px 60px rgba(139, 92, 246, 0.15), 0 0 0 1px rgba(255,255,255,0.06)",
-          transform: visible && !closing
-            ? "translateY(0)"
-            : "translateY(100%)",
-          opacity: visible && !closing ? 1 : 0,
-          transition: "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
-        }}
-      >
+          {/* Modal — Bottom sheet on mobile, centered on desktop */}
+          <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full md:max-w-lg md:mx-4 overflow-hidden"
+            style={{
+              background: "linear-gradient(145deg, #1a1a2e 0%, #16162a 50%, #0f0f23 100%)",
+              borderRadius: "24px 24px 0 0",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              boxShadow: "0 -8px 60px rgba(139, 92, 246, 0.15), 0 0 0 1px rgba(255,255,255,0.06)",
+            }}
+          >
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 md:hidden">
           <div
@@ -204,7 +209,7 @@ export default function QuotaExceededModal({
         {/* ═══ Tabs ═══ */}
         <div className="flex mx-6 mt-4 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
           <button
-            onClick={() => setTab("credits")}
+            onClick={() => { setTab("credits"); haptics.light(); }}
             className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
             style={{
               background: tab === "credits"
@@ -221,7 +226,7 @@ export default function QuotaExceededModal({
             Comprar Créditos
           </button>
           <button
-            onClick={() => setTab("upgrade")}
+            onClick={() => { setTab("upgrade"); haptics.light(); }}
             className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
             style={{
               background: tab === "upgrade"
@@ -251,7 +256,7 @@ export default function QuotaExceededModal({
               {orderedPackages.map((pkg) => (
                 <button
                   key={pkg.qty}
-                  onClick={() => handleBuyCredits(pkg.type, pkg.qty)}
+                  onClick={() => { haptics.medium(); handleBuyCredits(pkg.type, pkg.qty); }}
                   disabled={loadingPkg !== null}
                   className="w-full text-left rounded-2xl transition-all group relative overflow-hidden"
                   style={{
@@ -387,7 +392,7 @@ export default function QuotaExceededModal({
                   background: "linear-gradient(135deg, rgba(139, 92, 246, 0.06), rgba(168, 85, 247, 0.04))",
                   border: "1px solid rgba(139, 92, 246, 0.12)",
                 }}
-                onClick={() => setTab("upgrade")}
+                onClick={() => { setTab("upgrade"); haptics.light(); }}
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -420,7 +425,7 @@ export default function QuotaExceededModal({
                 availableUpgrades.map((plan) => (
                   <button
                     key={plan.name}
-                    onClick={onUpgrade}
+                    onClick={() => { haptics.medium(); onUpgrade(); }}
                     className="w-full text-left rounded-2xl transition-all group relative overflow-hidden"
                     style={{
                       background: plan.recommended
@@ -554,7 +559,9 @@ export default function QuotaExceededModal({
             }
           }
         `}</style>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

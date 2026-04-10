@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { haptics } from "@/lib/utils/haptics";
 
 interface Campaign {
   id: string;
@@ -80,6 +82,13 @@ export default function Historico() {
   /** Toggle favorito — optimistic UI */
   const toggleFavorite = useCallback(async (campaignId: string, currentState: boolean) => {
     setTogglingId(campaignId);
+    
+    // Trigger haptic feedback when favoriting/unfavoriting
+    if (currentState) {
+      haptics.light(); // Unfavorite
+    } else {
+      haptics.success(); // Favorite (positive action)
+    }
 
     // Optimistic: atualiza instantaneamente na UI
     setCampaigns(prev =>
@@ -282,28 +291,34 @@ export default function Historico() {
 
           {/* ── Campaign Cards ── */}
           <div className="space-y-3">
-            {paginatedCampaigns.map((campaign) => {
-              const score = campaign.campaign_scores?.[0]?.nota_geral;
-              // v3: nome da peça vem de output.analise | v2: headline_principal de campaign_outputs
-              const v3Name = campaign.output?.analise?.tipo_peca;
-              const v3Color = campaign.output?.analise?.cor_principal?.nome;
-              const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
-              const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
-              const headline = v2Name
-                || (v3Name ? `${capitalize(v3Name)}${v3Color ? ` — ${capitalize(v3Color)}` : ""}` : `Campanha ${objLabel}`);
-              const isFav = campaign.is_favorited;
-              const isToggling = togglingId === campaign.id;
-              const objStyle = objectiveColors[campaign.objective || ""] || { bg: "var(--surface)", color: "var(--muted)" };
+            <AnimatePresence mode="popLayout">
+              {paginatedCampaigns.map((campaign) => {
+                const score = campaign.campaign_scores?.[0]?.nota_geral;
+                // v3: nome da peça vem de output.analise | v2: headline_principal de campaign_outputs
+                const v3Name = campaign.output?.analise?.tipo_peca;
+                const v3Color = campaign.output?.analise?.cor_principal?.nome;
+                const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
+                const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
+                const headline = v2Name
+                  || (v3Name ? `${capitalize(v3Name)}${v3Color ? ` — ${capitalize(v3Color)}` : ""}` : `Campanha ${objLabel}`);
+                const isFav = campaign.is_favorited;
+                const isToggling = togglingId === campaign.id;
+                const objStyle = objectiveColors[campaign.objective || ""] || { bg: "var(--surface)", color: "var(--muted)" };
 
-              return (
-                <div
-                  key={campaign.id}
-                  className="rounded-2xl p-3 sm:p-4 transition-all group overflow-hidden"
-                  style={{
-                    background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
-                    border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
-                  }}
-                >
+                return (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    key={campaign.id}
+                    className="rounded-2xl p-3 sm:p-4 transition-all group overflow-hidden"
+                    style={{
+                      background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
+                      border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
+                    }}
+                  >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     {/* Star favorite button */}
                     <button
@@ -387,9 +402,10 @@ export default function Historico() {
                       </div>
                     </Link>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
+            </AnimatePresence>
           </div>
 
           {/* ── Pagination ── */}
