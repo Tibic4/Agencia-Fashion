@@ -27,6 +27,7 @@ export interface ModelInfo {
   hairLength?: string;
   ageRange?: string;
   style?: string;
+  gender?: string;
 }
 
 export interface PipelineInput {
@@ -129,6 +130,7 @@ export async function runCampaignPipeline(
     modelMediaType: input.modelMediaType,
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
     aspectRatio: sonnetResult.vto_hints.aspect_ratio,
+    gender: input.modelInfo?.gender,
     storeId: input.storeId,
     campaignId: input.campaignId,
     onImageComplete: async (index, success) => {

@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     let modelImageBase64: string | null = null;
     let modelMediaType = "image/png";
     // Metadados da modelo para o Sonnet (prompts contextuais)
-    let modelInfo: { skinTone?: string; bodyType?: string; pose?: string; hairColor?: string; hairTexture?: string; hairLength?: string; ageRange?: string; style?: string } = {};
+    let modelInfo: { skinTone?: string; bodyType?: string; pose?: string; hairColor?: string; hairTexture?: string; hairLength?: string; ageRange?: string; style?: string; gender?: string } = {};
 
     if (store) {
       try {
@@ -279,6 +279,7 @@ export async function POST(request: NextRequest) {
                 hairLength: customModel.hair_length || undefined,
                 ageRange: customModel.age_range || undefined,
                 style: customModel.style || undefined,
+                gender: customModel.gender || undefined,
               };
               console.log(`[Generate] ⭐ Modelo customizada selecionada: ${customModelId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
             }
@@ -305,6 +306,7 @@ export async function POST(request: NextRequest) {
               hairLength: bankModel.hair_length || undefined,
               ageRange: bankModel.age_range || undefined,
               style: bankModel.style || undefined,
+              gender: (bankModel as any).gender || undefined,
             };
             console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'}, ${modelInfo.hairColor || '?'})`);
           }
@@ -325,6 +327,7 @@ export async function POST(request: NextRequest) {
               hairLength: (am.hair_length as string) || undefined,
               ageRange: (am.age_range as string) || undefined,
               style: (am.style as string) || undefined,
+              gender: (am.gender as string) || undefined,
             };
             console.log(`[Generate] 👤 Modelo ativa da loja (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
           }
