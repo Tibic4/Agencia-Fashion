@@ -133,13 +133,13 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl overflow-hidden animate-fade-in-up"
-        style={{ background: "var(--background)", border: "1px solid var(--border)", boxShadow: "0 25px 50px rgba(0,0,0,0.3)" }}
+        className="w-full max-w-md rounded-t-3xl sm:rounded-2xl overflow-hidden animate-fade-in-up mt-8"
+        style={{ background: "var(--background)", border: "1px solid var(--border)", boxShadow: "0 -10px 50px rgba(0,0,0,0.3)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -324,7 +324,7 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-5 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="flex gap-3 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]" style={{ borderTop: "1px solid var(--border)" }}>
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-xl text-sm font-semibold min-h-[44px]"

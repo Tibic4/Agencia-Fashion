@@ -150,7 +150,14 @@ export default function AuthLayout({
         {/* Usage indicator — real data */}
         <div className="p-4" style={{ borderTop: "1px solid var(--border)" }}>
           <div className="rounded-xl p-3" style={{ background: "var(--gradient-card)" }}>
-            {usage && campaignsLimit === 0 ? (
+            {!usage ? (
+              /* Loading state */
+              <div className="animate-pulse space-y-2">
+                <div className="h-3 w-24 rounded" style={{ background: "var(--border)" }} />
+                <div className="h-2 rounded-full" style={{ background: "var(--border)" }} />
+                <div className="h-2 w-16 rounded" style={{ background: "var(--border)" }} />
+              </div>
+            ) : campaignsLimit === 0 ? (
               /* Sem plano — CTA para comprar */
               <>
                 <div className="flex items-center gap-2 mb-2">
@@ -178,7 +185,7 @@ export default function AuthLayout({
                     Campanhas usadas
                   </span>
                   <span className="text-xs font-bold gradient-text">
-                    {usage ? `${campaignsUsed}/${campaignsLimit}` : "..."}
+                    {`${campaignsUsed}/${campaignsLimit}`}
                   </span>
                 </div>
                 <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
@@ -274,7 +281,7 @@ export default function AuthLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-16 lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-24 lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
         <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>
