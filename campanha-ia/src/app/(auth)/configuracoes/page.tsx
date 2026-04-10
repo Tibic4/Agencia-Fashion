@@ -16,6 +16,7 @@ export default function Configuracoes() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [storeLoaded, setStoreLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -35,8 +36,12 @@ export default function Configuracoes() {
   // ── Load store data ──
   useEffect(() => {
     fetch("/api/store")
-      .then(res => res.json())
-      .then(data => {
+      .then(async (res) => {
+        if (!res.ok) {
+          setError("Não foi possível carregar os dados da loja.");
+          return;
+        }
+        const data = await res.json();
         const store = data?.data;
         if (store) {
           setStoreName(store.name || "");
@@ -47,9 +52,12 @@ export default function Configuracoes() {
           setLogoUrl(store.logo_url || null);
           const bc = store.brand_colors as { primary?: string } | null;
           if (bc?.primary) setBrandColor(bc.primary);
+          setStoreLoaded(true);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setError("Erro de conexão ao carregar configurações.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -317,10 +325,10 @@ export default function Configuracoes() {
 
         {/* ── Save ── */}
         <button onClick={handleSave}
-          disabled={saving || !storeName}
+          disabled={saving || !storeLoaded}
           className="btn-primary !py-3.5 w-full disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ background: saved ? "var(--success)" : undefined }}>
-          {saving ? "Salvando..." : saved ? "✅ Salvo!" : "Salvar alterações"}
+          {saving ? "Salvando..." : saved ? "✅ Salvo!" : !storeLoaded ? "Carregando..." : "Salvar alterações"}
         </button>
       </div>
     </div>

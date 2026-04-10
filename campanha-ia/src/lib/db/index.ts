@@ -456,7 +456,7 @@ export async function incrementCampaignsUsed(storeId: string) {
 /** Verifica se a loja pode gerar mais campanhas neste período */
 export async function canGenerateCampaign(storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const usage = await getCurrentUsage(storeId);
-  if (!usage) return { allowed: true, used: 0, limit: 999 }; // Sem controle caso não ache
+  if (!usage) return { allowed: false, used: 0, limit: 0 }; // Sem registro de uso = sem plano ativo
 
   return {
     allowed: usage.campaigns_generated < usage.campaigns_limit,
