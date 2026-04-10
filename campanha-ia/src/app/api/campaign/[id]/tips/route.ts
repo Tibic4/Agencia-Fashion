@@ -16,6 +16,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenAI } from "@google/genai";
 
+// NOTA (D7 audit): Verificar se "gemini-3-flash-preview" ainda é o nome correto.
+// Quando sair da preview, atualizar para "gemini-3-flash" ou equivalente estável.
 const TIPS_MODEL = "gemini-3-flash-preview";
 
 interface TipsResponse {

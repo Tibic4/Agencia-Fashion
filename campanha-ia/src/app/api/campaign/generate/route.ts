@@ -12,7 +12,6 @@ import {
   getActiveModel,
   consumeCredit,
   getStoreCredits,
-  hasAvulsoCredit,
 } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -95,16 +94,18 @@ export async function POST(request: NextRequest) {
       store = await getStoreByClerkId(clerkUserId);
     }
 
-    // ── Verificar quota (só verifica, NÃO consome ainda) ──
+    // ── Verificar quota e reservar crédito UPFRONT (FIX: race condition) ──
     let needsAvulsoCredit = false;
+    let creditReserved = false;
     if (store) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
-        // Plano esgotou — verificar se TEM crédito avulso (sem consumir)
-        const hasCredit = await hasAvulsoCredit(store.id, "campaigns");
-        if (hasCredit) {
+        // Plano esgotou — tentar consumir crédito avulso IMEDIATAMENTE (lock otimista)
+        const consumed = await consumeCredit(store.id, "campaigns");
+        if (consumed) {
           needsAvulsoCredit = true;
-          console.log(`[Generate] 💳 Crédito avulso reservado (plano esgotado: ${quota.used}/${quota.limit})`);
+          creditReserved = true;
+          console.log(`[Generate] 💳 Crédito avulso RESERVADO upfront (plano esgotado: ${quota.used}/${quota.limit})`);
         } else {
           // Sem créditos — bloquear
           const credits = await getStoreCredits(store.id);
@@ -290,7 +291,7 @@ export async function POST(request: NextRequest) {
           const supabase = createAdminClient();
           const { data: bankModel } = await supabase
             .from("model_bank")
-            .select("image_url, body_type, skin_tone, pose")
+            .select("image_url, body_type, skin_tone, pose, gender, hair_color, hair_texture, hair_length, age_range, style")
             .eq("id", modelBankId)
             .single();
           if (bankModel?.image_url) {
@@ -299,8 +300,13 @@ export async function POST(request: NextRequest) {
               skinTone: bankModel.skin_tone || undefined,
               bodyType: bankModel.body_type || undefined,
               pose: bankModel.pose || undefined,
+              hairColor: bankModel.hair_color || undefined,
+              hairTexture: bankModel.hair_texture || undefined,
+              hairLength: bankModel.hair_length || undefined,
+              ageRange: bankModel.age_range || undefined,
+              style: bankModel.style || undefined,
             };
-            console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
+            console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'}, ${modelInfo.hairColor || '?'})`);
           }
         }
 
@@ -389,6 +395,18 @@ export async function POST(request: NextRequest) {
           // ── Regra de negócio: cobrar crédito SÓ se ≥1 imagem gerada ──
           if (successCount === 0) {
             if (campaignRecord) await failCampaign(campaignRecord.id, "0/3 images generated");
+            // Devolver crédito avulso se reservado upfront
+            if (creditReserved && store) {
+              try {
+                const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+                const sb = createAdmin();
+                const { data: curr } = await sb.from("stores").select("credit_campaigns").eq("id", store.id).single();
+                await sb.from("stores").update({ credit_campaigns: (curr?.credit_campaigns || 0) + 1 }).eq("id", store.id);
+                console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (0 imagens geradas)`);
+              } catch (refundErr) {
+                console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
+              }
+            }
             await sendSSE("error", {
               error: "Nenhuma foto foi gerada. Tente novamente.",
               retry: true,
@@ -449,8 +467,8 @@ export async function POST(request: NextRequest) {
             });
 
             if (needsAvulsoCredit) {
-              await consumeCredit(store!.id, "campaigns");
-              console.log(`[Generate] 💳 Crédito avulso CONSUMIDO (${successCount}/3 imagens)`);
+              // Crédito já foi consumido upfront (reserva otimista)
+              console.log(`[Generate] 💳 Crédito avulso já reservado upfront (${successCount}/3 imagens geradas)`);
             } else {
               await incrementCampaignsUsed(store!.id);
             }
@@ -483,6 +501,7 @@ export async function POST(request: NextRequest) {
           const errMsg = pipelineError instanceof Error ? pipelineError.message : "Erro ao gerar campanha";
           await sendSSE("error", { error: errMsg });
         } finally {
+          // Stream sempre fecha aqui — cobre tanto success quanto error/ALL_IMAGES_FAILED paths
           try { await writer.close(); } catch { /* already closed */ }
         }
       })();

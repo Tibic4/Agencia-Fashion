@@ -145,7 +145,7 @@ export async function runCampaignPipeline(
 
   const durationMs = Date.now() - startTime;
   console.log(
-    `[Pipeline v5] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${sonnetResult.analise.tipo_peca}`
+    `[Pipeline v6] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${sonnetResult.analise.tipo_peca}`
   );
 
   return {
@@ -180,8 +180,11 @@ async function logAnalyzerCost(
 
   // Gemini 3.1 Pro pricing: $1.25/MTok input, $10/MTok output
   // Thinking tokens: ~2K budget (incluído no output pricing)
-  const avgInputTokens = 5000;  // imagens + prompt
-  const avgOutputTokens = 3000; // JSON + thinking
+  // NOTA (D2 audit): Esses são valores ESTIMADOS pois o Gemini structured output
+  // não retorna usage metadata acessível após o parse. Quando a API suportar,
+  // substituir por usageMetadata real do response.
+  const avgInputTokens = 5000;  // imagens + prompt (~4K image tokens + ~1K text)
+  const avgOutputTokens = 3000; // JSON (~1K) + thinking (~2K budget)
   const costUsd =
     (avgInputTokens / 1_000_000) * 1.25 + (avgOutputTokens / 1_000_000) * 10;
 
