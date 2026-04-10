@@ -515,7 +515,7 @@ export default function Home() {
             {/* Trial Pack */}
             <div className="max-w-md mx-auto mb-10">
               <div className="rounded-2xl p-5 text-center transition-all" style={{
-                background: 'var(--gradient-brand-soft)',
+                background: 'var(--background)',
                 border: '1px solid var(--brand-200)',
                 boxShadow: 'var(--shadow-md)',
               }}>
