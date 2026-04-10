@@ -47,40 +47,50 @@ export async function POST(request: NextRequest) {
       brandColor: brandColor || undefined,
     });
 
-    // 2. Criar modelo virtual (se não pulou)
+    // 2. Criar modelo virtual (se não pulou E se o plano permite)
     let storeModel = null;
     let previewUrl: string | null = null;
     if (model && !model.skip) {
-      storeModel = await createStoreModel({
-        storeId: store.id,
-        skinTone: model.skin || "morena_clara",
-        hairStyle: model.hair || "ondulado",
-        bodyType: model.body || "media",
-        style: model.style || "casual_natural",
-        ageRange: model.age || "adulta_26_35",
-        name: model.name || "Modelo",
-      });
+      // ── Verificar se o plano permite criar modelo ──
+      const { getStorePlanName, getModelLimitForPlan, listStoreModels } = await import("@/lib/db");
+      const planName = await getStorePlanName(store.id);
+      const modelLimit = getModelLimitForPlan(planName);
+      const existingModels = await listStoreModels(store.id);
 
-      // 2b. Gerar preview corpo inteiro via Gemini (fire-and-forget)
-      if (process.env.GOOGLE_AI_API_KEY) {
-        try {
-          const { generatePreviewDirect } = await import("@/lib/model-preview");
-          console.log(`[Onboarding] 🎨 Gerando preview para modelo...`);
-          generatePreviewDirect({
-            modelId: storeModel.id,
-            storeId: store.id,
-            skinTone: model.skin || "morena_clara",
-            hairStyle: model.hair || "ondulado",
-            bodyType: model.body || "media",
-            style: model.style || "casual_natural",
-            ageRange: model.age || "adulta_26_35",
-            name: model.name || "Modelo",
-          }).catch((err) => {
-            console.warn("[Onboarding] Preview generation falhou (não fatal):", err);
-          });
-        } catch (previewErr) {
-          console.warn("[Onboarding] Preview generation falhou (não fatal):", previewErr);
+      if (existingModels.length < modelLimit) {
+        storeModel = await createStoreModel({
+          storeId: store.id,
+          skinTone: model.skin || "morena_clara",
+          hairStyle: model.hair || "ondulado",
+          bodyType: model.body || "media",
+          style: model.style || "casual_natural",
+          ageRange: model.age || "adulta_26_35",
+          name: model.name || "Modelo",
+        });
+
+        // 2b. Gerar preview corpo inteiro via Gemini (fire-and-forget)
+        if (process.env.GOOGLE_AI_API_KEY) {
+          try {
+            const { generatePreviewDirect } = await import("@/lib/model-preview");
+            console.log(`[Onboarding] 🎨 Gerando preview para modelo...`);
+            generatePreviewDirect({
+              modelId: storeModel.id,
+              storeId: store.id,
+              skinTone: model.skin || "morena_clara",
+              hairStyle: model.hair || "ondulado",
+              bodyType: model.body || "media",
+              style: model.style || "casual_natural",
+              ageRange: model.age || "adulta_26_35",
+              name: model.name || "Modelo",
+            }).catch((err) => {
+              console.warn("[Onboarding] Preview generation falhou (não fatal):", err);
+            });
+          } catch (previewErr) {
+            console.warn("[Onboarding] Preview generation falhou (não fatal):", previewErr);
+          }
         }
+      } else {
+        console.log(`[Onboarding] ⚠️ Modelo não criado: plano "${planName}" permite ${modelLimit} modelos (tem ${existingModels.length})`);
       }
     }
 

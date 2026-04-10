@@ -201,10 +201,10 @@ export default function Historico() {
 
       {/* ── Filter Tabs ── */}
       {campaigns.length > 0 && (
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-2 snap-x hide-scrollbar" style={{ WebkitOverflowScrolling: "touch" }}>
           <button
             onClick={() => setFilter("all")}
-            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px]"
+            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
             style={{
               background: filter === "all" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "all" ? "white" : "var(--muted)",
@@ -215,7 +215,7 @@ export default function Historico() {
           </button>
           <button
             onClick={() => setFilter("favorites")}
-            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px]"
+            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
             style={{
               background: filter === "favorites" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "favorites" ? "white" : "var(--muted)",

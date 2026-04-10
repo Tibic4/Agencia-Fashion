@@ -111,10 +111,8 @@ export default function GerarCampanha() {
   } | null>(null);
   const [showSinglePhotoWarning, setShowSinglePhotoWarning] = useState(false);
 
-  const planModelLimits: Record<string, number> = {
-    free: 0, gratis: 0, essencial: 3, pro: 10, business: 25,
-  };
-  const maxModels = planModelLimits[userPlan] ?? 0;
+  // Model limit from API (source of truth — not hardcoded)
+  const [maxModels, setMaxModels] = useState(0);
 
   // Carregar banco de modelos (stock) + modelos personalizadas da loja + usage
   const [userCredits, setUserCredits] = useState(0);
@@ -131,6 +129,7 @@ export default function GerarCampanha() {
       .then(data => {
         setCustomModels(data.models || []);
         setUserPlan(data.plan || "free");
+        if (typeof data.limit === "number") setMaxModels(data.limit);
       })
       .catch(() => {});
     // Carregar cor da marca da loja
@@ -1215,44 +1214,46 @@ export default function GerarCampanha() {
             )}
           </div>
 
-          {/* Generate button */}
-          {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
-            <Link
-              href="/plano"
-              className="btn-primary w-full !py-4 text-base flex items-center justify-center gap-2"
-              style={{
-                boxShadow: "0 8px 30px rgba(139,92,246,0.3)",
-                background: "linear-gradient(135deg, #8B5CF6, #EC4899)",
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              {campaignsLimit === 0 ? "Comprar créditos para gerar" : "Recarregar créditos"}
-            </Link>
-          ) : (
-            <button
-              onClick={() => {
-                if (preview && !closeUpFile && !secondFile) {
-                  setShowSinglePhotoWarning(true);
-                } else {
-                  handleGenerate();
-                }
-              }}
-              disabled={!preview}
-              className="btn-primary w-full !py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
-              style={{
-                boxShadow: preview ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
-              }}
-            >
-              <IconZap />
-              Gerar fotos agora
-            </button>
-          )}
+          {/* Generate button (Sticky no Mobile) */}
+          <div className="lg:static sticky bottom-16 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "rgba(var(--background-rgb, 255, 255, 255), 0.8)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0" }}>
+            {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
+              <Link
+                href="/plano"
+                className="btn-primary w-full !py-4 text-base flex items-center justify-center gap-2"
+                style={{
+                  boxShadow: "0 8px 30px rgba(139,92,246,0.3)",
+                  background: "linear-gradient(135deg, #8B5CF6, #EC4899)",
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                {campaignsLimit === 0 ? "Comprar créditos para gerar" : "Recarregar créditos"}
+              </Link>
+            ) : (
+              <button
+                onClick={() => {
+                  if (preview && !closeUpFile && !secondFile) {
+                    setShowSinglePhotoWarning(true);
+                  } else {
+                    handleGenerate();
+                  }
+                }}
+                disabled={!preview}
+                className="btn-primary w-full !py-4 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                style={{
+                  boxShadow: preview ? "0 8px 30px rgba(236,72,153,0.3)" : "none",
+                }}
+              >
+                <IconZap />
+                Gerar fotos agora
+              </button>
+            )}
 
-          {!preview && campaignsLimit !== null && (campaignsUsed < campaignsLimit || userCredits > 0) && (
-            <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
-              Envie pelo menos a foto principal para começar
-            </p>
-          )}
+            {!preview && campaignsLimit !== null && (campaignsUsed < campaignsLimit || userCredits > 0) && (
+              <p className="text-xs text-center mt-3" style={{ color: "var(--muted)" }}>
+                Envie pelo menos a foto principal para começar
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

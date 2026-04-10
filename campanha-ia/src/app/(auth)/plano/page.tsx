@@ -7,6 +7,7 @@ const IconCheck = () => (
 );
 
 interface StoreUsage {
+  plan_name: string;
   campaigns_generated: number;
   campaigns_limit: number;
   models_used: number;
@@ -156,9 +157,16 @@ export default function Plano() {
   const campaignsLimit = usage?.campaigns_limit ?? 0;
   const usagePercent = campaignsLimit > 0 ? (campaignsUsed / campaignsLimit) * 100 : 0;
 
-  // Detect current plan name from store data
-  const currentPlanName = store?.plan_id
-    ? plans.find((p) => store.plan_id?.includes(p.id))?.name || "Avulso"
+  // Detect current plan name from usage API (source of truth)
+  const planNameMap: Record<string, string> = {
+    gratis: "Avulso",
+    free: "Avulso",
+    essencial: "Essencial",
+    pro: "Pro",
+    business: "Business",
+  };
+  const currentPlanName = usage?.plan_name
+    ? planNameMap[usage.plan_name] || "Avulso"
     : "Avulso";
 
   const nextRenewal = new Date();
@@ -314,7 +322,39 @@ export default function Plano() {
         ))}
       </div>
 
-      {/* Credits - Fix #15: disabled with "Em breve" tooltip */}
+      {/* Trial — only show for free plan users */}
+      {currentPlanName === "Avulso" && (
+        <div className="mb-8">
+          <h3 className="text-lg font-bold mb-4">Comece agora</h3>
+          <div className="rounded-2xl p-5 text-center transition-all hover:-translate-y-1" style={{
+            background: "var(--gradient-brand-soft)",
+            border: "1px solid var(--brand-200)",
+            boxShadow: "var(--shadow-md)",
+          }}>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-xl">🎯</span>
+              <h4 className="text-lg font-bold">Teste na Prática</h4>
+            </div>
+            <div className="flex items-baseline justify-center gap-1 mb-1">
+              <span className="text-2xl font-black">R$ 9,90</span>
+              <span className="text-sm" style={{ color: "var(--muted)" }}>único</span>
+            </div>
+            <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>
+              5 campanhas + 1 modelo virtual • Sem mensalidade
+            </p>
+            <button
+              onClick={() => handleCreditCheckout("trial")}
+              disabled={creditLoading === "trial"}
+              className="w-full max-w-xs mx-auto py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px]"
+              style={{ background: "var(--gradient-brand)", color: "white" }}
+            >
+              {creditLoading === "trial" ? "Abrindo checkout..." : "⚡ Testar por R$ 9,90"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Credits */}
       <h3 className="text-lg font-bold mb-4">Créditos avulsos</h3>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {extras.map((extra) => (

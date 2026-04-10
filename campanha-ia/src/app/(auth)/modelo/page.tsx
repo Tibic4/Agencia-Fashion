@@ -4,17 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 
-/* ═══════════════════════════════════════
-   Plan model limits (source: db/index.ts)
-   Grátis: 0 | Essencial: 3 | Pro: 10 | Business: 25
-   ═══════════════════════════════════════ */
-const planModelLimits: Record<string, number> = {
-  free: 0,
-  gratis: 0,
-  essencial: 3,
-  pro: 10,
-  business: 25,
-};
+
 
 const skinTones = [
   { value: "branca", label: "Clara", color: "#F5D0B5" },
@@ -92,6 +82,7 @@ export default function ModeloVirtual() {
   const [models, setModels] = useState<StoreModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
   const [userPlan, setUserPlan] = useState("free");
+  const [modelLimit, setModelLimit] = useState(0);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -109,7 +100,7 @@ export default function ModeloVirtual() {
   const [error, setError] = useState("");
   const [quotaError, setQuotaError] = useState<{ current: number; limit: number; plan: string } | null>(null);
 
-  const maxModels = planModelLimits[userPlan] ?? 0;
+  const maxModels = modelLimit;
   const canCreate = models.length < maxModels;
 
   // ── Load existing models ──
@@ -121,6 +112,7 @@ export default function ModeloVirtual() {
           const data = await res.json();
           setModels(data.models || []);
           setUserPlan(data.plan || "free");
+          setModelLimit(data.limit ?? 0);
         }
       } catch {
         // If API doesn't exist yet, use empty list
@@ -687,25 +679,27 @@ export default function ModeloVirtual() {
             </div>
           )}
 
-          {/* Generate */}
-          <button
-            className="btn-primary w-full !py-3.5"
-            onClick={handleCreate}
-            disabled={loading}
-            style={{ opacity: loading ? 0.7 : 1 }}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-                Criando modelo...
-              </span>
-            ) : (
-              "✨ Criar modelo virtual"
-            )}
-          </button>
-          <p className="text-xs text-center mt-3" style={{ color: "var(--muted)" }}>
-            Usa 1 crédito de modelo do seu plano · Pronta em ~30 segundos
-          </p>
+          {/* Generate (Sticky no Mobile) */}
+          <div className="lg:static sticky bottom-16 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "rgba(var(--background-rgb, 255, 255, 255), 0.8)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0" }}>
+            <button
+              className="btn-primary w-full !py-3.5"
+              onClick={handleCreate}
+              disabled={loading}
+              style={{ opacity: loading ? 0.7 : 1, boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                  Criando modelo...
+                </span>
+              ) : (
+                "✨ Criar modelo virtual"
+              )}
+            </button>
+            <p className="text-xs text-center mt-3" style={{ color: "var(--muted)" }}>
+              Usa 1 crédito de modelo do seu plano · Pronta em ~30 seg
+            </p>
+          </div>
         </div>
 
         {/* Right — Preview */}
