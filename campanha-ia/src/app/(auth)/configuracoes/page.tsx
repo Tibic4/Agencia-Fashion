@@ -134,7 +134,7 @@ export default function Configuracoes() {
   }
 
   return (
-    <div className="animate-fade-in-up max-w-2xl">
+    <>
       {/* Color Picker Modal */}
       {showColorPicker && (
         <BrandColorPicker
@@ -143,6 +143,8 @@ export default function Configuracoes() {
           onClose={() => setShowColorPicker(false)}
         />
       )}
+
+      <div className="animate-fade-in-up max-w-2xl">
 
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -332,5 +334,6 @@ export default function Configuracoes() {
         </button>
       </div>
     </div>
+    </>
   );
 }
