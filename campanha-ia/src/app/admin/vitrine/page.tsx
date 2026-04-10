@@ -345,12 +345,12 @@ export default function AdminVitrine() {
               {/* Imagens lado a lado */}
               <div className="grid grid-cols-2 gap-1 p-2">
                 <div className="relative">
-                  <img src={item.before_photo_url} alt="Antes" className="w-full h-40 object-cover rounded-lg" />
+                  <img src={item.before_photo_url} alt="Antes" className="w-full h-40 object-cover rounded-lg" style={{ objectPosition: "top center" }} />
                   <span className="absolute top-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: "var(--warning)", color: "black" }}>ANTES</span>
                 </div>
                 <div className="relative">
-                  <img src={item.after_photo_url} alt="Depois" className="w-full h-40 object-cover rounded-lg" />
+                  <img src={item.after_photo_url} alt="Depois" className="w-full h-40 object-cover rounded-lg" style={{ objectPosition: "top center" }} />
                   <span className="absolute top-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: "var(--success)", color: "white" }}>DEPOIS</span>
                 </div>
