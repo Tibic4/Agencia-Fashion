@@ -18,8 +18,8 @@ import { checkRateLimit } from "@/lib/rate-limit";
 export const maxDuration = 180;
 export const dynamic = "force-dynamic";
 
-// v5: Pipeline Sonnet + Gemini VTO. Demo mode se nenhuma key existe.
-const IS_DEMO_MODE = !process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY;
+// v6: Pipeline Gemini Analyzer + Gemini VTO. Demo mode se nenhuma key existe.
+const IS_DEMO_MODE = !process.env.GEMINI_API_KEY && !process.env.GOOGLE_AI_API_KEY;
 
 /**
  * POST /api/campaign/generate
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
     // ── PRODUCTION: buscar modelo para o pipeline v5 ──
     let modelImageBase64: string | null = null;
     let modelMediaType = "image/png";
-    // Metadados da modelo para o Sonnet (prompts contextuais)
+    // Metadados da modelo para o Gemini Analyzer (prompts contextuais)
     let modelInfo: { skinTone?: string; bodyType?: string; pose?: string; hairColor?: string; hairTexture?: string; hairLength?: string; ageRange?: string; style?: string; gender?: string } = {};
 
     if (store) {
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // 🚀 SSE STREAMING — pipeline v5
-      console.log("[Generate] 🚀 Iniciando pipeline v5 (Sonnet + 3x Gemini VTO)...");
+      console.log("[Generate] 🚀 Iniciando pipeline v6 (Gemini Analyzer + 3x Gemini VTO)...");
 
       const encoder = new TextEncoder();
       const stream = new TransformStream();
@@ -433,7 +433,7 @@ export async function POST(request: NextRequest) {
                   const buf = Buffer.from(img.imageBase64, "base64");
                   const ext = img.mimeType === "image/png" ? "png" : "jpg";
                   const contentType = img.mimeType || "image/jpeg";
-                  const path = `campaigns/${campaignRecord.id}/v5_look_${i + 1}.${ext}`;
+                  const path = `campaigns/${campaignRecord.id}/v6_look_${i + 1}.${ext}`;
                   const { error: upErr } = await supabase.storage
                     .from("generated-images")
                     .upload(path, buf, { contentType, upsert: true });
@@ -498,7 +498,7 @@ export async function POST(request: NextRequest) {
           });
         } catch (pipelineError: unknown) {
           if (campaignRecord) {
-            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v5 error";
+            const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v6 error";
             await failCampaign(campaignRecord.id, msg);
           }
           const errMsg = pipelineError instanceof Error ? pipelineError.message : "Erro ao gerar campanha";
@@ -521,7 +521,7 @@ export async function POST(request: NextRequest) {
       const errorObj = error as Record<string, unknown>;
       console.error("[API:campaign/generate] Error:", errorObj);
 
-      if (String(errorObj.message || "").includes("ANTHROPIC_API_KEY")) {
+      if (String(errorObj.message || "").includes("API_KEY")) {
         return NextResponse.json({ error: "Chave da API não configurada", code: "API_KEY_MISSING" }, { status: 500 });
       }
       if (errorObj.status === 429) {
@@ -541,7 +541,7 @@ export async function POST(request: NextRequest) {
     const errorObj = error as Record<string, unknown>;
     console.error("[API:campaign/generate] Top-level error:", errorObj);
 
-    if (String(errorObj.message || "").includes("ANTHROPIC_API_KEY")) {
+    if (String(errorObj.message || "").includes("API_KEY")) {
       return NextResponse.json({ error: "Chave da API não configurada", code: "API_KEY_MISSING" }, { status: 500 });
     }
     if (errorObj.status === 429) {

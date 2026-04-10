@@ -22,7 +22,7 @@ import { GoogleGenAI } from "@google/genai";
 // ═══════════════════════════════════════
 
 export interface GeminiVTOInput {
-  /** 3 styling/scene prompts do Sonnet (cenário + estilo) */
+  /** 3 styling/scene prompts do Gemini Analyzer (cenário + estilo) */
   stylingPrompts: [string, string, string];
   /** Base64 da foto principal do produto (sem prefixo data:) */
   productImageBase64: string;
@@ -438,7 +438,7 @@ async function generateSingleImage(
 // ═══════════════════════════════════════
 
 function mapAspectRatio(ratio: string): string {
-  const valid = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9"];
+  const valid = ["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"];
   return valid.includes(ratio) ? ratio : "3:4";
 }
 
@@ -465,7 +465,7 @@ async function logGeminiVTOCosts(
     // fallback
   }
 
-  // Gemini 3.1 Flash Image 2K: ~$0.04/imagem (input tokens + output image)
+  // Gemini 3 Pro Image 2K: ~$0.04/imagem (input tokens + output image)
   const costPerImage = 0.04;
   const totalCostUsd = costPerImage * successCount;
 
