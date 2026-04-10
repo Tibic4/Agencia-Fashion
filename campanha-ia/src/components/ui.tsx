@@ -17,10 +17,10 @@ export function PublicHeader({ showCta = true }: { showCta?: boolean }) {
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm" style={{ color: "var(--muted)" }}>
           <Link href="/sobre" className="hover:text-[var(--foreground)] transition">Sobre</Link>
-          <Link href="/#pricing" className="hover:text-[var(--foreground)] transition">Preços</Link>
-          <Link href="/login" className="hover:text-[var(--foreground)] transition font-medium">Entrar</Link>
+          <Link href="/#precos" className="hover:text-[var(--foreground)] transition">Preços</Link>
+          <Link href="/sign-in" className="hover:text-[var(--foreground)] transition font-medium">Entrar</Link>
           {showCta && (
-            <Link href="/cadastro" className="btn-primary text-sm !py-2 !px-3 sm:!py-2.5 sm:!px-5">
+            <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-3 sm:!py-2.5 sm:!px-5">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
             </Link>
