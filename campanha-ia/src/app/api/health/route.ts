@@ -26,9 +26,9 @@ export async function GET() {
   }
 
   // 2. API Keys configured
-  checks.anthropic = process.env.ANTHROPIC_API_KEY
+  checks.gemini = (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY)
     ? { status: "ok" }
-    : { status: "warning", detail: "ANTHROPIC_API_KEY not set (demo mode)" };
+    : { status: "warning", detail: "GEMINI_API_KEY not set (demo mode)" };
 
   checks.clerk = process.env.CLERK_SECRET_KEY
     ? { status: "ok" }

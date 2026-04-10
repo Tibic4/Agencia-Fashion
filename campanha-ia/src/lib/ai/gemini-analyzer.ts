@@ -40,7 +40,7 @@ export interface GeminiVTOHint {
   /** 3 scene+styling prompts para o Gemini VTO (em inglês) */
   scene_prompts: [string, string, string];
   /** Aspect ratio sugerido */
-  aspect_ratio: "3:4" | "4:5" | "2:3";
+  aspect_ratio: "9:16" | "3:4" | "4:5" | "2:3";
   /** Tipo de peça para categorização */
   category: string;
 }
