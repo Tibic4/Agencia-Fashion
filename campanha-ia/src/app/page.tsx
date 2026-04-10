@@ -57,57 +57,27 @@ const plans = [
   },
 ];
 
-const benefits = [
-  {
-    icon: <IconCamera />,
-    title: "Só com uma foto",
-    description: "Fotografe a peça com o celular e a IA gera a campanha completa, pronta pra postar.",
-  },
-  {
-    icon: <IconTarget />,
-    title: "Textos que vendem",
-    description: "IA treinada em copy de moda brasileira. Headlines, legendas e WhatsApp que convertem.",
-  },
-  {
-    icon: <IconShirt />,
-    title: "Modelo virtual",
-    description: "Sua roupa vestida em modelo IA. Sem fotógrafo, sem estúdio, sem custo extra.",
-  },
-  {
-    icon: <IconBarChart />,
-    title: "Score de qualidade",
-    description: "Nota de 0 a 100 com análise de conversão, clareza e aprovação Meta Ads.",
-  },
-  {
-    icon: <IconShield />,
-    title: "Compliance Meta",
-    description: "Alertas automáticos sobre políticas do Meta Ads. Zero risco de bloqueio.",
-  },
-  {
-    icon: <IconUsers />,
-    title: "Feito para lojista",
-    description: "Interface simples. Não precisa saber de marketing, design nem IA.",
-  },
-];
-
+/* ═══════════════════════════════════════
+   Steps data (Como funciona)
+   ═══════════════════════════════════════ */
 const steps = [
   {
     number: "01",
     icon: <IconCamera />,
-    title: "Tire a foto",
-    description: "Fotografe a peça de roupa com seu celular. Qualquer fundo serve — a IA resolve.",
+    title: "Fotografe a peça",
+    description: "Use o celular. Qualquer fundo, qualquer luz — a IA isola e analisa o tecido, caimento e cor.",
   },
   {
     number: "02",
     icon: <IconZap />,
-    title: "IA trabalha",
-    description: "Textos, criativos com modelo virtual, hashtags e score de qualidade — tudo automático.",
+    title: "IA cria tudo",
+    description: "Modelo virtual veste a peça, legendas persuasivas, hashtags e score de conversão — em segundos.",
   },
   {
     number: "03",
     icon: <IconDownload />,
-    title: "Publique",
-    description: "Copie o texto, baixe a imagem e poste no Instagram, WhatsApp ou Meta Ads.",
+    title: "Publique e venda",
+    description: "Copie, baixe e poste direto no Instagram, WhatsApp ou Meta Ads. Pronto pra converter.",
   },
 ];
 
@@ -128,8 +98,8 @@ export default function Home() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
+            <a href="#vitrine" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Resultado</a>
             <a href="#como-funciona" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Como funciona</a>
-            <a href="#beneficios" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Benefícios</a>
             <a href="#precos" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Preços</a>
           </nav>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -148,162 +118,227 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
-        {/* ═══ HERO ═══ */}
-        <section className="relative pt-24 pb-16 md:pt-40 md:pb-28 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
-          {/* Decorative elements */}
-          <div className="absolute top-20 left-10 w-72 h-72 rounded-full opacity-20 blur-3xl" style={{ background: 'var(--brand-400)' }} />
-          <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-400)' }} />
+        {/* ═══ HERO — VTO-first above the fold ═══ */}
+        <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
+          {/* Mesh gradient orbs */}
+          <div className="absolute top-10 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.15] blur-[100px]" style={{ background: 'var(--brand-400)' }} />
+          <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-[120px]" style={{ background: 'var(--accent-400)' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.04] blur-[80px]" style={{ background: 'var(--brand-300)' }} />
           
           <div className="container relative z-10">
-            <div className="max-w-3xl mx-auto text-center stagger-children">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 badge badge-brand mb-4 md:mb-6">
+            {/* ── Mobile Layout: text + compact VTO proof ── */}
+            <div className="md:hidden text-center stagger-children">
+              <div className="inline-flex items-center gap-2 badge badge-brand mb-3">
                 <IconSparkles />
-                <span>Feito para lojistas de moda</span>
+                <span>Virtual Try-On com IA</span>
               </div>
 
-              {/* Headline */}
-              <h1 className="text-[32px] sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-5">
+              <h1 className="text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
                 Sua roupa no corpo de uma{" "}
                 <span className="gradient-text">modelo IA.</span>
               </h1>
 
-              {/* Subheadline */}
-              <p className="text-lg md:text-xl leading-relaxed mb-10 max-w-2xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Só com uma foto da peça. A IA veste a modelo virtual, gera textos, hashtags e score de qualidade —{" "}
-                <strong style={{ color: 'var(--foreground)' }}>campanha pronta pra postar</strong>.
+              <p className="text-base leading-relaxed mb-6 max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
+                Foto da peça → campanha completa.{" "}
+                <strong style={{ color: 'var(--foreground)' }}>Modelo virtual, legendas e score</strong> — pronto pra postar.
               </p>
 
+              {/* ── VTO Proof Card (mobile "aha moment") ── */}
+              <div className="mb-6 mx-auto max-w-xs animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <div className="rounded-2xl overflow-hidden" style={{ 
+                  background: 'var(--surface)', 
+                  border: '1px solid var(--border)',
+                  boxShadow: '0 8px 40px rgba(236,72,153,0.12), var(--shadow-lg)',
+                }}>
+                  {/* VTO visual strip */}
+                  <div className="relative" style={{ aspectRatio: '4/3', background: 'linear-gradient(135deg, var(--brand-100), var(--accent-100))' }}>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-2" style={{
+                          background: 'var(--gradient-brand)',
+                          color: 'white',
+                          boxShadow: '0 8px 32px rgba(236,72,153,0.35)',
+                        }}>
+                          <IconShirt />
+                        </div>
+                        <p className="text-xs font-bold" style={{ color: 'var(--brand-700)' }}>
+                          Foto → Modelo Virtual
+                        </p>
+                      </div>
+                    </div>
+                    {/* Floating badges */}
+                    <div className="absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.6)', color: 'white', backdropFilter: 'blur(8px)' }}>
+                      📷 Antes
+                    </div>
+                    <div className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'var(--gradient-brand)', color: 'white' }}>
+                      ✨ Depois
+                    </div>
+                  </div>
+                  {/* Smart caption preview */}
+                  <div className="px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
+                        <IconSparkles />
+                      </div>
+                      <span className="text-[11px] font-semibold">Legenda gerada pela IA</span>
+                      <span className="ml-auto text-[11px] font-black gradient-text">94/100</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+                      ✨ Elegância que fala por si. Vestido midi em viscose premium — caimento fluido, decote transpassado e toque acetinado. Peça única. 💎
+                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>Alta Conversão</span>
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-100)', color: 'var(--accent-600)' }}>Copy Persuasivo</span>
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>Meta Aprovado</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full">
-                <Link href="/sign-up" className="btn-primary w-full sm:w-auto text-sm sm:text-base !py-3.5 !px-5 sm:!px-8 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
+              <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
+                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
                   <IconZap />
-                  <span className="sm:hidden">Testar por R$ 9,90</span>
-                  <span className="hidden sm:inline">Testar por R$ 9,90 — 5 campanhas completas</span>
+                  Testar por R$ 9,90
                 </Link>
-                <a href="#como-funciona" className="btn-secondary w-full sm:w-auto text-base !py-3.5 !px-8">
-                  Ver como funciona
+                <a href="#vitrine" className="btn-secondary w-full text-sm !py-3">
+                  Ver resultado real
                   <IconArrowRight />
                 </a>
               </div>
 
-              {/* Social proof */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-8 text-sm" style={{ color: 'var(--muted)' }}>
-                <div className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--success)' }}>✔</span>
-                  <span>Modelo virtual inclusa</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--success)' }}>✔</span>
-                  <span>Pague via PIX</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span style={{ color: 'var(--success)' }}>✔</span>
-                  <span>Cancele quando quiser</span>
-                </div>
+              {/* Trust signals */}
+              <div className="flex items-center justify-center gap-4 mt-6 text-[11px]" style={{ color: 'var(--muted)' }}>
+                <span className="flex items-center gap-1"><span style={{ color: 'var(--success)' }}>✔</span> Via PIX</span>
+                <span className="flex items-center gap-1"><span style={{ color: 'var(--success)' }}>✔</span> Sem assinatura</span>
+                <span className="flex items-center gap-1"><span style={{ color: 'var(--success)' }}>✔</span> Cancele quando quiser</span>
               </div>
             </div>
 
-            {/* Hero Visual — App Preview Mockup */}
-            {/* Mobile: compact result preview */}
-            <div className="md:hidden mt-10 max-w-sm mx-auto animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
-                    <IconSparkles />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold">Resultado da IA</p>
-                    <p className="text-[10px]" style={{ color: 'var(--muted)' }}>Campanha gerada automaticamente</p>
-                  </div>
-                  <span className="ml-auto text-xs font-bold gradient-text">87/100</span>
+            {/* ── Desktop Layout: side-by-side hero ── */}
+            <div className="hidden md:grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+              {/* Left — Copy */}
+              <div className="stagger-children">
+                <div className="inline-flex items-center gap-2 badge badge-brand mb-6">
+                  <IconSparkles />
+                  <span>Virtual Try-On com IA</span>
                 </div>
-                <p className="text-xs leading-relaxed mb-2" style={{ color: 'var(--muted)' }}>
-                  ✨ Ela chegou pra roubar a cena! Vestido floral perfeito pro verão — confortável, estiloso e por apenas R$ 89,90 💕
+
+                <h1 className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6">
+                  Sua roupa no corpo{" "}
+                  <span className="gradient-text">de uma modelo IA.</span>
+                </h1>
+
+                <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
+                  Só com uma foto da peça, a IA veste a modelo virtual, gera legendas persuasivas com terminologia de moda e score de conversão —{" "}
+                  <strong style={{ color: 'var(--foreground)' }}>campanha pronta pra postar</strong>.
                 </p>
-                <p className="text-[10px]" style={{ color: 'var(--brand-500)' }}>
-                  #modafeminina #vestidofloral #looknovo #fashionstyle
-                </p>
+
+                <div className="flex flex-wrap items-center gap-4 mb-8">
+                  <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
+                    <IconZap />
+                    Testar por R$ 9,90 — 5 campanhas
+                  </Link>
+                  <a href="#vitrine" className="btn-secondary text-base !py-3.5 !px-8">
+                    Ver resultado real
+                    <IconArrowRight />
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--muted)' }}>
+                  <div className="flex items-center gap-1.5">
+                    <span style={{ color: 'var(--success)' }}>✔</span>
+                    <span>Modelo virtual inclusa</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span style={{ color: 'var(--success)' }}>✔</span>
+                    <span>Pague via PIX</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span style={{ color: 'var(--success)' }}>✔</span>
+                    <span>Cancele quando quiser</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            {/* Desktop: full browser mockup */}
-            <div className="hidden md:block mt-16 md:mt-20 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-              <div className="relative rounded-2xl overflow-hidden" style={{ 
-                background: 'var(--gradient-card)', 
-                border: '1px solid var(--border)',
-                boxShadow: 'var(--shadow-xl)'
-              }}>
-                {/* Browser bar */}
-                <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }} />
-                    <div className="w-3 h-3 rounded-full" style={{ background: '#f59e0b' }} />
-                    <div className="w-3 h-3 rounded-full" style={{ background: '#10b981' }} />
-                  </div>
-                  <div className="flex-1 mx-4">
-                    <div className="h-6 rounded-md px-3 flex items-center text-xs" style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
-                      crialook.com.br/gerar
+
+              {/* Right — Browser Mockup with VTO proof */}
+              <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                <div className="relative rounded-2xl overflow-hidden" style={{ 
+                  background: 'var(--surface)', 
+                  border: '1px solid var(--border)',
+                  boxShadow: '0 20px 80px rgba(236,72,153,0.1), 0 8px 30px rgba(0,0,0,0.08)',
+                }}>
+                  {/* Browser chrome */}
+                  <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }} />
+                      <div className="w-3 h-3 rounded-full" style={{ background: '#f59e0b' }} />
+                      <div className="w-3 h-3 rounded-full" style={{ background: '#10b981' }} />
+                    </div>
+                    <div className="flex-1 mx-4">
+                      <div className="h-7 rounded-lg px-3 flex items-center text-xs" style={{ background: 'var(--background)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
+                        crialook.com.br/gerar
+                      </div>
                     </div>
                   </div>
-                </div>
-                {/* App content mockup */}
-                <div className="p-6 md:p-10">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Left — Upload area */}
-                    <div className="flex flex-col gap-4">
-                      <div className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--brand-500)' }}>
-                        Upload da peça
-                      </div>
-                      <div className="aspect-square rounded-xl flex flex-col items-center justify-center gap-3" style={{ 
-                        background: 'var(--surface)', 
-                        border: '2px dashed var(--border)',
-                      }}>
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
-                          <IconCamera />
+                  {/* App content mockup */}
+                  <div className="p-6 lg:p-8">
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Left — Upload visual */}
+                      <div className="space-y-3">
+                        <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand-500)' }}>
+                          Foto original
                         </div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Arraste a foto da roupa aqui</p>
-                        <div className="btn-primary text-xs !py-2 !px-4">Escolher foto</div>
+                        <div className="rounded-xl flex flex-col items-center justify-center gap-3" style={{ 
+                          aspectRatio: '3/4',
+                          background: 'linear-gradient(180deg, var(--brand-50), var(--surface))',
+                          border: '2px dashed var(--brand-200)',
+                        }}>
+                          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-500)' }}>
+                            <IconCamera />
+                          </div>
+                          <p className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Arraste a foto aqui</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm" style={{ color: 'var(--muted)' }}>Preço:</span>
-                        <div className="flex-1 h-10 rounded-lg px-3 flex items-center font-semibold" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                          R$ 89,90
+                      {/* Right — AI Result */}
+                      <div className="space-y-3">
+                        <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-500)' }}>
+                          Resultado IA
+                        </div>
+                        <div className="rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: 'linear-gradient(180deg, var(--accent-50), var(--surface))', border: '1px solid var(--border)' }}>
+                          <div className="h-full flex flex-col items-center justify-center gap-2 p-4">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 4px 16px rgba(236,72,153,0.3)' }}>
+                              <IconShirt />
+                            </div>
+                            <p className="text-[11px] font-bold text-center" style={{ color: 'var(--accent-700)' }}>Modelo IA vestindo a peça</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    {/* Right — Result preview */}
-                    <div className="flex flex-col gap-4">
-                      <div className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--accent-500)' }}>
-                        Resultado IA
-                      </div>
-                      <div className="rounded-xl p-5 space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center gap-2">
+                    {/* Result cards */}
+                    <div className="mt-5 space-y-3">
+                      <div className="rounded-xl p-4" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+                        <div className="flex items-center gap-2 mb-2">
                           <IconInstagram />
-                          <span className="text-sm font-semibold">Instagram Feed</span>
+                          <span className="text-xs font-bold">Instagram Feed</span>
+                          <span className="ml-auto text-xs font-black gradient-text">94/100</span>
                         </div>
-                        <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                          ✨ Ela chegou pra roubar a cena! Vestido floral perfeito pro verão — confortável, 
-                          estiloso e por apenas R$ 89,90 💕
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+                          ✨ Elegância atemporal. Vestido midi em viscose premium, caimento solto e acabamento acetinado. Peça que transita do escritório ao happy hour com naturalidade.
                         </p>
-                        <p className="text-xs" style={{ color: 'var(--brand-500)' }}>
-                          #modafeminina #vestidofloral #looknovo #fashionstyle #tendencia2026
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-100)', color: 'var(--brand-700)' }}>Alta Conversão</span>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>Meta Aprovado ✓</span>
+                        </div>
                       </div>
-                      <div className="rounded-xl p-5 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center gap-2">
+                      <div className="rounded-xl p-4" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+                        <div className="flex items-center gap-2 mb-2">
                           <span style={{ color: '#25d366' }}><IconWhatsApp /></span>
-                          <span className="text-sm font-semibold">WhatsApp</span>
+                          <span className="text-xs font-bold">WhatsApp</span>
                         </div>
-                        <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                          Oi! 🌸 Acabou de chegar vestido floral LINDO, super fresquinho pro calor! 
-                          Por R$ 89,90. Quer ver mais fotos? 📲
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
+                          Oi! ✨ Olha que peça maravilhosa acabou de chegar — vestido midi em viscose com toque acetinado. Super elegante e confortável. R$ 189,90 💎 Mando mais fotos? 📲
                         </p>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                          <div className="h-full rounded-full" style={{ width: '87%', background: 'var(--gradient-brand)' }} />
-                        </div>
-                        <span className="text-sm font-bold gradient-text">87/100</span>
                       </div>
                     </div>
                   </div>
@@ -313,40 +348,45 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
+        <div id="vitrine">
+          <ShowcaseSectionLoader />
+        </div>
+
         {/* ═══ COMO FUNCIONA ═══ */}
         <section id="como-funciona" className="section" style={{ background: 'var(--background)' }}>
           <div className="container">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">3 passos simples</div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                Como <span className="gradient-text">funciona</span>
+                De uma foto a uma <span className="gradient-text">campanha completa</span>
               </h2>
-              <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Nenhum conhecimento técnico necessário. Foto + preço = campanha completa.
+              <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
+                Nenhum conhecimento técnico. Sem Photoshop. Sem agência.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto stagger-children">
+            <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto stagger-children">
               {steps.map((step, i) => (
                 <div key={step.number} className="relative text-center group">
-                  {/* N5: Connector line between steps (mobile) */}
+                  {/* Connector line between steps (mobile) */}
                   {i < steps.length - 1 && (
-                    <div className="md:hidden absolute left-1/2 -translate-x-1/2 -bottom-5 w-px h-6" style={{ borderLeft: '2px dashed var(--brand-300)', opacity: 0.4 }} />
+                    <div className="md:hidden absolute left-1/2 -translate-x-1/2 -bottom-4 w-px h-5" style={{ borderLeft: '2px dashed var(--brand-300)', opacity: 0.4 }} />
                   )}
                   {/* Step number */}
-                  <div className="text-5xl md:text-7xl font-black mb-4 opacity-[0.06] md:opacity-[0.12]" style={{ color: 'var(--brand-500)' }}>
+                  <div className="text-5xl md:text-7xl font-black mb-4 opacity-[0.05]" style={{ color: 'var(--brand-500)' }}>
                     {step.number}
                   </div>
                   {/* Icon */}
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 -mt-16 relative z-10 transition-transform group-hover:scale-110" style={{ 
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 -mt-14 md:-mt-16 relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg" style={{ 
                     background: 'var(--gradient-brand)', 
                     color: 'white',
                     boxShadow: '0 8px 25px rgba(236,72,153,0.25)'
                   }}>
                     {step.icon}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  <h3 className="text-lg md:text-xl font-bold mb-2">{step.title}</h3>
+                  <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: 'var(--muted)' }}>
                     {step.description}
                   </p>
                 </div>
@@ -355,43 +395,112 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══ BENEFÍCIOS ═══ */}
-        <section id="beneficios" className="section" style={{ background: 'var(--gradient-brand-soft)' }}>
+        {/* ═══ BENEFÍCIOS — Bento Grid ═══ */}
+        <section id="beneficios" className="section" style={{ background: 'var(--surface)' }}>
           <div className="container">
-            <div className="text-center mb-16">
-              <div className="badge badge-brand mb-4 inline-flex">Por que escolher</div>
+            <div className="text-center mb-12 md:mb-16">
+              <div className="badge badge-brand mb-4 inline-flex">Tudo incluso</div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                Tudo que seu <span className="gradient-text">marketing</span> precisa
+                Uma foto. <span className="gradient-text">Seis entregas.</span>
               </h2>
-              <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Ferramenta completa para lojistas de moda que querem vender mais sem complicação.
+              <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
+                Cada campanha vem com modelo virtual, legendas inteligentes, hashtags, score e compliance — sem custo extra.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 max-w-5xl mx-auto stagger-children">
-              {benefits.map((benefit) => (
-                <div key={benefit.title} className="card-brand group cursor-default">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 md:mb-4 transition-transform group-hover:scale-110" style={{
-                    background: 'var(--brand-100)',
-                    color: 'var(--brand-600)',
-                  }}>
-                    {benefit.icon}
-                  </div>
-                  <h3 className="text-base md:text-lg font-bold mb-1 md:mb-2">{benefit.title}</h3>
-                  <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                    {benefit.description}
-                  </p>
+            {/* Bento Grid — 3 cols desktop, 2 cols tablet, 1 col mobile = no orphan */}
+            <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5 stagger-children">
+              {/* ★ VTO — gradient brand card for prominence */}
+              <div className="group rounded-2xl p-5 md:p-7 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden" style={{
+                background: 'var(--gradient-brand)',
+                color: 'white',
+                boxShadow: '0 8px 40px rgba(236,72,153,0.2)',
+              }}>
+                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-20 blur-3xl" style={{ background: 'white' }} />
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110" style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  backdropFilter: 'blur(8px)',
+                }}>
+                  <IconShirt />
                 </div>
-              ))}
+                <div className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-80">Feature principal</div>
+                <h3 className="text-lg md:text-xl font-bold mb-2">Modelo Virtual</h3>
+                <p className="text-xs md:text-sm leading-relaxed opacity-90">
+                  Sua roupa vestida em uma modelo IA realista. Sem fotógrafo, sem estúdio — Virtual Try-On.
+                </p>
+                <div className="mt-3">
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                    ✨ Powered by Fashn AI
+                  </span>
+                </div>
+              </div>
+
+              {/* 5 cards normais */}
+              <div className="card-brand group cursor-default rounded-2xl">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
+                  background: 'var(--brand-100)', color: 'var(--brand-600)',
+                }}>
+                  <IconTarget />
+                </div>
+                <h3 className="text-sm md:text-base font-bold mb-1">Legendas que vendem</h3>
+                <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  IA treinada em copy de moda brasileiro. Headlines, legendas e mensagens WhatsApp.
+                </p>
+              </div>
+
+              <div className="card-brand group cursor-default rounded-2xl">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
+                  background: 'var(--brand-100)', color: 'var(--brand-600)',
+                }}>
+                  <IconBarChart />
+                </div>
+                <h3 className="text-sm md:text-base font-bold mb-1">Score de conversão</h3>
+                <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  Nota de 0 a 100: persuasão, clareza, Meta Ads. Saiba o que melhorar.
+                </p>
+              </div>
+
+              <div className="card-brand group cursor-default rounded-2xl">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
+                  background: 'var(--brand-100)', color: 'var(--brand-600)',
+                }}>
+                  <IconCamera />
+                </div>
+                <h3 className="text-sm md:text-base font-bold mb-1">Só uma foto</h3>
+                <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  Fotografe com o celular. A IA isola o produto, analisa tecido e caimento.
+                </p>
+              </div>
+
+              <div className="card-brand group cursor-default rounded-2xl">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
+                  background: 'var(--brand-100)', color: 'var(--brand-600)',
+                }}>
+                  <IconShield />
+                </div>
+                <h3 className="text-sm md:text-base font-bold mb-1">Compliance Meta</h3>
+                <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  Alertas sobre políticas do Meta Ads. Zero risco de bloqueio.
+                </p>
+              </div>
+
+              <div className="card-brand group cursor-default rounded-2xl">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
+                  background: 'var(--brand-100)', color: 'var(--brand-600)',
+                }}>
+                  <IconUsers />
+                </div>
+                <h3 className="text-sm md:text-base font-bold mb-1">Feito pra lojista</h3>
+                <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  Interface simples e direta. Não precisa saber de marketing ou design.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
-        <ShowcaseSectionLoader />
-
         {/* ═══ PRICING ═══ */}
-        <section id="precos" className="section" style={{ background: 'var(--background)' }}>
+        <section id="precos" className="section" style={{ background: 'var(--gradient-brand-soft)' }}>
           <div className="container">
             <div className="text-center mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Planos</div>
@@ -435,7 +544,7 @@ export default function Home() {
               <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
             </div>
 
-            <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-5 max-w-5xl mx-auto overflow-x-auto snap-x snap-mandatory pb-6 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-5 max-w-4xl mx-auto overflow-x-auto snap-x snap-mandatory pb-6 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4 items-stretch" style={{ WebkitOverflowScrolling: "touch" }}>
               {plans.map((plan) => (
                 <div
                   key={plan.name}
@@ -511,7 +620,7 @@ export default function Home() {
         </section>
 
         {/* ═══ CTA FINAL ═══ */}
-        <section className="section relative overflow-hidden" style={{ background: 'var(--gradient-brand-soft)' }}>
+        <section className="section relative overflow-hidden" style={{ background: 'var(--background)' }}>
           <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--brand-400)' }} />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-400)' }} />
           
@@ -521,7 +630,7 @@ export default function Home() {
               <span className="gradient-text">foto de distância</span>.
             </h2>
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Comece com 5 campanhas por R$ 9,90. Modelo virtual, textos, hashtags — tudo incluso.
+              Comece com 5 campanhas por R$ 9,90. Modelo virtual, legendas inteligentes, hashtags — tudo incluso.
             </p>
             <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 hover:animate-pulse-glow" aria-label="Criar minha primeira campanha com IA">
               <IconZap />
