@@ -9,8 +9,8 @@
  * cenário preferido são passados ao Gemini 3.1 Pro para prompts ultra-detalhados.
  */
 
-import type { SonnetAnalise, SonnetDicasPostagem, SonnetVTOHint } from "./gemini-analyzer";
-import { analyzeWithSonnet } from "./gemini-analyzer";
+import type { GeminiAnalise, GeminiDicasPostagem, GeminiVTOHint } from "./gemini-analyzer";
+import { analyzeWithGemini } from "./gemini-analyzer";
 import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 
@@ -41,7 +41,7 @@ export interface PipelineInput {
   modelMediaType?: string;
   /** Metadados da modelo (para prompts contextuais) */
   modelInfo?: ModelInfo;
-  /** Informações de contexto para o Sonnet */
+  /** Informações de contexto para o Gemini Analyzer */
   price?: string;
   storeName?: string;
   bodyType?: "normal" | "plus";
@@ -62,9 +62,9 @@ export interface PipelineInput {
 }
 
 export interface PipelineResult {
-  analise: SonnetAnalise;
-  vto_hints: SonnetVTOHint;
-  dicas_postagem: SonnetDicasPostagem;
+  analise: GeminiAnalise;
+  vto_hints: GeminiVTOHint;
+  dicas_postagem: GeminiDicasPostagem;
   /** Array de 3 — null significa que aquela imagem falhou */
   images: (GeneratedImage | null)[];
   successCount: number;
@@ -88,10 +88,11 @@ export async function runCampaignPipeline(
   const startTime = Date.now();
 
   // — Etapa 1: Gemini 3.1 Pro analisa o produto ————————————————
+  // NOTA: step name "sonnet" mantido para compatibilidade com o frontend
   await onProgress?.("sonnet", "Analisando fotos do produto...", 8);
 
-  const sonnetStart = Date.now();
-  const sonnetResult = await analyzeWithSonnet({
+  const analyzerStart = Date.now();
+  const analyzerResult = await analyzeWithGemini({
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType as any,
     extraImages: input.extraImages as any,
@@ -102,7 +103,7 @@ export async function runCampaignPipeline(
     brandColor: input.brandColor,
     modelInfo: input.modelInfo,
   });
-  const analyzerDurationMs = Date.now() - sonnetStart;
+  const analyzerDurationMs = Date.now() - analyzerStart;
 
   // Log de custo do Gemini Analyzer (fire-and-forget)
   if (input.storeId) {
@@ -111,6 +112,7 @@ export async function runCampaignPipeline(
     );
   }
 
+  // NOTA: step name "sonnet_done" mantido para compatibilidade com o frontend
   await onProgress?.("sonnet_done", "Análise completa! Criando looks...", 30);
 
   // — Etapa 2: Gemini VTO gera 3 imagens em paralelo ————
@@ -123,13 +125,13 @@ export async function runCampaignPipeline(
   const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
   const imageResult = await generateWithGeminiVTO({
-    stylingPrompts: sonnetResult.vto_hints.scene_prompts,
+    stylingPrompts: analyzerResult.vto_hints.scene_prompts,
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
     modelMediaType: input.modelMediaType,
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
-    aspectRatio: sonnetResult.vto_hints.aspect_ratio,
+    aspectRatio: analyzerResult.vto_hints.aspect_ratio,
     gender: input.modelInfo?.gender,
     storeId: input.storeId,
     campaignId: input.campaignId,
@@ -147,13 +149,13 @@ export async function runCampaignPipeline(
 
   const durationMs = Date.now() - startTime;
   console.log(
-    `[Pipeline v6] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${sonnetResult.analise.tipo_peca}`
+    `[Pipeline v6] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${analyzerResult.analise.tipo_peca}`
   );
 
   return {
-    analise: sonnetResult.analise,
-    vto_hints: sonnetResult.vto_hints,
-    dicas_postagem: sonnetResult.dicas_postagem,
+    analise: analyzerResult.analise,
+    vto_hints: analyzerResult.vto_hints,
+    dicas_postagem: analyzerResult.dicas_postagem,
     images: imageResult.images,
     successCount: imageResult.successCount,
     durationMs,
