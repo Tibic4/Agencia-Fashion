@@ -318,9 +318,12 @@ function buildSystemPrompt(input: AnalyzerInput): string {
   const bodyMap: Record<string, string> = {
     normal: "standard/slim body frame",
     media: "standard average build",
+    medio: "standard average male build",
     magra: "slim/petite body frame",
     plus_size: "plus-size curvy body with full figure",
     plus: "plus-size curvy body with full figure",
+    robusto: "robust/heavy-set male build with broad shoulders and stocky frame",
+    atletico: "athletic muscular build",
   };
   const hairColorMap: Record<string, string> = {
     preto: "jet black hair",

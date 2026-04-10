@@ -413,7 +413,7 @@ function mapAspectRatio(ratio: string): string {
 
 // ═══════════════════════════════════════
 // Log de custos
-// Gemini 3.1 Flash Image: ~$0.04/imagem (2K)
+// Gemini 3 Pro Image: ~$0.04/imagem (2K)
 // Input: ~0.001/img, Output: ~0.04/img (1312×1744 ≈ $0.0385/img)
 // ═══════════════════════════════════════
 
@@ -443,7 +443,7 @@ async function logGeminiVTOCosts(
     campaign_id: campaignId || null,
     provider: "google",
     model_used: MODEL,
-    action: "gemini_vto_v5",
+    action: "gemini_vto_v6",
     cost_usd: totalCostUsd,
     cost_brl: totalCostUsd * exchangeRate,
     exchange_rate: exchangeRate,

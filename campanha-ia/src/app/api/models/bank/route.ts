@@ -3,8 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * GET /api/models/bank
- * Retorna as modelos padrão do banco (10 plus + 10 normais)
- * Query params opcionais: ?body_type=plus_size | normal
+ * Retorna as modelos padrão do banco (40 modelos: 10 f-media, 10 m-medio, 10 f-plus, 10 m-robusto)
+ * Query params opcionais: ?body_type=media|medio|plus_size|robusto
  */
 export async function GET(request: Request) {
   try {
@@ -14,12 +14,12 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("model_bank")
-      .select("id, name, body_type, skin_tone, pose, image_url, thumbnail_url")
+      .select("id, name, body_type, skin_tone, pose, image_url, thumbnail_url, gender, hair_color, hair_texture, hair_length, age_range, style")
       .eq("is_active", true)
       .order("body_type")
       .order("name");
 
-    if (bodyType && (bodyType === "plus_size" || bodyType === "normal")) {
+    if (bodyType) {
       query = query.eq("body_type", bodyType);
     }
 
@@ -40,7 +40,4 @@ export async function GET(request: Request) {
   }
 }
 
-/**
- * GET /api/models/bank/random
- * Retorna uma modelo aleatória do banco
- */
+// GET /api/models/bank/random endpoint removed (unused)

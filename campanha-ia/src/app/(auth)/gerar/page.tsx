@@ -100,11 +100,21 @@ export default function GerarCampanha() {
   const [dragOverSecond, setDragOverSecond] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bodyType, setBodyType] = useState<"normal" | "plus">("normal");
+
+  // Helper: mapeia filtro UI → body_types reais no DB
+  // DB values: media (f-normal), medio (m-normal), plus_size (f-plus), robusto (m-plus)
+  const matchesFilter = (dbBodyType: string, filter: string): boolean => {
+    if (filter === "all") return true;
+    if (filter === "padrao") return ["media", "medio", "normal"].includes(dbBodyType);
+    if (filter === "curvilinea") return ["plus_size", "robusto", "plus"].includes(dbBodyType);
+    // Fallback exact match
+    return dbBodyType === filter;
+  };
   const [modelBank, setModelBank] = useState<ModelBankItem[]>([]);
   const [customModels, setCustomModels] = useState<{ id: string; name: string; body_type: string; skin_tone?: string; photo_url?: string | null; is_active: boolean }[]>([]);
   const [userPlan, setUserPlan] = useState("free");
   const [selectedModelId, setSelectedModelId] = useState<string>("random");
-  const [modelFilter, setModelFilter] = useState<string>("all");
+  const [modelFilter, setModelFilter] = useState<string>("padrao");
   const [showAllModels, setShowAllModels] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
@@ -815,7 +825,7 @@ export default function GerarCampanha() {
             <label className="block text-sm font-semibold mb-2">Biotipo da modelo</label>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => { setBodyType("normal"); setModelFilter("normal"); setShowAllModels(false); }}
+                onClick={() => { setBodyType("normal"); setModelFilter("padrao"); setShowAllModels(false); }}
                 className="p-3 rounded-xl text-center transition-all"
                 style={{
                   border: bodyType === "normal"
@@ -829,7 +839,7 @@ export default function GerarCampanha() {
                 <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>P · M · G</p>
               </button>
               <button
-                onClick={() => { setBodyType("plus"); setModelFilter("plus_size"); setShowAllModels(false); }}
+                onClick={() => { setBodyType("plus"); setModelFilter("curvilinea"); setShowAllModels(false); }}
                 className="p-3 rounded-xl text-center transition-all"
                 style={{
                   border: bodyType === "plus"
@@ -857,17 +867,23 @@ export default function GerarCampanha() {
                 )}
               </div>
               <div className="flex gap-1">
-                {["all", "normal", "plus_size"].map((f) => (
+                {["all", "padrao", "curvilinea"].map((f) => (
                   <button
                     key={f}
-                    onClick={() => setModelFilter(f)}
+                    onClick={() => {
+                      setModelFilter(f);
+                      // Sync biotipo selector
+                      if (f === "padrao") setBodyType("normal");
+                      else if (f === "curvilinea") setBodyType("plus");
+                      setShowAllModels(false);
+                    }}
                     className="px-3 py-2 rounded-md text-xs font-medium transition-all min-h-[36px]"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
                     }}
                   >
-                    {f === "all" ? "Todas" : f === "normal" ? "Padrão" : "Curvilínea"}
+                    {f === "all" ? "Todas" : f === "padrao" ? "Padrão" : "Curvilínea"}
                   </button>
                 ))}
               </div>
@@ -890,7 +906,7 @@ export default function GerarCampanha() {
 
               {/* ⭐ Modelos personalizadas da loja (borda dourada) */}
               {customModels
-                .filter(m => modelFilter === "all" || m.body_type === modelFilter || (modelFilter === "plus_size" && m.body_type === "plus_size"))
+                .filter(m => matchesFilter(m.body_type, modelFilter))
                 .map((model) => (
                 <div key={`custom-${model.id}`} className="relative group">
                   <button
@@ -1024,7 +1040,7 @@ export default function GerarCampanha() {
 
               {/* Modelos stock do banco */}
               {(() => {
-                const filtered = modelBank.filter(m => modelFilter === "all" || m.body_type === modelFilter);
+                const filtered = modelBank.filter(m => matchesFilter(m.body_type, modelFilter));
                 const visibleModels = showAllModels ? filtered : filtered.slice(0, 6);
                 return visibleModels.map((model) => (
                   <button
@@ -1055,7 +1071,7 @@ export default function GerarCampanha() {
 
             {/* Botão ver mais modelos */}
             {(() => {
-              const filtered = modelBank.filter(m => modelFilter === "all" || m.body_type === modelFilter);
+              const filtered = modelBank.filter(m => matchesFilter(m.body_type, modelFilter));
               if (filtered.length <= 6) return null;
               return (
                 <button
