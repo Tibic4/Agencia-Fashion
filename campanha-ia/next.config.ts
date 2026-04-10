@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
   // Otimização de imagens: formatos modernos + qualidade boa
   images: {
     formats: ["image/avif", "image/webp"],
+    qualities: [50, 75, 90],
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 dias de cache

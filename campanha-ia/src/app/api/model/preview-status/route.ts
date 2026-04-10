@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     const { data: models, error } = await supabase
       .from("store_models")
-      .select("id, preview_url")
+      .select("id, preview_url, preview_status")
       .eq("store_id", store.id)
       .in("id", modelIds);
 
@@ -56,6 +56,8 @@ export async function GET(request: NextRequest) {
 
       if (url) {
         statuses[model.id] = { url, status: "completed" };
+      } else if (model.preview_status === "failed") {
+        statuses[model.id] = { url: null, status: "failed" };
       } else {
         statuses[model.id] = { url: null, status: "generating" };
       }
