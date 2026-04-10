@@ -119,11 +119,25 @@ export default function Onboarding() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFreeTier, setIsFreeTier] = useState<boolean>(true);
 
   // Confetti state for step 3
   const [confettiPieces, setConfettiPieces] = useState<{ left: string; delay: string; color: string; size: number }[]>([]);
 
   const totalSteps = 4; // 0-3
+
+  useEffect(() => {
+    // Check if user is free tier
+    fetch("/api/store")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          const plan = data.data.plan_name;
+          setIsFreeTier(!plan || plan === "gratis" || plan === "free");
+        }
+      })
+      .catch(() => setIsFreeTier(true)); // default to true on error
+  }, []);
 
   useEffect(() => {
     if (step === 3) {
@@ -141,7 +155,7 @@ export default function Onboarding() {
 
   function goNext() {
     setDirection("forward");
-    if (step === 1) {
+    if (step === 1 && isFreeTier) {
       saveOnboarding(true); // Skip model creation for new free accounts
       return;
     }
@@ -346,11 +360,7 @@ export default function Onboarding() {
           border-radius: 14px;
           background: var(--background);
           border: 1px solid var(--border);
-          transition: all 0.3s ease;
-        }
-        .onb-how-card:hover {
-          border-color: var(--brand-300);
-          box-shadow: var(--shadow-md);
+          text-align: left;
         }
         .onb-how-icon {
           width: 44px;
@@ -1184,10 +1194,12 @@ export default function Onboarding() {
                       <span>{instagram}</span>
                     </div>
                   )}
-                  <div className="onb-summary-row">
-                    <span>👩</span>
-                    <span>{body === "media" && skin && !saving ? "Modelo personalizada" : "Modelo stock"}</span>
-                  </div>
+                  {!isFreeTier && (
+                    <div className="onb-summary-row">
+                      <span>👩</span>
+                      <span>{body === "media" && skin && !saving ? "Modelo personalizada" : "Modelo stock"}</span>
+                    </div>
+                  )}
                 </div>
 
                 <Link
@@ -1199,14 +1211,15 @@ export default function Onboarding() {
                   <IconArrowRight />
                 </Link>
 
-                {/* Secondary link */}
-                <Link
-                  href="/modelo"
-                  className="onb-skip-btn"
-                  style={{ marginTop: "16px", display: "inline-block" }}
-                >
-                  Ou configurar modelo virtual primeiro →
-                </Link>
+                {!isFreeTier && (
+                  <Link
+                    href="/modelos"
+                    className="onb-skip-btn"
+                    style={{ marginTop: "16px", display: "inline-block" }}
+                  >
+                    Ou configurar modelo virtual primeiro →
+                  </Link>
+                )}
               </div>
             )}
           </div>
