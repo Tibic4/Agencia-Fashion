@@ -48,3 +48,5 @@ test-images/
 .env.local
 .env.production
 .env.development
+# clerk configuration (can include secrets)
+/.clerk/
