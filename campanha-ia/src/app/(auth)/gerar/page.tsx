@@ -1137,19 +1137,38 @@ export default function GerarCampanha() {
                   >
                     {bg.value === "minha_marca" && storeBrandColor ? (
                       <div
-                        className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative"
+                        className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative overflow-hidden"
                         style={{
-                          background: `linear-gradient(145deg, ${storeBrandColor}15 0%, ${storeBrandColor}40 100%)`,
+                          background: `
+                            radial-gradient(ellipse at 50% 30%, ${storeBrandColor}60 0%, ${storeBrandColor}25 60%, ${storeBrandColor}10 100%),
+                            linear-gradient(180deg, ${storeBrandColor}18 0%, ${storeBrandColor}35 100%)
+                          `,
+                          boxShadow: `inset 0 0 30px ${storeBrandColor}20, inset 0 -8px 16px ${storeBrandColor}15`,
                         }}
                       >
+                        {/* Noise texture overlay — CSS only, zero API */}
                         <div
-                          className="w-8 h-8 rounded-full shadow-sm"
+                          className="absolute inset-0 opacity-[0.08] mix-blend-overlay pointer-events-none"
                           style={{
-                            background: `linear-gradient(135deg, ${storeBrandColor}, ${storeBrandColor}CC)`,
-                            border: "2px solid white",
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                            backgroundSize: "128px 128px",
                           }}
                         />
-                        <span className="text-[9px] font-bold tracking-wide uppercase" style={{ color: storeBrandColor }}>Marca</span>
+                        {/* Subtle directional light */}
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            background: `linear-gradient(160deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(0,0,0,0.06) 100%)`,
+                          }}
+                        />
+                        <div
+                          className="w-8 h-8 rounded-full shadow-md relative z-10"
+                          style={{
+                            background: `linear-gradient(135deg, ${storeBrandColor}, ${storeBrandColor}CC)`,
+                            border: "2px solid rgba(255,255,255,0.8)",
+                          }}
+                        />
+                        <span className="text-[9px] font-bold tracking-wide uppercase relative z-10" style={{ color: storeBrandColor, textShadow: "0 0 8px rgba(255,255,255,0.5)" }}>Marca</span>
                       </div>
                     ) : bg.value === "personalizado" ? (
                       <div
