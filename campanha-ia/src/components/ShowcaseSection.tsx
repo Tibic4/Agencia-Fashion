@@ -105,9 +105,9 @@ function BeforeAfterSlider({
       {/* Slider area — 3:4 portrait (melhor fit para fotos de moda corpo inteiro) */}
       <div
         ref={containerRef}
-        className="relative select-none overflow-hidden touch-none"
+        className="relative select-none overflow-hidden touch-pan-y"
         style={{
-          aspectRatio: "3 / 4",
+          aspectRatio: "9 / 16",
           width: "100%",
           background: "#1a1a1a",
           cursor: isDragging ? "grabbing" : "grab",
@@ -298,9 +298,32 @@ export default function ShowcaseSection() {
     handleUserInteraction();
   }, [items.length, handleUserInteraction]);
 
-  // Não renderiza nada se não tem itens
-  if (loaded && items.length === 0) return null;
-  if (!loaded) return null;
+  // Enquanto carrega da API, mostra o Header real e um skeleton 9:16
+  if (!loaded) {
+    return (
+      <section className="section" style={{ background: "var(--surface)" }}>
+        <div className="container">
+          {/* Header estático visível de imediato para evitar CLS */}
+          <div className="text-center mb-6 md:mb-12">
+            <div className="badge badge-brand mb-3 md:mb-4 inline-flex">Virtual Try-On</div>
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-2 md:mb-4">
+              Foto real → <span className="gradient-text">modelo IA</span>
+            </h2>
+            <p className="text-sm md:text-lg max-w-xl mx-auto" style={{ color: "var(--muted)" }}>
+              Arraste para comparar. A peça real, vestida numa modelo gerada por IA.
+            </p>
+          </div>
+          {/* Skeleton do slider */}
+          <div className="w-full max-w-[400px] mx-auto relative rounded-2xl overflow-hidden" style={{ aspectRatio: "9/16", background: "var(--background)", border: "1px solid var(--border)" }}>
+             <div className="absolute inset-0 animate-pulse bg-zinc-800/40" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Não renderiza nada se já carregou e tem 0 itens
+  if (items.length === 0) return null;
 
   const activeItem = items[activeIndex];
 
@@ -318,22 +341,8 @@ export default function ShowcaseSection() {
           </p>
         </div>
 
-        {/* Slider container */}
-        <div className="max-w-3xl mx-auto relative">
-          {/* Counter badge (multiple items) */}
-          {items.length > 1 && (
-            <div
-              className="absolute -top-3 right-2 md:right-0 text-[11px] font-bold px-3 py-1 rounded-full z-30"
-              style={{
-                background: "var(--brand-500, #A855F7)",
-                color: "white",
-                boxShadow: "0 2px 8px rgba(168, 85, 247, 0.3)",
-              }}
-            >
-              {activeIndex + 1} / {items.length}
-            </div>
-          )}
-
+        {/* Slider container — max-width control para não explodir altura no Desktop */}
+        <div className="w-full max-w-[400px] mx-auto relative">
           {/* Navigation arrows (desktop only) */}
           {items.length > 1 && (
             <>
@@ -448,15 +457,6 @@ export default function ShowcaseSection() {
                   <path d="m9 18 6-6-6-6" />
                 </svg>
               </button>
-            </div>
-          )}
-
-          {/* ── Autoplay status indicator ── */}
-          {items.length > 1 && !isPaused && (
-            <div className="flex justify-center mt-2">
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ color: "var(--muted)", background: "var(--surface)" }}>
-                ▶ Trocando automaticamente
-              </span>
             </div>
           )}
         </div>
