@@ -32,6 +32,9 @@ export async function DELETE(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:models/delete]", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao excluir modelo", details: process.env.NODE_ENV === "development" ? message : undefined },
+      { status: 500 }
+    );
   }
 }

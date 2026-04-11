@@ -17,6 +17,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import type { ModelInfo } from "./pipeline";
+import { callGeminiSafe } from "./gemini-error-handler";
 
 // ═══════════════════════════════════════
 // Tipos de retorno (tipos de retorno do analyzer)
@@ -252,18 +253,21 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
     text: buildUserPrompt(input),
   });
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: "user", parts }],
-    config: {
-      systemInstruction: buildSystemPrompt(input),
-      responseMimeType: "application/json",
-      responseJsonSchema: RESPONSE_SCHEMA as any,
-      thinkingConfig: {
-        thinkingBudget: 2048,
+  const response = await callGeminiSafe(
+    () => ai.models.generateContent({
+      model: MODEL,
+      contents: [{ role: "user", parts }],
+      config: {
+        systemInstruction: buildSystemPrompt(input),
+        responseMimeType: "application/json",
+        responseJsonSchema: RESPONSE_SCHEMA as any,
+        thinkingConfig: {
+          thinkingBudget: 2048,
+        },
       },
-    },
-  });
+    }),
+    { label: "Gemini Analyzer", maxRetries: 1, backoffMs: 3000 }
+  );
 
   const durationMs = Date.now() - startTime;
 

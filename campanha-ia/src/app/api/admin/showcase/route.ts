@@ -91,7 +91,10 @@ export async function GET() {
     .order("sort_order")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[API:admin/showcase] GET error:", error.message);
+    return NextResponse.json({ error: "Erro ao listar vitrine" }, { status: 500 });
+  }
   return NextResponse.json({ success: true, data });
 }
 
@@ -178,7 +181,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:admin/showcase] Error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao criar item da vitrine" }, { status: 500 });
   }
 }
 
@@ -224,7 +227,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[API:admin/showcase] PATCH error:", message);
+    return NextResponse.json({ error: "Erro ao atualizar item" }, { status: 500 });
   }
 }
 
@@ -251,7 +255,10 @@ export async function DELETE(request: NextRequest) {
 
   // 2. Deletar do banco
   const { error } = await supabase.from("showcase_items").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[API:admin/showcase] DELETE error:", error.message);
+    return NextResponse.json({ error: "Erro ao deletar item" }, { status: 500 });
+  }
 
   // 3. Limpar arquivos do storage (best-effort, não falha se der erro)
   if (item) {

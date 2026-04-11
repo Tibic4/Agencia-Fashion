@@ -97,7 +97,14 @@ export async function POST(request: NextRequest) {
  * Processa notificação de pagamento (pontual ou cobrança de assinatura)
  */
 async function handlePaymentEvent(paymentId: string) {
-  const payment = await getPaymentStatus(paymentId);
+  let payment;
+  try {
+    payment = await getPaymentStatus(paymentId);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erro desconhecido";
+    console.error(`[Webhook:MercadoPago] ❌ Falha ao consultar pagamento ${paymentId}:`, msg);
+    throw err; // re-throw para o outer catch retornar 200 (evitar retry infinito)
+  }
 
   console.log("[Webhook:MercadoPago] Pagamento:", {
     status: payment.status,

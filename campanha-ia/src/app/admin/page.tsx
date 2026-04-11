@@ -23,6 +23,7 @@ async function getMetrics() {
     { data: planDistribution },
     { data: creditPurchases },
     { count: paidStores },
+    { count: pipelineErrors, data: pipelineErrorData },
   ] = await Promise.all([
     supabase.from("stores").select("*", { count: "exact", head: true }),
     supabase.from("stores").select("*", { count: "exact", head: true }).eq("onboarding_completed", true),
@@ -38,6 +39,8 @@ async function getMetrics() {
     supabase.from("credit_purchases").select("*").gte("created_at", monthStart).eq("payment_status", "approved"),
     // Lojas pagantes (não-grátis)
     supabase.from("stores").select("*", { count: "exact", head: true }).not("mercadopago_subscription_id", "is", null),
+    // Erros de pipeline no mês (para KPI)
+    supabase.from("api_cost_logs").select("metadata", { count: "exact" }).eq("action", "pipeline_error").gte("created_at", monthStart),
   ]);
 
   const apiCostBrl = costData?.reduce((sum, row) => sum + (row.cost_brl || 0), 0) ?? 0;
@@ -67,13 +70,23 @@ async function getMetrics() {
     regenerations: creditPurchases?.filter(p => p.package_type === "regenerations").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
   };
 
-  return {
+    // Pipeline error breakdown
+    const pipelineErrorCounts: Record<string, number> = {};
+    pipelineErrorData?.forEach((row: Record<string, unknown>) => {
+      const meta = row.metadata as Record<string, unknown> | null;
+      const code = String(meta?.error_code || "UNKNOWN");
+      pipelineErrorCounts[code] = (pipelineErrorCounts[code] || 0) + 1;
+    });
+
+    return {
     totalStores: totalStores ?? 0,
     activeStores: activeStores ?? 0,
     paidStores: paidStores ?? 0,
     campaignsThisMonth: campaignsThisMonth ?? 0,
     completedThisMonth: completedThisMonth ?? 0,
     failedThisMonth: failedThisMonth ?? 0,
+    pipelineErrors: pipelineErrors ?? 0,
+    pipelineErrorCounts,
     apiCostBrl,
     mrr,
     planCounts,
@@ -85,34 +98,47 @@ async function getMetrics() {
 
 function StatCard({ label, value, subtitle, color }: { label: string; value: string | number; subtitle?: string; color: string }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition">
-      <p className="text-sm text-gray-400 mb-1">{label}</p>
-      <p className={`text-3xl font-bold ${color}`}>{value}</p>
-      {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+    <div className="relative bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 overflow-hidden group">
+      {/* Subtle top glow */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
+      {/* Subtle inner gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+      
+      <div className="relative z-10">
+        <p className="text-[13px] font-medium text-[#A1A1AA] mb-1">{label}</p>
+        <p className={`text-3xl font-black tracking-tight ${color}`}>{value}</p>
+        {subtitle && <p className="text-[11px] uppercase tracking-wider text-[#71717A] mt-2 font-medium">{subtitle}</p>}
+      </div>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    processing: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    failed: "bg-red-500/10 text-red-400 border-red-500/20",
-    pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  const styles: Record<string, { dot: string; text: string }> = {
+    completed: { dot: "bg-[#34D399] shadow-[0_0_8px_rgba(52,211,153,0.5)]", text: "text-[#34D399]" },
+    processing: { dot: "bg-[#60A5FA] shadow-[0_0_8px_rgba(96,165,250,0.5)] animate-pulse", text: "text-[#60A5FA]" },
+    failed: { dot: "bg-[#F87171] shadow-[0_0_8px_rgba(248,113,113,0.5)]", text: "text-[#F87171]" },
+    pending: { dot: "bg-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.5)]", text: "text-[#FBBF24]" },
   };
+
+  const style = styles[status] || styles.pending;
+
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.pending}`}>
-      {status}
-    </span>
+    <div className="flex items-center gap-2">
+      <div className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+      <span className={`text-[11px] font-bold uppercase tracking-wider ${style.text}`}>
+        {status}
+      </span>
+    </div>
   );
 }
 
-const planColors: Record<string, string> = {
-  gratis: "bg-gray-600",
-  essencial: "bg-blue-500",
-  pro: "bg-fuchsia-500",
-  business: "bg-amber-500",
-  sem_plano: "bg-gray-700",
+const planGradients: Record<string, string> = {
+  gratis: "bg-gradient-to-r from-[#52525B] to-[#3F3F46]", // Zinc
+  essencial: "bg-gradient-to-r from-[#60A5FA] to-[#3B82F6]", // Blue
+  pro: "bg-gradient-to-r from-[#D946EF] to-[#C026D3]", // Fuchsia
+  business: "bg-gradient-to-r from-[#FBBF24] to-[#D97706]", // Premium Gold
+  sem_plano: "bg-gradient-to-r from-[#3F3F46] to-[#27272A]", // Darker Zinc
 };
 
 export default async function AdminDashboard() {
@@ -123,108 +149,120 @@ export default async function AdminDashboard() {
   const totalMrrCredits = m.mrr + m.creditStats.totalRevenue;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400 mt-1">Visão geral do CriaLook</p>
+        <h1 className="text-2xl font-black text-[#FAFAFA] tracking-tight">Dashboard Overview</h1>
+        <p className="text-sm font-medium text-[#A1A1AA] mt-1">Métricas e performance do ecossistema CriaLook</p>
       </div>
 
       {/* KPI Cards — Linha 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Lojas cadastradas" value={m.totalStores} subtitle={`${m.activeStores} ativas · ${m.paidStores} pagantes`} color="text-white" />
-        <StatCard label="MRR (Recorrência)" value={`R$ ${m.mrr.toFixed(2)}`} subtitle={`+ R$ ${m.creditStats.totalRevenue.toFixed(2)} em créditos`} color="text-emerald-400" />
-        <StatCard label="Campanhas este mês" value={m.campaignsThisMonth} subtitle={`${successRate}% sucesso`} color="text-amber-400" />
-        <StatCard label="Custo API (mês)" value={`R$ ${m.apiCostBrl.toFixed(2)}`} subtitle={`Margem: R$ ${(totalMrrCredits - m.apiCostBrl).toFixed(2)}`} color="text-blue-400" />
+        <StatCard label="Lojas cadastradas" value={m.totalStores} subtitle={`${m.activeStores} ativas · ${m.paidStores} pagantes`} color="text-[#FAFAFA]" />
+        <StatCard label="MRR (Recorrência)" value={`R$ ${m.mrr.toFixed(2)}`} subtitle={`+ R$ ${m.creditStats.totalRevenue.toFixed(2)} avulsos`} color="text-[#34D399]" />
+        <StatCard label="Campanhas no mês" value={m.campaignsThisMonth} subtitle={`${successRate}% sucesso`} color="text-[#FBBF24]" />
+        <StatCard label="Custo API (mês)" value={`R$ ${m.apiCostBrl.toFixed(2)}`} subtitle={`Margem: R$ ${(totalMrrCredits - m.apiCostBrl).toFixed(2)}`} color="text-[#FAFAFA]" />
       </div>
 
       {/* Vendas por Plano + Créditos Avulsos */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Distribuição por plano */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800">
-            <h2 className="text-sm font-semibold text-white">📊 Vendas por Plano</h2>
+        <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+          <div className="px-6 py-5 border-b border-white/5">
+            <h2 className="text-[13px] font-bold text-[#FAFAFA] uppercase tracking-widest">Distribuição por Plano</h2>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-5 relative z-10">
             {Object.entries(m.planCounts)
               .sort(([,a], [,b]) => b.price - a.price)
               .map(([key, plan]) => {
               const pct = m.totalStores > 0 ? (plan.count / m.totalStores) * 100 : 0;
-              const barColor = planColors[key] || "bg-gray-500";
+              const barGradient = planGradients[key] || "bg-gray-500";
               return (
                 <div key={key}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-300">{plan.display}</span>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-white">{plan.count}</span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        {plan.price > 0 ? `R$ ${(plan.count * plan.price).toFixed(0)}/mês` : "free"}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[13px] font-semibold text-[#E4E4E7]">{plan.display}</span>
+                    <div className="text-right flex items-baseline gap-2">
+                      <span className="text-sm font-black text-[#FAFAFA]">{plan.count} <span className="text-[10px] font-medium text-[#71717A]">lojas</span></span>
+                      <span className="text-[11px] font-medium text-[#A1A1AA] w-16 text-right">
+                        {plan.price > 0 ? `R$ ${(plan.count * plan.price).toFixed(0)}` : "free"}
                       </span>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-800 rounded-full h-2">
-                    <div className={`${barColor} h-2 rounded-full transition-all`} style={{ width: `${Math.max(pct, 2)}%` }} />
+                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden shadow-[inset_0_1px_rgba(0,0,0,0.5)]">
+                    <div className={`${barGradient} h-1.5 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${Math.max(pct, 2)}%` }} />
                   </div>
-                  <p className="text-xs text-gray-600 mt-0.5">{pct.toFixed(1)}% dos usuários</p>
+                  <p className="text-[10px] font-medium text-[#71717A] mt-1.5">{pct.toFixed(1)}% da base ativa</p>
                 </div>
               );
             })}
-            <div className="border-t border-gray-800 pt-3 mt-2">
+            <div className="border-t border-white/5 pt-4 mt-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">MRR Total</span>
-                <span className="text-lg font-bold text-emerald-400">R$ {m.mrr.toFixed(2)}</span>
+                <span className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-wider">MRR Fixado</span>
+                <span className="text-lg font-black text-[#34D399]">R$ {m.mrr.toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Créditos Avulsos */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800">
-            <h2 className="text-sm font-semibold text-white">💳 Créditos Avulsos (este mês)</h2>
+        <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden relative flex flex-col">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+          <div className="px-6 py-5 border-b border-white/5">
+            <h2 className="text-[13px] font-bold text-[#FAFAFA] uppercase tracking-widest">Marketplace de Créditos</h2>
           </div>
-          <div className="p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-white">{m.creditStats.totalPurchases}</p>
-                <p className="text-xs text-gray-400 mt-1">Compras realizadas</p>
+          <div className="p-6 flex-1 flex flex-col relative z-10">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-5 text-center">
+                <p className="text-3xl font-black text-[#FAFAFA]">{m.creditStats.totalPurchases}</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#71717A] mt-1">Transações</p>
               </div>
-              <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-400">R$ {m.creditStats.totalRevenue.toFixed(2)}</p>
-                <p className="text-xs text-gray-400 mt-1">Receita avulsa</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 mt-2">
-              <div className="flex items-center justify-between py-2 border-b border-gray-800/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">📝</span>
-                  <span className="text-sm text-gray-300">Campanhas extras</span>
-                </div>
-                <span className="text-sm font-bold text-amber-400">+{m.creditStats.campaigns}</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-gray-800/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🧍</span>
-                  <span className="text-sm text-gray-300">Modelos extras</span>
-                </div>
-                <span className="text-sm font-bold text-fuchsia-400">+{m.creditStats.models}</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🔄</span>
-                  <span className="text-sm text-gray-300">Regenerações extras</span>
-                </div>
-                <span className="text-sm font-bold text-blue-400">+{m.creditStats.regenerations}</span>
+              <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-5 text-center">
+                <p className="text-3xl font-black text-[#FBBF24]">R$ {m.creditStats.totalRevenue.toFixed(0)}</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-[#71717A] mt-1">Volume R$</p>
               </div>
             </div>
 
-            <div className="border-t border-gray-800 pt-3">
+            <div className="space-y-4 mb-6 flex-1">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Receita total do mês</span>
-                <span className="text-lg font-bold text-white">R$ {(m.mrr + m.creditStats.totalRevenue).toFixed(2)}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/[0.05]">
+                    <span className="text-[14px]">📝</span>
+                  </div>
+                  <span className="text-[13px] font-semibold text-[#A1A1AA]">Campanhas Extras</span>
+                </div>
+                <span className="text-[13px] font-black text-[#FBBF24]">+{m.creditStats.campaigns}</span>
               </div>
-              <p className="text-xs text-gray-600 mt-1">MRR R$ {m.mrr.toFixed(2)} + Avulsos R$ {m.creditStats.totalRevenue.toFixed(2)}</p>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/[0.05]">
+                    <span className="text-[14px]">🧍</span>
+                  </div>
+                  <span className="text-[13px] font-semibold text-[#A1A1AA]">Modelos Extras</span>
+                </div>
+                <span className="text-[13px] font-black text-[#D946EF]">+{m.creditStats.models}</span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/[0.05]">
+                    <span className="text-[14px]">🔄</span>
+                  </div>
+                  <span className="text-[13px] font-semibold text-[#A1A1AA]">Regenerações</span>
+                </div>
+                <span className="text-[13px] font-black text-[#60A5FA]">+{m.creditStats.regenerations}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 pt-4 mt-auto">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-wider block">Gross Revenue (Mês)</span>
+                  <p className="text-[10px] text-[#71717A] mt-0.5">Assinaturas + Avulsos</p>
+                </div>
+                <span className="text-xl font-black text-[#FAFAFA]">R$ {(m.mrr + m.creditStats.totalRevenue).toFixed(2)}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -232,32 +270,32 @@ export default async function AdminDashboard() {
 
       {/* KPI Cards 2 — Falhas e Rate */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Taxa de conversão" value={m.totalStores > 0 ? `${((m.paidStores / m.totalStores) * 100).toFixed(1)}%` : "0%"} subtitle="free → pago" color="text-fuchsia-400" />
-        <StatCard label="Ticket médio" value={m.paidStores > 0 ? `R$ ${(m.mrr / m.paidStores).toFixed(2)}` : "—"} subtitle="por loja pagante" color="text-amber-400" />
-        <StatCard label="Campanhas/loja" value={m.activeStores > 0 ? (m.campaignsThisMonth / m.activeStores).toFixed(1) : "0"} subtitle="média este mês" color="text-blue-400" />
-        <StatCard label="Falhas" value={m.failedThisMonth} subtitle="este mês" color={m.failedThisMonth > 0 ? "text-red-400" : "text-gray-500"} />
+        <StatCard label="Conversão Funil" value={m.totalStores > 0 ? `${((m.paidStores / m.totalStores) * 100).toFixed(1)}%` : "0%"} subtitle="free → pagante" color="text-[#D946EF]" />
+        <StatCard label="ARPU (Ticket Médio)" value={m.paidStores > 0 ? `R$ ${(m.mrr / m.paidStores).toFixed(2)}` : "—"} subtitle="por loja ativa" color="text-[#FBBF24]" />
+        <StatCard label="Intensidade de Uso" value={m.activeStores > 0 ? (m.campaignsThisMonth / m.activeStores).toFixed(1) : "0"} subtitle="campanhas/loja (mês)" color="text-[#60A5FA]" />
+        <StatCard label="Erros IA" value={m.pipelineErrors + m.failedThisMonth} subtitle={m.pipelineErrors > 0 ? Object.entries(m.pipelineErrorCounts).map(([k,v]) => `${k}: ${v}`).join(' · ') : 'sem erros'} color={m.pipelineErrors + m.failedThisMonth > 0 ? "text-[#F87171]" : "text-[#71717A]"} />
       </div>
 
       {/* Two columns — Recent activity */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Recent Campaigns */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Campanhas recentes</h2>
-            <a href="/admin/campanhas" className="text-xs text-amber-400 hover:text-amber-300 py-1 px-2 min-h-[44px] flex items-center">Ver todas →</a>
+        <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+            <h2 className="text-[12px] font-bold text-[#FAFAFA] uppercase tracking-widest">Activity Feed</h2>
+            <a href="/admin/campanhas" className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Ver Full Log →</a>
           </div>
-          <div className="divide-y divide-gray-800">
+          <div className="divide-y divide-white/5 border-t-0">
             {m.recentCampaigns.length === 0 ? (
-              <div className="px-6 py-12 text-center text-gray-500 text-sm">
-                Nenhuma campanha ainda
+              <div className="px-6 py-16 text-center text-[#71717A] text-[13px] font-medium">
+                Nenhum evento registrado.
               </div>
             ) : (
               m.recentCampaigns.map((campaign: Record<string, unknown>) => (
-                <div key={campaign.id as string} className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-800/30 transition min-h-[52px]">
+                <div key={campaign.id as string} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[56px]">
                   <div>
-                    <p className="text-sm text-white">{(campaign.stores as Record<string, string>)?.name || "—"}</p>
-                    <p className="text-xs text-gray-500">
-                      {formatDateBR(campaign.created_at as string)} · R$ {Number(campaign.price).toFixed(2)}
+                    <p className="text-[13px] font-semibold text-[#E4E4E7]">{(campaign.stores as Record<string, string>)?.name || "Store desativada"}</p>
+                    <p className="text-[11px] text-[#71717A] font-medium mt-0.5">
+                      {formatDateBR(campaign.created_at as string)}
                     </p>
                   </div>
                   <StatusBadge status={campaign.status as string} />
@@ -268,29 +306,33 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Recent Stores */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white">Novos clientes</h2>
-            <a href="/admin/clientes" className="text-xs text-amber-400 hover:text-amber-300 py-1 px-2 min-h-[44px] flex items-center">Ver todos →</a>
+        <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+            <h2 className="text-[12px] font-bold text-[#FAFAFA] uppercase tracking-widest">Latest Client Onboards</h2>
+            <a href="/admin/clientes" className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Database →</a>
           </div>
-          <div className="divide-y divide-gray-800">
+          <div className="divide-y divide-white/5 border-t-0">
             {m.recentStores.length === 0 ? (
-              <div className="px-6 py-12 text-center text-gray-500 text-sm">
-                Nenhum cliente ainda
+              <div className="px-6 py-16 text-center text-[#71717A] text-[13px] font-medium">
+                Nenhuma conta criada.
               </div>
             ) : (
               m.recentStores.map((store: Record<string, unknown>) => (
-                <div key={store.id as string} className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-800/30 transition min-h-[52px]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
+                <div key={store.id as string} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[56px]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#D946EF] to-[#8B5CF6] flex items-center justify-center text-white text-[13px] font-black shadow-[0_0_12px_rgba(217,70,239,0.3)]">
                       {(store.name as string)?.charAt(0)?.toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm text-white">{store.name as string}</p>
-                      <p className="text-xs text-gray-500">{store.segment_primary as string} · {(store.plans as Record<string, string>)?.display_name || "Sem plano"}</p>
+                      <p className="text-[13px] font-semibold text-[#FAFAFA]">{store.name as string}</p>
+                      <p className="text-[11px] text-[#71717A] font-medium mt-0.5">{store.segment_primary as string} · {(store.plans as Record<string, string>)?.display_name || "Free Tier"}</p>
                     </div>
                   </div>
-                  <span className={`w-2 h-2 rounded-full ${store.onboarding_completed ? "bg-emerald-400" : "bg-yellow-400"}`} />
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full border ${store.onboarding_completed ? "text-[#34D399] border-[#34D399]/20 bg-[#34D399]/10" : "text-[#FBBF24] border-[#FBBF24]/20 bg-[#FBBF24]/10"}`}>
+                      {store.onboarding_completed ? "Active" : "Onboarding"}
+                    </span>
+                  </div>
                 </div>
               ))
             )}

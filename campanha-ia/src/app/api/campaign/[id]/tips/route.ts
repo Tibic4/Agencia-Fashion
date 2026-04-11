@@ -291,7 +291,32 @@ export async function POST(
 
     // Parse JSON — clean markdown code blocks if any
     const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const tips: TipsResponse = JSON.parse(cleaned);
+    let tips: TipsResponse;
+    try {
+      tips = JSON.parse(cleaned);
+    } catch {
+      // Tentar reparar JSON truncado (raro com structured output)
+      console.warn("[Tips Pro] ⚠️ JSON inválido, tentando reparar...");
+      try {
+        let repaired = cleaned;
+        const first = repaired.indexOf("{");
+        const last = repaired.lastIndexOf("}");
+        if (first !== -1 && last > first) repaired = repaired.slice(first, last + 1);
+        // Fix unclosed strings/brackets
+        const quotes = (repaired.match(/(?<!\\)"/g) || []).length;
+        if (quotes % 2 !== 0) repaired += '"';
+        const opens = (repaired.match(/[{\[]/g) || []).length;
+        const closes = (repaired.match(/[}\]]/g) || []).length;
+        for (let i = 0; i < opens - closes; i++) {
+          const lastOpen = Math.max(repaired.lastIndexOf("{"), repaired.lastIndexOf("["));
+          repaired += repaired[lastOpen] === "{" ? "}" : "]";
+        }
+        tips = JSON.parse(repaired);
+      } catch {
+        logTipsCost(durationMs, id, storeId, usage).catch(() => {});
+        return NextResponse.json({ error: "Resposta da IA veio incompleta. Tente novamente." }, { status: 500 });
+      }
+    }
 
     // Validate no clothing references leaked through
     const forbidden = /calça|blusa|vestido|saia|conjunto|macacão|camisa|short|bermuda|regata|peça|roupa|look|outfit|produção/i;
