@@ -439,7 +439,7 @@ export default function GerarCampanha() {
   }
 
   return (
-    <div className="animate-fade-in-up pb-24 md:pb-0">
+    <div className="animate-fade-in-up pb-24 md:pb-0 w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
       {/* Quota Exceeded Modal (seção 5.5) */}
       {quotaExceeded && (
         <QuotaExceededModal
@@ -714,15 +714,15 @@ export default function GerarCampanha() {
                     <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>Close-up</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 p-3 h-full">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
+                  <div className="flex flex-col items-center justify-center gap-2 p-2 sm:p-3 h-full overflow-hidden w-full">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
                       <IconSearch />
                     </div>
-                    <div className="text-center px-1">
-                      <p className="text-[11px] sm:text-xs font-semibold leading-tight">Detalhe do tecido</p>
-                      <p className="text-[10px] sm:text-xs leading-tight mt-1" style={{ color: "var(--muted)" }}>Ajuda a IA na textura</p>
+                    <div className="text-center w-full min-w-0">
+                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Detalhe tecido</p>
+                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Ajuda na textura</p>
                     </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -774,15 +774,15 @@ export default function GerarCampanha() {
                     <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>2ª peça</span>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 p-3 h-full">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
+                  <div className="flex flex-col items-center justify-center gap-2 p-2 sm:p-3 h-full overflow-hidden w-full">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
                       <IconPlus />
                     </div>
-                    <div className="text-center px-1">
-                      <p className="text-[11px] sm:text-xs font-semibold leading-tight">Compor o look</p>
-                      <p className="text-[10px] sm:text-xs leading-tight mt-1" style={{ color: "var(--muted)" }}>Peça para combinar</p>
+                    <div className="text-center w-full min-w-0">
+                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Compor look</p>
+                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Peça para combinar</p>
                     </div>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -909,7 +909,7 @@ export default function GerarCampanha() {
                       else if (f === "homem_plus") setBodyType("robusto");
                       setShowAllModels(false);
                     }}
-                    className="px-2.5 py-1.5 md:px-3 md:py-2 rounded-md text-xs font-medium transition-all min-h-[36px] whitespace-nowrap flex-shrink-0"
+                    className="px-3 py-2 sm:px-3 sm:py-2 rounded-md text-[11px] sm:text-xs font-medium transition-all min-h-[44px] whitespace-nowrap flex-shrink-0"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
@@ -1223,7 +1223,7 @@ export default function GerarCampanha() {
                         <span className="text-[9px] font-medium" style={{ color: "var(--muted)" }}>Descreva</span>
                       </div>
                     ) : bg.thumb ? (
-                      <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover" />
+                      <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover object-top" />
                     ) : (
                       <div className="w-full aspect-square flex items-center justify-center" style={{ background: "var(--surface)" }}>
                         <span className="text-lg">✏️</span>
@@ -1288,7 +1288,7 @@ export default function GerarCampanha() {
                       <button
                         key={t.value}
                         onClick={() => setTone(tone === t.value ? "" : t.value)}
-                        className="px-3.5 py-2 rounded-full text-xs font-medium transition-all min-h-[36px]"
+                        className="px-4 py-2 rounded-full text-xs font-medium transition-all min-h-[44px]"
                         style={{
                           background: tone === t.value ? "var(--brand-100)" : "var(--surface)",
                           color: tone === t.value ? "var(--brand-700)" : "var(--muted)",
