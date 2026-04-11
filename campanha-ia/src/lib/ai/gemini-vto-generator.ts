@@ -444,8 +444,9 @@ function mapAspectRatio(ratio: string): string {
 
 // ═══════════════════════════════════════
 // Log de custos
-// Gemini 3 Pro Image: ~$0.04/imagem (2K)
-// Input: ~0.001/img, Output: ~0.04/img (1312×1744 ≈ $0.0385/img)
+// Gemini 3 Pro Image: pricing baseado em tokens (input + output)
+// Input: ~4600 tokens/img (2 imagens ref + prompt texto)
+// Output: ~4000 tokens/img (imagem gerada 2K)
 // ═══════════════════════════════════════
 
 async function logGeminiVTOCosts(
@@ -458,16 +459,30 @@ async function logGeminiVTOCosts(
   const supabase = createAdminClient();
 
   let exchangeRate = 5.8;
+  let modelPrice = { inputPerMTok: 1.25, outputPerMTok: 10.00 };
+
   try {
-    const { getExchangeRate } = await import("@/lib/pricing");
+    const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
     exchangeRate = await getExchangeRate();
+    const pricing = await getModelPricing();
+    if (pricing[MODEL]) {
+      modelPrice = pricing[MODEL];
+    }
   } catch {
     // fallback
   }
 
-  // Gemini 3 Pro Image 2K: ~$0.04/imagem (input tokens + output image)
-  const costPerImage = 0.04;
-  const totalCostUsd = costPerImage * successCount;
+  // Tokens por imagem VTO:
+  // Input: ~1300 tokens (model image) + ~1300 tokens (product image) + ~2000 tokens (prompt) = ~4600
+  // Output: ~4000 tokens (generated 2K image)
+  const inputTokensPerImage = 4600;
+  const outputTokensPerImage = 4000;
+  const totalInputTokens = inputTokensPerImage * successCount;
+  const totalOutputTokens = outputTokensPerImage * successCount;
+
+  const costUsd =
+    (totalInputTokens * modelPrice.inputPerMTok) / 1_000_000 +
+    (totalOutputTokens * modelPrice.outputPerMTok) / 1_000_000;
 
   const { error } = await supabase.from("api_cost_logs").insert({
     store_id: storeId,
@@ -475,9 +490,12 @@ async function logGeminiVTOCosts(
     provider: "google",
     model_used: MODEL,
     action: "gemini_vto_v6",
-    cost_usd: totalCostUsd,
-    cost_brl: totalCostUsd * exchangeRate,
+    cost_usd: costUsd,
+    cost_brl: costUsd * exchangeRate,
     exchange_rate: exchangeRate,
+    input_tokens: totalInputTokens,
+    output_tokens: totalOutputTokens,
+    tokens_used: totalInputTokens + totalOutputTokens,
     response_time_ms: totalMs,
   });
 
@@ -485,3 +503,4 @@ async function logGeminiVTOCosts(
     console.warn("[Gemini VTO] ⚠️ Falha ao logar custo:", error.message);
   }
 }
+
