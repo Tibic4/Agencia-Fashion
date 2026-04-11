@@ -1,10 +1,15 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTimeBR } from "@/lib/admin/format";
+import { requireAdmin } from "@/lib/admin/guard";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 async function getCosts() {
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) redirect("/gerar");
+
   const supabase = createAdminClient();
 
   const now = new Date();

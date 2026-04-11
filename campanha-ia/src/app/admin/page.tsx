@@ -1,7 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateBR } from "@/lib/admin/format";
+import { requireAdmin } from "@/lib/admin/guard";
+import { redirect } from "next/navigation";
 
 async function getMetrics() {
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) redirect("/gerar");
+
   const supabase = createAdminClient();
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
