@@ -601,9 +601,9 @@ export default function GerarCampanha() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-[1fr_1.1fr] xl:grid-cols-[1fr_1.2fr] lg:gap-12 gap-8 items-start">
         {/* Left — Upload (3 fotos: 1 grande + 2 pequenas) */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-24">
           {/* Upload Area — Layout 1 grande + 2 pequenas */}
           <div className="flex flex-col sm:flex-row gap-3" style={{ minHeight: "280px" }}>
             {/* Foto Principal (grande) */}
@@ -821,7 +821,7 @@ export default function GerarCampanha() {
         </div>
 
         {/* Right — Options */}
-        <div className="space-y-6">
+        <div className="space-y-8">
 
 
           {/* Body Type — Biotipo */}
@@ -830,7 +830,7 @@ export default function GerarCampanha() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <button
                 onClick={() => { setBodyType("normal"); setModelFilter("padrao"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all"
+                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
                 style={{
                   border: bodyType === "normal"
                     ? "2px solid var(--brand-500)"
@@ -838,13 +838,13 @@ export default function GerarCampanha() {
                   background: bodyType === "normal" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl">👤</span>
-                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Mulher Padrão</p>
-                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</p>
+                <span className="text-2xl mb-1">👤</span>
+                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Padrão</span>
+                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</span>
               </button>
               <button
                 onClick={() => { setBodyType("plus"); setModelFilter("curvilinea"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all"
+                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
                 style={{
                   border: bodyType === "plus"
                     ? "2px solid var(--brand-500)"
@@ -852,13 +852,13 @@ export default function GerarCampanha() {
                   background: bodyType === "plus" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl">💃</span>
-                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Mulher Plus</p>
-                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</p>
+                <span className="text-2xl mb-1">💃</span>
+                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Plus</span>
+                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
               </button>
               <button
                 onClick={() => { setBodyType("masculino"); setModelFilter("homem"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all"
+                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
                 style={{
                   border: bodyType === "masculino"
                     ? "2px solid var(--brand-500)"
@@ -866,13 +866,13 @@ export default function GerarCampanha() {
                   background: bodyType === "masculino" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl">🧍‍♂️</span>
-                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Homem Padrão</p>
-                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</p>
+                <span className="text-2xl mb-1">🧍‍♂️</span>
+                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Homem Padrão</span>
+                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</span>
               </button>
               <button
                 onClick={() => { setBodyType("robusto"); setModelFilter("homem_plus"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all"
+                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
                 style={{
                   border: bodyType === "robusto"
                     ? "2px solid var(--brand-500)"
@@ -880,9 +880,9 @@ export default function GerarCampanha() {
                   background: bodyType === "robusto" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl">🏋️‍♂️</span>
-                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Homem Plus</p>
-                <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</p>
+                <span className="text-2xl mb-1">🏋️‍♂️</span>
+                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Homem Plus</span>
+                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
               </button>
             </div>
           </div>
@@ -927,15 +927,16 @@ export default function GerarCampanha() {
               {/* Opção aleatória */}
               <button
                 onClick={() => setSelectedModelId("random")}
-                className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all active:scale-[0.98]"
+                className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-sm active:scale-[0.98]"
                 style={{
                   border: selectedModelId === "random"
                     ? "2px solid var(--brand-500)"
                     : "1px solid var(--border)",
                   background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
+                  boxShadow: selectedModelId === "random" ? "0 4px 12px rgba(236,72,153,0.15)" : "none",
                 }}
               >
-                <span className="text-lg">🎲</span>
+                <span className="text-lg drop-shadow-sm">🎲</span>
                 <span className="text-[10px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
               </button>
 
@@ -1090,11 +1091,12 @@ export default function GerarCampanha() {
                   <button
                     key={model.id}
                     onClick={() => setSelectedModelId(model.id)}
-                    className="aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                    className="group aspect-[3/4] rounded-lg overflow-hidden relative transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:z-10"
                     style={{
                       border: selectedModelId === model.id
                         ? "2px solid var(--brand-500)"
                         : "1px solid var(--border)",
+                      boxShadow: selectedModelId === model.id ? "0 4px 12px rgba(236,72,153,0.2)" : "none",
                     }}
                     title={model.name}
                   >
@@ -1172,47 +1174,67 @@ export default function GerarCampanha() {
                   <button
                     key={bg.value}
                     onClick={() => setBackground(bg.value)}
-                    className="rounded-xl overflow-hidden text-center transition-all"
+                    className="group rounded-xl overflow-hidden text-center transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5"
                     style={{
                       border: background === bg.value
                         ? "2px solid var(--brand-500)"
                         : "1px solid var(--border)",
+                      boxShadow: background === bg.value ? "0 4px 12px rgba(236,72,153,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
                     }}
                   >
                     {bg.value === "minha_marca" && storeBrandColor ? (
                       <div
                         className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative overflow-hidden"
                         style={{
-                          background: `
-                            radial-gradient(ellipse at 50% 30%, ${storeBrandColor}60 0%, ${storeBrandColor}25 60%, ${storeBrandColor}10 100%),
-                            linear-gradient(180deg, ${storeBrandColor}18 0%, ${storeBrandColor}35 100%)
+                          backgroundColor: storeBrandColor,
+                          backgroundImage: `
+                            radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4) 0%, transparent 60%),
+                            linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.3) 100%)
                           `,
-                          boxShadow: `inset 0 0 30px ${storeBrandColor}20, inset 0 -8px 16px ${storeBrandColor}15`,
                         }}
                       >
-                        {/* Noise texture overlay — CSS only, zero API */}
+                        {/* Organic noise texture */}
                         <div
-                          className="absolute inset-0 opacity-[0.08] mix-blend-overlay pointer-events-none"
+                          className="absolute inset-0 opacity-[0.25] mix-blend-multiply pointer-events-none"
                           style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                            backgroundSize: "128px 128px",
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                            backgroundSize: "150px 150px",
                           }}
                         />
-                        {/* Subtle directional light */}
-                        <div
-                          className="absolute inset-0 pointer-events-none"
+                        {/* Cyclorama curve shadow - studio style */}
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 h-[45%] pointer-events-none" 
                           style={{
-                            background: `linear-gradient(160deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(0,0,0,0.06) 100%)`,
+                            background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, transparent 100%)"
                           }}
                         />
-                        <div
-                          className="w-8 h-8 rounded-full shadow-md relative z-10"
+                        {/* Spotlight effect */}
+                        <div 
+                          className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] pointer-events-none opacity-40 mix-blend-overlay"
                           style={{
-                            background: `linear-gradient(135deg, ${storeBrandColor}, ${storeBrandColor}CC)`,
-                            border: "2px solid rgba(255,255,255,0.8)",
+                            background: "radial-gradient(circle at 50% 30%, #fff 0%, transparent 50%)"
                           }}
                         />
-                        <span className="text-[9px] font-bold tracking-wide uppercase relative z-10" style={{ color: storeBrandColor, textShadow: "0 0 8px rgba(255,255,255,0.5)" }}>Marca</span>
+                        
+                        <div
+                          className="w-7 h-7 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.2)] relative z-10 flex items-center justify-center backdrop-blur-md"
+                          style={{
+                            background: "rgba(255,255,255,0.25)",
+                            border: "1px solid rgba(255,255,255,0.5)",
+                          }}
+                        >
+                          <span className="text-[10px] drop-shadow-md">✨</span>
+                        </div>
+                        <span 
+                          className="text-[9px] font-bold tracking-widest uppercase relative z-10" 
+                          style={{ 
+                            color: "white", 
+                            textShadow: "0 1px 3px rgba(0,0,0,0.6), 0 0 10px rgba(0,0,0,0.3)",
+                            letterSpacing: "0.05em"
+                          }}
+                        >
+                          Marca
+                        </span>
                       </div>
                     ) : bg.value === "personalizado" ? (
                       <div
@@ -1306,8 +1328,8 @@ export default function GerarCampanha() {
             )}
           </div>
 
-          {/* Generate button (Ilha Flutuante no Mobile) */}
-          <div className="lg:static sticky bottom-[84px] md:bottom-0 p-3 sm:p-4 lg:p-0 my-6 lg:my-0 z-20 w-full" style={{ backdropFilter: "blur(12px)", backgroundColor: "var(--background)", border: "1px solid var(--border)", borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.4)" }}>
+          {/* Generate button (Flutuante no Mobile, Natural no Desktop) */}
+          <div className="sticky bottom-[84px] md:bottom-6 lg:static lg:bottom-auto px-4 py-3 lg:p-0 my-4 lg:my-0 z-20 w-full rounded-2xl lg:rounded-none shadow-[0_8px_30px_rgba(0,0,0,0.12)] lg:shadow-none border border-border lg:border-none bg-background/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none transition-all">
             {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
               <Link
                 href="/plano"
