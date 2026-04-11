@@ -51,6 +51,12 @@ export interface GeneratedImage {
   imageUrl: string;
   mimeType: string;
   durationMs: number;
+  /** Token usage real do Gemini (quando disponível) */
+  tokenUsage?: {
+    promptTokenCount: number;
+    candidatesTokenCount: number;
+    totalTokenCount: number;
+  };
 }
 
 export interface GeminiVTOResult {
@@ -339,10 +345,25 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
 
   console.log(`[Gemini VTO] ✅ ${successCount}/3 imagens geradas em ${totalDurationMs}ms`);
 
+  // Somar tokens reais de todas as imagens bem-sucedidas
+  const totalRealInputTokens = images
+    .filter(Boolean)
+    .reduce((s, img) => s + (img!.tokenUsage?.promptTokenCount || 0), 0);
+  const totalRealOutputTokens = images
+    .filter(Boolean)
+    .reduce((s, img) => s + (img!.tokenUsage?.candidatesTokenCount || 0), 0);
+  const hasRealTokens = totalRealInputTokens > 0 && totalRealOutputTokens > 0;
+
   // Log de custos (fire-and-forget)
   if (input.storeId) {
-    logGeminiVTOCosts(input.storeId, input.campaignId, successCount, totalDurationMs)
-      .catch((e) => console.warn("[Gemini VTO] Erro ao salvar custo:", e));
+    logGeminiVTOCosts(
+      input.storeId,
+      input.campaignId,
+      successCount,
+      totalDurationMs,
+      hasRealTokens ? totalRealInputTokens : undefined,
+      hasRealTokens ? totalRealOutputTokens : undefined
+    ).catch((e) => console.warn("[Gemini VTO] Erro ao salvar custo:", e));
   }
 
   return { images, successCount, totalDurationMs };
@@ -421,8 +442,20 @@ async function generateSingleImage(
   const imageBase64 = inlineData.data as string;
   const mimeType = inlineData.mimeType || "image/png";
 
+  // Extrair token usage real do response
+  const usage = response.usageMetadata;
+  const tokenUsage = usage ? {
+    promptTokenCount: (usage as any).promptTokenCount || 0,
+    candidatesTokenCount: (usage as any).candidatesTokenCount || 0,
+    totalTokenCount: (usage as any).totalTokenCount || 0,
+  } : undefined;
+
   const durationMs = Date.now() - start;
-  console.log(`[Gemini VTO] ✅ #${index + 1} "${conceptName}" — ${durationMs}ms (${Math.round(imageBase64.length / 1024)}KB base64)`);
+  console.log(
+    `[Gemini VTO] ✅ #${index + 1} "${conceptName}" — ${durationMs}ms` +
+    ` (${Math.round(imageBase64.length / 1024)}KB base64)` +
+    (tokenUsage ? ` [tokens: ${tokenUsage.promptTokenCount} in / ${tokenUsage.candidatesTokenCount} out]` : "")
+  );
 
   return {
     conceptName,
@@ -430,6 +463,7 @@ async function generateSingleImage(
     imageUrl: "", // será preenchido após upload para Supabase
     mimeType,
     durationMs,
+    tokenUsage,
   };
 }
 
@@ -444,16 +478,17 @@ function mapAspectRatio(ratio: string): string {
 
 // ═══════════════════════════════════════
 // Log de custos
-// Gemini 3 Pro Image: pricing baseado em tokens (input + output)
-// Input: ~4600 tokens/img (2 imagens ref + prompt texto)
-// Output: ~4000 tokens/img (imagem gerada 2K)
+// Gemini 3 Pro Image: usa tokens REAIS do usageMetadata
+// Fallback estimado só se API não retornar metadata
 // ═══════════════════════════════════════
 
 async function logGeminiVTOCosts(
   storeId: string,
   campaignId: string | undefined,
   successCount: number,
-  totalMs: number
+  totalMs: number,
+  realInputTokens?: number,
+  realOutputTokens?: number
 ) {
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
@@ -472,17 +507,23 @@ async function logGeminiVTOCosts(
     // fallback
   }
 
-  // Tokens por imagem VTO:
-  // Input: ~1300 tokens (model image) + ~1300 tokens (product image) + ~2000 tokens (prompt) = ~4600
-  // Output: ~4000 tokens (generated 2K image)
-  const inputTokensPerImage = 4600;
-  const outputTokensPerImage = 4000;
-  const totalInputTokens = inputTokensPerImage * successCount;
-  const totalOutputTokens = outputTokensPerImage * successCount;
+  // Usar tokens REAIS da API quando disponíveis
+  // Fallback: estimativa conservadora por imagem
+  const FALLBACK_INPUT_PER_IMG = 4600;
+  const FALLBACK_OUTPUT_PER_IMG = 4000;
+  const totalInputTokens = realInputTokens || (FALLBACK_INPUT_PER_IMG * successCount);
+  const totalOutputTokens = realOutputTokens || (FALLBACK_OUTPUT_PER_IMG * successCount);
+  const source = realInputTokens ? "real" : "estimated";
 
   const costUsd =
     (totalInputTokens * modelPrice.inputPerMTok) / 1_000_000 +
     (totalOutputTokens * modelPrice.outputPerMTok) / 1_000_000;
+
+  console.log(
+    `[Gemini VTO] 💰 Custo (${source}): $${costUsd.toFixed(4)} / R$ ${(costUsd * exchangeRate).toFixed(4)}` +
+    ` | tokens: ${totalInputTokens} in + ${totalOutputTokens} out` +
+    ` | pricing: $${modelPrice.inputPerMTok}/MTok in, $${modelPrice.outputPerMTok}/MTok out`
+  );
 
   const { error } = await supabase.from("api_cost_logs").insert({
     store_id: storeId,
