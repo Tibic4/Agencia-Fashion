@@ -913,6 +913,8 @@ export default function GerarCampanha() {
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
+                    }}
+                  >
                     {f === "all" ? "Todos" : f === "padrao" ? "Mulher Padrão" : f === "curvilinea" ? "Mulher Plus" : f === "homem" ? "Homem Padrão" : "Homem Plus"}
                   </button>
                 ))}
