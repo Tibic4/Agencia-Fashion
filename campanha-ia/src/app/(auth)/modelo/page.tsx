@@ -495,7 +495,7 @@ export default function ModeloVirtual() {
                     {confirmDeleteId === model.id ? (
                       <div className="flex gap-1.5 flex-1 animate-fade-in">
                         <button
-                          onClick={(e) => { e.stopPropagation(); haptics.heavy(); handleDelete(model.id); }}
+                          onClick={(e) => { e.stopPropagation(); haptics.error(); handleDelete(model.id); }}
                           disabled={deletingId === model.id}
                           className="flex-1 text-[11px] font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center shadow-lg"
                           style={{ background: "#EF4444", color: "white", opacity: deletingId === model.id ? 0.5 : 1 }}
