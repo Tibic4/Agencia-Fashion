@@ -837,7 +837,7 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">👤</span>
-                <p className="text-sm font-semibold mt-1 leading-none">Mulher Padrão</p>
+                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Mulher Padrão</p>
                 <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</p>
               </button>
               <button
@@ -851,7 +851,7 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">💃</span>
-                <p className="text-sm font-semibold mt-1 leading-none">Mulher Plus</p>
+                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Mulher Plus</p>
                 <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</p>
               </button>
               <button
@@ -865,7 +865,7 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">🧍‍♂️</span>
-                <p className="text-sm font-semibold mt-1 leading-none">Homem Padrão</p>
+                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Homem Padrão</p>
                 <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</p>
               </button>
               <button
@@ -879,7 +879,7 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl">🏋️‍♂️</span>
-                <p className="text-sm font-semibold mt-1 leading-none">Homem Plus</p>
+                <p className="text-xs sm:text-sm font-semibold mt-1 leading-none whitespace-nowrap">Homem Plus</p>
                 <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</p>
               </button>
             </div>
@@ -1040,7 +1040,7 @@ export default function GerarCampanha() {
 
               {customModels.filter(m => matchesFilter(m.body_type, modelFilter)).length === 0 && 
                modelBank.filter(m => matchesFilter(m.body_type, modelFilter)).length === 0 && (
-                <div className="col-span-2 sm:col-span-3 aspect-[3/4] max-h-[160px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all mx-1" style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
+                <div className="col-span-2 sm:col-span-3 aspect-[3/4] max-h-[160px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all mx-0" style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
                   <span className="text-xl mb-1 opacity-70">📭</span>
                   <span className="text-xs font-semibold">Nenhuma modelo salva.</span>
                   <Link href="/modelo" className="text-[10px] mt-1 font-bold underline transition-opacity hover:opacity-70" style={{ color: "var(--brand-500)" }}>Criar personalizada</Link>
@@ -1304,8 +1304,8 @@ export default function GerarCampanha() {
             )}
           </div>
 
-          {/* Generate button (Sticky no Mobile) */}
-          <div className="lg:static sticky bottom-16 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "rgba(var(--background-rgb, 255, 255, 255), 0.8)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0" }}>
+          {/* Generate button (Ilha Flutuante no Mobile) */}
+          <div className="lg:static sticky bottom-[84px] md:bottom-0 p-3 sm:p-4 lg:p-0 my-6 lg:my-0 z-20 w-full" style={{ backdropFilter: "blur(12px)", backgroundColor: "var(--background)", border: "1px solid var(--border)", borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.4)" }}>
             {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
               <Link
                 href="/plano"
