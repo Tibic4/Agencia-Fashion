@@ -666,7 +666,7 @@ export default function GerarCampanha() {
             </div>
 
             {/* Coluna direita: 2 fotos pequenas */}
-            <div className="flex flex-row sm:flex-col gap-3 flex-[2]">
+            <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 flex-[2]">
               {/* Close-up do tecido */}
               <div
                 className="relative rounded-xl overflow-hidden transition-all cursor-pointer group flex-1"
@@ -718,11 +718,11 @@ export default function GerarCampanha() {
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
                       <IconSearch />
                     </div>
-                    <div className="text-center">
-                      <p className="text-xs font-semibold">Detalhe do tecido</p>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>Ajuda a IA acertar a textura</p>
+                    <div className="text-center px-1">
+                      <p className="text-[11px] sm:text-xs font-semibold leading-tight">Detalhe do tecido</p>
+                      <p className="text-[10px] sm:text-xs leading-tight mt-1" style={{ color: "var(--muted)" }}>Ajuda a IA na textura</p>
                     </div>
-                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -778,11 +778,11 @@ export default function GerarCampanha() {
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
                       <IconPlus />
                     </div>
-                    <div className="text-center">
-                      <p className="text-xs font-semibold">Compor o look</p>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>Outra peça para combinar</p>
+                    <div className="text-center px-1">
+                      <p className="text-[11px] sm:text-xs font-semibold leading-tight">Compor o look</p>
+                      <p className="text-[10px] sm:text-xs leading-tight mt-1" style={{ color: "var(--muted)" }}>Peça para combinar</p>
                     </div>
-                    <span className="text-[10px] px-2 py-1 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
