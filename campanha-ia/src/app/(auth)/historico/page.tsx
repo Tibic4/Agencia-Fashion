@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
+import { friendlyError } from "@/lib/friendly-error";
 
 interface Campaign {
   id: string;
@@ -136,7 +137,7 @@ export default function Historico() {
         setCampaigns(data.data || []);
         if (data.plan) setPlanInfo(data.plan);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Erro ao carregar";
+        const message = friendlyError(err, "Erro ao carregar campanhas. Tente novamente.");
         setError(message);
       } finally {
         setLoading(false);

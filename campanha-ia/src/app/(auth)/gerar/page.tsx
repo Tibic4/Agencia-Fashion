@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
+import { friendlyError } from "@/lib/friendly-error";
 import QuotaExceededModal from "@/components/QuotaExceededModal";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 import GenerationLoadingScreen from "@/components/GenerationLoadingScreen";
@@ -321,7 +322,7 @@ export default function GerarCampanha() {
           });
           return;
         }
-        throw new Error(errorData.error || `Erro ${response.status}`);
+        throw new Error(friendlyError(errorData.error || `Erro ${response.status}`));
       }
 
       if (!response.ok || !response.body) {
@@ -391,7 +392,7 @@ export default function GerarCampanha() {
             clearInterval(fallbackInterval);
             streamDone = true;
             setIsGenerating(false);
-            setError(payload.error || "Erro ao gerar campanha");
+            setError(friendlyError(payload.error, "Erro ao gerar campanha. Tente novamente."));
             setErrorCode(payload.code || null);
             setErrorRetryable(payload.retryable !== false);
             return true;
@@ -426,13 +427,13 @@ export default function GerarCampanha() {
       if (!streamDone) {
         clearInterval(fallbackInterval);
         setIsGenerating(false);
-        setError("Conexão interrompida. Tente novamente.");
+        setError("Conexão interrompida. Verifique sua internet e tente novamente.");
       }
 
     } catch (err: any) {
       clearInterval(fallbackInterval);
       setIsGenerating(false);
-      setError(err.message || "Erro ao gerar campanha");
+      setError(friendlyError(err, "Erro ao gerar campanha. Tente novamente."));
     }
   };
 
@@ -502,10 +503,11 @@ export default function GerarCampanha() {
             <h3 className="text-lg font-bold" style={{ color: "var(--error, #EF4444)" }}>
                 {errorCode === "RATE_LIMITED" && "Alta demanda"}
                 {errorCode === "MODEL_OVERLOADED" && "Servidor sobrecarregado"}
-                {errorCode === "SAFETY_BLOCKED" && "Imagem não aceita"}
+                {errorCode === "SAFETY_BLOCKED" && "Conteúdo não permitido"}
+                {errorCode === "IMAGE_GENERATION_BLOCKED" && "Imagem não gerada"}
                 {errorCode === "BAD_REQUEST" && "Foto não reconhecida"}
                 {errorCode === "TIMEOUT" && "Tempo esgotado"}
-                {(!errorCode || !["RATE_LIMITED","MODEL_OVERLOADED","SAFETY_BLOCKED","BAD_REQUEST","TIMEOUT"].includes(errorCode)) && "Não foi possível gerar"}
+                {(!errorCode || !["RATE_LIMITED","MODEL_OVERLOADED","SAFETY_BLOCKED","IMAGE_GENERATION_BLOCKED","BAD_REQUEST","TIMEOUT"].includes(errorCode)) && "Não foi possível gerar"}
               </h3>
               <p className="text-sm mt-1 text-center font-medium" style={{ color: "var(--error, #EF4444)", opacity: 0.9 }}>
                 {error}
@@ -559,7 +561,7 @@ export default function GerarCampanha() {
           Criar <span className="gradient-text">Campanha</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Envie a foto da peça e receba 3 fotos editoriais prontas para postar
+          Envie a foto do look e receba 3 fotos editoriais prontas para postar
         </p>
       </div>
 
@@ -665,9 +667,13 @@ export default function GerarCampanha() {
                     <IconUpload />
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold text-sm mb-0.5">Foto da peça *</p>
+                    <p className="font-semibold text-sm mb-0.5">Foto principal *</p>
                     <p className="text-xs" style={{ color: "var(--muted)" }}>
-                      Mostrando a peça inteira, de frente
+                      O look inteiro, de frente
+                    </p>
+                    <p className="text-[10px] mt-2 flex items-center justify-center gap-1" style={{ color: "var(--muted)" }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      Apenas roupas e acessórios
                     </p>
                   </div>
                 </div>
@@ -729,8 +735,8 @@ export default function GerarCampanha() {
                       <IconSearch />
                     </div>
                     <div className="text-center w-full min-w-0">
-                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Detalhe tecido</p>
-                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Ajuda na textura</p>
+                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Detalhe ou ângulo</p>
+                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Textura, costura, estampa</p>
                     </div>
                     <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
@@ -790,13 +796,26 @@ export default function GerarCampanha() {
                       <IconPlus />
                     </div>
                     <div className="text-center w-full min-w-0">
-                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Compor look</p>
-                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Peça para combinar</p>
+                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Segunda peça</p>
+                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Ex: calça do conjunto</p>
                     </div>
                     <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Aviso de conteúdo — peças de roupa apenas */}
+          <div className="flex items-start gap-2.5 p-3 rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <p className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>Envie apenas fotos de roupas e acessórios</p>
+              <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
+                Fotos com pessoas sem roupa, conteúdo íntimo ou impróprio serão bloqueadas automaticamente pela IA. Use fotos da peça sobre cabide, manequim ou mesa.
+              </p>
             </div>
           </div>
 
@@ -1393,7 +1412,7 @@ export default function GerarCampanha() {
         </div>
       </div>
 
-      {/* Single Photo Warning — Bottom Sheet (mobile-first) */}
+      {/* Single Photo Warning — Bottom Sheet (mobile-first, touch-friendly) */}
       <AnimatePresence>
         {showSinglePhotoWarning && (
           <div
@@ -1406,7 +1425,7 @@ export default function GerarCampanha() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/50"
+              className="absolute inset-0 bg-black/60"
             />
 
             {/* Sheet */}
@@ -1415,80 +1434,109 @@ export default function GerarCampanha() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-2xl p-6 pb-8 sm:pb-6"
-              style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "0 -10px 40px rgba(0,0,0,0.5)" }}
+              className="relative w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-2xl overflow-hidden"
+              style={{ background: "var(--card, var(--background))", boxShadow: "0 -10px 40px rgba(0,0,0,0.4)" }}
               onClick={(e) => e.stopPropagation()}
             >
-            {/* Drag handle (mobile) */}
-            <div className="sm:hidden w-10 h-1 rounded-full bg-gray-300 mx-auto mb-5" />
+              {/* Top accent bar */}
+              <div className="h-1 w-full" style={{ background: "var(--gradient-brand)" }} />
 
-            {/* Icon + Title */}
-            <div className="text-center mb-4">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: "rgba(251, 191, 36, 0.12)" }}
-              >
-                <span className="text-2xl">📸</span>
-              </div>
-              <h3 className="text-lg font-bold" style={{ color: "var(--foreground)" }}>
-                Quer um resultado ainda melhor?
-              </h3>
-              <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--muted)" }}>
-                Você enviou apenas 1 foto. Com mais ângulos, a IA captura
-                melhor os detalhes e gera imagens mais fiéis à sua peça.
-              </p>
-            </div>
+              <div className="p-5 pb-7 sm:p-6 sm:pb-6">
+                {/* Drag handle (mobile) */}
+                <div className="sm:hidden w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--border)" }} />
 
-            {/* Suggestions */}
-            <div
-              className="rounded-xl p-3.5 mb-5 space-y-2"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-            >
-              <p className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>
-                💡 Sugestões para melhores resultados:
-              </p>
-              <ul className="space-y-1.5">
-                {[
-                  "Adicione um close do tecido (campo \"Detalhe\")",
-                  "Envie outro ângulo da peça (campo \"Compor o look\")",
-                ].map((tip) => (
-                  <li
-                    key={tip}
-                    className="text-xs flex items-start gap-2"
-                    style={{ color: "var(--muted)" }}
+                {/* Icon + Title */}
+                <div className="text-center mb-5">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                    style={{ background: "linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05))", border: "1px solid rgba(251,191,36,0.2)" }}
                   >
-                    <span className="text-amber-400 mt-0.5 shrink-0">•</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
+                    <span className="text-3xl">📸</span>
+                  </div>
+                  <h3 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
+                    Resultado ainda melhor?
+                  </h3>
+                  <p className="text-sm mt-2 leading-relaxed max-w-[280px] mx-auto" style={{ color: "var(--muted)" }}>
+                    Com mais fotos, a IA captura melhor os detalhes do tecido e do caimento.
+                  </p>
+                </div>
 
-            {/* Actions — stacked on mobile */}
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={() => {
-                  setShowSinglePhotoWarning(false);
-                  handleGenerate();
-                }}
-                className="btn-primary w-full !py-3.5 text-sm"
-                style={{ minHeight: "48px" }}
-              >
-                ⚡ Gerar mesmo assim
-              </button>
-              <button
-                onClick={() => setShowSinglePhotoWarning(false)}
-                className="w-full py-3 text-sm font-medium rounded-xl transition-colors"
-                style={{
-                  color: "var(--brand-600)",
-                  background: "var(--brand-50)",
-                  border: "1px solid var(--brand-100)",
-                  minHeight: "48px",
-                }}
-              >
-                Voltar e adicionar mais fotos
-              </button>
-            </div>
+                {/* Tip cards — visual, easy to scan */}
+                <div className="space-y-2.5 mb-6">
+                  {/* Tip 1 */}
+                  <div
+                    className="flex items-center gap-3 p-3.5 rounded-xl"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: "var(--foreground)" }}>
+                        Detalhe ou ângulo
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                        Close da textura, costura ou estampa
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Tip 2 */}
+                  <div
+                    className="flex items-center gap-3 p-3.5 rounded-xl"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: "var(--accent-50, var(--brand-50))", color: "var(--accent-500, var(--brand-500))" }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: "var(--foreground)" }}>
+                        Segunda peça
+                      </p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                        Ex: calça do conjunto, saia avulsa
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions — stacked, touch-friendly (min 48px) */}
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setShowSinglePhotoWarning(false);
+                      handleGenerate();
+                    }}
+                    className="btn-primary w-full text-sm font-semibold"
+                    style={{ minHeight: "52px", borderRadius: "14px" }}
+                  >
+                    ⚡ Gerar com 1 foto
+                  </button>
+                  <button
+                    onClick={() => setShowSinglePhotoWarning(false)}
+                    className="w-full text-sm font-semibold rounded-xl transition-colors"
+                    style={{
+                      color: "var(--foreground)",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      minHeight: "52px",
+                      borderRadius: "14px",
+                    }}
+                  >
+                    ← Adicionar mais fotos
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
