@@ -1,72 +1,112 @@
 /**
  * POST /api/campaign/[id]/tips
  *
- * Gemini Flash Vision — Dicas de postagem personalizadas baseadas na foto.
+ * Gemini 3.1 Pro — Copywriter profissional para Instagram.
+ * Gera copy pronto para colar + dicas de marketing baseadas na foto.
  * 
  * REGRA: NUNCA menciona cor, tipo de peça, tecido ou qualquer detalhe do vestuário.
  * Analisa APENAS: cenário, iluminação, composição, mood visual.
  * 
- * Input:  { imageUrl: string, objective?: string, targetAudience?: string }
- * Output: { poste_as, tom_da_voz, cta, dica_extra, hashtags }
+ * Input:  { imageUrl: string, objective?: string, targetAudience?: string, toneOverride?: string }
+ * Output: { caption, caption_alternativa, poste_as, tom_da_voz, cta, dica_extra, story_idea, hashtags }
  * 
- * Custo: ~R$ 0,001 por chamada (Flash 3.0 + 1 imagem)
+ * Custo: ~R$ 0,04 por chamada (Pro 3.1 + 1 imagem)
+ * Cached por sessão no frontend — 1 chamada por campanha.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenAI } from "@google/genai";
 
-// NOTA (D7 audit): Verificar se "gemini-3-flash-preview" ainda é o nome correto.
-// Quando sair da preview, atualizar para "gemini-3-flash" ou equivalente estável.
-const TIPS_MODEL = "gemini-3-flash-preview";
+// Gemini 3.1 Pro — melhor raciocínio criativo, ideal para copywriting
+const TIPS_MODEL = "gemini-3.1-pro-preview";
 
 interface TipsResponse {
+  caption: string;
+  caption_alternativa: string;
   poste_as: string;
   tom_da_voz: string;
   cta: string;
   dica_extra: string;
+  story_idea: string;
   hashtags: string[];
 }
 
-const SYSTEM_PROMPT = `Você é um consultor sênior de marketing digital para moda feminina brasileira no Instagram.
-Você recebe fotos de campanha e dá dicas ESPECÍFICAS e ACIONÁVEIS baseadas no que vê.
+// ═══════════════════════════════════════
+// Prompt Engineering (social-content + vto-expert skills)
+// ═══════════════════════════════════════
 
-REGRA ABSOLUTA — PROIBIDO:
-- NUNCA mencione tipo de peça (calça, blusa, vestido, saia etc.)
-- NUNCA mencione cor/tecido/estampa da roupa
-- NUNCA use "peça", "roupa", "look" ou "outfit"
+const SYSTEM_PROMPT = `Você é uma copywriter sênior de Instagram especializada em moda feminina brasileira.
+Você escreve captions magnéticas que geram salvamentos, compartilhamentos e vendas.
 
-O QUE VOCÊ ANALISA para personalizar as dicas:
-- Cenário (estúdio branco? rua urbana? loja? natureza?)
-- Iluminação (natural dourada? flash? suave? dramática?)
-- Mood visual (editorial minimalista? casual vibrante? sofisticado? jovem?)
-- Postura da modelo (confiança? movimento? olhar direto?)
-- Composição (corpo inteiro? meio corpo? close?)
+SUA MISSÃO: Olhar a foto da campanha e criar COPY PRONTA PARA COLAR no Instagram.
 
-SEJA ESPECÍFICO — não dê dicas genéricas como "poste entre 18h-21h".
-Baseie tudo no que VÊ na foto. Ex: se o cenário é urbano e jovem, sugira horário de pico jovem (21h-23h).
-Se é sofisticado em estúdio, sugira tom elegante.
+═══ REGRA ABSOLUTA — PROIBIDO ═══
+- NUNCA mencione tipo de peça (calça, blusa, vestido, saia, conjunto, macacão etc.)
+- NUNCA mencione cor, tecido, estampa ou material da roupa
+- NUNCA use "peça", "roupa", "look", "outfit" ou "produção"
+- Se você quebrar essa regra, o output é INÚTIL
 
-Responda SEMPRE em JSON válido puro, sem markdown, sem \`\`\`.`;
+═══ O QUE VOCÊ ANALISA DA FOTO ═══
+- Cenário (estúdio? rua? loja? natureza? café?)
+- Iluminação (golden hour? flash? suave? dramática?)
+- Mood visual (editorial? casual vibrante? sofisticado? jovem?)
+- Postura da modelo (confiança? movimento? olhar direto? relaxada?)
+- Composição (corpo inteiro? meio corpo? close? ângulo?)
 
-function buildUserPrompt(objective?: string, targetAudience?: string): string {
-  let prompt = `Olhe esta foto de campanha de moda e me dê dicas PERSONALIZADAS para essa imagem específica.
+═══ TÉCNICAS DE COPY QUE VOCÊ USA ═══
+
+1. HOOK FIRST: A primeira frase PARA o scroll. Use uma dessas fórmulas:
+   - Curiosidade: "Tem algo nessa foto que ninguém percebe…"
+   - Emoção: "Aquela sensação de se sentir incrível ✨"
+   - Pergunta: "Quem mais acorda querendo se sentir assim?"
+   - Contrarian: "Todo mundo fala X, mas a verdade é Y"
+
+2. SHORT. BREATHE. LAND:
+   - Uma ideia por frase
+   - Quebre linhas
+   - Deixe os pontos importantes respirarem
+   - Crie ritmo: curto, curto, explicação
+
+3. SPECIFIC > VAGUE:
+   - ❌ "Poste no melhor horário"
+   - ✅ "21h de terça — quando seu público abre o Insta no sofá"
+
+4. WRITE FROM EMOTION:
+   - Comece pelo sentimento, não pela ação
+   - Use palavras emocionais: confiança, brilho, poder, liberdade
+
+5. CTA QUE CONVERTE:
+   - Pergunta: "O que vocês acham?"
+   - Salvar: "Salva pra quando precisar de inspiração 📌"
+   - Compartilhar: "Marca quem precisa ver isso"
+   - DM: "Manda 'QUERO' nos stories"
+
+═══ FORMATO DE RESPOSTA ═══
+Responda SEMPRE em JSON puro válido. Sem markdown, sem \`\`\`, sem explicações.
+Apenas o JSON.`;
+
+function buildUserPrompt(objective?: string, targetAudience?: string, toneOverride?: string): string {
+  let prompt = `Olhe esta foto de campanha e me entregue COPY PROFISSIONAL pronto para colar.
 
 Responda neste JSON exato:
 {
-  "poste_as": "horário específico (ex: '21h' ou '12h às 14h') — justifique brevemente pelo mood da foto",
+  "caption": "Caption completa para o feed do Instagram (150-250 caracteres, com emojis, hook na primeira frase, CTA no final). NÃO mencione roupas.",
+  "caption_alternativa": "Segunda opção com tom DIFERENTE — se a primeira é descontraída, esta é sofisticada e vice-versa. Mesmas regras.",
+  "poste_as": "horário específico + dia ideal (ex: 'Terça às 21h — seu público está relaxando no sofá'). Justifique pelo mood da foto.",
   "tom_da_voz": "tom da caption em 3-5 palavras que COMBINE com a energia da foto",
-  "cta": "call-to-action criativo e curto (max 8 palavras) que conecte com a vibe da imagem",
-  "dica_extra": "1 dica prática e específica de marketing baseada no que você vê na foto (max 25 palavras)",
-  "hashtags": ["8 hashtags relevantes sem # — mix de alcance e nicho"]
+  "cta": "call-to-action criativo e curto (max 8 palavras) que gere ação IMEDIATA",
+  "dica_extra": "1 dica prática de marketing para ESSA foto específica (max 30 palavras). Baseada no que você VÊ.",
+  "story_idea": "Ideia criativa para um Story complementar usando essa mesma foto (max 30 palavras). Ex: enquete, antes/depois, countdown etc.",
+  "hashtags": ["10-12 hashtags sem # — mix estratégico: 3 de alto alcance, 4 de nicho moda, 3 locais/tendência, 2 de comunidade"]
 }`;
 
   if (objective) {
     const objMap: Record<string, string> = {
-      venda_imediata: "venda direta / conversão rápida",
-      lancamento: "lançamento de novidade / criar desire",
-      promocao: "promoção / urgência / escassez",
-      engajamento: "engajamento / salvar / compartilhar",
+      venda_imediata: "venda direta / conversão rápida — caption deve criar urgência sutil",
+      lancamento: "lançamento de novidade / criar desejo — caption deve gerar FOMO e curiosidade",
+      promocao: "promoção / urgência / escassez — caption deve ter gatilho de tempo limitado",
+      engajamento: "engajamento / salvar / compartilhar — caption deve fazer pergunta ou pedir opinião",
     };
     prompt += `\n\nObjetivo da campanha: ${objMap[objective] || objective}`;
   }
@@ -75,15 +115,26 @@ Responda neste JSON exato:
     prompt += `\nPúblico-alvo: ${targetAudience}`;
   }
 
+  if (toneOverride) {
+    const toneMap: Record<string, string> = {
+      casual_energetico: "Casual e energético — linguagem jovem, emojis, ritmo acelerado",
+      sofisticado: "Sofisticado e elegante — vocabulário refinado, sem gírias, luxo sutil",
+      urgente: "Urgente e direto — escassez, FOMO, gatilhos de tempo limitado",
+      acolhedor: "Acolhedor e afetuoso — como uma amiga dando dica, linguagem abraçante",
+      divertido: "Divertido e leve — humor, trocadilhos, energia boa",
+    };
+    prompt += `\nTom de voz obrigatório: ${toneMap[toneOverride] || toneOverride}`;
+  }
+
   const hour = new Date().getHours();
   const dayOfWeek = new Date().toLocaleDateString("pt-BR", { weekday: "long" });
-  prompt += `\nDia: ${dayOfWeek}, ${hour}h`;
+  prompt += `\nContexto temporal: ${dayOfWeek}, ${hour}h`;
 
   return prompt;
 }
 
 /**
- * Log custo da chamada Flash no admin (fire-and-forget)
+ * Log custo da chamada Pro no admin (fire-and-forget)
  */
 async function logTipsCost(
   durationMs: number,
@@ -97,13 +148,13 @@ async function logTipsCost(
     const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
     const exchangeRate = await getExchangeRate();
 
-    let costUsd = 0.0005; // fallback estimado (~R$ 0,003)
+    let costUsd = 0.005; // fallback estimado Pro (~R$ 0,03)
     const inputTokens = usage?.inputTokens || 0;
     const outputTokens = usage?.outputTokens || 0;
 
     if (inputTokens > 0 || outputTokens > 0) {
       const pricing = await getModelPricing();
-      const modelPrice = pricing[TIPS_MODEL] || pricing["gemini-3-flash-preview"] || { inputPerMTok: 0.50, outputPerMTok: 3.00 };
+      const modelPrice = pricing[TIPS_MODEL] || pricing["gemini-3.1-pro-preview"] || { inputPerMTok: 2.00, outputPerMTok: 12.00 };
       costUsd = (inputTokens * modelPrice.inputPerMTok) / 1_000_000
               + (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
     }
@@ -124,9 +175,9 @@ async function logTipsCost(
       response_time_ms: durationMs,
     });
 
-    console.log(`[Tips] 💰 Custo: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens, ${durationMs}ms)`);
+    console.log(`[Tips Pro] 💰 Custo: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens, ${durationMs}ms)`);
   } catch (e) {
-    console.warn("[Tips] ⚠️ Erro ao logar custo:", e);
+    console.warn("[Tips Pro] ⚠️ Erro ao logar custo:", e);
   }
 }
 
@@ -161,10 +212,11 @@ export async function POST(
 
   try {
     const body = await request.json();
-    const { imageUrl, objective, targetAudience } = body as {
+    const { imageUrl, objective, targetAudience, toneOverride } = body as {
       imageUrl: string;
       objective?: string;
       targetAudience?: string;
+      toneOverride?: string;
     };
 
     if (!imageUrl) {
@@ -180,14 +232,14 @@ export async function POST(
     const base64 = Buffer.from(imageBuffer).toString("base64");
     const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
 
-    // Call Gemini Flash
+    // Call Gemini 3.1 Pro — Copywriter mode
     const ai = new GoogleGenAI({ apiKey });
 
     const response = await ai.models.generateContent({
       model: TIPS_MODEL,
       config: {
-        temperature: 0.8,
-        maxOutputTokens: 500,
+        temperature: 0.9, // mais criatividade para copywriting
+        maxOutputTokens: 1200, // copy completo + variações
         systemInstruction: SYSTEM_PROMPT,
       },
       contents: [
@@ -195,7 +247,7 @@ export async function POST(
           role: "user",
           parts: [
             { inlineData: { mimeType, data: base64 } },
-            { text: buildUserPrompt(objective, targetAudience) },
+            { text: buildUserPrompt(objective, targetAudience, toneOverride) },
           ],
         },
       ],
@@ -204,7 +256,7 @@ export async function POST(
     const durationMs = Date.now() - startMs;
 
     // Extract real token usage for cost tracking
-    const usageMetadata = (response as any).usageMetadata;
+    const usageMetadata = (response as unknown as Record<string, unknown>).usageMetadata as Record<string, number> | undefined;
     const usage = usageMetadata ? {
       inputTokens: usageMetadata.promptTokenCount || usageMetadata.inputTokens || 0,
       outputTokens: usageMetadata.candidatesTokenCount || usageMetadata.outputTokens || 0,
@@ -221,10 +273,11 @@ export async function POST(
     const tips: TipsResponse = JSON.parse(cleaned);
 
     // Validate no clothing references leaked through
-    const forbidden = /calça|blusa|vestido|saia|conjunto|macacão|camisa|short|bermuda|regata/i;
-    const allText = `${tips.poste_as} ${tips.tom_da_voz} ${tips.cta} ${tips.dica_extra} ${tips.hashtags.join(" ")}`;
+    const forbidden = /calça|blusa|vestido|saia|conjunto|macacão|camisa|short|bermuda|regata|peça|roupa|look|outfit|produção/i;
+    const allText = `${tips.caption} ${tips.caption_alternativa} ${tips.poste_as} ${tips.tom_da_voz} ${tips.cta} ${tips.dica_extra} ${tips.story_idea} ${tips.hashtags.join(" ")}`;
     if (forbidden.test(allText)) {
-      console.warn("[Tips] ⚠️ Clothing reference leaked, sanitizing...");
+      console.warn("[Tips Pro] ⚠️ Clothing reference leaked, sanitizing...");
+      // Could implement auto-sanitization here in the future
     }
 
     // Log cost (fire-and-forget)
@@ -234,11 +287,10 @@ export async function POST(
   } catch (err) {
     const durationMs = Date.now() - startMs;
     logTipsCost(durationMs, id, storeId).catch(() => {});
-    console.error("[Tips] ❌", err instanceof Error ? err.message : err);
+    console.error("[Tips Pro] ❌", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: "Erro ao gerar dicas" },
       { status: 500 }
     );
   }
 }
-

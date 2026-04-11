@@ -54,6 +54,7 @@ interface V3Result {
   campaignId?: string | null;
   objective?: string | null;
   targetAudience?: string | null;
+  toneOverride?: string | null;
   data?: {
     analise: OpusAnalise;
     images: (GeneratedImage | null)[];
@@ -153,16 +154,20 @@ export default function ResultadoCampanha() {
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [showFormatSheet, setShowFormatSheet] = useState(false);
 
-  // ── AI Tips (Gemini Flash Vision) ──
+  // ── AI Tips (Gemini 3.1 Pro — Copywriter) ──
   interface SmartTips {
+    caption: string;
+    caption_alternativa: string;
     poste_as: string;
     tom_da_voz: string;
     cta: string;
     dica_extra: string;
+    story_idea: string;
     hashtags: string[];
   }
   const [smartTips, setSmartTips] = useState<SmartTips | null>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
+  const [copiedTip, setCopiedTip] = useState<string | null>(null);
   const tipsRequestedRef = useRef<string | null>(null); // prevent double-fire across re-renders
 
   useEffect(() => {
@@ -306,6 +311,7 @@ export default function ResultadoCampanha() {
         imageUrl: img.imageUrl,
         objective: result?.objective || undefined,
         targetAudience: result?.targetAudience || undefined,
+        toneOverride: result?.toneOverride || undefined,
       }),
     })
       .then(res => res.ok ? res.json() : null)
@@ -690,15 +696,69 @@ export default function ResultadoCampanha() {
           </div>
         )}
 
-        {/* ── Dicas adicionais (AI-powered) ── */}
+        {/* ── Copywriter Pro (AI-powered) ── */}
         {dicas && (
           <div className="space-y-3">
-            {/* AI badge */}
+            {/* AI Pro badge */}
             {smartTips && (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "var(--brand-100)", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Dicas por IA</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "linear-gradient(135deg, var(--brand-100), var(--brand-200))", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Copy por IA Pro</span>
               </div>
             )}
+
+            {/* ── Caption pronta para colar ── */}
+            {(smartTips?.caption || tipsLoading) && (
+              <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
+                  {smartTips?.caption && (
+                    <button
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(smartTips.caption);
+                        setCopiedTip("caption");
+                        setTimeout(() => setCopiedTip(null), 2000);
+                      }}
+                      className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all"
+                      style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
+                    >
+                      {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
+                    </button>
+                  )}
+                </div>
+                {tipsLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-4 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "100%" }} />
+                    <div className="h-4 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "80%" }} />
+                    <div className="h-4 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "60%" }} />
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{smartTips?.caption}</p>
+                )}
+              </div>
+            )}
+
+            {/* ── Caption alternativa ── */}
+            {smartTips?.caption_alternativa && (
+              <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px dashed var(--border)" }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(smartTips.caption_alternativa);
+                      setCopiedTip("alt");
+                      setTimeout(() => setCopiedTip(null), 2000);
+                    }}
+                    className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all"
+                    style={{ background: copiedTip === "alt" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "alt" ? "white" : "var(--brand-700)" }}
+                  >
+                    {copiedTip === "alt" ? "✓ Copiado!" : "📋 Copiar"}
+                  </button>
+                </div>
+                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--muted)", wordBreak: "break-word" }}>{smartTips.caption_alternativa}</p>
+              </div>
+            )}
+
+            {/* ── Grid: Horário + Tom + CTA ── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="rounded-2xl p-3 sm:p-4 space-y-1 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
@@ -725,7 +785,19 @@ export default function ResultadoCampanha() {
                 )}
               </div>
             </div>
-            {/* Dica extra do AI */}
+
+            {/* ── Story idea ── */}
+            {smartTips?.story_idea && (
+              <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "linear-gradient(135deg, var(--brand-50), var(--surface))", border: "1px solid var(--brand-100)" }}>
+                <span className="text-sm flex-shrink-0">📱</span>
+                <div>
+                  <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--brand-700)" }}>IDEIA PARA STORY</p>
+                  <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{smartTips.story_idea}</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Dica extra ── */}
             {smartTips?.dica_extra && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">💡</span>

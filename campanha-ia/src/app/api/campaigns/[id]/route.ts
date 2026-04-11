@@ -133,6 +133,7 @@ export async function GET(
           createdAt: campaign.created_at,
           objective: campaign.objective || null,
           targetAudience: campaign.target_audience || null,
+          toneOverride: (campaign as Record<string, unknown>).tone_override as string || null,
         },
       });
     }
