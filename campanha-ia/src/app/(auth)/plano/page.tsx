@@ -311,7 +311,7 @@ export default function Plano() {
             <button
               onClick={() => handleCheckout(plan.id)}
               disabled={loading === plan.id}
-              className="w-full mt-4 py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px]"
+              className="w-full mt-4 py-3 px-2 rounded-full text-[12px] sm:text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
               style={{
                 background: plan.highlight ? "white" : "var(--gradient-brand)",
                 color: plan.highlight ? "var(--brand-600)" : "white",
@@ -345,7 +345,7 @@ export default function Plano() {
             <button
               onClick={() => handleCreditCheckout("trial")}
               disabled={creditLoading === "trial"}
-              className="w-full max-w-xs mx-auto py-3 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px]"
+              className="w-full max-w-xs mx-auto py-3 px-2 rounded-full text-[12px] sm:text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
               style={{ background: "var(--gradient-brand)", color: "white" }}
             >
               {creditLoading === "trial" ? "Abrindo checkout..." : "⚡ Testar por R$ 9,90"}

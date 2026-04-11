@@ -437,7 +437,7 @@ export default function ModeloVirtual() {
                     <img
                       src={model.photo_url}
                       alt={model.name}
-                      className="w-full h-full object-cover object-[center_15%] transition-transform duration-700 ease-out group-hover:scale-110"
+                      className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
                     />
                   ) : (
                     <ModelPlaceholder
@@ -711,7 +711,7 @@ export default function ModeloVirtual() {
                 <button
                   key={b.value}
                   onClick={() => setBody(b.value)}
-                  className="p-3 rounded-xl text-sm font-medium text-center transition-all"
+                  className="p-2 sm:p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all truncate min-w-0"
                   style={{
                     background: body === b.value ? "var(--gradient-brand)" : "var(--surface)",
                     color: body === b.value ? "white" : "var(--muted)",
@@ -753,7 +753,7 @@ export default function ModeloVirtual() {
                 <button
                   key={a.value}
                   onClick={() => setAge(a.value)}
-                  className="p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all min-h-[44px]"
+                  className="p-2 sm:p-3 rounded-xl text-[10px] sm:text-sm font-medium text-center transition-all min-h-[44px] truncate min-w-0"
                   style={{
                     background: age === a.value ? "var(--brand-100)" : "var(--surface)",
                     color: age === a.value ? "var(--brand-700)" : "var(--muted)",
