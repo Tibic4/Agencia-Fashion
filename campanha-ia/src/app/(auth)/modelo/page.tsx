@@ -437,7 +437,7 @@ export default function ModeloVirtual() {
                     <img
                       src={model.photo_url}
                       alt={model.name}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                      className="w-full h-full object-cover object-[center_15%] transition-transform duration-700 ease-out group-hover:scale-110"
                     />
                   ) : (
                     <ModelPlaceholder

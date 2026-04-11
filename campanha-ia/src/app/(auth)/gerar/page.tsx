@@ -957,7 +957,7 @@ export default function GerarCampanha() {
                       <img
                         src={model.photo_url}
                         alt={model.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-[center_15%]"
                         style={{ animation: "fadeIn 0.5s ease-in" }}
                       />
                     ) : (
@@ -1099,7 +1099,7 @@ export default function GerarCampanha() {
                     <img
                       src={model.thumbnail_url || model.image_url}
                       alt={model.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-[center_15%]"
                     />
                     {selectedModelId === model.id && (
                       <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
