@@ -1,5 +1,5 @@
 /**
- * CriaLook Model Prompt Builder v6.0 — Gender-Aware Ultra-Realistic Model Generation
+ * CriaLook Model Prompt Builder v6.1 — Anti-Hallucination Studio Lighting
  *
  * Prompts centralizados para geração de preview de modelo virtual.
  * Usados tanto pelo model-preview.ts (fallback direto) quanto pelo Inngest (background job).
@@ -10,11 +10,11 @@
  *   1. MULTIMODAL (com foto) — Gemini replica a face da foto + corpo/cabelo conforme specs
  *   2. TEXT-ONLY (sem foto) — Gemini gera modelo 100% do zero, fotorrealista
  *
- * v6.0 — Novidades:
- *   - Suporte a modelos masculinos (gender-aware)
- *   - Poses simplificadas (A-Pose) para menos alucinações
- *   - Anatomia reforçada (5 dedos, mãos abertas)
- *   - Outfit unissex (camiseta branca + bermuda preta + descalço)
+ * v6.1 — Novidades:
+ *   - Iluminação simplificada: descreve EFEITO, não equipamento (anti guarda-chuva)
+ *   - Negativas explícitas contra equipamento de estúdio visível
+ *   - Aspect ratio 3:4 (menos espaço vazio = menos delírios)
+ *   - Fundo reforçado: "COMPLETELY EMPTY", "absolutely NOTHING"
  */
 
 // ═══════════════════════════════════════
@@ -314,16 +314,15 @@ ${ANATOMY_GUARD}
 
 ━━━ STUDIO LIGHTING & PHOTOGRAPHY (CRITICAL) ━━━
 • COMPLETELY DISREGARD any lighting from the reference photo — apply fresh professional studio lighting
-• Key light: Large octagonal softbox positioned 45° above-left, creating soft directional modeling on the face
-• Fill light: Large white reflector on the right side, filling shadows to a 2:1 ratio (natural, not flat)
-• Hair light: Subtle rim light from behind-left, creating a gentle edge separation from background
-• Color temperature: 5500K daylight-balanced, neutral white balance
-• Catchlight in eyes: Single soft rectangular catchlight reflecting the key light
-• Clean seamless infinity white background (#FAFAFA, not pure harsh white)
-• Camera: 85mm portrait lens at f/5.6, shot at eye level, full body framing from 10cm above head to 5cm below feet
-• Sharp focus across entire figure, slight natural vignette at extreme corners
+• Soft, even, professional studio lighting with gentle directional shadows that sculpt the face and body naturally
+• Subtle edge separation between the person and the background — a gentle glow, not harsh contrast
+• Color temperature: neutral daylight-balanced, clean white balance
+• Natural catchlight in both eyes
+• Clean seamless PLAIN white background (#FAFAFA) — absolutely NOTHING else in the background
+• Camera: shot at eye level, full body framing from 10cm above head to 5cm below feet
+• Sharp focus across entire figure
 • Natural skin rendering: visible pores, subtle skin texture, no airbrushing or plastic smoothing
-• Realistic shadow beneath feet and subtle body shadow on background
+• Realistic shadow beneath feet grounding the person in the space
 
 ━━━ OUTPUT REQUIREMENTS ━━━
 • A SINGLE photorealistic image — indistinguishable from a real studio photograph
@@ -332,7 +331,9 @@ ${ANATOMY_GUARD}
 • Complete figure visible: top of head to bare toes, nothing cropped
 • Portrait orientation (3:4 aspect ratio)
 • No text, watermarks, frames, or borders
-• No background elements besides the seamless white studio backdrop`;
+• NO visible lighting equipment, softboxes, umbrellas, reflectors, or studio gear
+• NO background elements, props, furniture, or objects — ONLY the clean white backdrop
+• The background must be COMPLETELY EMPTY — just a plain seamless white surface`;
 }
 
 // ═══════════════════════════════════════
@@ -367,17 +368,15 @@ ${getOutfitDesc(g.person === "man" ? "masculino" : "feminino")}
 ${ANATOMY_GUARD}
 
 ━━━ STUDIO LIGHTING & PHOTOGRAPHY ━━━
-• Large octagonal softbox key light positioned 45° above-left, creating soft directional shadows that sculpt the face and body
-• White reflector fill from the right, maintaining a natural 2:1 lighting ratio (visible shadows but not harsh)
-• Subtle hair/rim light from behind-left creating gentle edge separation from background
-• Color temperature: 5500K daylight balanced, perfectly neutral white balance
-• Single soft rectangular catchlight visible in both eyes
-• Clean seamless infinity white background (#FAFAFA — slightly warm white, not harsh blue-white)
-• Camera: 85mm portrait lens at f/5.6, positioned at the model's eye level
+• Soft, even, professional studio lighting with gentle directional shadows that sculpt the face and body naturally
+• Subtle edge separation between the person and the background — a gentle glow, not harsh contrast
+• Color temperature: neutral daylight balanced, clean white balance
+• Natural catchlight visible in both eyes
+• Clean seamless PLAIN white background (#FAFAFA) — absolutely NOTHING else in the background
+• Camera: shot at the model's eye level
 • Full body framing: from 10cm above the head to 5cm below the feet — ENTIRE body visible
-• Sharp focus across the entire figure with just a hint of natural depth falloff
+• Sharp focus across the entire figure
 • Subtle natural shadow beneath feet grounding the person in the space
-• Very slight natural vignette at extreme corners (as in real photography)
 
 ━━━ SKIN & REALISM DIRECTIVES ━━━
 • Natural skin rendering is CRITICAL — this must look like a photograph, NOT a digital painting
@@ -393,5 +392,7 @@ ${ANATOMY_GUARD}
 • ${g.pronoun.charAt(0).toUpperCase() + g.pronoun.slice(1)} should feel like a real person standing in a real studio — not a generated avatar
 • Portrait orientation (3:4 aspect ratio)
 • No text, watermarks, logos, frames, or borders
-• No background elements — only the clean white studio backdrop`;
+• NO visible lighting equipment, softboxes, umbrellas, reflectors, or studio gear
+• NO background elements, props, furniture, or objects — ONLY the clean white backdrop
+• The background must be COMPLETELY EMPTY — just a plain seamless white surface`;
 }

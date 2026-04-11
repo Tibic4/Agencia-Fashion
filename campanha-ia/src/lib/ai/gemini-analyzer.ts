@@ -487,17 +487,26 @@ function buildUserPrompt(input: AnalyzerInput): string {
     extras.push("🔴 ATENÇÃO — Modelo é plus size. Os prompts devem valorizar o corpo curvilíneo com poses e ângulos flattering");
   }
 
+  // ── Helper: hex → RGB string ──
+  function hexToRgb(hex: string): string {
+    const h = hex.replace("#", "");
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `${r}, ${g}, ${b}`;
+  }
+
   // ── Scene context (cenário selecionado) ──
   const SCENE_MOODS: Record<string, { name: string; description: string; details: string }> = {
     branco: {
       name: "Estúdio Branco Minimalista",
       description: "Clean minimalist white studio with pure seamless white cyclorama background",
-      details: "Soft even lighting from large overhead softboxes. No shadows on background. E-commerce product-focus aesthetic."
+      details: "Soft, even professional lighting. No shadows on background. No visible lighting equipment. E-commerce product-focus aesthetic."
     },
     estudio: {
       name: "Estúdio Profissional",
-      description: "Professional fashion photography studio with controlled three-point lighting setup",
-      details: "Key light 45° from subject, fill light opposite, hair/rim light from behind. Neutral gray or gradient backdrop. Sharp, editorial feel."
+      description: "Professional fashion photography studio with soft directional lighting",
+      details: "Even lighting sculpting the subject naturally. Neutral gray or gradient backdrop. Sharp, editorial feel. No visible lighting equipment, softboxes, umbrellas, or reflectors."
     },
     lifestyle: {
       name: "Lifestyle / Casual",
@@ -540,7 +549,9 @@ function buildUserPrompt(input: AnalyzerInput): string {
       sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO PELA LOJISTA:\n"${customText}"\nUse este cenário como fundo para TODOS os 3 prompts (scene_prompts[0], [1] e [2]).\nTODOS os prompts devem ter o MESMO ambiente e iluminação — varie apenas POSE e ÂNGULO DE CÂMERA.`;
     }
   } else if (bgType === "minha_marca" && input.brandColor) {
-    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca\nA lojista quer fotos com a identidade visual da marca. Cor principal: ${input.brandColor}.\nTODOS os 3 prompts devem usar: "softly textured studio wall in warm ${input.brandColor} tones with professional directional lighting creating natural depth and subtle shadows".\nO fundo deve parecer um ESTÚDIO REAL de fotografia de moda — NÃO um quadro sólido plano.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o fundo é SEMPRE o mesmo.`;
+    const hex = input.brandColor;
+    const rgb = hexToRgb(hex);
+    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca (COR EXATA OBRIGATÓRIA)\nA lojista quer fotos com a identidade visual da marca.\n\nCOR DO FUNDO — ESPECIFICAÇÃO EXATA (NÃO APROXIME):\n• HEX: ${hex}\n• RGB: ${rgb}\n• O fundo inteiro deve ser EXATAMENTE esta cor — NÃO interprete, NÃO aproxime, NÃO mude o tom\n\nTODOS os 3 prompts (scene_prompts[0], [1] e [2]) devem incluir esta instrução LITERALMENTE:\n"Solid uniform backdrop in EXACTLY the color hex ${hex} (RGB ${rgb}). The entire background is this single flat color — no texture, no gradient, no pattern, no variation. Soft, even professional lighting on the subject. No visible lighting equipment."\n\nREGRAS ABSOLUTAS:\n• A cor do fundo deve ser IDÊNTICA nos 3 prompts — use o hex ${hex} em TODOS\n• Fundo PLANO e UNIFORME — proibido textura, gradiente, ou qualquer variação\n• Nenhum equipamento de estúdio visível (softboxes, guarda-chuvas, etc)\n• Varie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts`;
   } else if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
     sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;

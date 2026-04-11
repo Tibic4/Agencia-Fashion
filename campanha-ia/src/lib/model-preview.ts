@@ -74,7 +74,7 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
       config: {
         responseModalities: ["IMAGE", "TEXT"],
         imageConfig: {
-          aspectRatio: "9:16",
+          aspectRatio: "3:4",
           imageSize: "2K",
         },
       } as any,

@@ -28,12 +28,23 @@ let modelPricingCache: CacheEntry<Record<string, ModelPricing>> | null = null;
 let exchangeRateCache: CacheEntry<number> | null = null;
 
 // Fallbacks hardcoded (usados se o banco estiver indisponível)
+//
+// FONTE OFICIAL: https://ai.google.dev/gemini-api/docs/pricing
+// Última verificação: 2026-04-11
 const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
-  // ═══ EM USO (Pipeline v3) ═══
+  // ═══ EM USO (Pipeline v7) ═══
   // Claude Opus 4.6 — Analista (opus-analyzer.ts)
   "claude-opus-4-6": { inputPerMTok: 15.00, outputPerMTok: 75.00 },
-  // Gemini 3 Pro Image — Gerador de imagens (image-generator.ts)
-  "gemini-3-pro-image-preview": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
+  // Gemini 3 Pro Image — Gerador de imagens VTO
+  // Google OFICIAL (ai.google.dev/gemini-api/docs/pricing):
+  //   Image input  = 560 tokens/img ($0.0011/img)
+  //   Image output = $120/MTok, 1120 tokens/img (1K-2K) = $0.134/img
+  //   Text  output — também cobrado a $120/MTok neste modelo
+  // Validação: campanha (3 imgs) = 3868 out tokens × $120/M + 10125 in × $2/M
+  //   = $0.464 + $0.020 = $0.484 (Google cobrou ~$0.505) ✅
+  "gemini-3-pro-image-preview": { inputPerMTok: 2.00, outputPerMTok: 120.00 },
+  // Gemini 3.1 Flash Image — image output $60/MTok
+  "gemini-3.1-flash-image-preview": { inputPerMTok: 0.50, outputPerMTok: 60.00 },
   // Gemini 3 Flash — Smart Tips + Preview de modelos
   "gemini-3-flash-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
 
@@ -42,7 +53,6 @@ const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
   "gemini-2.5-pro": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
   "gemini-3.1-flash-lite-preview": { inputPerMTok: 0.20, outputPerMTok: 1.00 },
   "gemini-3.1-pro-preview": { inputPerMTok: 2.00, outputPerMTok: 12.00 },
-  "gemini-3.1-flash-image-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
   "claude-sonnet-4-6": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-sonnet-4-20250514": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-haiku-4-20250514": { inputPerMTok: 1.00, outputPerMTok: 5.00 },
