@@ -494,7 +494,7 @@ async function logGeminiVTOCosts(
   const supabase = createAdminClient();
 
   let exchangeRate = 5.8;
-  let modelPrice = { inputPerMTok: 1.25, outputPerMTok: 10.00 };
+  let modelPrice = { inputPerMTok: 2.00, outputPerMTok: 120.00 };
 
   try {
     const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");

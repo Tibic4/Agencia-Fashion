@@ -706,8 +706,9 @@ export default function GerarCampanha() {
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setCloseUpFile(null); setCloseUpPreview(null); }}
-                      className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                      className="absolute top-0 right-0 w-8 h-8 p-1.5 rounded-full flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style={{ background: "rgba(0,0,0,0.6)" }}
+                      aria-label="Remover close-up"
                     >
                       <IconX />
                     </button>
@@ -766,8 +767,9 @@ export default function GerarCampanha() {
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setSecondFile(null); setSecondPreview(null); }}
-                      className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                      className="absolute top-0 right-0 w-8 h-8 p-1.5 rounded-full flex items-center justify-center min-w-[44px] min-h-[44px]"
                       style={{ background: "rgba(0,0,0,0.6)" }}
+                      aria-label="Remover segunda peça"
                     >
                       <IconX />
                     </button>
@@ -887,8 +889,8 @@ export default function GerarCampanha() {
 
           {/* Model Bank Selector — Unificado (customizadas + stock) */}
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-3">
-              <div>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+              <div className="flex-shrink-0">
                 <label className="text-sm font-semibold">Modelo virtual</label>
                 {customModels.length > 0 && (
                   <span className="text-xs ml-2" style={{ color: "var(--muted)" }}>
@@ -896,7 +898,7 @@ export default function GerarCampanha() {
                   </span>
                 )}
               </div>
-              <div className="flex overflow-x-auto gap-1 mt-2 md:mt-0 hide-scrollbar pb-1">
+              <div className="w-full md:w-auto min-w-0 flex overflow-x-auto gap-1 hide-scrollbar pb-1">
                 {["all", "padrao", "curvilinea", "homem", "homem_plus"].map((f) => (
                   <button
                     key={f}
@@ -909,7 +911,7 @@ export default function GerarCampanha() {
                       else if (f === "homem_plus") setBodyType("robusto");
                       setShowAllModels(false);
                     }}
-                    className="px-3 py-2 sm:px-3 sm:py-2 rounded-md text-[11px] sm:text-xs font-medium transition-all min-h-[44px] whitespace-nowrap flex-shrink-0"
+                    className="px-3 py-2 rounded-md text-[11px] sm:text-xs font-medium transition-all min-h-[44px] whitespace-nowrap flex-shrink-0"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
@@ -1256,7 +1258,7 @@ export default function GerarCampanha() {
           <div>
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2 text-sm font-medium transition"
+              className="flex items-center gap-2 text-sm font-medium transition min-h-[44px]"
               style={{ color: "var(--muted)" }}
             >
               Personalizar mais
