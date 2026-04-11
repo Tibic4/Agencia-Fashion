@@ -22,7 +22,7 @@ const settingMeta: Record<string, { label: string; description: string; type: "t
   enable_bg_removal: { label: "Remoção de fundo", description: "Habilitar/desabilitar remoção de fundo automática", type: "toggle" },
   maintenance_mode: { label: "Modo manutenção", description: "Bloqueia novas gerações de campanha", type: "toggle" },
   enable_registration: { label: "Abrir cadastros", description: "Permite novos cadastros de lojas", type: "toggle" },
-  default_ai_model: { label: "Modelo IA padrão", description: "Modelo Claude usado nas campanhas", type: "text" },
+  default_ai_model: { label: "Modelo IA padrão", description: "Modelo IA usado nas campanhas", type: "text" },
 
   monthly_cost_alert_brl: { label: "Alerta de custo mensal (R$)", description: "Valor para alerta de custo API", type: "number" },
   max_image_size_mb: { label: "Tamanho máx. imagem (MB)", description: "Limite em MB para upload", type: "number" },

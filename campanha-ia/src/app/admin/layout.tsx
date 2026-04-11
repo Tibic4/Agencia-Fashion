@@ -168,16 +168,16 @@ export default function AdminLayout({
         </div>
       )}
 
-      {/* Mobile Bottom Nav — quick access to top 5 items */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 flex items-center justify-around px-1 py-1 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
-        {adminNav.slice(0, 5).map((item) => {
+      {/* Mobile Bottom Nav — all items, horizontally scrollable */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 flex items-center overflow-x-auto px-1 py-1 pb-[max(0.375rem,env(safe-area-inset-bottom))] scrollbar-hide">
+        {adminNav.map((item) => {
           const isActive = pathname === item.href || 
             (item.href !== "/admin" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition min-w-0 min-h-[48px] justify-center ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition min-w-0 min-h-[48px] justify-center shrink-0 ${
                 isActive ? "text-amber-400" : "text-gray-500"
               }`}
             >
