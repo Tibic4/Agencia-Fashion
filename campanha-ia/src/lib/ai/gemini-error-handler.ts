@@ -113,7 +113,7 @@ export function classifyGeminiError(error: unknown): GeminiClassifiedError {
   if (msg.includes("SAFETY") || msg.includes("safety") || msg.includes("blocked") || msg.includes("filtrado")) {
     return {
       code: "SAFETY_BLOCKED",
-      userMessage: "Não foi possível criar esta foto. Tente outra combinação de modelo e roupa.",
+      userMessage: "A foto contém conteúdo que não é permitido pela nossa política. Envie apenas fotos de peças de roupa (sobre cabide, manequim ou mesa). Seu crédito foi devolvido.",
       technicalMessage: `Gemini Safety Block: ${msg}`,
       retryable: false,
       httpStatus: 400,

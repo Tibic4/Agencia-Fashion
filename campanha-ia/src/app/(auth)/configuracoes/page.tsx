@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useClerk } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import { haptics } from "@/lib/utils/haptics";
+import { friendlyError } from "@/lib/friendly-error";
 
 const BrandColorPicker = dynamic(() => import("@/components/BrandColorPicker"), { ssr: false });
 
@@ -81,13 +82,13 @@ export default function Configuracoes() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Erro ${res.status}`);
+        throw new Error(friendlyError(data.error || `Erro ${res.status}`, "Erro ao enviar logo. Tente novamente."));
       }
 
       const data = await res.json();
       setLogoUrl(data.url || data.logo_url);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao enviar logo";
+      const message = friendlyError(err, "Erro ao enviar logo. Tente novamente.");
       setError(message);
     } finally {
       setUploadingLogo(false);
@@ -115,13 +116,13 @@ export default function Configuracoes() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Erro ${res.status}`);
+        throw new Error(friendlyError(data.error || `Erro ${res.status}`, "Erro ao salvar configurações."));
       }
 
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      const message = friendlyError(err, "Erro ao salvar configurações. Tente novamente.");
       setError(message);
     } finally {
       setSaving(false);

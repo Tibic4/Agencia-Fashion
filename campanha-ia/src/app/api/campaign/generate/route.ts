@@ -512,14 +512,17 @@ export async function POST(request: NextRequest) {
           const isRetryable = errObj?.retryable === true;
           const technicalMsg = (errObj?.technicalMessage as string) || errMsg;
 
-          // Devolver crédito avulso se erro é retryable (429, 503, etc.)
-          if (creditReserved && isRetryable && store) {
+          // Devolver crédito avulso se o user não recebeu resultado:
+          // - Erros retryable (429, 503) — o user vai tentar de novo
+          // - SAFETY_BLOCKED / IMAGE_GENERATION_BLOCKED — a IA recusou, não é culpa do user
+          const shouldRefund = isRetryable || errCode === "SAFETY_BLOCKED" || errCode === "IMAGE_GENERATION_BLOCKED";
+          if (creditReserved && shouldRefund && store) {
             try {
               const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
               const sb = createAdmin();
               const { data: curr } = await sb.from("stores").select("credit_campaigns").eq("id", store.id).single();
               await sb.from("stores").update({ credit_campaigns: (curr?.credit_campaigns || 0) + 1 }).eq("id", store.id);
-              console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (erro retryable: ${errCode})`);
+              console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (${errCode})`);
             } catch (refundErr) {
               console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
             }
