@@ -1,8 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateTimeBR, formatTimeBR } from "@/lib/admin/format";
 import { StuckCampaignsSection } from "./StuckCampaigns";
+import { requireAdmin } from "@/lib/admin/guard";
+import { redirect } from "next/navigation";
 
 async function getLogs() {
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) redirect("/gerar");
+
   const supabase = createAdminClient();
 
   const now = new Date();

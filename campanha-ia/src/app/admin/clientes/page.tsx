@@ -1,7 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDateBR } from "@/lib/admin/format";
+import { requireAdmin } from "@/lib/admin/guard";
+import { redirect } from "next/navigation";
 
 async function getStores() {
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) redirect("/gerar");
+
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("stores")
