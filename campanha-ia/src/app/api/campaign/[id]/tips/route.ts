@@ -195,6 +195,27 @@ export async function POST(
     return NextResponse.json({ error: "Campaign ID obrigatório" }, { status: 400 });
   }
 
+  // ── Server-side cache: check if tips already exist in campaign output ──
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const cacheClient = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: campaign } = await cacheClient
+      .from("campaigns")
+      .select("output")
+      .eq("id", id)
+      .single();
+    
+    if (campaign?.output?.smart_tips) {
+      console.log(`[Tips Pro] ✅ Cache hit for campaign ${id} — zero cost`);
+      return NextResponse.json({ data: campaign.output.smart_tips, cached: true });
+    }
+  } catch {
+    // Non-fatal — proceed to generate
+  }
+
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "GOOGLE_AI_API_KEY não configurada" }, { status: 500 });
@@ -282,6 +303,31 @@ export async function POST(
 
     // Log cost (fire-and-forget)
     logTipsCost(durationMs, id, storeId, usage).catch(() => {});
+
+    // ── Save tips to campaign output for server-side cache (fire-and-forget) ──
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+      const saveClient = createClient(supabaseUrl, supabaseKey);
+      
+      // Read current output and merge smart_tips into it
+      const { data: current } = await saveClient
+        .from("campaigns")
+        .select("output")
+        .eq("id", id)
+        .single();
+      
+      const updatedOutput = { ...(current?.output || {}), smart_tips: tips };
+      await saveClient
+        .from("campaigns")
+        .update({ output: updatedOutput })
+        .eq("id", id);
+      
+      console.log(`[Tips Pro] 💾 Cached tips for campaign ${id}`);
+    } catch (e) {
+      console.warn("[Tips Pro] ⚠️ Failed to cache tips:", e);
+    }
 
     return NextResponse.json({ data: tips });
   } catch (err) {

@@ -115,6 +115,9 @@ export async function GET(
         }
       }
 
+      // Include cached smart_tips if available (saves an extra API call)
+      const smartTips = v3Output.smart_tips as Record<string, unknown> | null;
+
       return NextResponse.json({
         success: true,
         data: {
@@ -128,6 +131,7 @@ export async function GET(
             durationMs: campaign.pipeline_duration_ms || 0,
             successCount: v3Output.success_count || images.filter(Boolean).length,
           },
+          smart_tips: smartTips || null,
           score: scores || null,
           status: campaign.status,
           createdAt: campaign.created_at,
