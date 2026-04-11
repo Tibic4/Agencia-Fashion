@@ -17,13 +17,21 @@ interface Plan {
   is_active: boolean;
 }
 
-const settingMeta: Record<string, { label: string; description: string; type: "toggle" | "text" | "number" }> = {
-  enable_tryon: { label: "Virtual Try-On (Gemini)", description: "Habilitar/desabilitar o try-on globalmente via Gemini 3.1 Flash Image.", type: "toggle" },
+const settingMeta: Record<string, { label: string; description: string; type: "toggle" | "text" | "number" | "select"; options?: { value: string; label: string }[] }> = {
+  enable_tryon: { label: "Virtual Try-On (Gemini)", description: "Gera fotos com modelo vestindo a peça via Gemini 3 Pro Image.", type: "toggle" },
   enable_bg_removal: { label: "Remoção de fundo", description: "Habilitar/desabilitar remoção de fundo automática", type: "toggle" },
   maintenance_mode: { label: "Modo manutenção", description: "Bloqueia novas gerações de campanha", type: "toggle" },
   enable_registration: { label: "Abrir cadastros", description: "Permite novos cadastros de lojas", type: "toggle" },
-  default_ai_model: { label: "Modelo IA padrão", description: "Modelo IA usado nas campanhas", type: "text" },
-
+  default_ai_model: {
+    label: "Modelo IA padrão",
+    description: "Modelo principal usado na análise de peças",
+    type: "select",
+    options: [
+      { value: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (Análise + Copywriter)" },
+      { value: "gemini-3-pro-image-preview", label: "Gemini 3 Pro Image (VTO)" },
+      { value: "gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Image (Preview rápido)" },
+    ],
+  },
   monthly_cost_alert_brl: { label: "Alerta de custo mensal (R$)", description: "Valor para alerta de custo API", type: "number" },
   max_image_size_mb: { label: "Tamanho máx. imagem (MB)", description: "Limite em MB para upload", type: "number" },
   default_plan_id: { label: "Plano padrão", description: "ID do plano atribuído a novos usuários", type: "text" },
@@ -161,7 +169,7 @@ export default function AdminConfiguracoes() {
         </div>
       </div>
 
-      {/* Text/Number Settings */}
+      {/* Text/Number/Select Settings */}
       <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-800">
           <h2 className="text-sm font-semibold text-white">Parâmetros</h2>
@@ -178,23 +186,35 @@ export default function AdminConfiguracoes() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <input
-                    type={meta.type === "number" ? "number" : "text"}
-                    defaultValue={val}
-                    onBlur={(e) => {
-                      if (e.target.value !== val) {
-                        updateSetting(key, e.target.value);
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const target = e.target as HTMLInputElement;
-                        if (target.value !== val) updateSetting(key, target.value);
-                      }
-                    }}
-                    className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-gray-800 border border-gray-700 text-gray-200 focus:border-amber-500 focus:outline-none transition"
-                    placeholder={`${meta.label}...`}
-                  />
+                  {meta.type === "select" && meta.options ? (
+                    <select
+                      value={val}
+                      onChange={(e) => updateSetting(key, e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-gray-800 border border-gray-700 text-gray-200 focus:border-amber-500 focus:outline-none transition appearance-none cursor-pointer"
+                    >
+                      {meta.options.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={meta.type === "number" ? "number" : "text"}
+                      defaultValue={val}
+                      onBlur={(e) => {
+                        if (e.target.value !== val) {
+                          updateSetting(key, e.target.value);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const target = e.target as HTMLInputElement;
+                          if (target.value !== val) updateSetting(key, target.value);
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 rounded-lg text-sm font-mono bg-gray-800 border border-gray-700 text-gray-200 focus:border-amber-500 focus:outline-none transition"
+                      placeholder={`${meta.label}...`}
+                    />
+                  )}
                   {saving === key && (
                     <span className="text-xs text-amber-400 self-center animate-pulse">Salvando...</span>
                   )}
@@ -202,6 +222,35 @@ export default function AdminConfiguracoes() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Pipeline Overview */}
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-800">
+          <h2 className="text-sm font-semibold text-white">🤖 Pipeline de IA — Modelos Ativos</h2>
+        </div>
+        <div className="divide-y divide-gray-800">
+          {[
+            { icon: "🔍", stage: "Análise da peça", model: "gemini-3.1-pro-preview", cost: "~R$ 0,15", desc: "Identifica peças, cores, modelagem e mood da foto" },
+            { icon: "👗", stage: "Virtual Try-On (VTO)", model: "gemini-3-pro-image-preview", cost: "~R$ 2,80", desc: "Gera 3 fotos do modelo vestindo a peça" },
+            { icon: "✍️", stage: "Copywriter Pro", model: "gemini-3.1-pro-preview", cost: "~R$ 0,03", desc: "Gera captions e dicas de marketing para Instagram" },
+            { icon: "🖼️", stage: "Preview de modelo", model: "gemini-3.1-flash-image-preview", cost: "~R$ 0,01", desc: "Preview rápido ao criar modelo virtual" },
+          ].map((item) => (
+            <div key={item.stage} className="px-4 md:px-6 py-3 flex items-start gap-3">
+              <span className="text-lg mt-0.5 shrink-0">{item.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium text-white">{item.stage}</p>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 truncate max-w-full">
+                    {item.model}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+              </div>
+              <span className="text-xs font-semibold text-emerald-400 shrink-0 mt-1">{item.cost}</span>
+            </div>
+          ))}
         </div>
       </div>
 

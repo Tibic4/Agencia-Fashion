@@ -30,6 +30,6 @@ export async function POST(
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/activate] Error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao ativar modelo" }, { status: 500 });
   }
 }

@@ -30,7 +30,10 @@ export async function DELETE(
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/delete] Error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao excluir modelo", details: process.env.NODE_ENV === "development" ? msg : undefined },
+      { status: 500 }
+    );
   }
 }
 
@@ -60,6 +63,9 @@ export async function POST(
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/activate] Error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao ativar modelo", details: process.env.NODE_ENV === "development" ? msg : undefined },
+      { status: 500 }
+    );
   }
 }
