@@ -37,18 +37,23 @@ export const HAIR_TEXTURE_DESC: Record<string, string> = {
 
 export const HAIR_LENGTH_DESC: Record<string, string> = {
   raspado: "buzz cut / very short cropped close to the scalp",
-  joaozinho: "close-cropped pixie cut framing the face",
+  curto: "short cropped pixie/bob cut framing the face",
+  // Legado — fallback para modelos antigos do banco
+  joaozinho: "short cropped pixie cut framing the face",
   chanel: "chin-length structured bob cut",
   ombro: "shoulder-length with subtle layers",
-  medio: "mid-back length, flowing with natural movement",
+  // Atuais
+  medio: "shoulder to mid-back length with natural movement",
   longo: "long waist-length with healthy flowing ends",
 };
 
 export const HAIR_COLOR_DESC: Record<string, string> = {
   preto: "jet black with subtle blue-black sheen",
+  // Legado — fallback para modelos antigos
   castanho_escuro: "deep dark brown with chocolate tones",
-  castanho: "warm chestnut brown with subtle caramel highlights",
+  castanho: "warm brown with subtle caramel highlights",
   ruivo: "rich auburn red with copper undertones",
+  // Legado — fallback
   loiro_escuro: "warm honey-blonde with darker roots",
   loiro: "light golden blonde with sun-kissed dimension",
   platinado: "cool-toned platinum blonde with silvery sheen",
@@ -69,8 +74,8 @@ export const HAIR_DESC: Record<string, string> = {
  */
 export function buildHairDescription(texture?: string, length?: string, color?: string): string {
   const t = HAIR_TEXTURE_DESC[texture || ""] || "soft naturally wavy";
-  const l = HAIR_LENGTH_DESC[length || ""] || "shoulder-length";
-  const c = HAIR_COLOR_DESC[color || ""] || "dark brown";
+  const l = HAIR_LENGTH_DESC[length || ""] || "shoulder to mid-back length";
+  const c = HAIR_COLOR_DESC[color || ""] || "warm brown";
   return `${t} ${c} hair, ${l}`;
 }
 
@@ -128,13 +133,13 @@ The model stands in a SIMPLE, RELAXED A-POSE facing the camera directly:
 export const BODY_DESC = BODY_DESC_F;
 /** @deprecated Use AGE_DESC_F */
 export const AGE_DESC = AGE_DESC_F;
-/** @deprecated Use POSE_SIMPLE */
+/** @deprecated Use POSE_SIMPLE — campo "style" removido do UI, todas as poses são A-Pose */
 export const POSE_DESC: Record<string, string> = {
   casual_natural: POSE_SIMPLE,
   elegante: POSE_SIMPLE,
   esportivo: POSE_SIMPLE,
   urbano: POSE_SIMPLE,
-};
+}; // Mantido apenas para backward compat de modelos existentes
 
 // ═══════════════════════════════════════
 // Types
