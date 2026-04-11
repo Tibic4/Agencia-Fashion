@@ -281,7 +281,7 @@ export default function AuthLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all min-w-[56px] min-h-[48px] justify-center relative active:scale-[0.95]"
+              className="flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all flex-1 min-w-0 min-h-[48px] justify-center relative active:scale-[0.95]"
               style={{
                 color: isActive ? "var(--brand-500)" : "var(--muted)",
               }}
@@ -294,7 +294,7 @@ export default function AuthLayout({
                 />
               )}
               {item.icon}
-              <span className="text-[9px] font-bold leading-tight" style={{ opacity: isActive ? 1 : 0.8 }}>{item.shortLabel}</span>
+              <span className="text-[9px] font-bold leading-tight truncate w-full text-center px-0.5" style={{ opacity: isActive ? 1 : 0.8 }}>{item.shortLabel}</span>
             </Link>
           );
         })}

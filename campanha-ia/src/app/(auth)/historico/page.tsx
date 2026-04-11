@@ -380,7 +380,7 @@ export default function Historico() {
                         </p>
                         <div className="flex items-center gap-2 mt-1 min-w-0">
                           <span
-                            className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0"
+                            className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0 truncate max-w-[50%]"
                             style={{ background: objStyle.bg, color: objStyle.color }}
                           >
                             {objLabel || "—"}
