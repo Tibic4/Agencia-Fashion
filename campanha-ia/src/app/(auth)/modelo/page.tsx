@@ -438,7 +438,7 @@ export default function ModeloVirtual() {
                   <h3 className="font-bold text-white truncate text-sm leading-tight mb-0.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
                     {model.name}
                   </h3>
-                  <p className="text-[10px] text-white/85 line-clamp-1 mb-2.5 font-medium tracking-wide">
+                  <p className="text-[10px] text-white/85 line-clamp-2 mb-2.5 font-medium tracking-wide">
                     {labelSkin} • {labelHair} • {labelBody}
                   </p>
 
