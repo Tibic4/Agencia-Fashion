@@ -316,13 +316,13 @@ export default function Configuracoes() {
             {segments.map((seg) => (
               <button key={seg.value}
                 onClick={() => setSegment(seg.value)}
-                className="p-3 rounded-xl text-sm font-medium text-center transition-all min-h-[44px] flex items-center justify-center gap-2"
+                className="p-2 sm:p-3 rounded-xl text-[11px] sm:text-sm font-medium text-center transition-all min-h-[44px] flex items-center justify-center gap-1.5 sm:gap-2 truncate min-w-0"
                 style={{
                   background: segment === seg.value ? "var(--gradient-brand)" : "var(--surface)",
                   color: segment === seg.value ? "white" : "var(--muted)",
                   border: segment === seg.value ? "none" : "1px solid var(--border)",
                 }}>
-                <span>{seg.emoji}</span> {seg.label}
+                <span className="flex-shrink-0">{seg.emoji}</span> <span className="truncate">{seg.label}</span>
               </button>
             ))}
           </div>

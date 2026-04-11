@@ -403,7 +403,7 @@ export default function ResultadoCampanha() {
                 <img
                   src={getImageSrc(selectedImage)}
                   alt={`Foto ${(selectedIndex ?? 0) + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
                 <div
                   className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
@@ -423,7 +423,7 @@ export default function ResultadoCampanha() {
                 className="relative rounded-2xl overflow-hidden w-full"
                 style={{ aspectRatio: "3/4", background: "var(--surface)" }}
               >
-                <img src={getImageSrc(validImages[0])} alt="Foto 1" className="w-full h-full object-cover" />
+                <img src={getImageSrc(validImages[0])} alt="Foto 1" className="w-full h-full object-cover object-top" />
               </div>
             ) : null}
 
@@ -447,7 +447,7 @@ export default function ResultadoCampanha() {
                   }}
                 >
                   {img ? (
-                    <img src={getImageSrc(img)} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={getImageSrc(img)} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover object-top" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ background: "var(--surface)" }}>
                       <span className="text-sm">❌</span>
@@ -484,7 +484,7 @@ export default function ResultadoCampanha() {
                   }}
                 >
                   {img ? (
-                    <img src={getImageSrc(img)} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={getImageSrc(img)} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover object-top" loading="lazy" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-1">
                       <span className="text-3xl">❌</span>
@@ -600,7 +600,7 @@ export default function ResultadoCampanha() {
                 <img
                   src={previewDataUrl || getImageSrc(selectedImage)}
                   alt="Preview do formato"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-top"
                 />
                 <div
                   className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
