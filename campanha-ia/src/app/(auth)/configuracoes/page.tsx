@@ -130,7 +130,7 @@ export default function Configuracoes() {
 
   if (loading) {
     return (
-      <div className="animate-fade-in-up max-w-2xl flex items-center justify-center py-20">
+      <div className="animate-fade-in-up max-w-2xl mx-auto flex items-center justify-center py-20">
         <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
       </div>
     );
@@ -147,7 +147,7 @@ export default function Configuracoes() {
         />
       )}
 
-      <div className="animate-fade-in-up max-w-2xl">
+      <div className="animate-fade-in-up max-w-2xl mx-auto">
 
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">

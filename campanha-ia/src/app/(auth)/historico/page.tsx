@@ -293,7 +293,7 @@ export default function Historico() {
           )}
 
           {/* ── Campaign Cards ── */}
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
             <AnimatePresence mode="popLayout">
               {paginatedCampaigns.map((campaign) => {
                 const score = campaign.campaign_scores?.[0]?.nota_geral;
