@@ -123,7 +123,7 @@ const stepLabels: Record<string, string> = {
   gemini_vto_v5: "👗 Virtual Try-On v5 (legacy)",
   gemini_vto_v6: "👗 Virtual Try-On v6 (Gemini 3 Pro Image)",
   model_preview: "🧍 Preview de modelo (Gemini 3.1 Flash Image)",
-  smart_tips: "💡 Smart Tips (Gemini 3 Flash)",
+  smart_tips: "✍️ Copywriter Pro (Gemini 3.1 Pro)",
   sonnet_analyzer: "🧠 Análise (Sonnet — legacy)",
 };
 
