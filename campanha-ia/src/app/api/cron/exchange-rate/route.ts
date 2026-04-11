@@ -25,12 +25,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await refreshExchangeRate();
+  try {
+    const result = await refreshExchangeRate();
 
-  return NextResponse.json({
-    success: true,
-    rate: result.rate,
-    source: result.source,
-    timestamp: new Date().toISOString(),
-  });
+    return NextResponse.json({
+      success: true,
+      rate: result.rate,
+      source: result.source,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("[Cron:ExchangeRate] ❌ Falha:", message);
+    return NextResponse.json(
+      { error: "Falha ao atualizar câmbio", details: message },
+      { status: 500 }
+    );
+  }
 }

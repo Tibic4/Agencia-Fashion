@@ -16,6 +16,7 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
+import { callGeminiSafe } from "./gemini-error-handler";
 
 // ═══════════════════════════════════════
 // Tipos
@@ -394,34 +395,37 @@ async function generateSingleImage(
   // Map aspect ratio to Gemini format
   const geminiAspect = mapAspectRatio(aspectRatio);
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [
-      { text: vtoPrompt },
-      // IMAGE 1: Model (person)
-      {
-        inlineData: {
-          mimeType: modelMime as any,
-          data: modelBase64,
+  const response = await callGeminiSafe(
+    () => ai.models.generateContent({
+      model: MODEL,
+      contents: [
+        { text: vtoPrompt },
+        // IMAGE 1: Model (person)
+        {
+          inlineData: {
+            mimeType: modelMime as any,
+            data: modelBase64,
+          },
         },
-      },
-      // IMAGE 2: Product (garment/outfit)
-      {
-        inlineData: {
-          mimeType: productMime as any,
-          data: productBase64,
+        // IMAGE 2: Product (garment/outfit)
+        {
+          inlineData: {
+            mimeType: productMime as any,
+            data: productBase64,
+          },
         },
+      ],
+      config: {
+        responseModalities: ["IMAGE", "TEXT"],
+        imageConfig: {
+          aspectRatio: geminiAspect as any,
+          imageSize: IMAGE_SIZE as any,
+        },
+        // Pro model has thinking ALWAYS ON — no thinkingConfig needed
       },
-    ],
-    config: {
-      responseModalities: ["IMAGE", "TEXT"],
-      imageConfig: {
-        aspectRatio: geminiAspect as any,
-        imageSize: IMAGE_SIZE as any,
-      },
-      // Pro model has thinking ALWAYS ON — no thinkingConfig needed
-    },
-  });
+    }),
+    { label: `Gemini VTO #${index + 1}`, maxRetries: 1, backoffMs: 4000 }
+  );
 
   // Extrair imagem do response
   const parts = response.candidates?.[0]?.content?.parts || [];
@@ -431,11 +435,11 @@ async function generateSingleImage(
     // Verificar se foi bloqueado por segurança
     const candidate = response.candidates?.[0];
     if (candidate?.finishReason === "SAFETY") {
-      throw new Error(`Imagem #${index + 1} bloqueada — conteúdo filtrado pelo safety`);
+      throw new Error(`Não foi possível criar a foto #${index + 1}. Tente outra combinação de modelo e roupa.`);
     }
     const textPart = parts.find((p: any) => p.text);
     const reason = (textPart as any)?.text || "sem imagem no response";
-    throw new Error(`Gemini não gerou imagem para "${conceptName}": ${reason}`);
+    throw new Error(`A IA não conseguiu gerar a foto "${conceptName}". Tente novamente.`);
   }
 
   const inlineData = (imagePart as any).inlineData;

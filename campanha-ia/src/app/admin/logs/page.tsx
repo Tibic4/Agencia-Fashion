@@ -100,10 +100,15 @@ async function getLogs() {
 /** Map raw action names to human-readable v6 step labels */
 function stepLabel(action: string): string {
   const map: Record<string, { icon: string; label: string }> = {
-    gemini_analyzer: { icon: "🔮", label: "Análise da peça (Gemini 3.1 Pro)" },
-    gemini_vto_v5: { icon: "👗", label: "Virtual Try-On (Gemini Pro Image)" },
+    gemini_analyzer: { icon: "🔍", label: "Análise da peça (Gemini 3.1 Pro)" },
+    gemini_vto_v5: { icon: "👗", label: "Virtual Try-On v5 (Gemini Pro Image)" },
+    gemini_vto_v6: { icon: "👗", label: "Virtual Try-On v6 (Gemini 3 Pro Image)" },
     image_generation_v3: { icon: "👗", label: "Virtual Try-On (Gemini Pro Image)" },
-    preview_model: { icon: "🖼️", label: "Preview de modelo" },
+    model_preview: { icon: "🖼️", label: "Preview de modelo (Flash Image)" },
+    preview_model: { icon: "🖼️", label: "Preview de modelo (Flash Image)" },
+    smart_tips: { icon: "✍️", label: "Copywriter Pro (Gemini 3.1 Pro)" },
+    pipeline_error: { icon: "❌", label: "Erro no Pipeline" },
+    sonnet_analyzer: { icon: "🧠", label: "Análise (Sonnet — legacy)" },
   };
   const entry = map[action];
   return entry ? `${entry.icon} ${entry.label}` : action;
@@ -237,18 +242,26 @@ export default async function AdminLogs() {
           <>
             {/* Mobile: compact rows */}
             <div className="md:hidden divide-y divide-gray-800 max-h-96 overflow-y-auto">
-              {recentCosts.map((log: Record<string, unknown>, i: number) => (
-                <div key={i} className="px-4 py-2.5">
+              {recentCosts.map((log: Record<string, unknown>, i: number) => {
+                const isError = log.action === "pipeline_error";
+                const meta = (log.metadata as Record<string, unknown>) || {};
+                return (
+                <div key={i} className={`px-4 py-2.5 ${isError ? 'bg-red-950/20' : ''}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-white capitalize font-medium">{String(log.provider || "")}</span>
-                      <span className="text-[10px] text-gray-500">{stepLabel(String(log.action || ""))}</span>
+                      <span className={`text-[10px] ${isError ? 'text-red-400' : 'text-gray-500'}`}>{stepLabel(String(log.action || ""))}</span>
                     </div>
-                    <span className="text-xs font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
+                    {isError ? (
+                      <span className="text-xs font-semibold text-red-400" title={String(meta.message || '')}>{String(meta.error_code || 'ERROR')}</span>
+                    ) : (
+                      <span className="text-xs font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
+                    )}
                   </div>
                   <span className="text-[10px] text-gray-600">{formatTimeBR(String(log.created_at))}</span>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Desktop: full table */}
@@ -264,17 +277,25 @@ export default async function AdminLogs() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
-                  {recentCosts.map((log: Record<string, unknown>, i: number) => (
-                    <tr key={i} className="hover:bg-gray-800/30 transition">
+                  {recentCosts.map((log: Record<string, unknown>, i: number) => {
+                    const isError = log.action === "pipeline_error";
+                    const meta = (log.metadata as Record<string, unknown>) || {};
+                    return (
+                    <tr key={i} className={`transition ${isError ? 'bg-red-950/20 hover:bg-red-950/30' : 'hover:bg-gray-800/30'}`}>
                       <td className="px-6 py-2.5 text-gray-400 text-xs font-mono">
                         {formatTimeBR(String(log.created_at))}
                       </td>
                       <td className="px-6 py-2.5 text-white capitalize">{String(log.provider || "")}</td>
-                      <td className="px-6 py-2.5 text-gray-400 text-xs">{stepLabel(String(log.action || ""))}</td>
-                      <td className="px-6 py-2.5 text-gray-400 font-mono text-xs">{String(log.model_used || "—")}</td>
-                      <td className="px-6 py-2.5 text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</td>
+                      <td className={`px-6 py-2.5 text-xs ${isError ? 'text-red-400 font-medium' : 'text-gray-400'}`}>{stepLabel(String(log.action || ""))}</td>
+                      <td className="px-6 py-2.5 text-gray-400 font-mono text-xs" title={isError ? String(meta.message || '') : ''}>
+                        {isError ? String(meta.error_code || 'ERROR') : String(log.model_used || "—")}
+                      </td>
+                      <td className={`px-6 py-2.5 ${isError ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {isError ? '—' : `R$ ${(Number(log.cost_brl) || 0).toFixed(4)}`}
+                      </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

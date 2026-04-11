@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("[API:model/preview-status] Supabase error:", error.message, error.code);
-      return NextResponse.json({ error: "Erro ao consultar modelos", detail: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Erro ao consultar modelos" }, { status: 500 });
     }
 
     // Montar mapa de statuses
@@ -67,6 +67,6 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/preview-status] Error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao consultar status" }, { status: 500 });
   }
 }

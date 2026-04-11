@@ -504,8 +504,55 @@ export async function POST(request: NextRequest) {
             const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v6 error";
             await failCampaign(campaignRecord.id, msg);
           }
+
+          // Extrair código classificado (vem do callGeminiSafe)
+          const errObj = pipelineError as Record<string, unknown>;
+          const errCode = (errObj?.code as string) || "PIPELINE_ERROR";
           const errMsg = pipelineError instanceof Error ? pipelineError.message : "Erro ao gerar campanha";
-          await sendSSE("error", { error: errMsg });
+          const isRetryable = errObj?.retryable === true;
+          const technicalMsg = (errObj?.technicalMessage as string) || errMsg;
+
+          // Devolver crédito avulso se erro é retryable (429, 503, etc.)
+          if (creditReserved && isRetryable && store) {
+            try {
+              const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+              const sb = createAdmin();
+              const { data: curr } = await sb.from("stores").select("credit_campaigns").eq("id", store.id).single();
+              await sb.from("stores").update({ credit_campaigns: (curr?.credit_campaigns || 0) + 1 }).eq("id", store.id);
+              console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (erro retryable: ${errCode})`);
+            } catch (refundErr) {
+              console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
+            }
+          }
+
+          // Logar erro no api_cost_logs para visibilidade no admin dashboard
+          if (store?.id) {
+            try {
+              const { createAdminClient } = await import("@/lib/supabase/admin");
+              const sb = createAdminClient();
+              await sb.from("api_cost_logs").insert({
+                store_id: store.id,
+                campaign_id: campaignRecord?.id || null,
+                provider: "google",
+                model_used: "pipeline_v6",
+                action: "pipeline_error",
+                cost_usd: 0,
+                cost_brl: 0,
+                exchange_rate: 0,
+                input_tokens: 0,
+                output_tokens: 0,
+                tokens_used: 0,
+                response_time_ms: Date.now() - Date.parse(campaignRecord?.created_at || new Date().toISOString()),
+                metadata: { error_code: errCode, message: technicalMsg.slice(0, 500), retryable: isRetryable },
+              });
+            } catch { /* non-critical — don't block error response */ }
+          }
+
+          await sendSSE("error", {
+            error: errMsg,
+            code: errCode,
+            retryable: isRetryable,
+          });
         } finally {
           // Stream sempre fecha aqui — cobre tanto success quanto error/ALL_IMAGES_FAILED paths
           try { await writer.close(); } catch { /* already closed */ }

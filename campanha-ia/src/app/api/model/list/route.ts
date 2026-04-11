@@ -53,6 +53,6 @@ export async function GET() {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/list] Error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao listar modelos" }, { status: 500 });
   }
 }

@@ -99,6 +99,8 @@ export default function GerarCampanha() {
   const [dragOverCloseUp, setDragOverCloseUp] = useState(false);
   const [dragOverSecond, setDragOverSecond] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [errorRetryable, setErrorRetryable] = useState(true);
   const [bodyType, setBodyType] = useState<"normal" | "plus" | "masculino" | "robusto">("normal");
 
   // Helper: mapeia filtro UI → body_types reais no DB
@@ -390,6 +392,8 @@ export default function GerarCampanha() {
             streamDone = true;
             setIsGenerating(false);
             setError(payload.error || "Erro ao gerar campanha");
+            setErrorCode(payload.code || null);
+            setErrorRetryable(payload.retryable !== false);
             return true;
           }
         } catch {
@@ -495,11 +499,16 @@ export default function GerarCampanha() {
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
               </div>
-              <h3 className="text-lg font-bold" style={{ color: "var(--error, #EF4444)" }}>
-                Não foi possível gerar
+            <h3 className="text-lg font-bold" style={{ color: "var(--error, #EF4444)" }}>
+                {errorCode === "RATE_LIMITED" && "Alta demanda"}
+                {errorCode === "MODEL_OVERLOADED" && "Servidor sobrecarregado"}
+                {errorCode === "SAFETY_BLOCKED" && "Imagem não aceita"}
+                {errorCode === "BAD_REQUEST" && "Foto não reconhecida"}
+                {errorCode === "TIMEOUT" && "Tempo esgotado"}
+                {(!errorCode || !["RATE_LIMITED","MODEL_OVERLOADED","SAFETY_BLOCKED","BAD_REQUEST","TIMEOUT"].includes(errorCode)) && "Não foi possível gerar"}
               </h3>
               <p className="text-sm mt-1 text-center font-medium" style={{ color: "var(--error, #EF4444)", opacity: 0.9 }}>
-                Houve uma instabilidade temporária. Isso pode acontecer em horários de pico.
+                {error}
               </p>
             </div>
 
@@ -523,17 +532,17 @@ export default function GerarCampanha() {
             {/* Actions */}
             <div className="p-6 flex flex-col gap-3">
               <button
-                onClick={() => { setError(null); handleGenerate(); }}
+                onClick={() => { setError(null); setErrorCode(null); setErrorRetryable(true); if (errorRetryable) handleGenerate(); }}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[48px]"
                 style={{ background: "var(--gradient-brand)", color: "white", boxShadow: "0 4px 16px rgba(236,72,153,0.3)" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                 </svg>
-                Tentar novamente
+                {errorRetryable ? "Tentar novamente" : "Alterar foto e tentar"}
               </button>
               <button
-                onClick={() => setError(null)}
+                onClick={() => { setError(null); setErrorCode(null); setErrorRetryable(true); }}
                 className="w-full py-3 rounded-xl text-sm font-medium transition-all min-h-[48px]"
                 style={{ color: "var(--muted)" }}
               >
@@ -932,17 +941,19 @@ export default function GerarCampanha() {
               {/* Opção aleatória */}
               <button
                 onClick={() => setSelectedModelId("random")}
-                className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-sm active:scale-[0.98]"
+                className="aspect-[3/4] rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-sm active:scale-[0.98]"
                 style={{
-                  border: selectedModelId === "random"
-                    ? "2px solid var(--brand-500)"
-                    : "1px solid var(--border)",
                   background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
-                  boxShadow: selectedModelId === "random" ? "0 4px 12px rgba(236,72,153,0.15)" : "none",
                 }}
               >
-                <span className="text-lg drop-shadow-sm">🎲</span>
-                <span className="text-[10px] font-medium mt-1" style={{ color: "var(--muted)" }}>Aleatória</span>
+                {/* Border Overlay */}
+                <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
+                  selectedModelId === "random" 
+                    ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.2)]" 
+                    : "ring-1 ring-inset ring-[var(--border)] opacity-50"
+                }`} />
+                <span className="text-lg drop-shadow-sm relative z-20">🎲</span>
+                <span className="text-[10px] font-medium mt-1 relative z-20" style={{ color: "var(--muted)" }}>Aleatória</span>
               </button>
 
               {/* ⭐ Modelos personalizadas da loja (borda dourada) */}
@@ -953,12 +964,6 @@ export default function GerarCampanha() {
                   <button
                     onClick={() => setSelectedModelId(model.id)}
                     className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all active:scale-[0.98]"
-                    style={{
-                      border: selectedModelId === model.id
-                        ? "2px solid var(--brand-500)"
-                        : "2px solid #D4A017",
-                      boxShadow: "0 0 8px rgba(212,160,23,0.25)",
-                    }}
                     title={`⭐ ${model.name} (sua modelo)`}
                   >
                     {model.photo_url ? (
@@ -976,13 +981,19 @@ export default function GerarCampanha() {
                         isGenerating={true}
                       />
                     )}
+                    {/* Borda dourada/selecionada Overlay */}
+                    <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
+                      selectedModelId === model.id 
+                        ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]" 
+                        : "ring-2 ring-inset ring-[#D4A017] shadow-[inset_0_0_8px_rgba(212,160,23,0.25)]"
+                    }`} />
                     {/* Badge ⭐ */}
-                    <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
+                    <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full z-20" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
                       ⭐ Sua
                     </div>
                     {selectedModelId === model.id && (
-                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">✓</span>
+                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center z-20">
+                        <span className="text-white text-sm font-bold shadow-sm">✓</span>
                       </div>
                     )}
                   </button>
@@ -1096,13 +1107,7 @@ export default function GerarCampanha() {
                   <button
                     key={model.id}
                     onClick={() => setSelectedModelId(model.id)}
-                    className="group aspect-[3/4] rounded-lg overflow-hidden relative transition-all duration-300 hover:scale-[1.03] hover:shadow-lg hover:z-10"
-                    style={{
-                      border: selectedModelId === model.id
-                        ? "2px solid var(--brand-500)"
-                        : "1px solid var(--border)",
-                      boxShadow: selectedModelId === model.id ? "0 4px 12px rgba(236,72,153,0.2)" : "none",
-                    }}
+                    className="group aspect-[3/4] rounded-lg overflow-hidden relative transition-all duration-300 hover:scale-[1.03] hover:z-10"
                     title={model.name}
                   >
                     <img
@@ -1110,9 +1115,15 @@ export default function GerarCampanha() {
                       alt={model.name}
                       className="w-full h-full object-cover object-[center_15%]"
                     />
+                    {/* Border Overlay */}
+                    <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
+                      selectedModelId === model.id 
+                        ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]"
+                        : "ring-1 ring-inset ring-[var(--border)] opacity-50 group-hover:ring-brand-500/50 group-hover:opacity-100"
+                    }`} />
                     {selectedModelId === model.id && (
-                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center">
-                        <span className="text-white text-sm font-bold">✓</span>
+                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center z-20">
+                        <span className="text-white text-sm font-bold shadow-sm">✓</span>
                       </div>
                     )}
                   </button>
@@ -1179,14 +1190,14 @@ export default function GerarCampanha() {
                   <button
                     key={bg.value}
                     onClick={() => setBackground(bg.value)}
-                    className="group rounded-xl overflow-hidden text-center transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5"
-                    style={{
-                      border: background === bg.value
-                        ? "2px solid var(--brand-500)"
-                        : "1px solid var(--border)",
-                      boxShadow: background === bg.value ? "0 4px 12px rgba(236,72,153,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
-                    }}
+                    className="group rounded-xl overflow-hidden text-center transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative"
                   >
+                    {/* Border Overlay */}
+                    <div className={`absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 z-20 ${
+                      background === bg.value 
+                        ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.2)]" 
+                        : "ring-1 ring-inset ring-[var(--border)] opacity-50 group-hover:ring-brand-500/50 group-hover:opacity-100"
+                    }`} />
                     {bg.value === "minha_marca" && storeBrandColor ? (
                       <div
                         className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative overflow-hidden"

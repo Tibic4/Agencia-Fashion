@@ -32,9 +32,8 @@ let exchangeRateCache: CacheEntry<number> | null = null;
 // FONTE OFICIAL: https://ai.google.dev/gemini-api/docs/pricing
 // Última verificação: 2026-04-11
 const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
-  // ═══ EM USO (Pipeline v7) ═══
-  // Claude Opus 4.6 — Analista (opus-analyzer.ts)
-  "claude-opus-4-6": { inputPerMTok: 15.00, outputPerMTok: 75.00 },
+  // ═══ EM USO (Pipeline v7 — 100% Gemini) ═══
+  // Gemini 3.1 Pro — Analisador de peças + Copywriter Pro
   // Gemini 3 Pro Image — Gerador de imagens VTO
   // Google OFICIAL (ai.google.dev/gemini-api/docs/pricing):
   //   Image input  = 560 tokens/img ($0.0011/img)
@@ -50,10 +49,11 @@ const FALLBACK_MODEL_PRICING: Record<string, ModelPricing> = {
   // Gemini 3 Flash — Preview de modelos (legado tips, agora Pro)
   "gemini-3-flash-preview": { inputPerMTok: 0.50, outputPerMTok: 3.00 },
 
-  // ═══ LEGADO (mantidos para histórico) ═══
+  // ═══ LEGADO (mantidos para cálculo de custo de campanhas antigas) ═══
   "gemini-2.5-flash": { inputPerMTok: 0.30, outputPerMTok: 2.50 },
   "gemini-2.5-pro": { inputPerMTok: 1.25, outputPerMTok: 10.00 },
   "gemini-3.1-flash-lite-preview": { inputPerMTok: 0.20, outputPerMTok: 1.00 },
+  "claude-opus-4-6": { inputPerMTok: 15.00, outputPerMTok: 75.00 },
   "claude-sonnet-4-6": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-sonnet-4-20250514": { inputPerMTok: 3.00, outputPerMTok: 15.00 },
   "claude-haiku-4-20250514": { inputPerMTok: 1.00, outputPerMTok: 5.00 },

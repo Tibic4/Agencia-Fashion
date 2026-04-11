@@ -16,7 +16,7 @@ const sections = [
   },
   {
     title: "3. Processamento de Imagens",
-    content: "As fotos enviadas são processadas por APIs de IA terceirizadas (Anthropic, Google Gemini, Fashn AI) exclusivamente para geração da campanha e Virtual Try-On. Não usamos suas imagens para treinar modelos.",
+    content: "As fotos enviadas são processadas pela API do Google Gemini exclusivamente para geração da campanha e Virtual Try-On. Não usamos suas imagens para treinar modelos.",
   },
   {
     title: "4. Armazenamento",
