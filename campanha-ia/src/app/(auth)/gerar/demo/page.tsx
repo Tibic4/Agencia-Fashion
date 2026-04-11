@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
@@ -163,7 +163,7 @@ export default function ResultadoCampanha() {
   }
   const [smartTips, setSmartTips] = useState<SmartTips | null>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
-  const [tipsFetched, setTipsFetched] = useState<string | null>(null); // track which image was analyzed
+  const tipsRequestedRef = useRef<string | null>(null); // prevent double-fire across re-renders
 
   useEffect(() => {
     const campaignId = searchParams.get("id");
@@ -172,7 +172,6 @@ export default function ResultadoCampanha() {
     setResult(null);
     setSelectedIndex(null);
     setSmartTips(null);
-    setTipsFetched(null);
     setPreviewDataUrl(null);
     setCopiedCaption(false);
 
@@ -275,18 +274,30 @@ export default function ResultadoCampanha() {
     return () => { cancelled = true; };
   }, [selectedIndex, activeFormat, result]);
 
-  /** Fetch AI tips ONCE per campaign (not per photo switch) */
+  /** Fetch AI tips ONCE per campaign — cached in sessionStorage to survive remounts */
   useEffect(() => {
     if (selectedIndex === null || !result) return;
     const campaignId = searchParams.get("id") || result?.campaignId;
     if (!campaignId) return;
-    if (tipsFetched === campaignId) return; // already fetched for this campaign
+
+    // Check sessionStorage cache first (survives remounts)
+    const cacheKey = `tips_${campaignId}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        setSmartTips(JSON.parse(cached));
+        return;
+      } catch { /* ignore parse error, re-fetch */ }
+    }
+
+    // Prevent double-fire via ref (survives re-renders within same mount)
+    if (tipsRequestedRef.current === campaignId) return;
+    tipsRequestedRef.current = campaignId;
 
     const img = result?.data?.images?.[selectedIndex];
     if (!img?.imageUrl) return;
 
     setTipsLoading(true);
-    setTipsFetched(campaignId); // mark immediately to prevent double-fire
 
     fetch(`/api/campaign/${campaignId}/tips`, {
       method: "POST",
@@ -301,12 +312,14 @@ export default function ResultadoCampanha() {
       .then(data => {
         if (data?.data) {
           setSmartTips(data.data);
+          // Cache in sessionStorage so remounts don't re-fetch
+          try { sessionStorage.setItem(cacheKey, JSON.stringify(data.data)); } catch {}
         }
       })
       .catch(() => { /* silent fallback to static tips */ })
       .finally(() => setTipsLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, tipsFetched]);
+  }, [selectedIndex, result]);
 
   const copyCaption = async () => {
     const caption = result?.data?.dicas_postagem?.caption_sugerida;

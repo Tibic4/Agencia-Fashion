@@ -144,15 +144,15 @@ export const StoreOnboardingSchema = z.object({
 
 export const ModelCreateSchema = z.object({
   skin_tone: z.enum(['branca', 'morena_clara', 'morena', 'negra']),
-  // Novos campos granulares de cabelo
+  // Campos granulares de cabelo (simplificados v2)
   hair_texture: z.enum(['liso', 'ondulado', 'cacheado', 'crespo']),
-  hair_length: z.enum(['joaozinho', 'chanel', 'ombro', 'medio', 'longo']),
-  hair_color: z.enum(['preto', 'castanho_escuro', 'castanho', 'ruivo', 'loiro_escuro', 'loiro', 'platinado']),
+  hair_length: z.enum(['raspado', 'curto', 'medio', 'longo']).or(z.string()), // .or(string) para valores legados no DB
+  hair_color: z.enum(['preto', 'castanho', 'ruivo', 'loiro', 'platinado']).or(z.string()),
   // Legado — mantido para backward compat
   hair_style: z.enum(['liso', 'ondulado', 'cacheado', 'crespo', 'curto']).optional(),
   body_type: z.enum(['magra', 'media', 'plus_size']),
-  style: z.enum(['casual_natural', 'elegante', 'esportivo', 'urbano']),
-  age_range: z.enum(['jovem_18_25', 'adulta_26_35', 'madura_36_50']),
+  style: z.enum(['casual_natural', 'elegante', 'esportivo', 'urbano']).default('casual_natural'),
+  age_range: z.enum(['jovem_18_25', 'adulta_26_35', 'adulto_26_35', 'madura_36_50', 'maduro_36_50']).default('adulta_26_35'),
   name: z.string().max(20).optional(),
 });
 

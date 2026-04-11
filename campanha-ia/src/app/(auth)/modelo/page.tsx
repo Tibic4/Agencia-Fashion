@@ -22,26 +22,21 @@ const hairTextures = [
 ];
 
 const hairLengthsFem = [
-  { value: "joaozinho", label: "Joãozinho", emoji: "✂️" },
-  { value: "chanel", label: "Chanel / Bob", emoji: "💈" },
-  { value: "ombro", label: "Ombro", emoji: "👤" },
+  { value: "curto", label: "Curto", emoji: "✂️" },
   { value: "medio", label: "Médio", emoji: "🙎‍♀️" },
   { value: "longo", label: "Longo", emoji: "💁‍♀️" },
 ];
 
 const hairLengthsMasc = [
   { value: "raspado", label: "Raspado", emoji: "🧑‍🦲" },
-  { value: "joaozinho", label: "Curto", emoji: "✂️" },
-  { value: "ombro", label: "Médio", emoji: "👤" },
-  { value: "longo", label: "Longo", emoji: "🧔" },
+  { value: "curto", label: "Curto", emoji: "✂️" },
+  { value: "medio", label: "Médio", emoji: "👤" },
 ];
 
 const hairColors = [
   { value: "preto", label: "Preto", emoji: "⬛" },
-  { value: "castanho_escuro", label: "Cast. escuro", emoji: "🟫" },
   { value: "castanho", label: "Castanho", emoji: "🤎" },
   { value: "ruivo", label: "Ruivo", emoji: "🔶" },
-  { value: "loiro_escuro", label: "Mel", emoji: "🍯" },
   { value: "loiro", label: "Loiro", emoji: "💛" },
   { value: "platinado", label: "Platinado", emoji: "🤍" },
 ];
@@ -58,31 +53,8 @@ const bodyTypesMasc = [
   { value: "robusto", label: "Robusto" },
 ];
 
-const stylesFem = [
-  { value: "casual_natural", label: "Casual", emoji: "👟" },
-  { value: "elegante", label: "Elegante", emoji: "👠" },
-  { value: "esportivo", label: "Esportivo", emoji: "🏃‍♀️" },
-  { value: "urbano", label: "Urbano", emoji: "🏙️" },
-];
-
-const stylesMasc = [
-  { value: "casual_natural", label: "Casual", emoji: "👟" },
-  { value: "elegante", label: "Elegante", emoji: "👔" },
-  { value: "esportivo", label: "Esportivo", emoji: "🏃‍♂️" },
-  { value: "urbano", label: "Urbano", emoji: "🏙️" },
-];
-
-const agesFem = [
-  { value: "jovem_18_25", label: "18-25 anos" },
-  { value: "adulta_26_35", label: "26-35 anos" },
-  { value: "madura_36_50", label: "36-50 anos" },
-];
-
-const agesMasc = [
-  { value: "jovem_18_25", label: "18-25 anos" },
-  { value: "adulto_26_35", label: "26-35 anos" },
-  { value: "maduro_36_50", label: "36-50 anos" },
-];
+// Style e Age removidos do formulário — defaults hardcoded para reduzir desvaneios da IA
+// Dados legados permanecem no banco para backward compat
 
 /* ═══════════════════════════════════════
    Model type
@@ -129,18 +101,14 @@ export default function ModeloVirtual() {
   const [gender, setGender] = useState<"feminino" | "masculino">("feminino");
   const [skin, setSkin] = useState("morena_clara");
   const [hairTexture, setHairTexture] = useState("ondulado");
-  const [hairLength, setHairLength] = useState("ombro");
+  const [hairLength, setHairLength] = useState("medio");
   const [hairColor, setHairColor] = useState("castanho");
   const [body, setBody] = useState("media");
-  const [style, setStyle] = useState("casual_natural");
-  const [age, setAge] = useState("adulta_26_35");
   const [name, setName] = useState("");
 
   // Dynamic arrays based on gender
   const hairLengths = gender === "masculino" ? hairLengthsMasc : hairLengthsFem;
   const bodyTypes = gender === "masculino" ? bodyTypesMasc : bodyTypesFem;
-  const styles = gender === "masculino" ? stylesMasc : stylesFem;
-  const ages = gender === "masculino" ? agesMasc : agesFem;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -226,8 +194,8 @@ export default function ModeloVirtual() {
       formData.append("hairColor", hairColor);
       formData.append("hairStyle", hairTexture); // backward compat
       formData.append("bodyType", body);
-      formData.append("style", style);
-      formData.append("ageRange", age);
+      formData.append("style", "casual_natural"); // default fixo — campo removido do UI
+      formData.append("ageRange", gender === "masculino" ? "adulto_26_35" : "adulta_26_35"); // default fixo
       formData.append("name", name || "Modelo");
       formData.append("gender", gender);
 
@@ -258,8 +226,8 @@ export default function ModeloVirtual() {
         hair_length: hairLength,
         hair_color: hairColor,
         body_type: body,
-        style: style,
-        age_range: age,
+        style: "casual_natural",
+        age_range: gender === "masculino" ? "adulto_26_35" : "adulta_26_35",
         gender,
         is_active: true,
         created_at: new Date().toISOString(),
@@ -318,11 +286,9 @@ export default function ModeloVirtual() {
     setName("");
     setSkin("morena_clara");
     setHairTexture("ondulado");
-    setHairLength("ombro");
+    setHairLength("medio");
     setHairColor("castanho");
     setBody("media");
-    setStyle("casual_natural");
-    setAge("adulta_26_35");
     setError("");
     setQuotaError(null);
   }
@@ -588,8 +554,7 @@ export default function ModeloVirtual() {
                 onClick={() => {
                   setGender("feminino");
                   setBody("media");
-                  setAge("adulta_26_35");
-                  setHairLength("ombro");
+                  setHairLength("medio");
                 }}
                 className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
                 style={{
@@ -604,8 +569,7 @@ export default function ModeloVirtual() {
                 onClick={() => {
                   setGender("masculino");
                   setBody("medio");
-                  setAge("adulto_26_35");
-                  setHairLength("joaozinho");
+                  setHairLength("curto");
                 }}
                 className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
                 style={{
@@ -724,47 +688,7 @@ export default function ModeloVirtual() {
             </div>
           </div>
 
-          {/* Style */}
-          <div>
-            <label className="block text-sm font-semibold mb-3">Estilo</label>
-            <div className="grid grid-cols-2 gap-2">
-              {styles.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStyle(s.value)}
-                  className="flex items-center gap-2 p-3 rounded-xl text-sm font-medium transition-all"
-                  style={{
-                    background: style === s.value ? "var(--gradient-card)" : "var(--surface)",
-                    border: style === s.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                    color: style === s.value ? "var(--brand-600)" : "var(--muted)",
-                  }}
-                >
-                  <span className="text-lg">{s.emoji}</span> {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Age */}
-          <div>
-            <label className="block text-sm font-semibold mb-3">Faixa etária</label>
-            <div className="grid grid-cols-3 gap-2">
-              {ages.map((a) => (
-                <button
-                  key={a.value}
-                  onClick={() => setAge(a.value)}
-                  className="p-2 sm:p-3 rounded-xl text-[10px] sm:text-sm font-medium text-center transition-all min-h-[44px] truncate min-w-0"
-                  style={{
-                    background: age === a.value ? "var(--brand-100)" : "var(--surface)",
-                    color: age === a.value ? "var(--brand-700)" : "var(--muted)",
-                    border: age === a.value ? "1px solid var(--brand-300)" : "1px solid var(--border)",
-                  }}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Style e Age removidos — defaults fixos enviados no submit */}
 
           {/* Name */}
           <div>
@@ -857,8 +781,7 @@ export default function ModeloVirtual() {
                   <span className="badge badge-brand text-xs">{hairLengths.find(h => h.value === hairLength)?.label}</span>
                   <span className="badge badge-brand text-xs">{hairColors.find(h => h.value === hairColor)?.label}</span>
                   <span className="badge badge-brand text-xs">{bodyTypes.find(b => b.value === body)?.label}</span>
-                  <span className="badge badge-brand text-xs">{styles.find(s => s.value === style)?.label}</span>
-                  <span className="badge badge-brand text-xs">{ages.find(a => a.value === age)?.label}</span>
+
                 </div>
 
                 <p className="text-xs mt-6" style={{ color: "var(--muted)" }}>
