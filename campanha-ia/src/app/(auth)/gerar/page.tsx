@@ -603,12 +603,12 @@ export default function GerarCampanha() {
 
       <div className="grid lg:grid-cols-[1fr_1.1fr] xl:grid-cols-[1fr_1.2fr] lg:gap-12 gap-8 items-start">
         {/* Left — Upload (3 fotos: 1 grande + 2 pequenas) */}
-        <div className="space-y-6 lg:sticky lg:top-24">
+        <div className="space-y-6 lg:sticky lg:top-24 min-w-0">
           {/* Upload Area — Layout 1 grande + 2 pequenas */}
-          <div className="flex flex-col sm:flex-row gap-3" style={{ minHeight: "280px" }}>
+          <div className="flex flex-col sm:flex-row gap-3 min-w-0" style={{ minHeight: "280px" }}>
             {/* Foto Principal (grande) */}
             <div
-              className="relative rounded-2xl overflow-hidden transition-all cursor-pointer group flex-[3]"
+              className="relative rounded-2xl overflow-hidden transition-all cursor-pointer group flex-[3] min-w-0"
               style={{
                 border: dragOver
                   ? "2px dashed var(--brand-500)"
@@ -666,7 +666,7 @@ export default function GerarCampanha() {
             </div>
 
             {/* Coluna direita: 2 fotos pequenas */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 flex-[2]">
+            <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3 flex-[2] min-w-0">
               {/* Close-up do tecido */}
               <div
                 className="relative rounded-xl overflow-hidden transition-all cursor-pointer group flex-1"
@@ -808,6 +808,11 @@ export default function GerarCampanha() {
                 type="text"
                 value={price}
                 onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                onFocus={(e) => {
+                  if (window.innerWidth < 1024) {
+                    setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
+                  }
+                }}
                 placeholder="Ex: 89,90"
                 className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
                 style={{
@@ -821,7 +826,7 @@ export default function GerarCampanha() {
         </div>
 
         {/* Right — Options */}
-        <div className="space-y-8">
+        <div className="space-y-8 min-w-0">
 
 
           {/* Body Type — Biotipo */}
@@ -1267,6 +1272,11 @@ export default function GerarCampanha() {
                 type="text"
                 value={customBg}
                 onChange={(e) => setCustomBg(e.target.value)}
+                onFocus={(e) => {
+                  if (window.innerWidth < 1024) {
+                    setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
+                  }
+                }}
                 placeholder="Descreva: parede rosa da loja, praia ao pôr do sol…"
                 maxLength={60}
                 className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
