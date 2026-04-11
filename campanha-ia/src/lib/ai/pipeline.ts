@@ -107,7 +107,13 @@ export async function runCampaignPipeline(
 
   // Log de custo do Gemini Analyzer (fire-and-forget)
   if (input.storeId) {
-    logAnalyzerCost(input.storeId, input.campaignId, analyzerDurationMs).catch((e) =>
+    logAnalyzerCost(
+      input.storeId,
+      input.campaignId,
+      analyzerDurationMs,
+      analyzerResult._usageMetadata?.promptTokenCount,
+      analyzerResult._usageMetadata?.candidatesTokenCount
+    ).catch((e) =>
       console.warn("[Pipeline] Erro ao salvar custo Analyzer:", e)
     );
   }
@@ -170,27 +176,41 @@ async function logAnalyzerCost(
   storeId: string,
   campaignId: string | undefined,
   responseTimeMs: number,
+  realInputTokens?: number,
+  realOutputTokens?: number,
 ) {
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
 
   let exchangeRate = 5.8;
+  let modelPrice = { inputPerMTok: 2.00, outputPerMTok: 12.00 }; // Gemini 3.1 Pro fallback
+
   try {
-    const { getExchangeRate } = await import("@/lib/pricing");
+    const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
     exchangeRate = await getExchangeRate();
+    const pricing = await getModelPricing();
+    if (pricing["gemini-3.1-pro-preview"]) {
+      modelPrice = pricing["gemini-3.1-pro-preview"];
+    }
   } catch {
     // fallback
   }
 
-  // Gemini 3.1 Pro pricing: $1.25/MTok input, $10/MTok output
-  // Thinking tokens: ~2K budget (incluído no output pricing)
-  // NOTA (D2 audit): Esses são valores ESTIMADOS pois o Gemini structured output
-  // não retorna usage metadata acessível após o parse. Quando a API suportar,
-  // substituir por usageMetadata real do response.
-  const avgInputTokens = 5000;  // imagens + prompt (~4K image tokens + ~1K text)
-  const avgOutputTokens = 3000; // JSON (~1K) + thinking (~2K budget)
+  // Usar tokens REAIS da API quando disponíveis
+  const FALLBACK_INPUT = 5000;
+  const FALLBACK_OUTPUT = 3000;
+  const inputTokens = realInputTokens || FALLBACK_INPUT;
+  const outputTokens = realOutputTokens || FALLBACK_OUTPUT;
+  const source = realInputTokens ? "real" : "estimated";
+
   const costUsd =
-    (avgInputTokens / 1_000_000) * 1.25 + (avgOutputTokens / 1_000_000) * 10;
+    (inputTokens * modelPrice.inputPerMTok) / 1_000_000 +
+    (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
+
+  console.log(
+    `[Pipeline] 💰 Analyzer (${source}): $${costUsd.toFixed(4)} / R$ ${(costUsd * exchangeRate).toFixed(4)}` +
+    ` | tokens: ${inputTokens} in + ${outputTokens} out`
+  );
 
   const { error } = await supabase.from("api_cost_logs").insert({
     store_id: storeId,
@@ -201,7 +221,9 @@ async function logAnalyzerCost(
     cost_usd: costUsd,
     cost_brl: costUsd * exchangeRate,
     exchange_rate: exchangeRate,
-    tokens_used: avgInputTokens + avgOutputTokens,
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    tokens_used: inputTokens + outputTokens,
     response_time_ms: responseTimeMs,
   });
 

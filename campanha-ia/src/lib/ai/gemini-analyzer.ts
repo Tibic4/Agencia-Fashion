@@ -68,6 +68,12 @@ export interface GeminiAnalyzerResult {
   analise: GeminiAnalise;
   vto_hints: GeminiVTOHint;
   dicas_postagem: GeminiDicasPostagem;
+  /** Token usage real da API (internal — não faz parte do JSON schema) */
+  _usageMetadata?: {
+    promptTokenCount: number;
+    candidatesTokenCount: number;
+    totalTokenCount: number;
+  };
 }
 
 // ═══════════════════════════════════════
@@ -297,6 +303,13 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
   console.log(
     `[Gemini 3.1 Pro] ✅ Análise em ${durationMs}ms | input=${usage?.promptTokenCount ?? "?"} output=${usage?.candidatesTokenCount ?? "?"} tokens | peça: ${result.analise.tipo_peca}`
   );
+
+  // Attach real token usage para o pipeline usar no cost logger
+  result._usageMetadata = usage ? {
+    promptTokenCount: (usage as any).promptTokenCount || 0,
+    candidatesTokenCount: (usage as any).candidatesTokenCount || 0,
+    totalTokenCount: (usage as any).totalTokenCount || 0,
+  } : undefined;
 
   return result;
 }
