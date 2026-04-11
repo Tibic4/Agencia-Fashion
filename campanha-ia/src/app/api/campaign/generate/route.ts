@@ -482,6 +482,9 @@ export async function POST(request: NextRequest) {
           await sendSSE("done", {
             success: true,
             campaignId: campaignRecord?.id || null,
+            objective: objective || null,
+            targetAudience: targetAudience || null,
+            toneOverride: toneOverride || null,
             data: {
               analise,
               images: images.map(img => img ? {
