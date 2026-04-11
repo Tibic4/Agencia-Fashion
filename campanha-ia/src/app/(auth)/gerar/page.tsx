@@ -913,18 +913,17 @@ export default function GerarCampanha() {
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
-                    }}
-                  >
                     {f === "all" ? "Todos" : f === "padrao" ? "Mulher Padrão" : f === "curvilinea" ? "Mulher Plus" : f === "homem" ? "Homem Padrão" : "Homem Plus"}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+            {/* Grid de Modelos (Aleatória + Customizadas) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
               {/* Opção aleatória */}
               <button
                 onClick={() => setSelectedModelId("random")}
-                className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all"
+                className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all active:scale-[0.98]"
                 style={{
                   border: selectedModelId === "random"
                     ? "2px solid var(--brand-500)"
@@ -943,7 +942,7 @@ export default function GerarCampanha() {
                 <div key={`custom-${model.id}`} className="relative group">
                   <button
                     onClick={() => setSelectedModelId(model.id)}
-                    className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all"
+                    className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all active:scale-[0.98]"
                     style={{
                       border: selectedModelId === model.id
                         ? "2px solid var(--brand-500)"
@@ -1050,7 +1049,7 @@ export default function GerarCampanha() {
               {customModels.length < maxModels ? (
                 <a
                   href="/modelo"
-                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03]"
+                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] active:scale-[0.98]"
                   style={{
                     border: "2px dashed #D4A017",
                     background: "var(--surface)",
@@ -1065,7 +1064,7 @@ export default function GerarCampanha() {
               ) : maxModels > 0 ? (
                 <a
                   href="/plano"
-                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03]"
+                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] active:scale-[0.98]"
                   style={{
                     border: "1px solid var(--border)",
                     background: "linear-gradient(135deg, var(--surface), var(--brand-50))",
