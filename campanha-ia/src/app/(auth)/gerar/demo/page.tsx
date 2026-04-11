@@ -664,8 +664,8 @@ export default function ResultadoCampanha() {
           </div>
         )}
 
-        {/* ── Caption sugerida ── */}
-        {dicas?.caption_sugerida && (
+        {/* ── Caption sugerida (fallback — hidden when Pro tips loaded) ── */}
+        {dicas?.caption_sugerida && !smartTips && (
           <div className="rounded-2xl p-4 sm:p-5 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="font-bold text-sm">📝 Legenda pronta para copiar</h2>
