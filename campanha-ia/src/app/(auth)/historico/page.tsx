@@ -23,7 +23,10 @@ interface Campaign {
     version?: string;
     analise?: {
       tipo_peca?: string;
+      pecas?: string[];
       cor_principal?: { nome?: string; hex?: string };
+      mood?: string;
+      modelagem?: string;
     };
     image_urls?: (string | null)[];
     success_count?: number;
@@ -294,13 +297,35 @@ export default function Historico() {
             <AnimatePresence mode="popLayout">
               {paginatedCampaigns.map((campaign) => {
                 const score = campaign.campaign_scores?.[0]?.nota_geral;
-                // v3: nome da peça vem de output.analise | v2: headline_principal de campaign_outputs
-                const v3Name = campaign.output?.analise?.tipo_peca;
-                const v3Color = campaign.output?.analise?.cor_principal?.nome;
+                const v3Analise = campaign.output?.analise;
                 const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
                 const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
-                const headline = v2Name
-                  || (v3Name ? `${capitalize(v3Name)}${v3Color ? ` — ${capitalize(v3Color)}` : ""}` : `Campanha ${objLabel}`);
+
+                // Build smart headline:
+                // Prioridade: pecas[0] (descritivo) > tipo_peca + cor > v2 headline > fallback
+                let headline = "";
+                if (v2Name) {
+                  headline = v2Name;
+                } else if (v3Analise) {
+                  const firstPeca = v3Analise.pecas?.[0];
+                  const tipoPeca = v3Analise.tipo_peca;
+                  const cor = v3Analise.cor_principal?.nome;
+                  const mood = v3Analise.mood;
+
+                  if (firstPeca && firstPeca.length > 3) {
+                    // Use the descriptive name (e.g. "Blusa cropped com manga bufante")
+                    headline = capitalize(firstPeca);
+                  } else if (tipoPeca) {
+                    headline = capitalize(tipoPeca);
+                    if (cor) headline += ` ${capitalize(cor)}`;
+                  }
+
+                  // Append mood as subtitle (e.g. "· Urbano moderno")
+                  if (mood && mood.length > 2 && headline.length < 40) {
+                    headline += ` · ${capitalize(mood)}`;
+                  }
+                }
+                if (!headline) headline = `Campanha ${objLabel}`.trim();
                 const isFav = campaign.is_favorited;
                 const isToggling = togglingId === campaign.id;
                 const objStyle = objectiveColors[campaign.objective || ""] || { bg: "var(--surface)", color: "var(--muted)" };
