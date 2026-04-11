@@ -269,9 +269,9 @@ export default function AuthLayout({
 
       {/* Mobile Bottom Tab Bar — Floating Island Style */}
       <nav
-        className="lg:hidden fixed left-4 right-4 z-30 glass grid grid-flow-col auto-cols-fr gap-1 px-2 py-1.5 rounded-2xl shadow-xl shadow-black/5"
+        className="lg:hidden fixed left-2 right-2 z-30 glass grid grid-flow-col auto-cols-fr px-1 py-1.5 rounded-2xl shadow-xl shadow-black/5"
         style={{ 
-          bottom: "calc(16px + env(safe-area-inset-bottom))",
+          bottom: "calc(12px + env(safe-area-inset-bottom))",
           border: "1px solid var(--border)" 
         }}
       >
@@ -281,7 +281,7 @@ export default function AuthLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all min-h-[48px] justify-center relative active:scale-[0.95]"
+              className="flex flex-col items-center gap-0.5 py-1.5 rounded-xl transition-all min-h-[44px] justify-center relative active:scale-[0.95]"
               style={{
                 color: isActive ? "var(--brand-500)" : "var(--muted)",
               }}
@@ -289,12 +289,12 @@ export default function AuthLayout({
             >
               {isActive && (
                 <div 
-                  className="absolute inset-x-1 inset-y-0.5 rounded-xl transition-all" 
+                  className="absolute inset-x-0.5 inset-y-0.5 rounded-xl transition-all" 
                   style={{ background: "rgba(236,72,153,0.1)", zIndex: -1 }} 
                 />
               )}
-              <div className="flex-shrink-0">{item.icon}</div>
-              <span className="block w-full max-w-[64px] text-[9px] font-bold leading-tight truncate text-center px-0.5" style={{ opacity: isActive ? 1 : 0.8 }}>
+              <div className="flex-shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]">{item.icon}</div>
+              <span className="block w-full text-[9px] font-bold leading-none truncate text-center" style={{ opacity: isActive ? 1 : 0.8 }}>
                 {item.shortLabel}
               </span>
             </Link>

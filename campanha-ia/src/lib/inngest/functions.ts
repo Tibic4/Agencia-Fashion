@@ -150,7 +150,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
       config: {
         responseModalities: ["IMAGE", "TEXT"],
         imageConfig: {
-          aspectRatio: "9:16",
+          aspectRatio: "3:4",
           imageSize: "2K",
         },
       } as any,
