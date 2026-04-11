@@ -181,9 +181,9 @@ export default function Configuracoes() {
           <h2 className="text-lg font-semibold mb-5">Identidade da marca</h2>
           <div className="flex flex-col sm:flex-row gap-6">
             {/* Logo */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-row sm:flex-col items-center sm:items-center gap-4 sm:gap-3">
               <div
-                className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer transition hover:opacity-80 relative group"
+                className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer transition hover:opacity-80 relative group"
                 style={{ background: "var(--surface)", border: "2px dashed var(--border)" }}
                 onClick={() => logoInputRef.current?.click()}
               >
@@ -198,28 +198,32 @@ export default function Configuracoes() {
                   </>
                 ) : (
                   <div className="text-center">
-                    <span className="text-3xl">📷</span>
-                    <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>Sua logo</p>
+                    <span className="text-2xl sm:text-3xl">📷</span>
+                    <p className="text-[10px] mt-1 hidden sm:block" style={{ color: "var(--muted)" }}>Sua logo</p>
                   </div>
                 )}
               </div>
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleLogoUpload(file);
-                }}
-              />
-              <button
-                onClick={() => logoInputRef.current?.click()}
-                className="text-xs font-semibold px-4 py-2 rounded-lg min-h-[44px] transition"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
-              >
-                {logoUrl ? "Trocar logo" : "Enviar logo"}
-              </button>
+
+              <div className="flex flex-col items-start sm:items-center flex-1 sm:flex-none">
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleLogoUpload(file);
+                  }}
+                />
+                {!logoUrl && <label className="text-sm font-semibold sm:hidden block mb-1">Sua Logo</label>}
+                <button
+                  onClick={() => logoInputRef.current?.click()}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg min-h-[44px] transition w-full sm:w-auto"
+                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                >
+                  {logoUrl ? "Trocar logo da marca" : "Fazer upload"}
+                </button>
+              </div>
             </div>
 
             {/* Brand Color */}
