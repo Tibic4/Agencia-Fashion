@@ -49,12 +49,24 @@ interface DicasPostagem {
   caption_sugerida: string;
 }
 
+interface SmartTips {
+  caption: string;
+  caption_alternativa: string;
+  poste_as: string;
+  tom_da_voz: string;
+  cta: string;
+  dica_extra: string;
+  story_idea: string;
+  hashtags: string[];
+}
+
 interface V3Result {
   success: boolean;
   campaignId?: string | null;
   objective?: string | null;
   targetAudience?: string | null;
   toneOverride?: string | null;
+  smart_tips?: SmartTips | null; // Server-cached Pro copywriter tips
   data?: {
     analise: OpusAnalise;
     images: (GeneratedImage | null)[];
@@ -88,14 +100,19 @@ const IconStar = () => (
    Format Presets — client-side Canvas crop
 ───────────────────────────────────────── */
 const FORMAT_PRESETS = [
-  { id: "stories",   label: "Stories",       icon: "📱", w: 1080, h: 1920, ratio: "9:16" },
-  { id: "feed45",    label: "Feed 4:5",      icon: "📸", w: 1080, h: 1350, ratio: "4:5" },
-  { id: "whatsapp",  label: "WhatsApp",      icon: "💬", w: 1080, h: 1920, ratio: "9:16" },
+  { id: "stories",   label: "Stories / Zap", icon: "📱", w: 1080, h: 1920, ratio: "9:16", desc: "Stories, Reels e WhatsApp Status" },
+  { id: "feed45",    label: "Feed 4:5",      icon: "📸", w: 1080, h: 1350, ratio: "4:5",  desc: "Post no Feed do Instagram" },
+  { id: "feed11",    label: "Feed 1:1",      icon: "⬜", w: 1080, h: 1080, ratio: "1:1",  desc: "Quadrado para Feed e catálogo" },
 ] as const;
 
 type FormatId = typeof FORMAT_PRESETS[number]["id"];
 
-/** Crop & resize image using offscreen canvas (zero API cost) */
+/**
+ * Smart fit image into target aspect ratio using blurred background.
+ * If source already matches target ratio → simple resize (no blur needed).
+ * Otherwise → fit the full image centered, fill empty space with blurred version.
+ * Zero API cost, runs entirely on Canvas.
+ */
 async function cropToFormat(
   imageSrc: string,
   targetW: number,
@@ -110,18 +127,6 @@ async function cropToFormat(
       const targetRatio = targetW / targetH;
       const srcRatio = srcW / srcH;
 
-      let cropX = 0, cropY = 0, cropW = srcW, cropH = srcH;
-
-      if (srcRatio > targetRatio) {
-        // Source is wider → crop sides
-        cropW = Math.round(srcH * targetRatio);
-        cropX = Math.round((srcW - cropW) / 2);
-      } else {
-        // Source is taller → crop top/bottom
-        cropH = Math.round(srcW / targetRatio);
-        cropY = Math.round((srcH - cropH) / 2);
-      }
-
       const canvas = document.createElement("canvas");
       canvas.width = targetW;
       canvas.height = targetH;
@@ -130,7 +135,63 @@ async function cropToFormat(
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+
+      // Check if ratios match (within 2% tolerance) — simple resize
+      if (Math.abs(srcRatio - targetRatio) < 0.02) {
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+        resolve(canvas.toDataURL("image/png", 1.0));
+        return;
+      }
+
+      // ── Step 1: Draw blurred background (fill entire canvas) ──
+      // Scale image to cover the canvas
+      let bgW: number, bgH: number, bgX: number, bgY: number;
+      if (srcRatio > targetRatio) {
+        bgH = targetH;
+        bgW = Math.round(targetH * srcRatio);
+      } else {
+        bgW = targetW;
+        bgH = Math.round(targetW / srcRatio);
+      }
+      bgX = Math.round((targetW - bgW) / 2);
+      bgY = Math.round((targetH - bgH) / 2);
+
+      // Draw scaled background
+      ctx.filter = "blur(40px) brightness(0.7) saturate(1.3)";
+      ctx.drawImage(img, bgX - 20, bgY - 20, bgW + 40, bgH + 40);
+      ctx.filter = "none";
+
+      // ── Step 2: Subtle vignette overlay ──
+      const vignette = ctx.createRadialGradient(
+        targetW / 2, targetH / 2, Math.min(targetW, targetH) * 0.3,
+        targetW / 2, targetH / 2, Math.max(targetW, targetH) * 0.7
+      );
+      vignette.addColorStop(0, "rgba(0,0,0,0)");
+      vignette.addColorStop(1, "rgba(0,0,0,0.35)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, targetW, targetH);
+
+      // ── Step 3: Draw sharp image centered (fit inside) ──
+      let fitW: number, fitH: number;
+      if (srcRatio > targetRatio) {
+        // Source is wider than target → fit by width
+        fitW = targetW;
+        fitH = Math.round(targetW / srcRatio);
+      } else {
+        // Source is taller than target → fit by height
+        fitH = targetH;
+        fitW = Math.round(targetH * srcRatio);
+      }
+      const fitX = Math.round((targetW - fitW) / 2);
+      const fitY = Math.round((targetH - fitH) / 2);
+
+      // Subtle shadow behind the main image
+      ctx.shadowColor = "rgba(0,0,0,0.3)";
+      ctx.shadowBlur = 30;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 4;
+      ctx.drawImage(img, fitX, fitY, fitW, fitH);
+      ctx.shadowColor = "transparent";
 
       resolve(canvas.toDataURL("image/png", 1.0));
     };
@@ -154,17 +215,7 @@ export default function ResultadoCampanha() {
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [showFormatSheet, setShowFormatSheet] = useState(false);
 
-  // ── AI Tips (Gemini 3.1 Pro — Copywriter) ──
-  interface SmartTips {
-    caption: string;
-    caption_alternativa: string;
-    poste_as: string;
-    tom_da_voz: string;
-    cta: string;
-    dica_extra: string;
-    story_idea: string;
-    hashtags: string[];
-  }
+  // ── AI Tips (Gemini 3.1 Pro — Copywriter) ── (SmartTips interface defined at module scope)
   const [smartTips, setSmartTips] = useState<SmartTips | null>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
   const [copiedTip, setCopiedTip] = useState<string | null>(null);
@@ -279,13 +330,19 @@ export default function ResultadoCampanha() {
     return () => { cancelled = true; };
   }, [selectedIndex, activeFormat, result]);
 
-  /** Fetch AI tips ONCE per campaign — cached in sessionStorage to survive remounts */
+  /** Fetch AI tips ONCE per campaign — uses server-side cache + sessionStorage + ref guard */
   useEffect(() => {
     if (selectedIndex === null || !result) return;
     const campaignId = searchParams.get("id") || result?.campaignId;
     if (!campaignId) return;
 
-    // Check sessionStorage cache first (survives remounts)
+    // Priority 1: Server-cached tips (came with the campaign data from API)
+    if (result?.smart_tips) {
+      setSmartTips(result.smart_tips as SmartTips);
+      return;
+    }
+
+    // Priority 2: sessionStorage cache (survives remounts in same tab)
     const cacheKey = `tips_${campaignId}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -295,7 +352,7 @@ export default function ResultadoCampanha() {
       } catch { /* ignore parse error, re-fetch */ }
     }
 
-    // Prevent double-fire via ref (survives re-renders within same mount)
+    // Priority 3: Prevent double-fire via ref (survives re-renders within same mount)
     if (tipsRequestedRef.current === campaignId) return;
     tipsRequestedRef.current = campaignId;
 
@@ -619,7 +676,7 @@ export default function ResultadoCampanha() {
                 <img
                   src={previewDataUrl || getImageSrc(selectedImage)}
                   alt="Preview do formato"
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-contain"
                 />
                 <div
                   className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
@@ -636,9 +693,7 @@ export default function ResultadoCampanha() {
                     {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} — {FORMAT_PRESETS.find(f => f.id === activeFormat)?.w}×{FORMAT_PRESETS.find(f => f.id === activeFormat)?.h}px
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                    {activeFormat === "stories" && "Ideal para Instagram Stories e Reels"}
-                    {activeFormat === "feed45" && "Formato recomendado para Feed do Instagram"}
-                    {activeFormat === "whatsapp" && "WhatsApp Status e catálogo pelo celular"}
+                    {FORMAT_PRESETS.find(f => f.id === activeFormat)?.desc}
                   </p>
                 </div>
                 <button

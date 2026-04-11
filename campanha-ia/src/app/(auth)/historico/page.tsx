@@ -302,27 +302,41 @@ export default function Historico() {
                 const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
 
                 // Build smart headline:
-                // Prioridade: pecas[0] (descritivo) > tipo_peca + cor > v2 headline > fallback
+                // For conjuntos: "Peça 1 + Peça 2 · cor/mood"
+                // For single: "Peça descritiva · mood"
                 let headline = "";
                 if (v2Name) {
                   headline = v2Name;
                 } else if (v3Analise) {
-                  const firstPeca = v3Analise.pecas?.[0];
+                  const pecas = v3Analise.pecas || [];
                   const tipoPeca = v3Analise.tipo_peca;
                   const cor = v3Analise.cor_principal?.nome;
                   const mood = v3Analise.mood;
 
-                  if (firstPeca && firstPeca.length > 3) {
-                    // Use the descriptive name (e.g. "Blusa cropped com manga bufante")
-                    headline = capitalize(firstPeca);
+                  // Helper: shorten a piece name to ~4 meaningful words
+                  const shorten = (s: string) => {
+                    const words = s.split(/\s+/);
+                    // Remove filler words like "de", "com", "em", "e"
+                    const meaningful = words.filter(w => !["de", "com", "em", "e", "da", "do", "na", "no", "para"].includes(w.toLowerCase()));
+                    return capitalize(meaningful.slice(0, 4).join(" "));
+                  };
+
+                  if (pecas.length >= 2 && tipoPeca === "conjunto") {
+                    // Conjunto: show both pieces abbreviated
+                    headline = `${shorten(pecas[0])} + ${shorten(pecas[1])}`;
+                  } else if (pecas.length > 0 && pecas[0].length > 3) {
+                    headline = capitalize(pecas[0]);
                   } else if (tipoPeca) {
                     headline = capitalize(tipoPeca);
-                    if (cor) headline += ` ${capitalize(cor)}`;
                   }
 
-                  // Append mood as subtitle (e.g. "· Urbano moderno")
-                  if (mood && mood.length > 2 && headline.length < 40) {
-                    headline += ` · ${capitalize(mood)}`;
+                  // Append color or mood as subtitle
+                  if (headline.length < 45) {
+                    if (cor && cor.length > 1) {
+                      headline += ` · ${capitalize(cor)}`;
+                    } else if (mood && mood.length > 2) {
+                      headline += ` · ${capitalize(mood)}`;
+                    }
                   }
                 }
                 if (!headline) headline = `Campanha ${objLabel}`.trim();
