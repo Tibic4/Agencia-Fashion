@@ -27,7 +27,7 @@ const plans = [
     tagline: "Pra quem tá começando com IA",
     unitPrice: "R$ 4,60 por campanha",
     cta: "Começar com Essencial",
-    features: ["15 campanhas/mês", "3 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 30 dias", "Suporte por email"],
+    features: ["15 campanhas/mês", "3 modelos exclusivas", "3 opções por campanha", "4 canais prontos", "Score de conversão", "Suporte por email"],
   },
   {
     id: "pro",
@@ -40,7 +40,7 @@ const plans = [
     tagline: "O favorito das lojistas que crescem",
     unitPrice: "R$ 2,98 por campanha",
     cta: "Assinar Pro ⭐",
-    features: ["50 campanhas/mês", "10 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 1 ano", "Suporte WhatsApp"],
+    features: ["50 campanhas/mês", "10 modelos exclusivas", "3 opções por campanha", "4 canais prontos", "Score de conversão", "Suporte WhatsApp"],
   },
   {
     id: "business",
@@ -53,7 +53,7 @@ const plans = [
     tagline: "Pra quem posta todo dia e não quer limite",
     unitPrice: "R$ 2,49 por campanha — melhor custo",
     cta: "Ir pro Business",
-    features: ["120 campanhas/mês", "25 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico ilimitado", "Suporte prioritário"],
+    features: ["120 campanhas/mês", "25 modelos exclusivas", "3 opções por campanha", "4 canais prontos", "Score de conversão", "Suporte prioritário"],
   },
 ];
 
@@ -138,9 +138,9 @@ export default function Home() {
                 <span className="gradient-text">modelo IA.</span>
               </h1>
 
-              <p className="text-base leading-relaxed mb-6 max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
-                Foto da peça → campanha completa.{" "}
-                <strong style={{ color: 'var(--foreground)' }}>Modelo virtual, legendas e score</strong> — pronto pra postar.
+              <p className="text-[15px] sm:text-base leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
+                Transforme roupas do cabide em fotografia de moda.{" "}
+                <strong style={{ color: 'var(--foreground)' }}>Sua modelo exclusiva e 3 opções de fotos</strong> por campanha.
               </p>
 
               {/* ── VTO Proof Card (mobile "aha moment") ── */}
@@ -230,8 +230,8 @@ export default function Home() {
                 </h1>
 
                 <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
-                  Só com uma foto da peça, a IA veste a modelo virtual, gera legendas persuasivas com terminologia de moda e score de conversão —{" "}
-                  <strong style={{ color: 'var(--foreground)' }}>campanha pronta pra postar</strong>.
+                  Transforme peças do cabide em fotografia de moda. A IA usa sua modelo virtual exclusiva, escreve as legendas e entrega{" "}
+                  <strong style={{ color: 'var(--foreground)' }}>3 opções de fotos em cada campanha</strong>.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 mb-8">
@@ -424,9 +424,9 @@ export default function Home() {
                   <IconShirt />
                 </div>
                 <div className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-80">Feature principal</div>
-                <h3 className="text-lg md:text-xl font-bold mb-2">Modelo Virtual</h3>
+                <h3 className="text-lg md:text-xl font-bold mb-2">Modelos Exclusivas</h3>
                 <p className="text-xs md:text-sm leading-relaxed opacity-90">
-                  Sua roupa vestida em uma modelo IA realista. Sem fotógrafo, sem estúdio — Virtual Try-On.
+                  Crie o biotipo da sua cliente ideal (etnia, cabelo, corpo) e vista toda a sua coleção nela de forma padronizada.
                 </p>
                 <div className="mt-3">
                   <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -466,9 +466,9 @@ export default function Home() {
                 }}>
                   <IconCamera />
                 </div>
-                <h3 className="text-sm md:text-base font-bold mb-1">Só uma foto</h3>
+                <h3 className="text-sm md:text-base font-bold mb-1">Poder de Escolha</h3>
                 <p className="text-xs md:text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                  Fotografe com o celular. A IA isola o produto, analisa tecido e caimento.
+                  Não dependa da sorte de um clique só. A IA gera 3 opções visuais a cada campanha para garantir a foto ideal.
                 </p>
               </div>
 
@@ -557,7 +557,7 @@ export default function Home() {
                   }}
                 >
                   {plan.popular && (
-                    <div className="text-xs font-bold px-4 py-1 rounded-full mb-3 inline-block" style={{
+                    <div className="text-xs font-bold px-4 py-1.5 rounded-full mb-4 inline-flex items-center justify-center self-start text-center" style={{
                       background: 'var(--gray-950)',
                       color: 'white',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
