@@ -435,7 +435,7 @@ async function generateSingleImage(
     // Verificar se foi bloqueado por segurança
     const candidate = response.candidates?.[0];
     if (candidate?.finishReason === "SAFETY") {
-      throw new Error(`Não foi possível criar a foto #${index + 1}. Tente outra combinação de modelo e roupa.`);
+      throw new Error(`Conteúdo bloqueado pela IA. Envie apenas fotos de peças de roupa.`);
     }
     const textPart = parts.find((p: any) => p.text);
     const reason = (textPart as any)?.text || "sem imagem no response";

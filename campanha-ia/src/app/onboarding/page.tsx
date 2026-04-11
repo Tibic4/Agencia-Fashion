@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { friendlyError } from "@/lib/friendly-error";
 
 const BrandColorPicker = dynamic(() => import("@/components/BrandColorPicker"), { ssr: false });
 
@@ -187,13 +188,13 @@ export default function Onboarding() {
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || `Erro ${res.status}`);
+          throw new Error(friendlyError(data.error || `Erro ${res.status}`, "Erro ao salvar. Tente novamente."));
         }
 
         setDirection("forward");
         setStep(3);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Erro ao salvar";
+        const message = friendlyError(err, "Erro ao salvar. Tente novamente.");
         setError(message);
       } finally {
         setSaving(false);

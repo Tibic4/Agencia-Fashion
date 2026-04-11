@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { friendlyError } from "@/lib/friendly-error";
 
 const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -125,7 +126,7 @@ export default function Plano() {
         setStatusMsg("🎭 Modo demo — checkout simulado. Configure MERCADOPAGO_ACCESS_TOKEN no .env.local");
         setCreditLoading(null);
       } else {
-        setStatusMsg(data.error || "Erro ao criar checkout de créditos.");
+        setStatusMsg(friendlyError(data.error, "Erro ao criar checkout de créditos."));
         setCreditLoading(null);
       }
     } catch {
@@ -144,7 +145,7 @@ export default function Plano() {
         setStatusMsg("✅ Assinatura cancelada. Seu plano permanece ativo até o fim do período.");
         setStore((prev) => prev ? { ...prev, mercadopago_subscription_id: null } : prev);
       } else {
-        setStatusMsg(data.error || "Erro ao cancelar assinatura.");
+        setStatusMsg(friendlyError(data.error, "Erro ao cancelar assinatura."));
       }
     } catch {
       setStatusMsg("Erro de conexão. Tente novamente.");

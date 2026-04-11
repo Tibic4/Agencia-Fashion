@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
+import { friendlyError } from "@/lib/friendly-error";
 import { haptics } from "@/lib/utils/haptics";
 
 
@@ -212,7 +213,7 @@ export default function ModeloVirtual() {
           setLoading(false);
           return;
         }
-        throw new Error(json.error || "Erro ao criar modelo");
+        throw new Error(friendlyError(json.error || "Erro ao criar modelo"));
       }
       setQuotaError(null);
 
@@ -237,7 +238,7 @@ export default function ModeloVirtual() {
       setShowCreateForm(false);
       resetForm();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erro desconhecido";
+      const msg = friendlyError(err, "Erro ao criar modelo. Tente novamente.");
       setError(msg);
     } finally {
       setLoading(false);
