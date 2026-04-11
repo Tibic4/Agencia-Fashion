@@ -377,27 +377,36 @@ export default function ModeloVirtual() {
         </div>
       ) : models.length === 0 ? (
         /* Empty state */
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-8xl mb-6">👩</div>
-          <h2 className="text-xl font-bold mb-2">
-            Crie sua modelo exclusiva
+        <div 
+          className="flex flex-col items-center justify-center p-8 text-center rounded-2xl mx-auto max-w-lg mt-8 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+          style={{ 
+            border: "2px dashed var(--border)", 
+            background: "var(--surface)", 
+            boxShadow: "0 8px 32px rgba(0,0,0,0.05)" 
+          }}
+        >
+          <div className="w-20 h-20 rounded-full mb-6 flex items-center justify-center bg-brand-50 mx-auto" style={{ border: "2px solid var(--border)" }}>
+            <span className="text-4xl group-hover:scale-110 transition-transform">✨</span>
+          </div>
+          <h2 className="text-xl font-bold mb-2 text-foreground">
+            Sua vitrine virtual está vazia
           </h2>
-          <p className="text-sm mb-6 max-w-md" style={{ color: "var(--muted)" }}>
+          <p className="text-sm mb-8 leading-relaxed max-w-md mx-auto" style={{ color: "var(--muted)" }}>
             {maxModels === 0
-              ? "Assine um plano pago e crie uma modelo com o rosto e corpo da sua cliente ideal. Suas roupas serão vestidas nela automaticamente!"
-              : "Monte a modelo ideal para sua loja — escolha tom de pele, cabelo, biotipo e estilo. As roupas serão vestidas nela em todas as campanhas."
+              ? "Assine um plano e adicione modelos reais ou IA com as proporções exatas do seu público. Vista roupas de forma automática!"
+              : "Crie a modelo ideal para sua loja escolhendo biotipo, etnia e cabelo. Ela usará suas roupas com perfeição em todas as campanhas."
             }
           </p>
           {maxModels === 0 ? (
-            <Link href="/plano" className="btn-primary">
-              ⭐ Ver planos
+            <Link href="/plano" className="btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all">
+              ⭐ Ver planos e iniciar
             </Link>
           ) : (
             <button
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all"
               onClick={() => setShowCreateForm(true)}
             >
-              ✨ Criar minha primeira modelo
+              + Criar modelo exclusiva
             </button>
           )}
         </div>
@@ -414,7 +423,7 @@ export default function ModeloVirtual() {
             return (
               <div
                 key={model.id}
-                className="relative rounded-2xl overflow-hidden transition-all group flex flex-col hover:scale-[1.02] cursor-default"
+                className="relative rounded-2xl overflow-hidden transition-all group flex flex-col hover:scale-[1.02] active:scale-[0.98] cursor-default"
                 style={{
                   border: model.is_active ? "2px solid var(--brand-500)" : "1px solid var(--border)",
                   background: "var(--surface)",

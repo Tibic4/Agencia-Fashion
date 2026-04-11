@@ -244,10 +244,10 @@ export default function AuthLayout({
 
       {/* Mobile Header */}
       <header
-        className="lg:hidden fixed top-0 left-0 right-0 z-30 glass h-14 flex items-center justify-between px-4"
+        className="lg:hidden fixed top-0 left-0 right-0 z-30 glass h-14 flex items-center justify-between px-4 shadow-sm"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
-        <Link href="/gerar" className="flex items-center gap-2">
+        <Link href="/gerar" className="flex items-center gap-2 active:scale-95 transition-transform">
           <Image src="/logo.png" alt="CriaLook" width={34} height={34} className="rounded-full" />
           <span className="text-base font-bold">
             Cria<span className="gradient-text">Look</span>
@@ -267,10 +267,13 @@ export default function AuthLayout({
         </div>
       </header>
 
-      {/* Mobile Bottom Tab Bar — all 5 items */}
+      {/* Mobile Bottom Tab Bar — Floating Island Style */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 glass flex items-center justify-around py-1 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
-        style={{ borderTop: "1px solid var(--border)" }}
+        className="lg:hidden fixed left-4 right-4 z-30 glass flex items-center justify-between px-2 py-1.5 rounded-2xl shadow-xl shadow-black/5"
+        style={{ 
+          bottom: "calc(16px + env(safe-area-inset-bottom))",
+          border: "1px solid var(--border)" 
+        }}
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -278,21 +281,27 @@ export default function AuthLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-lg transition-all min-w-[56px] min-h-[48px] justify-center"
+              className="flex flex-col items-center gap-1 py-1.5 px-0 rounded-xl transition-all min-w-[56px] min-h-[48px] justify-center relative active:scale-[0.95]"
               style={{
                 color: isActive ? "var(--brand-500)" : "var(--muted)",
               }}
               aria-label={item.label}
             >
+              {isActive && (
+                <div 
+                  className="absolute inset-x-1 inset-y-0.5 rounded-xl transition-all" 
+                  style={{ background: "rgba(236,72,153,0.1)", zIndex: -1 }} 
+                />
+              )}
               {item.icon}
-              <span className="text-[9px] font-medium leading-tight">{item.shortLabel}</span>
+              <span className="text-[9px] font-bold leading-tight" style={{ opacity: isActive ? 1 : 0.8 }}>{item.shortLabel}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-24 lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-28 lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
         <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>
