@@ -234,32 +234,6 @@ export default function Home() {
                   afterImage="" 
                 />
               </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <IconInstagram />
-                          <span className="text-xs font-bold">Instagram Feed</span>
-                          <span className="ml-auto text-xs font-black gradient-text">94/100</span>
-                        </div>
-                        <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
-                          ✨ Elegância atemporal. Vestido midi em viscose premium, caimento solto e acabamento acetinado. Peça que transita do escritório ao happy hour com naturalidade.
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-100)', color: 'var(--brand-700)' }}>Alta Conversão</span>
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>Meta Aprovado ✓</span>
-                        </div>
-                      </div>
-                      <div className="rounded-xl p-4" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span style={{ color: '#25d366' }}><IconWhatsApp /></span>
-                          <span className="text-xs font-bold">WhatsApp</span>
-                        </div>
-                        <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
-                          Oi! ✨ Olha que peça maravilhosa acabou de chegar — vestido midi em viscose com toque acetinado. Super elegante e confortável. R$ 189,90 💎 Mando mais fotos? 📲
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
