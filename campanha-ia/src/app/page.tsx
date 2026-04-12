@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import ShowcaseSectionLoader from "@/components/ShowcaseSectionLoader";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
@@ -64,7 +63,7 @@ export default function Home() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#vitrine" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Resultado</a>
+            <a href="#demo-viva" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Demo</a>
             <a href="#como-funciona" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Como funciona</a>
             <a href="#precos" className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Preços</a>
           </nav>
@@ -109,54 +108,28 @@ export default function Home() {
                 <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
               </p>
 
-              {/* ── VTO Proof Card (mobile "aha moment") ── */}
+              {/* ── VTO Proof — Before/After Slider (mobile) ── */}
               <div className="mb-6 mx-auto max-w-xs animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <div className="rounded-2xl overflow-hidden" style={{ 
-                  background: 'var(--surface)', 
-                  border: '1px solid var(--border)',
-                  boxShadow: '0 8px 40px rgba(236,72,153,0.12), var(--shadow-lg)',
-                }}>
-                  {/* VTO visual strip */}
-                  <div className="relative" style={{ aspectRatio: '4/3', background: 'linear-gradient(135deg, var(--brand-100), var(--accent-100))' }}>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-2" style={{
-                          background: 'var(--gradient-brand)',
-                          color: 'white',
-                          boxShadow: '0 8px 32px rgba(236,72,153,0.35)',
-                        }}>
-                          <IconShirt />
-                        </div>
-                        <p className="text-xs font-bold" style={{ color: 'var(--brand-700)' }}>
-                          Foto → Modelo Virtual
-                        </p>
-                      </div>
+                <BeforeAfterSlider 
+                  beforeImage="/demo-before.jpg" 
+                  afterImage="/demo-after.png" 
+                />
+                {/* Smart caption preview */}
+                <div className="mt-3 rounded-xl px-4 py-3 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
+                      <IconSparkles />
                     </div>
-                    {/* Floating badges */}
-                    <div className="absolute top-3 left-3 text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.6)', color: 'white', backdropFilter: 'blur(8px)' }}>
-                      📷 Antes
-                    </div>
-                    <div className="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'var(--gradient-brand)', color: 'white' }}>
-                      ✨ Depois
-                    </div>
+                    <span className="text-[11px] font-semibold">Legenda gerada pela IA</span>
+                    <span className="ml-auto text-[11px] font-black gradient-text">94/100</span>
                   </div>
-                  {/* Smart caption preview */}
-                  <div className="px-4 py-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
-                        <IconSparkles />
-                      </div>
-                      <span className="text-[11px] font-semibold">Legenda gerada pela IA</span>
-                      <span className="ml-auto text-[11px] font-black gradient-text">94/100</span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
-                      ✨ Elegância que fala por si. Vestido midi em viscose premium — caimento fluido, decote transpassado e toque acetinado. Peça única. 💎
-                    </p>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>Alta Conversão</span>
-                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-100)', color: 'var(--accent-600)' }}>Copy Persuasivo</span>
-                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>Meta Aprovado</span>
-                    </div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+                    ✨ Vestido floral tropical — caimento fluido, estampa exclusiva e toque acetinado. Peça que vende sozinha. 🌺
+                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>Alta Conversão</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-100)', color: 'var(--accent-600)' }}>Copy Persuasivo</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>Meta Aprovado</span>
                   </div>
                 </div>
               </div>
@@ -167,7 +140,7 @@ export default function Home() {
                   <IconZap />
                   Criar Minha 1ª Campanha — R$ 14,90
                 </Link>
-                <a href="#vitrine" className="btn-secondary w-full text-sm !py-3">
+                <a href="#demo-viva" className="btn-secondary w-full text-sm !py-3">
                   Ver Exemplo Pronto
                   <IconArrowRight />
                 </a>
@@ -205,7 +178,7 @@ export default function Home() {
                     <IconZap />
                     Criar Minha 1ª Campanha — R$ 14,90
                   </Link>
-                  <a href="#vitrine" className="btn-secondary text-base !py-3.5 !px-8">
+                  <a href="#demo-viva" className="btn-secondary text-base !py-3.5 !px-8">
                     Ver Exemplo Pronto
                     <IconArrowRight />
                   </a>
@@ -230,8 +203,8 @@ export default function Home() {
               {/* Right — Interactive Before/After Slider */}
               <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                 <BeforeAfterSlider 
-                  beforeImage="" 
-                  afterImage="" 
+                  beforeImage="/demo-before.jpg" 
+                  afterImage="/demo-after.png" 
                 />
               </div>
             </div>
@@ -260,13 +233,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
-        <div id="vitrine" className="scroll-mt-20">
-          <ShowcaseSectionLoader />
-        </div>
 
         {/* ═══ DEMONSTRAÇÃO VIVA ═══ */}
-        <section className="section scroll-mt-20" style={{ background: 'var(--surface)' }}>
+        <section id="demo-viva" className="section scroll-mt-20" style={{ background: 'var(--surface)' }}>
           <div className="container">
             <div className="text-center mb-10">
               <div className="badge badge-brand mb-4 inline-flex">Demonstração Real</div>
@@ -479,7 +448,7 @@ export default function Home() {
             </p>
             <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 hover:animate-pulse-glow" aria-label="Criar minha primeira campanha com IA">
               <IconZap />
-              Criar minha primeira campanha
+              Criar minha primeira campanha — R$ 14,90
               <IconArrowRight />
             </Link>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs font-medium text-muted-foreground opacity-80">
