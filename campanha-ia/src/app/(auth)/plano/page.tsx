@@ -384,18 +384,9 @@ export default function Plano() {
             Pagamento 100% Seguro
           </span>
         </div>
-        <div className="flex items-center gap-2" aria-label="Processado pelo Mercado Pago">
+        <div className="flex items-center gap-1.5" aria-label="Processado pelo Mercado Pago">
           <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: "var(--muted)" }}>Checkout oficial</span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.92/mercadopago/logo__large@2x.png"
-            alt="Mercado Pago"
-            width={80}
-            height={20}
-            className="inline-block"
-            style={{ height: "16px", width: "auto" }}
-            loading="lazy"
-          />
+          <span className="text-xs font-bold" style={{ color: "#009EE3" }}>Mercado Pago</span>
         </div>
       </div>
     </div>
