@@ -10,7 +10,7 @@
  */
 
 import type { GeminiAnalise, GeminiDicasPostagem, GeminiVTOHint } from "./gemini-analyzer";
-import { analyzeWithGemini } from "./gemini-analyzer";
+import { analyzeWithGemini, getTexturedBackdropPrompt } from "./gemini-analyzer";
 import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 
@@ -130,8 +130,22 @@ export async function runCampaignPipeline(
   const imageProgressEnd = 85;   // ending progress after all images
   const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
+  // ── Backdrop injection: PROGRAMMATIC override ──
+  // Instead of trusting the AI text model to copy backdrop text identically
+  // into all 3 scene_prompts (which fails ~70% of the time), we inject the
+  // EXACT SAME backdrop string into each prompt here in the pipeline.
+  let finalPrompts = analyzerResult.vto_hints.scene_prompts as [string, string, string];
+
+  if (input.backgroundType === "minha_marca" && input.brandColor) {
+    const backdropText = getTexturedBackdropPrompt(input.brandColor);
+    console.log(`[Pipeline] 🎨 Injecting programmatic backdrop for ${input.brandColor} into all 3 prompts`);
+    finalPrompts = finalPrompts.map(
+      (prompt) => `${prompt}\n\n${backdropText}`
+    ) as [string, string, string];
+  }
+
   const imageResult = await generateWithGeminiVTO({
-    stylingPrompts: analyzerResult.vto_hints.scene_prompts,
+    stylingPrompts: finalPrompts,
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
