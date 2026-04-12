@@ -1,4 +1,8 @@
 /**
+ * @deprecated — Esta rota NÃO é mais chamada pelo frontend.
+ * O copy de Instagram agora é gerado diretamente pelo Analyzer (gemini-analyzer.ts)
+ * dentro da pipeline de geração. Mantida apenas para compatibilidade com logs antigos.
+ * 
  * POST /api/campaign/[id]/tips
  *
  * Gemini 3.1 Pro — Copywriter profissional para Instagram.
@@ -9,9 +13,6 @@
  * 
  * Input:  { imageUrl: string, objective?: string, targetAudience?: string, toneOverride?: string }
  * Output: { caption, caption_alternativa, poste_as, tom_da_voz, cta, dica_extra, story_idea, hashtags }
- * 
- * Custo: ~R$ 0,04 por chamada (Pro 3.1 + 1 imagem)
- * Cached por sessão no frontend — 1 chamada por campanha.
  */
 
 import { NextRequest, NextResponse } from "next/server";
