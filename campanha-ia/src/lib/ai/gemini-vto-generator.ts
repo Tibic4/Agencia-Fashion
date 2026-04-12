@@ -166,6 +166,25 @@ SECTION 1: IDENTITY PRESERVATION (NON-NEGOTIABLE)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 2: GARMENT REPRODUCTION (CRITICAL FIDELITY)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 STEP 1 — SURFACE MARK SCAN (DO THIS FIRST, BEFORE ANYTHING ELSE):
+Study IMAGE 2 carefully for 5 seconds. Look for ANY of these surface details on the garment:
+  — Embossed/debossed logos (same color as fabric, visible only by shadow/texture difference)
+  — Embroidered logos, monograms, or initials (thread on fabric)
+  — Printed brand names, symbols, or icons
+  — Tone-on-tone marks (subtle, same-color impressions on the chest, sleeve, or back)
+  — Small metal/rubber brand badges or tags sewn onto the fabric
+If you find ANY brand mark: you MUST reproduce it in the output at the EXACT same position, scale, and style.
+These marks are the garment's IDENTITY — removing them is like removing the person's face.
+
+🚨 BRAND MARK FIDELITY (NON-NEGOTIABLE — SAME PRIORITY AS FACE):
+• If IMAGE 2 has a logo/mark on the LEFT CHEST → the output MUST show that SAME mark on the left chest
+• If IMAGE 2 has a logo/mark on the RIGHT CHEST → the output MUST show that SAME mark on the right chest
+• Embossed/tonal logos (same color as fabric): reproduce the EXACT shadow pattern and dimensional texture
+• Embroidered logos: reproduce the thread color, stitch pattern, and raised texture
+• Printed logos: reproduce the exact ink color, opacity, and position
+• ❌ FORBIDDEN: smoothing over logos, blurring marks, replacing with plain fabric, inventing new logos
+
 • Reproduce EVERY visible piece from IMAGE 2 — if there's a top AND a bottom, BOTH must appear
 • If IMAGE 2 shows a SET/CONJUNTO (blouse + skirt, top + pants, dress + jacket), include ALL pieces
 • Color matching: exact hue, saturation, and brightness of the original garment — NO color drift
@@ -174,7 +193,6 @@ SECTION 2: GARMENT REPRODUCTION (CRITICAL FIDELITY)
 • Embellishments: embroidery, lace, sequins, beading, appliqué — render with photographic accuracy
 • Fabric texture: you can SEE the fabric type — ribbed knit shows ridges, silk shows sheen, denim shows weave, chiffon shows transparency
 • Retail tags, price stickers, hang tags, barcode labels: NOT visible (this is a finished campaign shot)
-• ✅ PRESERVE brand logos, embroidered marks, and printed brand identifiers that are PART of the garment design — these are intentional design elements, NOT removable labels
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 3: FABRIC PHYSICS & TAILORING
