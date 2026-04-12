@@ -3,6 +3,15 @@ import Image from "next/image";
 import ShowcaseSectionLoader from "@/components/ShowcaseSectionLoader";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
+import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import HowItWorksAnimation from "@/components/HowItWorksAnimation";
+import FaqAccordion from "@/components/FaqAccordion";
+import LiveCampaignDemo from "@/components/LiveCampaignDemo";
+import HumiliatingMathTable from "@/components/HumiliatingMathTable";
+import PricingTabs from "@/components/PricingTabs";
+import StickyCTA from "@/components/StickyCTA";
+import TestimonialCards from "@/components/TestimonialCards";
+import ScrollTracker from "@/components/ScrollTracker";
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
@@ -12,50 +21,7 @@ export const revalidate = 3600;
 
 import { IconCamera, IconZap, IconDownload, IconSparkles, IconShirt, IconTarget, IconBarChart, IconShield, IconUsers, IconCheck, IconArrowRight, IconInstagram, IconWhatsApp, IconChevronUp } from "@/components/Icons";
 
-/* ═══════════════════════════════════════
-   Plans data
-   ═══════════════════════════════════════ */
-const plans = [
-  {
-    id: "essencial",
-    name: "Essencial",
-    price: 69,
-    badge: "💡",
-    popular: false,
-    campaigns: 15,
-    models: 3,
-    tagline: "Pra quem tá começando com IA",
-    unitPrice: "R$ 4,60 por campanha",
-    cta: "Começar com Essencial",
-    features: ["15 campanhas/mês", "3 modelos exclusivas", "3 opções por campanha", "4 canais prontos", "Score de conversão", "Suporte por email"],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 149,
-    badge: "🚀",
-    popular: true,
-    campaigns: 50,
-    models: 10,
-    tagline: "O favorito das lojistas que crescem",
-    unitPrice: "R$ 2,98 por campanha",
-    cta: "Assinar Pro ⭐",
-    features: ["50 campanhas/mês", "10 modelos exclusivas", "3 opções por campanha", "4 canais prontos", "Score de conversão", "Suporte WhatsApp"],
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: 299,
-    badge: "🏢",
-    popular: false,
-    campaigns: 120,
-    models: 25,
-    tagline: "Pra quem posta todo dia e não quer limite",
-    unitPrice: "R$ 2,49 por campanha — melhor custo",
-    cta: "Ir pro Business",
-    features: ["120 campanhas/mês", "25 modelos exclusivas", "3 opções por campanha", "4 canais prontos", "Score de conversão", "Suporte prioritário"],
-  },
-];
+
 
 /* ═══════════════════════════════════════
    Steps data (Como funciona)
@@ -134,13 +100,13 @@ export default function Home() {
               </div>
 
               <h1 className="text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
-                Sua roupa no corpo de uma{" "}
-                <span className="gradient-text">modelo IA.</span>
+                Transforme a Foto do Manequim em{" "}
+                <span className="gradient-text">Campanha Pronta.</span>
               </h1>
 
               <p className="text-[15px] sm:text-base leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
-                Transforme roupas do cabide em fotografia de moda.{" "}
-                <strong style={{ color: 'var(--foreground)' }}>Sua modelo exclusiva e 3 opções de fotos</strong> por campanha.
+                Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
+                <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
               </p>
 
               {/* ── VTO Proof Card (mobile "aha moment") ── */}
@@ -197,12 +163,12 @@ export default function Home() {
 
               {/* CTAs */}
               <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
-                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
+                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 14,90">
                   <IconZap />
-                  Testar por R$ 9,90
+                  Criar Minha 1ª Campanha — R$ 14,90
                 </Link>
                 <a href="#vitrine" className="btn-secondary w-full text-sm !py-3">
-                  Ver resultado real
+                  Ver Exemplo Pronto
                   <IconArrowRight />
                 </a>
               </div>
@@ -225,22 +191,22 @@ export default function Home() {
                 </div>
 
                 <h1 className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6">
-                  Sua roupa no corpo{" "}
-                  <span className="gradient-text">de uma modelo IA.</span>
+                  Transforme a Foto do Manequim em{" "}
+                  <span className="gradient-text">Campanha Pronta.</span>
                 </h1>
 
                 <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
-                  Transforme peças do cabide em fotografia de moda. A IA usa sua modelo virtual exclusiva, escreve as legendas e entrega{" "}
-                  <strong style={{ color: 'var(--foreground)' }}>3 opções de fotos em cada campanha</strong>.
+                  Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
+                  <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 mb-8">
-                  <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Testar CriaLook por R$ 9,90">
+                  <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 14,90">
                     <IconZap />
-                    Testar por R$ 9,90 — 5 campanhas
+                    Criar Minha 1ª Campanha — R$ 14,90
                   </Link>
                   <a href="#vitrine" className="btn-secondary text-base !py-3.5 !px-8">
-                    Ver resultado real
+                    Ver Exemplo Pronto
                     <IconArrowRight />
                   </a>
                 </div>
@@ -261,63 +227,13 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Right — Browser Mockup with VTO proof */}
+              {/* Right — Interactive Before/After Slider */}
               <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                <div className="relative rounded-2xl overflow-hidden" style={{ 
-                  background: 'var(--surface)', 
-                  border: '1px solid var(--border)',
-                  boxShadow: '0 20px 80px rgba(236,72,153,0.1), 0 8px 30px rgba(0,0,0,0.08)',
-                }}>
-                  {/* Browser chrome */}
-                  <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }} />
-                      <div className="w-3 h-3 rounded-full" style={{ background: '#f59e0b' }} />
-                      <div className="w-3 h-3 rounded-full" style={{ background: '#10b981' }} />
-                    </div>
-                    <div className="flex-1 mx-4">
-                      <div className="h-7 rounded-lg px-3 flex items-center text-xs" style={{ background: 'var(--background)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
-                        crialook.com.br/gerar
-                      </div>
-                    </div>
-                  </div>
-                  {/* App content mockup */}
-                  <div className="p-6 lg:p-8">
-                    <div className="grid grid-cols-2 gap-6">
-                      {/* Left — Upload visual */}
-                      <div className="space-y-3">
-                        <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand-500)' }}>
-                          Foto original
-                        </div>
-                        <div className="rounded-xl flex flex-col items-center justify-center gap-3" style={{ 
-                          aspectRatio: '3/4',
-                          background: 'linear-gradient(180deg, var(--brand-50), var(--surface))',
-                          border: '2px dashed var(--brand-200)',
-                        }}>
-                          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-500)' }}>
-                            <IconCamera />
-                          </div>
-                          <p className="text-xs font-medium" style={{ color: 'var(--muted)' }}>Arraste a foto aqui</p>
-                        </div>
-                      </div>
-                      {/* Right — AI Result */}
-                      <div className="space-y-3">
-                        <div className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent-500)' }}>
-                          Resultado IA
-                        </div>
-                        <div className="rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: 'linear-gradient(180deg, var(--accent-50), var(--surface))', border: '1px solid var(--border)' }}>
-                          <div className="h-full flex flex-col items-center justify-center gap-2 p-4">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 4px 16px rgba(236,72,153,0.3)' }}>
-                              <IconShirt />
-                            </div>
-                            <p className="text-[11px] font-bold text-center" style={{ color: 'var(--accent-700)' }}>Modelo IA vestindo a peça</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Result cards */}
-                    <div className="mt-5 space-y-3">
-                      <div className="rounded-xl p-4" style={{ background: 'var(--background)', border: '1px solid var(--border)' }}>
+                <BeforeAfterSlider 
+                  beforeImage="" 
+                  afterImage="" 
+                />
+              </div>
                         <div className="flex items-center gap-2 mb-2">
                           <IconInstagram />
                           <span className="text-xs font-bold">Instagram Feed</span>
@@ -348,10 +264,48 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ═══ SOCIAL PROOF BAR ═══ */}
+        <section className="py-8 border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <div className="container">
+            <div className="text-center">
+              <p className="text-sm font-semibold mb-6 flex items-center justify-center gap-2" style={{ color: 'var(--muted)' }}>
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--success)' }}></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: 'var(--success)' }}></span>
+                </span>
+                <strong style={{ color: 'var(--foreground)' }}>1.247 lojistas</strong> já criaram 8.900+ campanhas esta semana
+              </p>
+              <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale blur-[0.5px]">
+                <span className="text-xl font-black tracking-tighter">DONNA</span>
+                <span className="text-xl font-black tracking-widest font-serif">ELEGANCE</span>
+                <span className="text-xl font-bold uppercase">ML Fashion</span>
+                <span className="text-xl font-bold italic">Boutique</span>
+                <span className="text-xl font-black">CiaBrand</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ═══ VITRINE ANTES/DEPOIS ═══ */}
         <div id="vitrine" className="scroll-mt-20">
           <ShowcaseSectionLoader />
         </div>
+
+        {/* ═══ DEMONSTRAÇÃO VIVA ═══ */}
+        <section className="section scroll-mt-20" style={{ background: 'var(--surface)' }}>
+          <div className="container">
+            <div className="text-center mb-10">
+              <div className="badge badge-brand mb-4 inline-flex">Demonstração Real</div>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+                Veja uma <span className="gradient-text">Campanha Viva</span>
+              </h2>
+              <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
+                Simule como seria a geração mágica com CriaLook sem precisar criar conta agora.
+              </p>
+            </div>
+            <LiveCampaignDemo />
+          </div>
+        </section>
 
         {/* ═══ COMO FUNCIONA ═══ */}
         <section id="como-funciona" className="section scroll-mt-20" style={{ background: 'var(--background)' }}>
@@ -366,32 +320,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto stagger-children">
-              {steps.map((step, i) => (
-                <div key={step.number} className="relative text-center group">
-                  {/* Connector line between steps (mobile) */}
-                  {i < steps.length - 1 && (
-                    <div className="md:hidden absolute left-1/2 -translate-x-1/2 -bottom-4 w-px h-5" style={{ borderLeft: '2px dashed var(--brand-300)', opacity: 0.4 }} />
-                  )}
-                  {/* Step number */}
-                  <div className="text-5xl md:text-7xl font-black mb-4 opacity-[0.05]" style={{ color: 'var(--brand-500)' }}>
-                    {step.number}
-                  </div>
-                  {/* Icon */}
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 -mt-14 md:-mt-16 relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg" style={{ 
-                    background: 'var(--gradient-brand)', 
-                    color: 'white',
-                    boxShadow: '0 8px 25px rgba(236,72,153,0.25)'
-                  }}>
-                    {step.icon}
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold mb-2">{step.title}</h3>
-                  <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: 'var(--muted)' }}>
-                    {step.description}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <HowItWorksAnimation />
           </div>
         </section>
 
@@ -499,123 +428,65 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══ PRICING ═══ */}
+        {/* ═══ MATEMÁTICA HUMILHANTE & PRICING ═══ */}
         <section id="precos" className="section scroll-mt-20" style={{ background: 'var(--gradient-brand-soft)' }}>
           <div className="container">
-            <div className="text-center mb-16">
-              <div className="badge badge-brand mb-4 inline-flex">Planos</div>
+            <div className="text-center mb-10">
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                Teste na prática, <span className="gradient-text">escale quando quiser</span>
+                A verdadeira <span className="gradient-text">Matemática Humilhante</span>
               </h2>
               <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Escolha quantas campanhas sua loja precisa. Mesma tecnologia em todos os planos.
+                Descubra o quanto sua concorrência gasta enquanto você corta até 99% de custo (e de estresse).
               </p>
             </div>
+            
+            <HumiliatingMathTable />
 
-            {/* Trial Pack */}
-            <div className="max-w-md mx-auto mb-10">
-              <div className="rounded-2xl p-5 text-center transition-all" style={{
-                background: 'var(--background)',
-                border: '1px solid var(--brand-200)',
-                boxShadow: 'var(--shadow-md)',
-              }}>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-xl">🎯</span>
-                  <h3 className="text-lg font-bold">Teste na Prática</h3>
-                </div>
-                <div className="flex items-baseline justify-center gap-1 mb-2">
-                  <span className="text-2xl font-black">R$ 9,90</span>
-                  <span className="text-sm" style={{ color: 'var(--muted)' }}>único</span>
-                </div>
-                <p className="text-sm mb-3" style={{ color: 'var(--muted)' }}>
-                  5 campanhas completas • Sem mensalidade
-                </p>
-                <Link href="/sign-up" className="btn-primary w-full !py-2.5 text-sm">
-                  <IconZap />
-                  Testar por R$ 9,90
-                </Link>
+            <div className="mt-20 text-center mb-8">
+              <div className="badge badge-brand mb-4 inline-flex">Planos & Packs</div>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+                Invista na Sua <span className="gradient-text">Agência Virtual</span>
+              </h2>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold mb-4 bg-brand-500/10 text-brand-600 border border-brand-200 dark:border-brand-800 dark:text-brand-400">
+                ⚡ Preço de lançamento — válido até final do mês
               </div>
             </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 max-w-md mx-auto mb-12">
-              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>ou assine e pague menos</span>
-              <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <PricingTabs />
+          </div>
+        </section>
+
+        {/* ═══ DEPOIMENTOS / SOCIAL PROOF FINAL ═══ */}
+        <section id="depoimentos" className="section scroll-mt-20 border-t" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <div className="container">
+            <div className="text-center mb-12 md:mb-16">
+              <div className="badge badge-brand mb-4 inline-flex">Eles também duvidaram</div>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+                O impacto de quem <span className="gradient-text">já adotou a IA</span>
+              </h2>
+              <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
+                Resultados reais de marcas reais que decidiram parar de perder dinheiro com método antigo.
+              </p>
             </div>
+            
+            <TestimonialCards />
+          </div>
+        </section>
 
-            <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-5 max-w-4xl mx-auto overflow-x-auto snap-x snap-mandatory pb-6 md:overflow-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scroll-pl-4 items-stretch" style={{ WebkitOverflowScrolling: "touch" }}>
-              {plans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className="relative flex flex-col rounded-2xl p-5 md:p-6 transition-all duration-300 hover:-translate-y-1 snap-center min-w-[260px] md:min-w-0 flex-shrink-0"
-                  style={{
-                    background: plan.popular ? 'var(--gradient-brand)' : 'var(--surface)',
-                    border: plan.popular ? 'none' : '1px solid var(--border)',
-                    boxShadow: plan.popular ? 'var(--shadow-glow)' : 'var(--shadow-sm)',
-                    color: plan.popular ? 'white' : 'var(--foreground)',
-                  }}
-                >
-                  {plan.popular && (
-                    <div className="text-xs font-bold px-4 py-1.5 rounded-full mb-4 inline-flex items-center justify-center self-start text-center" style={{
-                      background: 'var(--gray-950)',
-                      color: 'white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                    }}>
-                      ⭐ Mais popular
-                    </div>
-                  )}
-
-                  <div className="text-2xl mb-2">{plan.badge}</div>
-                  <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
-                  
-                  <div className="flex items-baseline gap-1 mb-1">
-                    {plan.price > 0 ? (
-                      <>
-                        <span className="text-3xl font-black">R$ {plan.price}</span>
-                        <span className="text-sm opacity-70">/mês</span>
-                      </>
-                    ) : (
-                      <span className="text-3xl font-black">Grátis</span>
-                    )}
-                  </div>
-
-                  <p className="text-xs mb-1 opacity-80">
-                    {plan.tagline}
-                  </p>
-                  <p className="text-xs mb-5 font-medium" style={{ opacity: 0.8 }}>
-                    {plan.unitPrice}
-                  </p>
-
-                  <Link
-                    href="/sign-up"
-                    className="w-full text-center text-sm font-semibold py-3 sm:py-2.5 rounded-full transition-all mb-5 min-h-[44px]"
-                    style={{
-                      background: plan.popular ? 'white' : 'var(--gradient-brand)',
-                      color: plan.popular ? 'var(--brand-600)' : 'white',
-                    }}
-                  >
-                    {plan.cta}
-                  </Link>
-
-                  <div className="flex-1 space-y-2.5">
-                    {plan.features.map((f) => (
-                      <div key={f} className="flex items-start gap-2 text-sm">
-                        <span className="mt-0.5 flex-shrink-0" style={{ color: plan.popular ? 'white' : 'var(--success)' }}>
-                          <IconCheck />
-                        </span>
-                        <span style={{ opacity: plan.popular ? 0.95 : 0.8 }}>{f}</span>
-                      </div>
-                    ))}
-
-                  </div>
-                </div>
-              ))}
+        {/* ═══ FAQ SECTION ═══ */}
+        <section id="faq" className="section scroll-mt-20 border-t" style={{ borderColor: 'var(--border)', background: 'var(--background)' }}>
+          <div className="container">
+            <div className="text-center mb-12 md:mb-16">
+              <div className="badge badge-brand mb-4 inline-flex">Dúvidas Frequentes</div>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+                Ainda tem <span className="gradient-text">perguntas?</span>
+              </h2>
+              <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
+                Tudo o que você precisa saber antes de gerar sua primeira campanha.
+              </p>
             </div>
-            {/* Mobile scroll hint */}
-            <p className="md:hidden text-center text-xs mt-2" style={{ color: 'var(--muted)' }}>
-              ← Deslize para ver todos os planos →
-            </p>
+            
+            <FaqAccordion />
           </div>
         </section>
 
@@ -630,27 +501,28 @@ export default function Home() {
               <span className="gradient-text">foto de distância</span>.
             </h2>
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Comece com 5 campanhas por R$ 9,90. Modelo virtual, legendas inteligentes, hashtags — tudo incluso.
+              Comece com o Pack Teste por R$ 14,90. 3 campanhas completas: Modelo virtual, logo na imagem e legendas de alta conversão.
             </p>
             <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 hover:animate-pulse-glow" aria-label="Criar minha primeira campanha com IA">
               <IconZap />
               Criar minha primeira campanha
               <IconArrowRight />
             </Link>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs font-medium text-muted-foreground opacity-80">
+              <div className="flex items-center gap-1.5 bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/20">
+                <span>🔒</span>
+                <span>Risco Zero</span>
+              </div>
+              <span>Não curtiu o resultado? Devolvemos seu crédito na hora. Sem perguntas.</span>
+            </div>
           </div>
         </section>
       </main>
 
       {/* N3: Sticky CTA de Conversão (mobile) */}
-      <Link
-        href="/sign-up"
-        className="fixed bottom-6 left-4 right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold"
-        style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 8px 25px rgba(236,72,153,0.4)' }}
-      >
-        <IconZap />
-        Testar CriaLook por R$ 9,90
-      </Link>
-
+      <StickyCTA />
+      
+      <ScrollTracker />
       <Footer />
     </div>
   );

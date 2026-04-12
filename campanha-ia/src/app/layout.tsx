@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { DM_Sans, Playfair_Display } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
 import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 });
 
-const playfair = Playfair_Display({
+const outfit = Outfit({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
@@ -72,7 +72,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="pt-BR" className={`${dmSans.variable} ${playfair.variable} h-full antialiased`}>
+      <html lang="pt-BR" className={`${inter.variable} ${outfit.variable} h-full antialiased`}>
         <body className="min-h-full flex flex-col">
           <ClientProviders>
             {children}
