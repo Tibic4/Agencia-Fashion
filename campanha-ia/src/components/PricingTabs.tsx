@@ -8,7 +8,17 @@ import Image from "next/image";
 export default function PricingTabs() {
   const [activeTab, setActiveTab] = useState<"assinaturas" | "avulsos">("assinaturas");
 
-  const assinaturas = [
+  interface PlanType {
+    name: string;
+    qty: string;
+    price: string;
+    sub: string;
+    popular: boolean;
+    features?: string[];
+    original?: string;
+  }
+
+  const assinaturas: PlanType[] = [
     {
       name: "Essencial",
       qty: "15 Campanhas / mês",
@@ -35,7 +45,7 @@ export default function PricingTabs() {
     }
   ];
 
-  const packs = [
+  const packs: PlanType[] = [
     {
       name: "Starter",
       qty: "3 Campanhas avulsas",
