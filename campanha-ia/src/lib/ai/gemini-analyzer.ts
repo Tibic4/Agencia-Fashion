@@ -543,6 +543,73 @@ function buildUserPrompt(input: AnalyzerInput): string {
     return `${r}, ${g}, ${b}`;
   }
 
+  // ── Helper: hex → HSL (for texture selection) ──
+  function hexToHSL(hex: string): { h: number; s: number; l: number } {
+    const c = hex.replace("#", "");
+    let r = parseInt(c.substring(0, 2), 16) / 255;
+    let g = parseInt(c.substring(2, 4), 16) / 255;
+    let b = parseInt(c.substring(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (max === min) return { h: 0, s: 0, l: l * 100 };
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h = 0;
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+  }
+
+  /**
+   * Generates a DETERMINISTIC textured backdrop description based on brand color.
+   * Using photography language (per VTO Expert Gemini skill) to anchor the model
+   * on an identical, repeatable backdrop across all 3 photos.
+   *
+   * The key insight: Gemini is non-deterministic, but when the textual description
+   * is ultra-specific and identical across calls, visual consistency reaches ~90%+.
+   */
+  function getTexturedBackdropPrompt(hex: string): string {
+    const { h, s, l } = hexToHSL(hex);
+    const rgb = hexToRgb(hex);
+
+    // Select texture + lighting based on color family (HSL analysis)
+    let texture: string;
+    let lightSetup: string;
+
+    if (l > 85) {
+      // Near-white → clean seamless paper, e-commerce standard
+      texture = `smooth matte seamless paper backdrop in hex ${hex} (RGB ${rgb})`;
+      lightSetup = "professional three-point softbox lighting with feather-edge fill from both sides, creating even shadow-free illumination on the backdrop";
+    } else if (l < 20) {
+      // Very dark → rich velvet with centered spot
+      texture = `rich matte velvet fabric backdrop in deep hex ${hex} (RGB ${rgb}), with a subtle centered spotlight creating a gentle radial luminance falloff — center 8% brighter than edges`;
+      lightSetup = "dramatic beauty dish from directly above at 45 degrees, with minimal fill, creating moody editorial contrast";
+    } else if (l > 65 && s < 40) {
+      // Light desaturated / pastel → soft painted wall
+      texture = `soft matte painted wall in hex ${hex} (RGB ${rgb}), with a very subtle warm vignette naturally darkening 4% toward the corners`;
+      lightSetup = "large octabox key light from front-right at 30 degrees, gentle fill reflector from left, creating soft dimensional wraparound light";
+    } else if (s > 35 && (h < 60 || h > 300)) {
+      // Warm saturated (red, pink, orange, warm yellow, magenta)
+      texture = `fine matte plaster wall in hex ${hex} (RGB ${rgb}), with a subtle radial light gradient — center 5% brighter, naturally darkening toward corners. The surface has a refined matte texture like Venetian stucco, smooth but not flat`;
+      lightSetup = "professional beauty dish key light from above-right at 40 degrees, with a silver reflector fill from lower-left, creating soft wraparound illumination";
+    } else if (s > 35 && h >= 60 && h <= 180) {
+      // Cool saturated (green, teal, cyan)
+      texture = `smooth matte concrete wall in hex ${hex} (RGB ${rgb}), with a subtle directional gradient — left side 4% brighter than right, creating natural depth. The surface has a fine sand-finish texture`;
+      lightSetup = "directional softbox key light from upper-left at 35 degrees, no fill, creating clean editorial side-lit illumination";
+    } else if (s > 35 && h > 180 && h <= 300) {
+      // Cool saturated (blue, purple, indigo)
+      texture = `smooth matte brushed plaster wall in hex ${hex} (RGB ${rgb}), with a centered soft spotlight creating 5% brighter center and natural edge darkening. The surface has a fine eggshell finish`;
+      lightSetup = "large parabolic softbox from front-center at 40 degrees above, with subtle rim light from behind, creating dimensional studio illumination";
+    } else {
+      // Neutral / low saturation mid-tones → clean gradient
+      texture = `smooth matte seamless backdrop in hex ${hex} (RGB ${rgb}), with a very subtle top-to-bottom gradient — top 3% lighter than bottom for natural depth`;
+      lightSetup = "even three-point lighting setup with main softbox from front-right, fill from front-left, and hair light from above-behind";
+    }
+
+    return `BACKDROP SPECIFICATION (MUST BE IDENTICAL IN ALL 3 PHOTOS):\n${texture}.\nLIGHTING: ${lightSetup}.\nThe background color MUST be EXACTLY hex ${hex} — do NOT shift, approximate, or reinterpret the hue.\n❌ FORBIDDEN: changing the backdrop color, adding props/objects to the background, using a completely different backdrop style between photos.`;
+  }
+
   // ── Scene context (cenário selecionado) ──
   const SCENE_MOODS: Record<string, { name: string; description: string; details: string }> = {
     branco: {
@@ -597,8 +664,8 @@ function buildUserPrompt(input: AnalyzerInput): string {
     }
   } else if (bgType === "minha_marca" && input.brandColor) {
     const hex = input.brandColor;
-    const rgb = hexToRgb(hex);
-    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca (COR EXATA OBRIGATÓRIA)\nA lojista quer fotos com a identidade visual da marca.\n\nCOR DO FUNDO — ESPECIFICAÇÃO EXATA (NÃO APROXIME):\n• HEX: ${hex}\n• RGB: ${rgb}\n• O fundo inteiro deve ser EXATAMENTE esta cor — NÃO interprete, NÃO aproxime, NÃO mude o tom\n\nTODOS os 3 prompts (scene_prompts[0], [1] e [2]) devem incluir esta instrução LITERALMENTE:\n"Solid uniform backdrop in EXACTLY the color hex ${hex} (RGB ${rgb}). The entire background is this single flat color — no texture, no gradient, no pattern, no variation. Soft, even professional lighting on the subject. No visible lighting equipment."\n\nREGRAS ABSOLUTAS:\n• A cor do fundo deve ser IDÊNTICA nos 3 prompts — use o hex ${hex} em TODOS\n• Fundo PLANO e UNIFORME — proibido textura, gradiente, ou qualquer variação\n• Nenhum equipamento de estúdio visível (softboxes, guarda-chuvas, etc)\n• Varie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts`;
+    const backdropSpec = getTexturedBackdropPrompt(hex);
+    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Minha Marca (COR + TEXTURA DA MARCA)\nA lojista quer fotos com a identidade visual da marca — fundo texturizado premium na cor da marca.\n\n${backdropSpec}\n\n🚨 CONSISTÊNCIA OBRIGATÓRIA ENTRE AS 3 FOTOS:\nTODOS os 3 prompts (scene_prompts[0], [1] e [2]) devem incluir a MESMA descrição de backdrop LITERALMENTE — copie o texto acima em CADA prompt.\nO fundo deve ser visualmente IDÊNTICO nas 3 fotos — mesma cor, mesma textura, mesmo setup de iluminação.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts.\nNenhum equipamento de estúdio visível (softboxes, guarda-chuvas, tripés, rebatedores).`;
   } else if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
     sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;
