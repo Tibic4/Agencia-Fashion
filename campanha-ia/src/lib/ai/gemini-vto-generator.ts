@@ -173,7 +173,8 @@ SECTION 2: GARMENT REPRODUCTION (CRITICAL FIDELITY)
 • Construction details: every button, zipper, snap, hook, seam, stitch line, pocket, belt loop must be visible
 • Embellishments: embroidery, lace, sequins, beading, appliqué — render with photographic accuracy
 • Fabric texture: you can SEE the fabric type — ribbed knit shows ridges, silk shows sheen, denim shows weave, chiffon shows transparency
-• Labels, tags, price stickers: NOT visible (this is a finished campaign shot)
+• Retail tags, price stickers, hang tags, barcode labels: NOT visible (this is a finished campaign shot)
+• ✅ PRESERVE brand logos, embroidered marks, and printed brand identifiers that are PART of the garment design — these are intentional design elements, NOT removable labels
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 3: FABRIC PHYSICS & TAILORING
@@ -247,7 +248,8 @@ CAMERA:
 • Camera at eye-level or slightly above (1.5m-1.7m from ground), angled to show full figure
 • Sharp focus across the entire figure — thread-level garment detail, individual hair strands at edges
 • Natural depth of field appropriate to the scene (studio = deeper DOF, outdoor = shallower)
-• Clean image: NO text, NO watermarks, NO split frames, NO borders, NO artifacts
+• Clean image: NO text overlays, NO watermarks, NO split frames, NO borders, NO artifacts
+• ✅ EXCEPTION: brand logos, labels, or text that are PRINTED/EMBROIDERED/EMBOSSED on the garment fabric itself MUST be preserved — they are part of the garment's design
 • NO duplicated elements, NO extra limbs, NO distorted proportions
 • Color output: sRGB color space, balanced exposure, no blown highlights or crushed shadows
 
@@ -298,7 +300,8 @@ SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
 - Color temperature consistency: garment color under studio lighting (IMAGE 2) must look natural under the SCENE lighting — adjust for warm/cool shift but maintain the SAME perceived hue
 
 ❌ COMPOSITION ERRORS:
-- Text, watermarks, logos, borders, frames, split panels
+- Overlay text, watermarks, borders, frames, split panels (NOT garment logos — those MUST stay)
+- ✅ GARMENT BRAND LOGOS/MARKS: Any logo, monogram, embroidered mark, printed brand name, or embossed symbol that is PART of the garment's fabric/design MUST be faithfully reproduced — do NOT remove, blur, or alter brand identifiers on the clothing
 - Multiple people (output ONE person only)
 - Cropped body (must be HEAD TO FEET)
 - Floating objects, duplicated elements, background artifacts
