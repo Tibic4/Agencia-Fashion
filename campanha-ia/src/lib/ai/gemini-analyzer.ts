@@ -465,7 +465,8 @@ REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
    - Dedos extras, dedos fundidos, dedos faltando
    - Distorções anatômicas (membros extras, proporções erradas)
    - Mudança de cor do tecido (manter EXATAMENTE como na foto do produto)
-   - Logo ou texto na roupa que não existe na peça original
+   - Texto ou logo INVENTADO pela IA que NÃO existe na peça original (se o produto tem logo da marca bordado/estampado, PRESERVE fielmente)
+   - ✅ PRESERVAR: logos, monogramas, bordados, estampas de marca que são PARTE DO DESIGN da peça — esses são elementos intencionais do produto
    - Roupas flutuando sem conexão com o corpo
    - Comprimento de manga/barra diferente do original
 
