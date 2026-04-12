@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Download, RefreshCw, Wand2, CheckCircle2, Image as ImageIcon } from "lucide-react";
+import { Copy, Download, RefreshCw, Wand2, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 
 export default function LiveCampaignDemo() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -33,9 +34,33 @@ export default function LiveCampaignDemo() {
     }
   }, [isGenerating]);
 
-  const handleCopy = () => {
+  const demoText = `☀️ Casual chic que funciona de segunda a sábado.
+
+Cropped canelado terracota + bermuda jeans destroyed — o combo que toda cliente pede e nunca acha pronto. Agora achou. 🔥
+
+Tecido premium com elastano que abraça sem apertar. Lavagem clara vintage que combina com tudo.
+
+🏷️ Cropped: R$ 59 | Bermuda: R$ 89
+Combo lançamento R$ 129 (economize R$ 19) 💸
+
+📲 Chama no direct ou toque no link da bio!
+#ModaFeminina #LookDoDia #JeansDestroyed #CroppedCanelado #ModaCasual`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(demoText);
+    } catch { /* fallback: textarea copy */ }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadDemo = () => {
+    const link = document.createElement("a");
+    link.href = "/api/demo-download";
+    link.download = "campanha-crialook-demo.jpg";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const resetDemo = () => {
@@ -49,7 +74,7 @@ export default function LiveCampaignDemo() {
       <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-surface shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
         
         {/* Left Side: Empty State / Generating / Result Image */}
-        <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 relative flex flex-col items-center justify-center p-8">
+        <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 relative flex items-center justify-center p-8 min-h-[400px] md:min-h-[500px]">
           <AnimatePresence mode="wait">
             {!isGenerating && !isDone && (
               <motion.div 
@@ -68,9 +93,9 @@ export default function LiveCampaignDemo() {
                 </p>
                 <button 
                   onClick={() => setIsGenerating(true)}
-                  className="btn-primary w-full text-lg shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+                  className="btn-primary w-full text-lg shadow-[0_0_20px_rgba(217,70,239,0.4)]"
                 >
-                  <Wand2 className="w-5 h-5 mr-2" /> Gerar Demonstração (60s)
+                  <Wand2 className="w-5 h-5 mr-2" /> Gerar Demonstração Grátis
                 </button>
               </motion.div>
             )}
@@ -81,7 +106,7 @@ export default function LiveCampaignDemo() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center w-full"
+                className="absolute inset-0 flex flex-col items-center justify-center"
               >
                 {/* Circular Progress */}
                 <div className="relative w-40 h-40 mb-6">
@@ -117,13 +142,15 @@ export default function LiveCampaignDemo() {
                 key="done"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="w-full h-full absolute inset-0 bg-gray-100" // Image overlay
+                className="w-full h-full absolute inset-0"
               >
-                {/* Fake image representation since we don't have the actual generated image file for the mock */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-100 dark:bg-gray-800 text-brand-900 dark:text-brand-300">
-                   <ImageIcon className="w-16 h-16 opacity-50 mb-2" />
-                   <span className="font-bold opacity-70">Imagem da Campanha</span>
-                </div>
+                <Image 
+                  src="/demo-download.jpg" 
+                  alt="Campanha gerada pela IA — Cropped Terracota + Bermuda Jeans" 
+                  fill 
+                  className="object-cover" 
+                  priority 
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -159,36 +186,43 @@ export default function LiveCampaignDemo() {
                   
                   <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 text-sm leading-relaxed mb-6 text-foreground relative group">
                     <p>
-                      ✨ Aquele look que a gente veste e o dia muda... <br/><br/>
-                      Vestido Tropical Bloom — porque você merece um verão dentro de você. Caimento fluido, decote estruturado e toque acetinado premium. 🌺 <br/><br/>
-                      Apenas 5 unidades disponíveis nessa estampa. <br/>
-                      De R$ 189 por R$ 149 na promo de lançamento. 🛍️ <br/><br/>
-                      👉 Toque no link da bio e garanta o seu antes que esgote!
+                      ☀️ Casual chic que funciona de segunda a sábado. <br/><br/>
+                      Cropped canelado terracota + bermuda jeans destroyed — o combo que toda cliente pede e nunca acha pronto. Agora achou. 🔥 <br/><br/>
+                      Tecido premium com elastano que abraça sem apertar. Lavagem clara vintage que combina com tudo. <br/><br/>
+                      🏷️ Cropped: R$ 59 | Bermuda: R$ 89 <br/>
+                      Combo lançamento R$ 129 (economize R$ 19) 💸 <br/><br/>
+                      📲 Chama no direct ou toque no link da bio! <br/>
+                      #ModaFeminina #LookDoDia #JeansDestroyed #CroppedCanelado #ModaCasual
                     </p>
                     <button 
                       onClick={handleCopy}
-                      className="absolute top-3 right-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      className="absolute top-3 right-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center min-w-[44px] min-h-[44px]"
                     >
                       {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    <button className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 transition-colors">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 transition-colors min-h-[44px]">
                       <Download className="w-4 h-4" />
                       Baixar Foto
                     </button>
-                    <button onClick={handleCopy} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-colors">
+                    <button onClick={handleCopy} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-colors min-h-[44px]">
                       {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      Copiar Texto
+                      {copied ? "Copiado!" : "Copiar Texto"}
                     </button>
                   </div>
+
+                  {/* CTA de conversão pós-demo */}
+                  <a href="/sign-up" className="btn-primary w-full text-sm !py-3 min-h-[44px] hover:animate-pulse-glow">
+                    ✨ Quero criar a minha — R$ 14,90
+                  </a>
                 </div>
 
                 <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-auto flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Tempo gasto: 60s</span>
-                  <button onClick={resetDemo} className="text-xs font-bold flex items-center gap-1 text-gray-500 hover:text-brand-600 transition-colors">
-                    <RefreshCw className="w-3 h-3" /> Gerar Outra
+                  <span className="text-xs text-muted-foreground">Tempo real: ~60s</span>
+                  <button onClick={resetDemo} className="text-xs font-bold flex items-center gap-1 text-gray-500 hover:text-brand-600 transition-colors min-h-[44px] px-3">
+                    <RefreshCw className="w-3.5 h-3.5" /> Gerar Outra
                   </button>
                 </div>
               </motion.div>

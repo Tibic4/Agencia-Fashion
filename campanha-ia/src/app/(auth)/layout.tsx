@@ -256,7 +256,7 @@ export default function AuthLayout({
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {usage && campaignsLimit === 0 ? (
-            <Link href="/plano" className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: "rgba(251,146,60,0.15)", color: "#FB923C", border: "1px solid rgba(251,146,60,0.2)" }}>
+            <Link href="/plano" className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: "rgba(217,70,239,0.12)", color: "var(--brand-500)", border: "1px solid rgba(217,70,239,0.2)" }}>
               Sem plano
             </Link>
           ) : (
@@ -290,7 +290,7 @@ export default function AuthLayout({
               {isActive && (
                 <div 
                   className="absolute inset-x-0.5 inset-y-0.5 rounded-xl transition-all" 
-                  style={{ background: "rgba(236,72,153,0.1)", zIndex: -1 }} 
+                  style={{ background: "rgba(217,70,239,0.1)", zIndex: -1 }} 
                 />
               )}
               <div className="flex-shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]">{item.icon}</div>

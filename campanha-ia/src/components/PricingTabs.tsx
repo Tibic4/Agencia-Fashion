@@ -112,7 +112,7 @@ export default function PricingTabs() {
           {(activeTab === "assinaturas" ? assinaturas : packs).map((plan, i) => (
             <div 
               key={i} 
-              className={`relative flex flex-col rounded-3xl p-8 bg-surface border transition-all duration-300 ${plan.popular ? 'border-brand-500 shadow-[0_0_40px_rgba(245,158,11,0.15)] md:-translate-y-4 hover:-translate-y-6' : 'border-border shadow-md hover:shadow-xl hover:-translate-y-2'}`}
+              className={`relative flex flex-col rounded-3xl p-8 bg-surface border transition-all duration-300 ${plan.popular ? 'border-brand-500 shadow-[0_0_40px_rgba(217,70,239,0.15)] md:-translate-y-4 hover:-translate-y-6' : 'border-border shadow-md hover:shadow-xl hover:-translate-y-2'}`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-500 text-brand-950 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-lg">
