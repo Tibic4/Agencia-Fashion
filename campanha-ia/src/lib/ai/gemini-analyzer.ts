@@ -20,6 +20,76 @@ import type { ModelInfo } from "./pipeline";
 import { callGeminiSafe } from "./gemini-error-handler";
 
 // ═══════════════════════════════════════
+// Exported helpers (used by pipeline for backdrop injection)
+// ═══════════════════════════════════════
+
+export function hexToRgb(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
+
+export function hexToHSL(hex: string): { h: number; s: number; l: number } {
+  const c = hex.replace("#", "");
+  let r = parseInt(c.substring(0, 2), 16) / 255;
+  let g = parseInt(c.substring(2, 4), 16) / 255;
+  let b = parseInt(c.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l: l * 100 };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/**
+ * Generates a DETERMINISTIC textured backdrop description based on brand color.
+ * Using photography language (per VTO Expert Gemini skill) to anchor the model
+ * on an identical, repeatable backdrop across all 3 photos.
+ *
+ * EXPORTED so the pipeline can inject this PROGRAMMATICALLY into each scene_prompt,
+ * guaranteeing 100% identical text across all 3 VTO calls.
+ */
+export function getTexturedBackdropPrompt(hex: string): string {
+  const { h, s, l } = hexToHSL(hex);
+  const rgb = hexToRgb(hex);
+
+  let texture: string;
+  let lightSetup: string;
+
+  if (l > 85) {
+    texture = `smooth matte seamless paper backdrop in hex ${hex} (RGB ${rgb})`;
+    lightSetup = "professional three-point softbox lighting with feather-edge fill from both sides, creating even shadow-free illumination on the backdrop";
+  } else if (l < 20) {
+    texture = `rich matte velvet fabric backdrop in deep hex ${hex} (RGB ${rgb}), with a subtle centered spotlight creating a gentle radial luminance falloff — center 8% brighter than edges`;
+    lightSetup = "dramatic beauty dish from directly above at 45 degrees, with minimal fill, creating moody editorial contrast";
+  } else if (l > 65 && s < 40) {
+    texture = `soft matte painted wall in hex ${hex} (RGB ${rgb}), with a very subtle warm vignette naturally darkening 4% toward the corners`;
+    lightSetup = "large octabox key light from front-right at 30 degrees, gentle fill reflector from left, creating soft dimensional wraparound light";
+  } else if (s > 35 && (h < 60 || h > 300)) {
+    texture = `fine matte plaster wall in hex ${hex} (RGB ${rgb}), with a subtle radial light gradient — center 5% brighter, naturally darkening toward corners. The surface has a refined matte texture like Venetian stucco, smooth but not flat`;
+    lightSetup = "professional beauty dish key light from above-right at 40 degrees, with a silver reflector fill from lower-left, creating soft wraparound illumination";
+  } else if (s > 35 && h >= 60 && h <= 180) {
+    texture = `smooth matte concrete wall in hex ${hex} (RGB ${rgb}), with a subtle directional gradient — left side 4% brighter than right, creating natural depth. The surface has a fine sand-finish texture`;
+    lightSetup = "directional softbox key light from upper-left at 35 degrees, no fill, creating clean editorial side-lit illumination";
+  } else if (s > 35 && h > 180 && h <= 300) {
+    texture = `smooth matte brushed plaster wall in hex ${hex} (RGB ${rgb}), with a centered soft spotlight creating 5% brighter center and natural edge darkening. The surface has a fine eggshell finish`;
+    lightSetup = "large parabolic softbox from front-center at 40 degrees above, with subtle rim light from behind, creating dimensional studio illumination";
+  } else {
+    texture = `smooth matte seamless backdrop in hex ${hex} (RGB ${rgb}), with a very subtle top-to-bottom gradient — top 3% lighter than bottom for natural depth`;
+    lightSetup = "even three-point lighting setup with main softbox from front-right, fill from front-left, and hair light from above-behind";
+  }
+
+  return `BACKDROP SPECIFICATION (MUST BE IDENTICAL IN ALL 3 PHOTOS):\n${texture}.\nLIGHTING: ${lightSetup}.\nThe background color MUST be EXACTLY hex ${hex} — do NOT shift, approximate, or reinterpret the hue.\n❌ FORBIDDEN: changing the backdrop color, adding props/objects to the background, using a completely different backdrop style between photos.`;
+}
+
+// ═══════════════════════════════════════
 // Tipos de retorno (tipos de retorno do analyzer)
 // ═══════════════════════════════════════
 
@@ -535,81 +605,10 @@ function buildUserPrompt(input: AnalyzerInput): string {
     extras.push("🔴 ATENÇÃO — Modelo é plus size. Os prompts devem valorizar o corpo curvilíneo com poses e ângulos flattering");
   }
 
-  // ── Helper: hex → RGB string ──
-  function hexToRgb(hex: string): string {
-    const h = hex.replace("#", "");
-    const r = parseInt(h.substring(0, 2), 16);
-    const g = parseInt(h.substring(2, 4), 16);
-    const b = parseInt(h.substring(4, 6), 16);
-    return `${r}, ${g}, ${b}`;
-  }
-
-  // ── Helper: hex → HSL (for texture selection) ──
-  function hexToHSL(hex: string): { h: number; s: number; l: number } {
-    const c = hex.replace("#", "");
-    let r = parseInt(c.substring(0, 2), 16) / 255;
-    let g = parseInt(c.substring(2, 4), 16) / 255;
-    let b = parseInt(c.substring(4, 6), 16) / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const l = (max + min) / 2;
-    if (max === min) return { h: 0, s: 0, l: l * 100 };
-    const d = max - min;
-    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    let h = 0;
-    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-    else if (max === g) h = ((b - r) / d + 2) / 6;
-    else h = ((r - g) / d + 4) / 6;
-    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-  }
-
-  /**
-   * Generates a DETERMINISTIC textured backdrop description based on brand color.
-   * Using photography language (per VTO Expert Gemini skill) to anchor the model
-   * on an identical, repeatable backdrop across all 3 photos.
-   *
-   * The key insight: Gemini is non-deterministic, but when the textual description
-   * is ultra-specific and identical across calls, visual consistency reaches ~90%+.
-   */
-  function getTexturedBackdropPrompt(hex: string): string {
-    const { h, s, l } = hexToHSL(hex);
-    const rgb = hexToRgb(hex);
-
-    // Select texture + lighting based on color family (HSL analysis)
-    let texture: string;
-    let lightSetup: string;
-
-    if (l > 85) {
-      // Near-white → clean seamless paper, e-commerce standard
-      texture = `smooth matte seamless paper backdrop in hex ${hex} (RGB ${rgb})`;
-      lightSetup = "professional three-point softbox lighting with feather-edge fill from both sides, creating even shadow-free illumination on the backdrop";
-    } else if (l < 20) {
-      // Very dark → rich velvet with centered spot
-      texture = `rich matte velvet fabric backdrop in deep hex ${hex} (RGB ${rgb}), with a subtle centered spotlight creating a gentle radial luminance falloff — center 8% brighter than edges`;
-      lightSetup = "dramatic beauty dish from directly above at 45 degrees, with minimal fill, creating moody editorial contrast";
-    } else if (l > 65 && s < 40) {
-      // Light desaturated / pastel → soft painted wall
-      texture = `soft matte painted wall in hex ${hex} (RGB ${rgb}), with a very subtle warm vignette naturally darkening 4% toward the corners`;
-      lightSetup = "large octabox key light from front-right at 30 degrees, gentle fill reflector from left, creating soft dimensional wraparound light";
-    } else if (s > 35 && (h < 60 || h > 300)) {
-      // Warm saturated (red, pink, orange, warm yellow, magenta)
-      texture = `fine matte plaster wall in hex ${hex} (RGB ${rgb}), with a subtle radial light gradient — center 5% brighter, naturally darkening toward corners. The surface has a refined matte texture like Venetian stucco, smooth but not flat`;
-      lightSetup = "professional beauty dish key light from above-right at 40 degrees, with a silver reflector fill from lower-left, creating soft wraparound illumination";
-    } else if (s > 35 && h >= 60 && h <= 180) {
-      // Cool saturated (green, teal, cyan)
-      texture = `smooth matte concrete wall in hex ${hex} (RGB ${rgb}), with a subtle directional gradient — left side 4% brighter than right, creating natural depth. The surface has a fine sand-finish texture`;
-      lightSetup = "directional softbox key light from upper-left at 35 degrees, no fill, creating clean editorial side-lit illumination";
-    } else if (s > 35 && h > 180 && h <= 300) {
-      // Cool saturated (blue, purple, indigo)
-      texture = `smooth matte brushed plaster wall in hex ${hex} (RGB ${rgb}), with a centered soft spotlight creating 5% brighter center and natural edge darkening. The surface has a fine eggshell finish`;
-      lightSetup = "large parabolic softbox from front-center at 40 degrees above, with subtle rim light from behind, creating dimensional studio illumination";
-    } else {
-      // Neutral / low saturation mid-tones → clean gradient
-      texture = `smooth matte seamless backdrop in hex ${hex} (RGB ${rgb}), with a very subtle top-to-bottom gradient — top 3% lighter than bottom for natural depth`;
-      lightSetup = "even three-point lighting setup with main softbox from front-right, fill from front-left, and hair light from above-behind";
-    }
-
-    return `BACKDROP SPECIFICATION (MUST BE IDENTICAL IN ALL 3 PHOTOS):\n${texture}.\nLIGHTING: ${lightSetup}.\nThe background color MUST be EXACTLY hex ${hex} — do NOT shift, approximate, or reinterpret the hue.\n❌ FORBIDDEN: changing the backdrop color, adding props/objects to the background, using a completely different backdrop style between photos.`;
-  }
+  // ── Helpers: delegate to module-level exported functions ──
+  // (kept as local aliases for backward compat within buildUserPrompt)
+  const _hexToRgb = hexToRgb;
+  const _getTexturedBackdropPrompt = getTexturedBackdropPrompt;
 
   // ── Scene context (cenário selecionado) ──
   const SCENE_MOODS: Record<string, { name: string; description: string; details: string }> = {
