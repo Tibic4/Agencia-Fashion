@@ -203,6 +203,13 @@ SECTION 4: SCENE, ENVIRONMENT & PHOTOGRAPHY DIRECTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${stylingPrompt}
 
+🚨 BACKGROUND CONSISTENCY (CRITICAL FOR CAMPAIGN COHESION):
+• This image is ONE photo in a 3-photo campaign series — the backdrop MUST be visually identical across all photos
+• Same background color, same surface texture, same lighting angle and intensity
+• The ONLY differences between photos should be: POSE, CAMERA ANGLE, and EXPRESSION
+• If the scene description above specifies a backdrop color (hex code), reproduce that EXACT color — do NOT approximate
+• ❌ FORBIDDEN: inventing a different background style, adding/removing props, changing the lighting setup
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 5: SKIN & HUMAN REALISM
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
