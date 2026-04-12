@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Download, RefreshCw, Wand2, CheckCircle2, Instagram, Image as ImageIcon } from "lucide-react";
+import { Copy, Download, RefreshCw, Wand2, CheckCircle2, Image as ImageIcon } from "lucide-react";
 
 export default function LiveCampaignDemo() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -153,7 +153,7 @@ export default function LiveCampaignDemo() {
 
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
-                    <Instagram className="w-5 h-5 text-pink-500" />
+                    <svg className="w-5 h-5 text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                     <span className="font-bold text-sm">Legenda para Feed (Alta Conversão)</span>
                   </div>
                   
