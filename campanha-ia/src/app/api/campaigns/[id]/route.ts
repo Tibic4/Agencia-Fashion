@@ -81,6 +81,8 @@ export async function GET(
             (dicas.caption_sugerida as string) ||
             (firstLegenda.legenda as string) ||
             "",
+          caption_alternativa:
+            (dicas.caption_alternativa as string) || undefined,
           tom_legenda:
             (dicas.tom_legenda as string) ||
             (firstLegenda.dica as string) ||
@@ -88,6 +90,10 @@ export async function GET(
           cta:
             (dicas.cta as string) ||
             "Chama no direct!",
+          dica_extra:
+            (dicas.dica_extra as string) || undefined,
+          story_idea:
+            (dicas.story_idea as string) || undefined,
           hashtags: uniqueHashtags.length > 0
             ? uniqueHashtags
             : (dicas.hashtags as string[]) || [],
@@ -103,9 +109,12 @@ export async function GET(
         };
 
         mappedDicas.caption_sugerida = sanitize(mappedDicas.caption_sugerida, "✨ Novidade que você vai amar! Confira no nosso perfil 💕");
+        mappedDicas.caption_alternativa = sanitize(mappedDicas.caption_alternativa, undefined as unknown as string);
         mappedDicas.tom_legenda = sanitize(mappedDicas.tom_legenda, "Descontraído e acolhedor");
         mappedDicas.cta = sanitize(mappedDicas.cta, "Chama no direct!");
         mappedDicas.sequencia_sugerida = sanitize(mappedDicas.sequencia_sugerida, undefined as unknown as string);
+        mappedDicas.dica_extra = sanitize(mappedDicas.dica_extra, undefined as unknown as string);
+        mappedDicas.story_idea = sanitize(mappedDicas.story_idea, undefined as unknown as string);
 
         // Also sanitize hashtags
         if (Array.isArray(mappedDicas.hashtags)) {
@@ -114,9 +123,6 @@ export async function GET(
           );
         }
       }
-
-      // Include cached smart_tips if available (saves an extra API call)
-      const smartTips = v3Output.smart_tips as Record<string, unknown> | null;
 
       return NextResponse.json({
         success: true,
@@ -131,7 +137,6 @@ export async function GET(
             durationMs: campaign.pipeline_duration_ms || 0,
             successCount: v3Output.success_count || images.filter(Boolean).length,
           },
-          smart_tips: smartTips || null,
           score: scores || null,
           status: campaign.status,
           createdAt: campaign.created_at,

@@ -59,8 +59,11 @@ export interface GeminiDicasPostagem {
   melhor_horario: string;
   sequencia_sugerida: string;
   caption_sugerida: string;
+  caption_alternativa: string;
   tom_legenda: string;
   cta: string;
+  dica_extra: string;
+  story_idea: string;
   hashtags: string[];
   legendas: GeminiDicaLegenda[];
 }
@@ -181,15 +184,18 @@ const RESPONSE_SCHEMA = {
     },
     dicas_postagem: {
       type: "object",
-      description: "Dicas de postagem em português brasileiro. REGRA ABSOLUTA: NUNCA mencione tipo de peça (calça, blusa, vestido, saia, sapato, tênis, sandália etc.), cor, tecido, estampa, material ou qualquer detalhe da roupa. Use termos genéricos como 'esse visual', 'esse look', 'essa novidade', 'essa escolha'.",
+      description: "Copy profissional de Instagram e dicas de marketing em português brasileiro. Você é uma COPYWRITER SÊNIOR de moda. REGRA ABSOLUTA: NUNCA mencione tipo de peça (calça, blusa, vestido, saia, sapato, tênis, sandália etc.), cor, tecido, estampa, material ou qualquer detalhe da roupa. Use termos genéricos como 'esse visual', 'essa novidade', 'essa escolha'.",
       properties: {
-        melhor_dia: { type: "string", description: "Melhor dia da semana para postar" },
-        melhor_horario: { type: "string", description: "Melhor horário para postar (ex: '19h', '18h às 21h')" },
-        sequencia_sugerida: { type: "string", description: "Como usar as 3 fotos em sequência no feed/stories. NÃO mencione tipo de roupa, cor ou tecido." },
-        caption_sugerida: { type: "string", description: "Legenda pronta para Instagram com emojis, 100-200 chars. PROIBIDO mencionar tipo de peça, cor, tecido ou sapato. Use 'esse visual', 'essa novidade'. Foque no mood/estilo/atitude." },
-        tom_legenda: { type: "string", description: "Tom da voz em 3-5 palavras (ex: 'Elegante e sofisticado', 'Jovem e descolado'). Sem referência a roupa." },
-        cta: { type: "string", description: "Call-to-action curto, max 8 palavras. Sem mencionar tipo de peça. Ex: 'Garanta antes que acabe!', 'Chama no direct!'" },
-        hashtags: { type: "array", items: { type: "string" }, description: "10-15 hashtags sem #. Pode incluir hashtags de moda genéricas mas NUNCA hashtags com tipo específico de peça ou cor." },
+        melhor_dia: { type: "string", description: "Melhor dia da semana para postar. Seja ESPECÍFICO e justifique pelo mood. Ex: 'Terça — seu público está planejando a semana'" },
+        melhor_horario: { type: "string", description: "Horário ideal com justificativa. Ex: '21h — quando relaxam no sofá e abrem o Insta'" },
+        sequencia_sugerida: { type: "string", description: "Como usar as 3 fotos em sequência no feed/stories. NÃO mencione tipo de roupa, cor ou tecido. Dê instrução PRÁTICA." },
+        caption_sugerida: { type: "string", description: "Legenda principal MAGNÉTICA para Instagram (150-250 chars com emojis). TÉCNICA: comece com HOOK que para o scroll (curiosidade, emoção ou pergunta), quebre em frases curtas, termine com CTA. PROIBIDO mencionar tipo de peça, cor, tecido. Foque no SENTIMENTO: confiança, poder, liberdade, brilho. Ex: 'Aquela sensação de se sentir incrível ✨ Um visual que fala por você, sem precisar de legenda. Quem mais acorda querendo se sentir assim? 💕'" },
+        caption_alternativa: { type: "string", description: "Segunda opção de legenda com TOM OPOSTO. Se a primeira é descontraída, esta é sofisticada e vice-versa. Mesmas regras: PROIBIDO mencionar roupa, 150-250 chars, hook + CTA. Isso dá à lojista OPÇÃO de escolha." },
+        tom_legenda: { type: "string", description: "Tom da voz em 3-5 palavras (ex: 'Descontraído, inspirador e elegante'). Sem referência a roupa." },
+        cta: { type: "string", description: "Call-to-action criativo e curto, max 8 palavras. Que gere AÇÃO IMEDIATA. Sem mencionar tipo de peça. Use fórmulas: pergunta ('O que acham?'), salvar ('Salva pra depois 📌'), DM ('Manda QUERO no direct'), compartilhar ('Marca quem precisa ver')." },
+        dica_extra: { type: "string", description: "1 dica PRÁTICA e específica de marketing para ESSA campanha (max 40 palavras). Baseada no mood/estilo visual da peça. Ex: 'Poste o carrossel com as 3 fotos e peça aos seguidores pra votar a favorita — isso triplica o engajamento nos comentários.'" },
+        story_idea: { type: "string", description: "Ideia criativa para um Story complementar usando essas fotos (max 40 palavras). Use features do Instagram: enquete, countdown, quiz, antes/depois, sticker de pergunta. Ex: 'Faça uma enquete com as 3 fotos: Qual é a sua vibe? A, B ou C? — stories com votação têm 3x mais interação.'" },
+        hashtags: { type: "array", items: { type: "string" }, description: "10-15 hashtags sem #. Mix estratégico: 3 alto alcance (modafeminina, lookdodia), 4 nicho fashion brasileiro, 3 tendência/local, 2 comunidade. NUNCA hashtags com tipo específico de peça ou cor." },
         legendas: {
           type: "array",
           items: {
@@ -197,7 +203,7 @@ const RESPONSE_SCHEMA = {
             properties: {
               foto: { type: "integer", description: "Número da foto (1, 2 ou 3)" },
               plataforma: { type: "string", description: "Plataforma alvo (Instagram Feed, WhatsApp, Stories)" },
-              legenda: { type: "string", description: "Legenda pronta com emojis. PROIBIDO mencionar tipo de roupa, cor, tecido ou sapato." },
+              legenda: { type: "string", description: "Legenda pronta com emojis. PROIBIDO mencionar tipo de roupa, cor, tecido ou sapato. Use técnica de hook + emoção." },
               hashtags: { type: "array", items: { type: "string" } },
               dica: { type: "string", description: "Dica de como usar essa legenda. Sem referência a peça específica." },
             },
@@ -207,7 +213,7 @@ const RESPONSE_SCHEMA = {
           maxItems: 3,
         },
       },
-      required: ["melhor_dia", "melhor_horario", "sequencia_sugerida", "caption_sugerida", "tom_legenda", "cta", "hashtags", "legendas"],
+      required: ["melhor_dia", "melhor_horario", "sequencia_sugerida", "caption_sugerida", "caption_alternativa", "tom_legenda", "cta", "dica_extra", "story_idea", "hashtags", "legendas"],
     },
   },
   required: ["analise", "vto_hints", "dicas_postagem"],
@@ -469,11 +475,48 @@ EXEMPLO DE PROMPT EXCELENTE ✅:
 EXEMPLO DE PROMPT RUIM ❌:
 "Studio setting with good lighting. Model stands confidently wearing the garment."
 
-REGRAS PARA DICAS DE POSTAGEM:
-- Em PORTUGUÊS brasileiro, tom acessível e "amiga da lojista"
-- Legendas prontas para copiar com emojis relevantes
-- Hashtags atuais do nicho fashion brasileiro
-- Incluir dica de SEQUÊNCIA (como postar as 3 fotos nos stories/feed)`;
+REGRAS PARA DICAS DE POSTAGEM (COPYWRITER SÊNIOR DE INSTAGRAM):
+
+Você é uma copywriter sênior de Instagram especializada em moda brasileira.
+Sua copy deve ser MAGNÉTICA — gera salvamentos, compartilhamentos e vendas.
+
+═══ TÉCNICAS DE COPY OBRIGATÓRIAS ═══
+
+1. HOOK FIRST — A primeira frase PARA o scroll. Use uma destas fórmulas:
+   - Curiosidade: "Tem algo nessa foto que ninguém percebe…"
+   - Emoção: "Aquela sensação de se sentir incrível ✨"
+   - Pergunta: "Quem mais acorda querendo se sentir assim?"
+   - Contrarian: "Todo mundo fala X, mas a verdade é Y"
+
+2. SHORT. BREATHE. LAND:
+   - Uma ideia por frase
+   - Quebre linhas para dar ritmo
+   - Frases curtas, curtas, depois uma explicação
+   - Deixe os pontos importantes respirarem
+
+3. ESPECÍFICO > VAGO:
+   - ❌ "Poste no melhor horário"
+   - ✅ "21h de terça — quando seu público abre o Insta no sofá"
+
+4. ESCREVA A PARTIR DA EMOÇÃO:
+   - Comece pelo sentimento, não pela ação
+   - Use palavras emocionais: confiança, brilho, poder, liberdade
+   - Conecte o sentimento ao visual
+
+5. CTA QUE CONVERTE:
+   - Pergunta: "O que vocês acham?"
+   - Salvar: "Salva pra depois 📌"
+   - Compartilhar: "Marca quem precisa ver"
+   - DM: "Manda QUERO no direct"
+
+═══ REGRAS DE CONTEÚDO ═══
+- Em PORTUGUÊS brasileiro, tom "amiga da lojista"
+- CAPTION_ALTERNATIVA deve ter tom OPOSTO à principal
+- STORY_IDEA deve usar features do Instagram (enquete, countdown, quiz)
+- DICA_EXTRA deve ser PRÁTICA e específica — não genérica
+- Hashtags: mix estratégico de alcance, nicho e comunidade
+- NUNCA mencione tipo de peça, cor, tecido ou material
+- Foque no MOOD: cenário, iluminação, atitude, energia da foto`;
 }
 
 // ═══════════════════════════════════════

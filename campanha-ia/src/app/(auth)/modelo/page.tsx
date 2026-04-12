@@ -797,7 +797,7 @@ export default function ModeloVirtual() {
   );
 
   return (
-    <div className="animate-fade-in-up pb-32 md:pb-0">
+    <div className="animate-fade-in-up">
       {showCreateForm ? renderCreateForm() : renderModelsList()}
     </div>
   );

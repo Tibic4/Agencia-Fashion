@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
@@ -43,21 +43,16 @@ interface OpusAnalise {
 
 interface DicasPostagem {
   melhor_horario: string;
+  melhor_dia?: string;
+  sequencia_sugerida?: string;
   hashtags: string[];
   cta: string;
   tom_legenda: string;
   caption_sugerida: string;
-}
-
-interface SmartTips {
-  caption: string;
-  caption_alternativa: string;
-  poste_as: string;
-  tom_da_voz: string;
-  cta: string;
-  dica_extra: string;
-  story_idea: string;
-  hashtags: string[];
+  caption_alternativa?: string;
+  dica_extra?: string;
+  story_idea?: string;
+  legendas?: Array<{ foto: number; plataforma: string; legenda: string; hashtags?: string[]; dica?: string }>;
 }
 
 interface V3Result {
@@ -66,7 +61,6 @@ interface V3Result {
   objective?: string | null;
   targetAudience?: string | null;
   toneOverride?: string | null;
-  smart_tips?: SmartTips | null; // Server-cached Pro copywriter tips
   data?: {
     analise: OpusAnalise;
     images: (GeneratedImage | null)[];
@@ -208,18 +202,15 @@ export default function ResultadoCampanha() {
   const searchParams = useSearchParams();
   const [result, setResult] = useState<V3Result | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [copiedCaption, setCopiedCaption] = useState(false);
+
   const [loadingFromApi, setLoadingFromApi] = useState(false);
   const [activeFormat, setActiveFormat] = useState<FormatId>("stories");
   const [downloadingHQ, setDownloadingHQ] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [showFormatSheet, setShowFormatSheet] = useState(false);
 
-  // ── AI Tips (Gemini 3.1 Pro — Copywriter) ── (SmartTips interface defined at module scope)
-  const [smartTips, setSmartTips] = useState<SmartTips | null>(null);
-  const [tipsLoading, setTipsLoading] = useState(false);
+  // ── Copy tip actions ──
   const [copiedTip, setCopiedTip] = useState<string | null>(null);
-  const tipsRequestedRef = useRef<string | null>(null); // prevent double-fire across re-renders
 
   useEffect(() => {
     const campaignId = searchParams.get("id");
@@ -227,9 +218,8 @@ export default function ResultadoCampanha() {
     // Reset state when campaign changes (prevents showing stale data)
     setResult(null);
     setSelectedIndex(null);
-    setSmartTips(null);
     setPreviewDataUrl(null);
-    setCopiedCaption(false);
+
 
     // 1. If URL has ?id=, ALWAYS load from API (history / shared links)
     if (campaignId) {
@@ -330,67 +320,9 @@ export default function ResultadoCampanha() {
     return () => { cancelled = true; };
   }, [selectedIndex, activeFormat, result]);
 
-  /** Fetch AI tips ONCE per campaign — uses server-side cache + sessionStorage + ref guard */
-  useEffect(() => {
-    if (selectedIndex === null || !result) return;
-    const campaignId = searchParams.get("id") || result?.campaignId;
-    if (!campaignId) return;
+  /* Smart Tips removed — all copy now comes from the enriched analyzer dicas_postagem */
 
-    // Priority 1: Server-cached tips (came with the campaign data from API)
-    if (result?.smart_tips) {
-      setSmartTips(result.smart_tips as SmartTips);
-      return;
-    }
 
-    // Priority 2: sessionStorage cache (survives remounts in same tab)
-    const cacheKey = `tips_${campaignId}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        setSmartTips(JSON.parse(cached));
-        return;
-      } catch { /* ignore parse error, re-fetch */ }
-    }
-
-    // Priority 3: Prevent double-fire via ref (survives re-renders within same mount)
-    if (tipsRequestedRef.current === campaignId) return;
-    tipsRequestedRef.current = campaignId;
-
-    const img = result?.data?.images?.[selectedIndex];
-    if (!img?.imageUrl) return;
-
-    setTipsLoading(true);
-
-    fetch(`/api/campaign/${campaignId}/tips`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageUrl: img.imageUrl,
-        objective: result?.objective || undefined,
-        targetAudience: result?.targetAudience || undefined,
-        toneOverride: result?.toneOverride || undefined,
-      }),
-    })
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.data) {
-          setSmartTips(data.data);
-          // Cache in sessionStorage so remounts don't re-fetch
-          try { sessionStorage.setItem(cacheKey, JSON.stringify(data.data)); } catch {}
-        }
-      })
-      .catch(() => { /* silent fallback to static tips */ })
-      .finally(() => setTipsLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex, result]);
-
-  const copyCaption = async () => {
-    const caption = result?.data?.dicas_postagem?.caption_sugerida;
-    if (!caption) return;
-    await navigator.clipboard.writeText(caption);
-    setCopiedCaption(true);
-    setTimeout(() => setCopiedCaption(false), 2000);
-  };
 
   // ── Loading / empty ──
   if (!result) {
@@ -719,97 +651,66 @@ export default function ResultadoCampanha() {
           </div>
         )}
 
-        {/* ── Caption sugerida (fallback — hidden when Pro tips loaded) ── */}
-        {dicas?.caption_sugerida && !smartTips && (
-          <div className="rounded-2xl p-4 sm:p-5 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="font-bold text-sm">📝 Legenda pronta para copiar</h2>
-              <button
-                onClick={copyCaption}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-80 self-start sm:self-auto flex-shrink-0"
-                style={{ background: "var(--brand-100)", color: "var(--brand-700)", border: "1px solid var(--brand-200)" }}
-              >
-                {copiedCaption ? <><IconCheck /> Copiado!</> : <><IconCopy /> Copiar</>}
-              </button>
-            </div>
-            <pre className="text-xs sm:text-sm whitespace-pre-wrap break-words font-sans" style={{ color: "var(--foreground)", lineHeight: 1.65, overflowWrap: "anywhere", maxWidth: "100%" }}>
-              {dicas.caption_sugerida}
-            </pre>
-            {dicas.hashtags && dicas.hashtags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                {dicas.hashtags.slice(0, 20).map((tag, i) => (
-                  <span
-                    key={i}
-                    className="px-2.5 py-1 rounded-full text-xs font-medium"
-                    style={{ background: "var(--brand-50)", color: "var(--brand-600)", border: "1px solid var(--brand-100)" }}
-                  >
-                    {tag.startsWith("#") ? tag : `#${tag}`}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Copywriter Pro (AI-powered) ── */}
+        {/* ── Copy de Instagram (gerado pelo Analyzer enriquecido) ── */}
         {dicas && (
           <div className="space-y-3">
-            {/* AI Pro badge */}
-            {smartTips && (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "linear-gradient(135deg, var(--brand-100), var(--brand-200))", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Copy por IA Pro</span>
-              </div>
-            )}
+            {/* AI Copy badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "linear-gradient(135deg, var(--brand-100), var(--brand-200))", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Copy por IA</span>
+            </div>
 
-            {/* ── Caption pronta para colar ── */}
-            {(smartTips?.caption || tipsLoading) && (
+            {/* ── Caption principal ── */}
+            {dicas.caption_sugerida && (
               <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
-                  {smartTips?.caption && (
-                    <button
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(smartTips.caption);
-                        setCopiedTip("caption");
-                        setTimeout(() => setCopiedTip(null), 2000);
-                      }}
-                      className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all"
-                      style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
-                    >
-                      {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
-                    </button>
-                  )}
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(dicas.caption_sugerida);
+                      setCopiedTip("caption");
+                      setTimeout(() => setCopiedTip(null), 2000);
+                    }}
+                    className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all min-h-[32px]"
+                    style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
+                  >
+                    {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
+                  </button>
                 </div>
-                {tipsLoading ? (
-                  <div className="space-y-2">
-                    <div className="h-4 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "100%" }} />
-                    <div className="h-4 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "80%" }} />
-                    <div className="h-4 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "60%" }} />
+                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{dicas.caption_sugerida}</p>
+                {dicas.hashtags && dicas.hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+                    {dicas.hashtags.slice(0, 20).map((tag, i) => (
+                      <span
+                        key={i}
+                        className="px-2.5 py-1 rounded-full text-xs font-medium"
+                        style={{ background: "var(--brand-50)", color: "var(--brand-600)", border: "1px solid var(--brand-100)" }}
+                      >
+                        {tag.startsWith("#") ? tag : `#${tag}`}
+                      </span>
+                    ))}
                   </div>
-                ) : (
-                  <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{smartTips?.caption}</p>
                 )}
               </div>
             )}
 
             {/* ── Caption alternativa ── */}
-            {smartTips?.caption_alternativa && (
+            {dicas.caption_alternativa && (
               <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px dashed var(--border)" }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
                   <button
                     onClick={async () => {
-                      await navigator.clipboard.writeText(smartTips.caption_alternativa);
+                      await navigator.clipboard.writeText(dicas.caption_alternativa!);
                       setCopiedTip("alt");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all"
+                    className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all min-h-[32px]"
                     style={{ background: copiedTip === "alt" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "alt" ? "white" : "var(--brand-700)" }}
                   >
                     {copiedTip === "alt" ? "✓ Copiado!" : "📋 Copiar"}
                   </button>
                 </div>
-                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--muted)", wordBreak: "break-word" }}>{smartTips.caption_alternativa}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--muted)", wordBreak: "break-word" }}>{dicas.caption_alternativa}</p>
               </div>
             )}
 
@@ -817,46 +718,34 @@ export default function ResultadoCampanha() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="rounded-2xl p-3 sm:p-4 space-y-1 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
-                {tipsLoading ? (
-                  <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "60%" }} />
-                ) : (
-                  <p className="text-xs sm:text-sm font-semibold">{smartTips?.poste_as || dicas.melhor_horario || "Entre 18h–21h"}</p>
-                )}
+                <p className="text-xs sm:text-sm font-semibold">{dicas.melhor_horario || "Entre 18h–21h"}</p>
               </div>
               <div className="rounded-2xl p-3 sm:p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
-                {tipsLoading ? (
-                  <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "80%" }} />
-                ) : (
-                  <p className="text-xs sm:text-sm font-semibold">{smartTips?.tom_da_voz || dicas.tom_legenda || "Descontraído e acolhedor"}</p>
-                )}
+                <p className="text-xs sm:text-sm font-semibold">{dicas.tom_legenda || "Descontraído e acolhedor"}</p>
               </div>
               <div className="rounded-2xl p-3 sm:p-4 space-y-1 col-span-2 sm:col-span-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
-                {tipsLoading ? (
-                  <div className="h-5 rounded-lg animate-pulse" style={{ background: "var(--border)", width: "70%" }} />
-                ) : (
-                  <p className="text-xs sm:text-sm font-semibold">{smartTips?.cta || dicas.cta || "Chama no direct!"}</p>
-                )}
+                <p className="text-xs sm:text-sm font-semibold">{dicas.cta || "Chama no direct!"}</p>
               </div>
             </div>
 
             {/* ── Story idea ── */}
-            {smartTips?.story_idea && (
+            {dicas.story_idea && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "linear-gradient(135deg, var(--brand-50), var(--surface))", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">📱</span>
                 <div>
                   <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--brand-700)" }}>IDEIA PARA STORY</p>
-                  <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{smartTips.story_idea}</p>
+                  <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{dicas.story_idea}</p>
                 </div>
               </div>
             )}
 
             {/* ── Dica extra ── */}
-            {smartTips?.dica_extra && (
+            {dicas.dica_extra && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">💡</span>
-                <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{smartTips.dica_extra}</p>
+                <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{dicas.dica_extra}</p>
               </div>
             )}
           </div>
