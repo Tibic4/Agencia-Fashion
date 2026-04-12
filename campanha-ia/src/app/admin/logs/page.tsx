@@ -106,7 +106,7 @@ function stepLabel(action: string): string {
     image_generation_v3: { icon: "👗", label: "Virtual Try-On (Gemini Pro Image)" },
     model_preview: { icon: "🖼️", label: "Preview de modelo (Flash Image)" },
     preview_model: { icon: "🖼️", label: "Preview de modelo (Flash Image)" },
-    smart_tips: { icon: "✍️", label: "Copywriter Pro (Gemini 3.1 Pro)" },
+    smart_tips: { icon: "✍️", label: "Copywriter (removido)" },
     pipeline_error: { icon: "❌", label: "Erro no Pipeline" },
     sonnet_analyzer: { icon: "🧠", label: "Análise (Sonnet — legacy)" },
   };
