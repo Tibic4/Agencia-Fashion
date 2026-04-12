@@ -92,7 +92,7 @@ export default function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAft
       <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full z-10" style={{ opacity: sliderPosition > 20 ? 1 : 0, transition: 'opacity 0.2s' }}>
         Sua Foto
       </div>
-      <div className="absolute top-4 right-4 bg-brand-600/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.5)] z-10" style={{ opacity: sliderPosition < 80 ? 1 : 0, transition: 'opacity 0.2s' }}>
+      <div className="absolute top-4 right-4 bg-brand-600/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(217,70,239,0.5)] z-10" style={{ opacity: sliderPosition < 80 ? 1 : 0, transition: 'opacity 0.2s' }}>
         Nossa IA
       </div>
     </div>

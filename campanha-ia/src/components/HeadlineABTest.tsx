@@ -12,7 +12,7 @@ interface HeadlineABTestProps {
 const variantColors = [
   { bg: "linear-gradient(135deg, #ec4899, #a855f7)", label: "A", tagBg: "#ec4899" },
   { bg: "linear-gradient(135deg, #3b82f6, #06b6d4)", label: "B", tagBg: "#3b82f6" },
-  { bg: "linear-gradient(135deg, #f59e0b, #ef4444)", label: "C", tagBg: "#f59e0b" },
+  { bg: "linear-gradient(135deg, #d946ef, #ef4444)", label: "C", tagBg: "#d946ef" },
 ];
 
 export default function HeadlineABTest({

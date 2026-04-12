@@ -60,7 +60,7 @@ const PHASE_CONFIG: Record<Phase, {
   polishing: {
     icon: "✨",
     title: "Finalizando detalhes",
-    color: "#f59e0b",
+    color: "#d946ef",
   },
   almostDone: {
     icon: "🎯",
@@ -104,7 +104,7 @@ const STATUS_MESSAGES: Record<Phase, string[]> = {
 /* ── Confetti colors ── */
 const CONFETTI_COLORS = [
   "#ec4899", "#a855f7", "#f97316", "#10b981",
-  "#3b82f6", "#f472b6", "#c084fc", "#fbbf24",
+  "#3b82f6", "#f472b6", "#c084fc", "#d946ef",
 ];
 
 /* ── Format time ── */

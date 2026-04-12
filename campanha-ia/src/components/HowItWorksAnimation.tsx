@@ -56,7 +56,7 @@ export default function HowItWorksAnimation() {
               </div>
 
               {/* Timeline Center Node */}
-              <div className="hidden md:flex absolute left-1/2 outline outline-8 outline-background -translate-x-1/2 w-16 h-16 rounded-full items-center justify-center shadow-lg z-10" style={{ backgroundImage: step.id === 2 ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'none', backgroundColor: step.id === 2 ? 'transparent' : '#18181b' }}>
+              <div className="hidden md:flex absolute left-1/2 outline outline-8 outline-background -translate-x-1/2 w-16 h-16 rounded-full items-center justify-center shadow-lg z-10" style={{ backgroundImage: step.id === 2 ? 'linear-gradient(135deg, #ec4899, #a855f7)' : 'none', backgroundColor: step.id === 2 ? 'transparent' : '#18181b' }}>
                 {step.icon}
               </div>
 

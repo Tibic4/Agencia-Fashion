@@ -10,7 +10,7 @@ export default function TestimonialCards() {
       avatar: "M",
       result: "ROI: 320% em 48h",
       quote: "Antes eu perdia 2h descendo nas costas da minha vendedora pra ela tirar foto. Hoje uso o manequim que fica no canto da loja e o Catarina AI (CriaLook) converte em fotos absurdas. Vendi todas as 15 peças do lote no primeiro teste de Meta Ads.",
-      bg: "bg-amber-50 dark:bg-amber-950/20"
+      bg: "bg-fuchsia-50 dark:bg-fuchsia-950/20"
     },
     {
       name: "Letícia Ribeiro",
