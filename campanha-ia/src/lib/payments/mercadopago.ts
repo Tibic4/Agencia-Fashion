@@ -1,4 +1,8 @@
 import { MercadoPagoConfig, Preference, Payment, PreApproval } from "mercadopago";
+import { PLANS, type PlanId } from "@/lib/plans";
+
+// Re-export for consumers that imported PlanId from here
+export { PLANS, type PlanId };
 
 /**
  * Client do Mercado Pago configurado com access token
@@ -10,38 +14,6 @@ const client = new MercadoPagoConfig({
 export const preferenceClient = new Preference(client);
 export const paymentClient = new Payment(client);
 export const preApprovalClient = new PreApproval(client);
-
-/**
- * Planos do CriaLook — alinhados com tabela `plans` do Supabase
- */
-export const PLANS = {
-  essencial: {
-    id: "essencial",
-    name: "Essencial",
-    price: 69.0,
-    campaigns_per_month: 15,
-    models: 3,
-    features: ["15 campanhas/mês", "3 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 30 dias", "Suporte por email"],
-  },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    price: 149.0,
-    campaigns_per_month: 50,
-    models: 10,
-    features: ["50 campanhas/mês", "10 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico 1 ano", "Suporte WhatsApp"],
-  },
-  business: {
-    id: "business",
-    name: "Business",
-    price: 299.0,
-    campaigns_per_month: 120,
-    models: 25,
-    features: ["120 campanhas/mês", "25 modelos virtuais", "Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Histórico ilimitado", "Suporte prioritário"],
-  },
-} as const;
-
-export type PlanId = keyof typeof PLANS;
 
 // ═══════════════════════════════════════
 // ASSINATURA RECORRENTE (PreApproval)

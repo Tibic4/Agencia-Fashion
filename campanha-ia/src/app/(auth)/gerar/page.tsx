@@ -460,11 +460,12 @@ export default function GerarCampanha() {
           onBuyCredits={async (type, qty) => {
             // Mapear type+qty para packageId que a API espera
             const packageMap: Record<string, string> = {
-              "campaigns_1": "1_campanha",
-              "campaigns_5": "5_campanhas",
+              "campaigns_3": "3_campanhas",
               "campaigns_10": "10_campanhas",
-              "models_1": "1_modelo",
+              "campaigns_20": "20_campanhas",
               "models_3": "3_modelos",
+              "models_10": "10_modelos",
+              "models_25": "25_modelos",
             };
             const packageId = packageMap[`${type}_${qty}`];
             if (!packageId) return;

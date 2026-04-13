@@ -78,7 +78,7 @@ export default function HumiliatingMathTable() {
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay" />
               <div className="relative z-10 flex flex-col items-center justify-center h-full">
                 <span className="block text-sm text-brand-100 mb-1">Custo de 1 campanha</span>
-                <span className="font-black text-white text-2xl md:text-4xl animate-pulse-glow drop-shadow-md">R$ 14,90</span>
+                <span className="font-black text-white text-2xl md:text-4xl animate-pulse-glow drop-shadow-md">R$ 19,90</span>
               </div>
             </div>
           </div>

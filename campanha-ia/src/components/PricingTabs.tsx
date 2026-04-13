@@ -24,7 +24,7 @@ export default function PricingTabs() {
       qty: "15 Campanhas / mês",
       price: "179",
       sub: "R$ 11,93 por campanha",
-      features: ["Modelos Virtuais Exclusivos", "Legenda e Hashtags IA", "Fundo Inteligente Adaptável", "Suporte WhatsApp"],
+      features: ["5 Modelos Virtuais", "Legenda e Hashtags IA", "Fundo Inteligente Adaptável", "Suporte WhatsApp"],
       popular: false,
     },
     {
@@ -32,7 +32,7 @@ export default function PricingTabs() {
       qty: "40 Campanhas / mês",
       price: "359",
       sub: "R$ 8,98 por campanha",
-      features: ["Modelos Virtuais Exclusivos", "Legenda e Hashtags IA", "Alta Prioridade na Fila", "Fundo Inteligente Adaptável", "Suporte WhatsApp"],
+      features: ["15 Modelos Virtuais", "Legenda e Hashtags IA", "Alta Prioridade na Fila", "Fundo Inteligente Adaptável", "Suporte WhatsApp"],
       popular: true,
     },
     {
@@ -40,7 +40,7 @@ export default function PricingTabs() {
       qty: "100 Campanhas / mês",
       price: "749",
       sub: "R$ 7,49 por campanha",
-      features: ["Modelos Virtuais Exclusivos", "Legenda e Hashtags IA", "Prioridade Máxima na Fila", "Fundo Inteligente Adaptável", "Suporte VIP Dedicado"],
+      features: ["40 Modelos Virtuais", "Legenda e Hashtags IA", "Prioridade Máxima na Fila", "Fundo Inteligente Adaptável", "Suporte VIP Dedicado"],
       popular: false,
     }
   ];
