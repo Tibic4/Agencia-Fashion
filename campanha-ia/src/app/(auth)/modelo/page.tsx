@@ -405,6 +405,7 @@ export default function ModeloVirtual() {
                       src={model.photo_url}
                       alt={model.name}
                       className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-110"
+                      loading="lazy"
                     />
                   ) : (
                     <ModelPlaceholder
@@ -741,7 +742,7 @@ export default function ModeloVirtual() {
           )}
 
           {/* Generate (Sticky no Mobile) */}
-          <div className="lg:static sticky bottom-20 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "rgba(var(--background-rgb, 255, 255, 255), 0.8)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0" }}>
+          <div className="lg:static sticky bottom-20 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "var(--background)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0", opacity: 0.97 }}>
             <button
               className="btn-primary w-full !py-3.5"
               onClick={handleCreate}

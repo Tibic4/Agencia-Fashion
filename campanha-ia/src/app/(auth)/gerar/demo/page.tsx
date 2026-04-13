@@ -820,10 +820,10 @@ export default function ResultadoCampanha() {
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="relative w-full rounded-t-3xl p-5 pb-8"
-              style={{ background: "var(--card)", borderTop: "1px solid var(--border)", boxShadow: "0 -10px 40px rgba(0,0,0,0.5)" }}
+              style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", boxShadow: "0 -10px 40px rgba(0,0,0,0.5)" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-10 h-1 rounded-full bg-gray-300 mx-auto mb-5" />
+              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--border)" }} />
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold">Escolha o Aspect Ratio</h3>
                 <button onClick={() => setShowFormatSheet(false)} className="w-8 h-8 flex items-center justify-center rounded-lg bg-[var(--surface)] text-[var(--muted)]">
