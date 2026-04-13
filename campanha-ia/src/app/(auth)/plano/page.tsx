@@ -45,17 +45,55 @@ export default function Plano() {
   const [store, setStore] = useState<StoreData | null>(null);
   const [usage, setUsage] = useState<StoreUsage | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [trialUsed, setTrialUsed] = useState(false);
 
   // Fix #2: Read URL params inside useEffect (not during render)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
+    const creditsStatus = params.get("credits");
+
     if (status === "approved") {
       setStatusMsg("✅ Pagamento aprovado! Seu plano será atualizado em instantes.");
     } else if (status === "rejected") {
       setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
     } else if (status === "pending") {
       setStatusMsg("⏳ Pagamento pendente (PIX/Boleto). Atualizaremos assim que confirmar.");
+    }
+
+    if (creditsStatus === "approved") {
+      setStatusMsg("✅ Créditos adicionados com sucesso!");
+    } else if (creditsStatus === "rejected") {
+      setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
+    } else if (creditsStatus === "pending") {
+      setStatusMsg("⏳ Pagamento pendente (PIX/Boleto). Atualizaremos assim que confirmar.");
+
+      // Auto-polling para PIX/boleto pendente
+      const paymentId = params.get("payment_id") || params.get("collection_id");
+      if (paymentId) {
+        const pollInterval = setInterval(async () => {
+          try {
+            const res = await fetch(`/api/credits/check-payment?payment_id=${paymentId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            if (data.status === "approved") {
+              clearInterval(pollInterval);
+              setStatusMsg("✅ Pagamento confirmado! Créditos adicionados.");
+              // Recarregar dados da loja para refletir créditos
+              window.location.href = "/plano?credits=approved";
+            } else if (data.status === "rejected" || data.status === "cancelled") {
+              clearInterval(pollInterval);
+              setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
+            }
+          } catch { /* ignore polling errors */ }
+        }, 5000); // Verificar a cada 5 segundos
+
+        // Limpar polling após 10 minutos (evitar polling infinito)
+        setTimeout(() => clearInterval(pollInterval), 10 * 60 * 1000);
+
+        return () => clearInterval(pollInterval);
+      }
     }
   }, []);
 
@@ -84,6 +122,20 @@ export default function Plano() {
       }
     }
     loadStoreData();
+  }, []);
+
+  // Check if trial was already used
+  useEffect(() => {
+    async function loadTrialStatus() {
+      try {
+        const res = await fetch("/api/credits/trial-status");
+        if (res.ok) {
+          const data = await res.json();
+          setTrialUsed(data.used === true);
+        }
+      } catch { /* ignore — will show trial if check fails */ }
+    }
+    loadTrialStatus();
   }, []);
 
   const handleCheckout = async (planId: string) => {
@@ -324,8 +376,8 @@ export default function Plano() {
         ))}
       </div>
 
-      {/* Trial — only show for free plan users */}
-      {currentPlanName === "Avulso" && (
+      {/* Trial — only show for free plan users who haven't used it */}
+      {currentPlanName === "Avulso" && !trialUsed && (
         <div className="mb-8">
           <h3 className="text-lg font-bold mb-4">Comece agora</h3>
           <div className="rounded-2xl p-5 text-center transition-all hover:-translate-y-1" style={{
