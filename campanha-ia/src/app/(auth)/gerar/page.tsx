@@ -587,30 +587,30 @@ export default function GerarCampanha() {
                 boxShadow: "0 4px 16px rgba(236,72,153,0.25)",
               }}
             >
-              <span className="text-xl">🎯</span>
+              <span className="text-xl">✨</span>
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold" style={{ color: "var(--foreground)" }}>
-                {campaignsLimit === 0 ? "Compre créditos para começar" : "Seus créditos acabaram"}
+                {campaignsLimit === 0 ? "Ative seu plano para criar" : "Campanhas do período esgotadas"}
               </h3>
-              <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+              <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
                 {campaignsLimit === 0
-                  ? "Você ainda não tem nenhum crédito. Compre um pacote ou assine um plano para criar campanhas."
-                  : `Você usou ${campaignsUsed}/${campaignsLimit} campanhas do período. Compre créditos avulsos ou faça upgrade.`
+                  ? "Assine um plano para gerar fotos profissionais com modelo virtual e IA."
+                  : `Você usou ${campaignsUsed}/${campaignsLimit} campanhas. Compre créditos avulsos ou faça upgrade.`
                 }
               </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <Link
                 href="/plano"
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px] flex items-center justify-center"
+                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold text-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px] flex items-center justify-center"
                 style={{
                   background: "var(--gradient-brand)",
                   color: "white",
                   boxShadow: "0 4px 12px rgba(236,72,153,0.25)",
                 }}
               >
-                {campaignsLimit === 0 ? "Comprar créditos" : "Ver planos"}
+                {campaignsLimit === 0 ? "⚡ Ativar plano" : "Ver planos"}
               </Link>
             </div>
           </div>
@@ -1388,7 +1388,7 @@ export default function GerarCampanha() {
                 }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                {campaignsLimit === 0 ? "Comprar créditos para gerar" : "Recarregar créditos"}
+                {campaignsLimit === 0 ? "⚡ Ativar plano para gerar" : "Recarregar créditos"}
               </Link>
             ) : (
               <button
