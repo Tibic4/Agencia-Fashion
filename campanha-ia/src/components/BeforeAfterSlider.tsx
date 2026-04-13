@@ -59,7 +59,7 @@ export default function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAft
       {/* After Image (Renderizada) */}
       <div className="absolute inset-0 w-full h-full bg-surface">
         {afterImage ? (
-          <Image src={afterImage} alt="Resultado IA" fill className="object-cover" priority />
+          <Image src={afterImage} alt="Resultado IA" fill sizes="(max-width: 768px) 100vw, 448px" className="object-cover" priority />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-brand-100 text-brand-700">Resultado 3D</div>
         )}
@@ -71,7 +71,7 @@ export default function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAft
         style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
       >
         {beforeImage ? (
-          <Image src={beforeImage} alt="Foto Original" fill className="object-cover" priority />
+          <Image src={beforeImage} alt="Foto Original" fill sizes="(max-width: 768px) 100vw, 448px" className="object-cover" priority />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">Manequim</div>
         )}

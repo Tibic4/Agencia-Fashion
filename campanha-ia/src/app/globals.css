@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Make Tailwind v4 dark: variant work with both OS preference AND manual data-theme toggle */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ═══════════════════════════════════════
    Design System — CriaLook (Fashion AI)
    Palette: Pink → Fuchsia → Purple (Logo-Aligned)
@@ -121,6 +124,7 @@
   --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);
@@ -369,10 +373,14 @@ h1, h2 {
 }
 
 @media (prefers-color-scheme: dark) {
-  .glass {
+  :root:not([data-theme="light"]) .glass {
     background: rgba(24, 24, 27, 0.7);
     border: 1px solid rgba(63, 63, 70, 0.4);
   }
+}
+:root[data-theme="dark"] .glass {
+  background: rgba(24, 24, 27, 0.7);
+  border: 1px solid rgba(63, 63, 70, 0.4);
 }
 
 /* Gradient Border */
@@ -483,10 +491,14 @@ h1, h2 {
 }
 
 @media (prefers-color-scheme: dark) {
-  .badge-brand {
+  :root:not([data-theme="light"]) .badge-brand {
     background: rgba(217,70,239,0.15);
     color: var(--brand-300);
   }
+}
+:root[data-theme="dark"] .badge-brand {
+  background: rgba(217,70,239,0.15);
+  color: var(--brand-300);
 }
 
 /* Section */
@@ -529,12 +541,18 @@ h1, h2 {
 }
 
 @media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
+  :root:not([data-theme="light"]) ::-webkit-scrollbar-thumb {
     background: var(--gray-700);
   }
-  ::-webkit-scrollbar-thumb:hover {
+  :root:not([data-theme="light"]) ::-webkit-scrollbar-thumb:hover {
     background: var(--gray-600);
   }
+}
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--gray-700);
+}
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-600);
 }
 
 /* ═══════════════════════════════════════

@@ -1,14 +1,132 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Download, RefreshCw, Wand2, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
+
+/* ═══════════════════════════════════════
+   Demo campaigns — each with image + unique caption
+   ═══════════════════════════════════════ */
+const demos = [
+  {
+    image: "/demo-download.jpg",
+    alt: "Cropped laranja + bermuda jeans — campanha gerada pela IA",
+    caption: `☀️ Casual chic que funciona de segunda a sábado.
+
+Cropped canelado laranja + bermuda jeans destroyed — o combo que toda cliente pede e nunca acha pronto. Agora achou. 🔥
+
+Tecido premium com elastano que abraça sem apertar. Lavagem clara vintage que combina com tudo.
+
+🏷️ Cropped: R$ 59 | Bermuda: R$ 89
+Combo lançamento R$ 129 (economize R$ 19) 💸
+
+📲 Chama no direct ou toque no link da bio!
+#ModaFeminina #LookDoDia #JeansDestroyed #CroppedCanelado #ModaCasual`,
+    jsx: (
+      <>
+        ☀️ Casual chic que funciona de segunda a sábado. <br/><br/>
+        Cropped canelado laranja + bermuda jeans destroyed — o combo que toda cliente pede e nunca acha pronto. Agora achou. 🔥 <br/><br/>
+        Tecido premium com elastano que abraça sem apertar. Lavagem clara vintage que combina com tudo. <br/><br/>
+        🏷️ Cropped: R$ 59 | Bermuda: R$ 89 <br/>
+        Combo lançamento R$ 129 (economize R$ 19) 💸 <br/><br/>
+        📲 Chama no direct ou toque no link da bio! <br/>
+        #ModaFeminina #LookDoDia #JeansDestroyed #CroppedCanelado #ModaCasual
+      </>
+    ),
+  },
+  {
+    image: "/demo-2.png",
+    alt: "Vestido longo tropical com flores e araras — campanha gerada pela IA",
+    caption: `🌺 A estampa que para o feed e faz o dedo clicar.
+
+Vestido longo tropical com decote V, manga 3/4 e cintura marcada com cordão — caimento solto que valoriza todos os corpos. Estampa exclusiva com flores e araras. 🦜
+
+Tecido viscose leve que não amassa e acompanha cada movimento com elegância.
+
+🏷️ R$ 189 à vista ou 3x de R$ 63
+Frete grátis acima de R$ 150 🚚
+
+📲 Garanta o seu antes que esgote — link na bio!
+#VestidoLongo #EstampaTropical #ModaVerão #LookPraia #ModaFeminina`,
+    jsx: (
+      <>
+        🌺 A estampa que para o feed e faz o dedo clicar. <br/><br/>
+        Vestido longo tropical com decote V, manga 3/4 e cintura marcada com cordão — caimento solto que valoriza todos os corpos. Estampa exclusiva com flores e araras. 🦜 <br/><br/>
+        Tecido viscose leve que não amassa e acompanha cada movimento com elegância. <br/><br/>
+        🏷️ R$ 189 à vista ou 3x de R$ 63 <br/>
+        Frete grátis acima de R$ 150 🚚 <br/><br/>
+        📲 Garanta o seu antes que esgote — link na bio! <br/>
+        #VestidoLongo #EstampaTropical #ModaVerão #LookPraia #ModaFeminina
+      </>
+    ),
+  },
+  {
+    image: "/demo-3.png",
+    alt: "Vestido verde esmeralda ombro único — campanha gerada pela IA",
+    caption: `💚 A cor que domina a temporada — e o closet da sua cliente.
+
+Vestido curto verde esmeralda com modelagem ombro único, manga ampla e faixa na cintura. Elegância descomplicada que funciona do brunch ao happy hour. ✨
+
+Tecido texturizado com caimento impecável. Não marca, não transparece, não decepciona.
+
+🏷️ R$ 149 à vista
+Parcelamos em até 3x sem juros 💳
+
+📲 Corre que verde esmeralda esgota rápido — chama no direct!
+#VestidoVerde #OmbroÚnico #LookFesta #ModaElegante #ModaFeminina`,
+    jsx: (
+      <>
+        💚 A cor que domina a temporada — e o closet da sua cliente. <br/><br/>
+        Vestido curto verde esmeralda com modelagem ombro único, manga ampla e faixa na cintura. Elegância descomplicada que funciona do brunch ao happy hour. ✨ <br/><br/>
+        Tecido texturizado com caimento impecável. Não marca, não transparece, não decepciona. <br/><br/>
+        🏷️ R$ 149 à vista <br/>
+        Parcelamos em até 3x sem juros 💳 <br/><br/>
+        📲 Corre que verde esmeralda esgota rápido — chama no direct! <br/>
+        #VestidoVerde #OmbroÚnico #LookFesta #ModaElegante #ModaFeminina
+      </>
+    ),
+  },
+  {
+    image: "/demo-4.png",
+    alt: "Macaquinho estampado tropical floral — campanha gerada pela IA",
+    caption: `🌸 Peça única, estilo de sobra — é vestir e sair arrasando.
+
+Macaquinho estampado tropical com decote V, manga ampla e amarração na cintura. Estampa vibrante com flores vermelhas e detalhes étnicos que chamam atenção de longe. 🔥
+
+Tecido fluido ultraleve — perfeito pro calor sem perder a elegância.
+
+🏷️ R$ 129 à vista ou 2x de R$ 64,50
+Compre 2 peças e ganhe 10% OFF 🎉
+
+📲 Peça pronta-entrega — chama agora no direct!
+#Macaquinho #LookVerão #EstampaFloral #ModaTropical #ModaFeminina`,
+    jsx: (
+      <>
+        🌸 Peça única, estilo de sobra — é vestir e sair arrasando. <br/><br/>
+        Macaquinho estampado tropical com decote V, manga ampla e amarração na cintura. Estampa vibrante com flores vermelhas e detalhes étnicos que chamam atenção de longe. 🔥 <br/><br/>
+        Tecido fluido ultraleve — perfeito pro calor sem perder a elegância. <br/><br/>
+        🏷️ R$ 129 à vista ou 2x de R$ 64,50 <br/>
+        Compre 2 peças e ganhe 10% OFF 🎉 <br/><br/>
+        📲 Peça pronta-entrega — chama agora no direct! <br/>
+        #Macaquinho #LookVerão #EstampaFloral #ModaTropical #ModaFeminina
+      </>
+    ),
+  },
+];
 
 export default function LiveCampaignDemo() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [currentDemo, setCurrentDemo] = useState(0);
+
+  // Pick a random demo on first render
+  useEffect(() => {
+    setCurrentDemo(Math.floor(Math.random() * demos.length));
+  }, []);
+
+  const demo = demos[currentDemo];
 
   // Simula o timer acelerado na página de LP (para não entediar o usuário)
   useEffect(() => {
@@ -34,38 +152,33 @@ export default function LiveCampaignDemo() {
     }
   }, [isGenerating]);
 
-  const demoText = `☀️ Casual chic que funciona de segunda a sábado.
-
-Cropped canelado terracota + bermuda jeans destroyed — o combo que toda cliente pede e nunca acha pronto. Agora achou. 🔥
-
-Tecido premium com elastano que abraça sem apertar. Lavagem clara vintage que combina com tudo.
-
-🏷️ Cropped: R$ 59 | Bermuda: R$ 89
-Combo lançamento R$ 129 (economize R$ 19) 💸
-
-📲 Chama no direct ou toque no link da bio!
-#ModaFeminina #LookDoDia #JeansDestroyed #CroppedCanelado #ModaCasual`;
-
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(demoText);
+      await navigator.clipboard.writeText(demo.caption);
     } catch { /* fallback: textarea copy */ }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [demo.caption]);
 
-  const handleDownloadDemo = () => {
+  const handleDownloadDemo = useCallback(() => {
     const link = document.createElement("a");
-    link.href = "/api/demo-download";
-    link.download = "campanha-crialook-demo.jpg";
+    link.href = demo.image;
+    link.download = `campanha-crialook-demo.${demo.image.endsWith('.png') ? 'png' : 'jpg'}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [demo.image]);
 
   const resetDemo = () => {
     setIsDone(false);
     setProgress(0);
+    setCopied(false);
+    // Pick a different random demo
+    let next = Math.floor(Math.random() * demos.length);
+    while (next === currentDemo && demos.length > 1) {
+      next = Math.floor(Math.random() * demos.length);
+    }
+    setCurrentDemo(next);
     setIsGenerating(true);
   };
 
@@ -106,10 +219,10 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col items-center justify-center"
+                className="absolute inset-0 flex flex-col items-center justify-center px-4"
               >
                 {/* Circular Progress */}
-                <div className="relative w-40 h-40 mb-6">
+                <div className="relative w-32 h-32 md:w-40 md:h-40 mb-6 mx-auto">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-gray-200 dark:text-gray-800" />
                     <circle 
@@ -121,17 +234,17 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black">{Math.round(progress)}%</span>
+                    <span className="text-2xl md:text-3xl font-black">{Math.round(progress)}%</span>
                   </div>
                 </div>
                 
                 {/* Status text jumping updates based on progress */}
-                <div className="h-8 overflow-hidden text-lg font-bold text-brand-600 dark:text-brand-400">
+                <div className="h-8 overflow-hidden text-sm md:text-lg font-bold text-brand-600 dark:text-brand-400 text-center w-full">
                   <AnimatePresence mode="wait">
-                    {progress < 30 && <motion.span key="1" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Recortando peça...</motion.span>}
-                    {progress >= 30 && progress < 60 && <motion.span key="2" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Gerando modelo realista...</motion.span>}
-                    {progress >= 60 && progress < 90 && <motion.span key="3" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Criando cenário de luxo...</motion.span>}
-                    {progress >= 90 && <motion.span key="4" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Escrevendo Copy Persuasiva...</motion.span>}
+                    {progress < 30 && <motion.span key="1" className="block text-center" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Recortando peça...</motion.span>}
+                    {progress >= 30 && progress < 60 && <motion.span key="2" className="block text-center" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Gerando modelo realista...</motion.span>}
+                    {progress >= 60 && progress < 90 && <motion.span key="3" className="block text-center" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Criando cenário de luxo...</motion.span>}
+                    {progress >= 90 && <motion.span key="4" className="block text-center" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Escrevendo Copy Persuasiva...</motion.span>}
                   </AnimatePresence>
                 </div>
               </motion.div>
@@ -139,15 +252,16 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
 
             {isDone && (
               <motion.div 
-                key="done"
+                key={`done-${currentDemo}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="w-full h-full absolute inset-0"
               >
                 <Image 
-                  src="/demo-download.jpg" 
-                  alt="Campanha gerada pela IA — Cropped Terracota + Bermuda Jeans" 
+                  src={demo.image} 
+                  alt={demo.alt} 
                   fill 
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover" 
                   priority 
                 />
@@ -161,14 +275,15 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
             {!isDone ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-40 grayscale blur-[2px]">
                 {/* Skeleton UI for text */}
-                <div className="w-12 h-12 bg-gray-200 rounded-full mb-4" />
-                <div className="w-3/4 h-6 bg-gray-200 rounded mb-2" />
-                <div className="w-full h-4 bg-gray-200 rounded mb-2" />
-                <div className="w-5/6 h-4 bg-gray-200 rounded mb-6" />
-                <div className="w-full h-12 bg-gray-200 rounded-xl" />
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full mb-4" />
+                <div className="w-3/4 h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                <div className="w-full h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                <div className="w-5/6 h-4 bg-gray-200 dark:bg-gray-700 rounded mb-6" />
+                <div className="w-full h-12 bg-gray-200 dark:bg-gray-700 rounded-xl" />
               </div>
             ) : (
               <motion.div 
+                key={`text-${currentDemo}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col h-full"
@@ -185,15 +300,7 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
                   </div>
                   
                   <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 text-sm leading-relaxed mb-6 text-foreground relative group">
-                    <p>
-                      ☀️ Casual chic que funciona de segunda a sábado. <br/><br/>
-                      Cropped canelado terracota + bermuda jeans destroyed — o combo que toda cliente pede e nunca acha pronto. Agora achou. 🔥 <br/><br/>
-                      Tecido premium com elastano que abraça sem apertar. Lavagem clara vintage que combina com tudo. <br/><br/>
-                      🏷️ Cropped: R$ 59 | Bermuda: R$ 89 <br/>
-                      Combo lançamento R$ 129 (economize R$ 19) 💸 <br/><br/>
-                      📲 Chama no direct ou toque no link da bio! <br/>
-                      #ModaFeminina #LookDoDia #JeansDestroyed #CroppedCanelado #ModaCasual
-                    </p>
+                    <p>{demo.jsx}</p>
                     <button 
                       onClick={handleCopy}
                       className="absolute top-3 right-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center min-w-[44px] min-h-[44px]"
@@ -203,11 +310,11 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-50 text-brand-700 font-bold hover:bg-brand-100 transition-colors min-h-[44px]">
+                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors min-h-[44px]">
                       <Download className="w-4 h-4" />
                       Baixar Foto
                     </button>
-                    <button onClick={handleCopy} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-colors min-h-[44px]">
+                    <button onClick={handleCopy} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold hover:bg-black dark:hover:bg-white transition-colors min-h-[44px]">
                       {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       {copied ? "Copiado!" : "Copiar Texto"}
                     </button>

@@ -30,7 +30,7 @@ export default function HowItWorksAnimation() {
   return (
     <div className="relative py-12 max-w-5xl mx-auto">
       {/* Central Timeline Line (Desktop) */}
-      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-gray-200 via-brand-200 to-gray-200 -translate-x-1/2 rounded-full" />
+      <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-gray-200 via-brand-200 to-gray-200 dark:from-gray-800 dark:via-brand-800 dark:to-gray-800 -translate-x-1/2 rounded-full" />
 
       <div className="space-y-16 md:space-y-24">
         {steps.map((step, index) => {
@@ -47,7 +47,7 @@ export default function HowItWorksAnimation() {
               {/* Content Panel */}
               <div className="w-full md:w-1/2 flex flex-col md:text-left text-center">
                 <div className={`md:max-w-md ${isEven ? 'ml-auto' : 'mr-auto'} p-8 rounded-2xl bg-surface border border-border shadow-lg hover:shadow-xl transition-shadow`}>
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-100 text-brand-700 font-bold mb-4 font-display text-xl">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-bold mb-4 font-display text-xl">
                     {step.id}
                   </div>
                   <h3 className="text-2xl font-bold font-display mb-3 text-foreground">{step.title}</h3>
