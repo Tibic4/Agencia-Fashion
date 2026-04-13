@@ -269,9 +269,9 @@ export default function AuthLayout({
 
       {/* Mobile Bottom Tab Bar — Floating Island Style */}
       <nav
-        className="lg:hidden fixed left-2 right-2 z-30 glass grid grid-flow-col auto-cols-fr px-1 py-1.5 rounded-2xl shadow-xl shadow-black/5"
+        className="lg:hidden fixed left-2 right-2 z-30 glass grid grid-flow-col auto-cols-fr px-1 py-1 rounded-2xl shadow-xl shadow-black/5"
         style={{ 
-          bottom: "calc(12px + env(safe-area-inset-bottom))",
+          bottom: "calc(8px + env(safe-area-inset-bottom))",
           border: "1px solid var(--border)" 
         }}
       >
@@ -307,8 +307,8 @@ export default function AuthLayout({
         className="flex-1 lg:ml-64 pt-14 lg:pt-0 lg:pb-0 min-h-screen"
         style={{ 
           overflowX: "hidden",
-          /* 12px nav bottom offset + ~60px nav height + 16px breathing room = 88px + safe-area */
-          paddingBottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
+          /* 8px nav offset + ~52px nav height + 12px breathing = 72px + safe-area */
+          paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {/* On desktop lg:, override inline pb via important — sidebar has no bottom nav */}
