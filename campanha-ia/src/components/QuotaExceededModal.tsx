@@ -15,15 +15,15 @@ interface QuotaExceededModalProps {
 }
 
 const CREDIT_PACKAGES = [
-  { qty: 5, price: "19,90", priceNum: 19.90, perUnit: "3,98", perUnitNum: 3.98, type: "campaigns", savings: 0 },
-  { qty: 15, price: "49,90", priceNum: 49.90, perUnit: "3,33", perUnitNum: 3.33, type: "campaigns", savings: 16, popular: true },
-  { qty: 30, price: "89,90", priceNum: 89.90, perUnit: "3,00", perUnitNum: 3.00, type: "campaigns", savings: 25, best: true },
+  { qty: 3, price: "49,90", priceNum: 49.90, perUnit: "16,63", perUnitNum: 16.63, type: "campaigns", savings: 0 },
+  { qty: 10, price: "149,90", priceNum: 149.90, perUnit: "14,99", perUnitNum: 14.99, type: "campaigns", savings: 10, popular: true },
+  { qty: 20, price: "249,00", priceNum: 249.00, perUnit: "12,45", perUnitNum: 12.45, type: "campaigns", savings: 25, best: true },
 ];
 
 const PLAN_UPGRADE = [
-  { name: "Essencial", price: 69, campaigns: 15 },
-  { name: "Pro", price: 149, campaigns: 50, recommended: true },
-  { name: "Business", price: 299, campaigns: 120 },
+  { name: "Essencial", price: 179, campaigns: 15 },
+  { name: "Pro", price: 359, campaigns: 40, recommended: true },
+  { name: "Business", price: 749, campaigns: 100 },
 ];
 
 export default function QuotaExceededModal({

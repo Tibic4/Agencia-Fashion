@@ -136,9 +136,9 @@ export default function Home() {
 
               {/* CTAs */}
               <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
-                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 14,90">
+                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
                   <IconZap />
-                  Criar Minha 1ª Campanha — R$ 14,90
+                  Criar Minha 1ª Campanha — R$ 19,90
                 </Link>
                 <a href="#demo-viva" className="btn-secondary w-full text-sm !py-3">
                   Ver Exemplo Pronto
@@ -174,9 +174,9 @@ export default function Home() {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 mb-8">
-                  <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 14,90">
+                  <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
                     <IconZap />
-                    Criar Minha 1ª Campanha — R$ 14,90
+                    Criar Minha 1ª Campanha — R$ 19,90
                   </Link>
                   <a href="#demo-viva" className="btn-secondary text-base !py-3.5 !px-8">
                     Ver Exemplo Pronto
@@ -430,11 +430,11 @@ export default function Home() {
               <span className="gradient-text">foto de distância</span>.
             </h2>
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Comece com o Pack Teste por R$ 14,90. 3 campanhas completas: Modelo virtual, logo na imagem e legendas de alta conversão.
+              Comece com o Pack Teste por R$ 19,90. 3 campanhas completas: Modelo virtual, logo na imagem e legendas de alta conversão.
             </p>
             <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 hover:animate-pulse-glow" aria-label="Criar minha primeira campanha com IA">
               <IconZap />
-              Criar minha primeira campanha — R$ 14,90
+              Criar minha primeira campanha — R$ 19,90
               <IconArrowRight />
             </Link>
 

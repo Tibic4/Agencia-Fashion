@@ -48,7 +48,7 @@ export default function StickyCTA() {
       style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 8px 25px rgba(217,70,239,0.4)' }}
     >
       <Zap className="w-5 h-5" />
-      Criar Campanha — R$ 14,90
+      Criar Campanha — R$ 19,90
     </Link>
   );
 }
