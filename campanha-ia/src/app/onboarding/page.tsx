@@ -109,7 +109,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(0); // 0 = welcome, 1 = store, 2 = model, 3 = done
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [storeName, setStoreName] = useState("");
-  const [segment, setSegment] = useState("");
+  const [segment, setSegment] = useState<string[]>([]);
   const [city, setCity] = useState("");
   const [instagram, setInstagram] = useState("");
   const [skin, setSkin] = useState("morena_clara");
@@ -178,7 +178,7 @@ export default function Onboarding() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             storeName,
-            segment,
+            segment: segment.join(","),
             city: city || undefined,
             instagram: instagram || undefined,
             brandColor: brandColor || undefined,
@@ -893,14 +893,22 @@ export default function Onboarding() {
 
                   {/* Segments */}
                   <div>
-                    <label className="onb-label">Segmento principal *</label>
+                    <label className="onb-label">Segmento principal * <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: "11px" }}>(até 2)</span></label>
                     <div className="onb-segments">
                       {segments.map((seg) => (
                         <button
                           key={seg.value}
-                          onClick={() => setSegment(seg.value)}
+                          onClick={() => {
+                            setSegment((prev) => {
+                              if (prev.includes(seg.value)) {
+                                return prev.filter((s) => s !== seg.value);
+                              }
+                              if (prev.length >= 2) return prev; // Max 2
+                              return [...prev, seg.value];
+                            });
+                          }}
                           className="onb-segment-btn"
-                          data-active={segment === seg.value}
+                          data-active={segment.includes(seg.value)}
                         >
                           <span className="onb-segment-emoji">{seg.emoji}</span>
                           <div>
@@ -1012,7 +1020,7 @@ export default function Onboarding() {
                      </button>
                      <button
                        onClick={goNext}
-                       disabled={!storeName || !segment || saving}
+                       disabled={!storeName || segment.length === 0 || saving}
                        className="btn-primary flex-1 !py-3 disabled:opacity-40 disabled:cursor-not-allowed"
                      >
                        {saving ? "Salvando..." : <>Continuar <IconArrowRight /></>}
@@ -1180,7 +1188,7 @@ export default function Onboarding() {
                   <div className="onb-summary-row">
                     <span>👗</span>
                     <span>
-                      {segments.find((s) => s.value === segment)?.label || "Moda"}
+                      {segment.map((s) => segments.find((seg) => seg.value === s)?.label).filter(Boolean).join(", ") || "Moda"}
                     </span>
                   </div>
                   {city && (
