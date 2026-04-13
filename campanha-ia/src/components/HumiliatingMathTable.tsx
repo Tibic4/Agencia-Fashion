@@ -33,7 +33,7 @@ export default function HumiliatingMathTable() {
 
   return (
     <div className="w-full max-w-4xl mx-auto py-8">
-      <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 bg-surface">
+      <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800" style={{ background: 'var(--surface)' }}>
         {/* Header */}
         <div className="grid grid-cols-2 md:grid-cols-2 divide-x divide-gray-200 dark:divide-gray-800">
           <div className="bg-gray-50 dark:bg-gray-900/50 p-6 flex flex-col items-center justify-center text-center">
@@ -56,7 +56,7 @@ export default function HumiliatingMathTable() {
         <div className="flex flex-col">
           {rows.map((row, i) => (
             <div key={i} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-800 border-t border-gray-200 dark:border-gray-800 text-sm md:text-base">
-              <div className="p-4 md:p-6 text-center flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900/20">
+              <div className="p-4 md:p-6 text-center flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900/40">
                 <span className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">{row.feature}</span>
                 <span className="font-medium text-gray-600 dark:text-gray-300">{row.traditional}</span>
               </div>

@@ -373,8 +373,8 @@ export default function Plano() {
         ))}
       </div>
 
-      {/* Security Badge - Mercado Pago */}
-      <div className="mt-12 mb-8 flex flex-col items-center justify-center opacity-60 hover:opacity-90 transition-opacity">
+      {/* Security Badge — Mercado Pago */}
+      <div className="mt-12 mb-8 flex flex-col items-center justify-center opacity-70 hover:opacity-100 transition-all duration-300">
         <div className="flex items-center gap-1.5 mb-3">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--success, #22c55e)" }}>
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -384,9 +384,28 @@ export default function Plano() {
             Pagamento 100% Seguro
           </span>
         </div>
-        <div className="flex items-center gap-1.5" aria-label="Processado pelo Mercado Pago">
-          <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: "var(--muted)" }}>Checkout oficial</span>
-          <span className="text-xs font-bold" style={{ color: "#009EE3" }}>Mercado Pago</span>
+        <div className="flex items-center gap-2.5 mb-2">
+          {/* MP Handshake Icon */}
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mercado Pago">
+            <circle cx="24" cy="24" r="24" fill="#009EE3"/>
+            <path d="M34.5 20.5c-1.2-1.8-3.5-2.5-5.5-2.5-1.5 0-2.8.4-3.8 1.2-.3.2-.5.2-.8 0C23.4 18.4 22 18 20.5 18c-2 0-4.3.7-5.5 2.5-1.5 2.2-1 5.2.8 7.2l7.5 7.5c.4.4 1 .4 1.4 0l7.5-7.5c1.8-2 2.3-5 .8-7.2z" fill="white" opacity="0.95"/>
+            <path d="M16 25c0-2 1-3.5 2.5-4s3 0 4 1c.3.3.7.3 1 0 1-1 2.5-1.5 4-1s2.5 2 2.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6"/>
+          </svg>
+          {/* Mercado Pago wordmark */}
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: "var(--muted)" }}>Checkout oficial</span>
+            <span className="text-base font-black tracking-tight" style={{ color: '#009EE3' }}>
+              mercado<span style={{ fontWeight: 900 }}>pago</span>
+            </span>
+          </div>
+        </div>
+        {/* Payment methods */}
+        <div className="flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+          <span>PIX</span>
+          <span className="w-0.5 h-0.5 rounded-full" style={{ background: "var(--muted)" }} />
+          <span>Cartão</span>
+          <span className="w-0.5 h-0.5 rounded-full" style={{ background: "var(--muted)" }} />
+          <span>Boleto</span>
         </div>
       </div>
     </div>

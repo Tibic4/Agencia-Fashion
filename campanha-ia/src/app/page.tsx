@@ -57,7 +57,7 @@ export default function Home() {
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-1.5">
-            <Image src="/logo.png" alt="CriaLook" width={52} height={52} className="rounded-full" priority />
+            <Image src="/logo.png" alt="CriaLook" width={52} height={52} className="rounded-full" />
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
               Cria<span className="gradient-text">Look</span>
             </span>
@@ -127,9 +127,9 @@ export default function Home() {
                     ✨ Vestido floral tropical — caimento fluido, estampa exclusiva e toque acetinado. Peça que vende sozinha. 🌺
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>Alta Conversão</span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-100)', color: 'var(--accent-600)' }}>Copy Persuasivo</span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#16a34a' }}>Meta Aprovado</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300">Alta Conversão</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-accent-100 dark:bg-accent-700/30 text-accent-600 dark:text-accent-300">Copy Persuasivo</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">Meta Aprovado</span>
                   </div>
                 </div>
               </div>
@@ -300,18 +300,12 @@ export default function Home() {
                 <p className="text-xs md:text-sm leading-relaxed opacity-90">
                   Crie o biotipo da sua cliente ideal (etnia, cabelo, corpo) e vista toda a sua coleção nela de forma padronizada.
                 </p>
-                <div className="mt-3">
-                  <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                    ✨ Powered by Fashn AI
-                  </span>
-                </div>
+
               </div>
 
               {/* 5 cards normais */}
               <div className="card-brand group cursor-default rounded-2xl">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
-                  background: 'var(--brand-100)', color: 'var(--brand-600)',
-                }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300">
                   <IconTarget />
                 </div>
                 <h3 className="text-sm md:text-base font-bold mb-1">Legendas que vendem</h3>
@@ -321,9 +315,7 @@ export default function Home() {
               </div>
 
               <div className="card-brand group cursor-default rounded-2xl">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
-                  background: 'var(--brand-100)', color: 'var(--brand-600)',
-                }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300">
                   <IconBarChart />
                 </div>
                 <h3 className="text-sm md:text-base font-bold mb-1">Score de conversão</h3>
@@ -333,9 +325,7 @@ export default function Home() {
               </div>
 
               <div className="card-brand group cursor-default rounded-2xl">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
-                  background: 'var(--brand-100)', color: 'var(--brand-600)',
-                }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300">
                   <IconCamera />
                 </div>
                 <h3 className="text-sm md:text-base font-bold mb-1">Poder de Escolha</h3>
@@ -345,9 +335,7 @@ export default function Home() {
               </div>
 
               <div className="card-brand group cursor-default rounded-2xl">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
-                  background: 'var(--brand-100)', color: 'var(--brand-600)',
-                }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300">
                   <IconShield />
                 </div>
                 <h3 className="text-sm md:text-base font-bold mb-1">Compliance Meta</h3>
@@ -357,9 +345,7 @@ export default function Home() {
               </div>
 
               <div className="card-brand group cursor-default rounded-2xl">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110" style={{
-                  background: 'var(--brand-100)', color: 'var(--brand-600)',
-                }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300">
                   <IconUsers />
                 </div>
                 <h3 className="text-sm md:text-base font-bold mb-1">Feito pra lojista</h3>
@@ -451,13 +437,7 @@ export default function Home() {
               Criar minha primeira campanha — R$ 14,90
               <IconArrowRight />
             </Link>
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs font-medium text-muted-foreground opacity-80">
-              <div className="flex items-center gap-1.5 bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/20">
-                <span>🔒</span>
-                <span>Risco Zero</span>
-              </div>
-              <span>Não curtiu o resultado? Devolvemos seu crédito na hora. Sem perguntas.</span>
-            </div>
+
           </div>
         </section>
       </main>
