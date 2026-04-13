@@ -326,7 +326,7 @@ export default function ModeloVirtual() {
               color: "white",
             }}
           >
-            {maxModels === 0 ? "⭐ Assine um plano para começar" : "⬆️ Liberar mais modelos"}
+            {maxModels === 0 ? "⚡ Ativar plano" : "⬆️ Liberar mais modelos"}
           </Link>
         )}
       </div>
@@ -360,13 +360,13 @@ export default function ModeloVirtual() {
           </h2>
           <p className="text-sm mb-8 leading-relaxed max-w-md mx-auto" style={{ color: "var(--muted)" }}>
             {maxModels === 0
-              ? "Assine um plano e adicione modelos reais ou IA com as proporções exatas do seu público. Vista roupas de forma automática!"
+              ? "Ative um plano para criar modelos virtuais exclusivas que vestem suas roupas com perfeição."
               : "Crie a modelo ideal para sua loja escolhendo biotipo, etnia e cabelo. Ela usará suas roupas com perfeição em todas as campanhas."
             }
           </p>
           {maxModels === 0 ? (
-            <Link href="/plano" className="btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all">
-              ⭐ Ver planos e iniciar
+            <Link href="/plano" className="btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all min-h-[48px] flex items-center justify-center">
+              ⚡ Ativar plano
             </Link>
           ) : (
             <button

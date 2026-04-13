@@ -240,16 +240,12 @@ export default function Historico() {
         </div>
       )}
 
-      {/* Aviso de expiração de histórico */}
-      {planInfo && planInfo.historyDays > 0 && (
-        <div className="mb-6 p-4 rounded-xl flex items-center gap-3 text-sm" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-200)" }}>
-          <span>📅</span>
-          <p>
-            Seu plano mostra campanhas dos últimos <strong>{historyLabel}</strong>.{" "}
-            <Link href="/plano" className="font-semibold underline" style={{ color: "var(--brand-600)" }}>
-              Faça upgrade
-            </Link>{" "}
-            para histórico mais longo.
+      {/* Nota de filtro de histórico — só mostra quando há campanhas e o plano limita */}
+      {planInfo && planInfo.historyDays > 0 && campaigns.length > 0 && (
+        <div className="mb-4 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <span style={{ color: "var(--muted)" }}>📅</span>
+          <p style={{ color: "var(--muted)" }}>
+            Mostrando últimos <strong style={{ color: "var(--foreground)" }}>{historyLabel}</strong>
           </p>
         </div>
       )}
@@ -264,7 +260,7 @@ export default function Historico() {
       )}
 
       {campaigns.length === 0 ? (
-        <div className="text-center py-16">
+        <div className="text-center py-12">
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--gradient-card)' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand-400)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -274,11 +270,11 @@ export default function Historico() {
             </svg>
           </div>
           <h2 className="text-xl font-bold mb-2">Nenhuma campanha ainda</h2>
-          <p className="text-sm mb-6 max-w-xs mx-auto" style={{ color: "var(--muted)" }}>
-            Gere sua primeira campanha com IA — só precisa de uma foto!
+          <p className="text-sm mb-6 max-w-xs mx-auto leading-relaxed" style={{ color: "var(--muted)" }}>
+            Suas campanhas geradas aparecerão aqui.
           </p>
           <Link href="/gerar" className="btn-primary inline-flex min-h-[48px] items-center">
-            ⚡ Gerar primeira campanha
+            ⚡ Criar primeira campanha
           </Link>
         </div>
       ) : (
