@@ -167,24 +167,31 @@ export default function PricingTabs() {
 
       {/* Security Seals — Mercado Pago */}
       <div className="mt-16 border-t border-border pt-8 flex flex-col items-center">
-        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground mb-4 uppercase tracking-widest">
+        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground mb-5 uppercase tracking-widest">
           <ShieldCheck className="w-4 h-4 text-brand-500" />
           Pagamento 100% Seguro
         </div>
-        <div className="flex flex-col items-center gap-3 opacity-70 hover:opacity-100 transition-all duration-300">
-           {/* Mercado Pago official logo (handshake + wordmark) */}
-           <div className="flex items-center gap-2.5">
-             {/* MP Handshake Icon */}
-             <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mercado Pago">
-               <circle cx="24" cy="24" r="24" fill="#009EE3"/>
-               <path d="M34.5 20.5c-1.2-1.8-3.5-2.5-5.5-2.5-1.5 0-2.8.4-3.8 1.2-.3.2-.5.2-.8 0C23.4 18.4 22 18 20.5 18c-2 0-4.3.7-5.5 2.5-1.5 2.2-1 5.2.8 7.2l7.5 7.5c.4.4 1 .4 1.4 0l7.5-7.5c1.8-2 2.3-5 .8-7.2z" fill="white" opacity="0.95"/>
-               <path d="M16 25c0-2 1-3.5 2.5-4s3 0 4 1c.3.3.7.3 1 0 1-1 2.5-1.5 4-1s2.5 2 2.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6"/>
+        <div className="flex flex-col items-center gap-4 opacity-70 hover:opacity-100 transition-all duration-300">
+           {/* Mercado Pago official handshake logo + wordmark */}
+           <div className="flex items-center gap-3">
+             {/* MP Handshake Icon — official style */}
+             <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mercado Pago">
+               <circle cx="24" cy="24" r="24" fill="#00AAFF"/>
+               {/* Left hand */}
+               <path d="M13 27.5c0 0 1.5-1 3-1s2.5.8 3.5.8c1.2 0 2-.5 2-.5l5.5-5c.8-.7 2-.6 2.7.2.6.7.5 1.8-.2 2.4l-3 2.6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+               {/* Right hand */}
+               <path d="M35 27.5c0 0-1.5-1-3-1s-2.5.8-3.5.8c-1.2 0-2-.5-2-.5l-5.5-5c-.8-.7-2-.6-2.7.2-.6.7-.5 1.8.2 2.4l3 2.6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+               {/* Clasped center */}
+               <path d="M21 27c1 .8 2.2 1.2 3 1.2s2-.4 3-1.2" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+               {/* Sleeves */}
+               <path d="M10 28.5c0-.8.7-1.5 1.5-1.5h2c.4 0 .5.3.5.7v4.3c0 .6-.4 1-1 1h-2c-.6 0-1-.4-1-1v-3.5z" fill="white" opacity="0.9"/>
+               <path d="M38 28.5c0-.8-.7-1.5-1.5-1.5h-2c-.4 0-.5.3-.5.7v4.3c0 .6.4 1 1 1h2c.6 0 1-.4 1-1v-3.5z" fill="white" opacity="0.9"/>
              </svg>
              {/* Mercado Pago wordmark */}
              <div className="flex flex-col items-start leading-none">
-               <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Checkout oficial</span>
-               <span className="text-lg font-black tracking-tight" style={{ color: '#009EE3' }}>
-                 mercado<span style={{ color: '#009EE3', fontWeight: 900 }}>pago</span>
+               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Checkout oficial</span>
+               <span className="text-xl font-black tracking-tight" style={{ color: '#00AAFF' }}>
+                 mercado<span className="font-black">pago</span>
                </span>
              </div>
            </div>
