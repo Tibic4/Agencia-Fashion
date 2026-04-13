@@ -181,8 +181,23 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
             <div className="p-5 space-y-4">
               {mode === "upload" && (
                 <div>
-                  <label
-                    onClick={() => haptics.light()}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) drawImageOnCanvas(file);
+                      e.target.value = ''; // Reset for consecutive same-file selection
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.light();
+                      fileInputRef.current?.click();
+                    }}
                     className="w-full py-12 rounded-xl flex flex-col items-center gap-3 transition hover:opacity-80 cursor-pointer"
                     style={{ border: "2px dashed var(--border)", background: "var(--surface)" }}
                   >
@@ -193,17 +208,7 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
                         JPG, PNG ou WebP
                       </p>
                     </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) drawImageOnCanvas(file);
-                        e.target.value = ''; // Reset for consecutive same-file selection
-                      }}
-                    />
-                  </label>
+                  </button>
 
                   <button
                     onClick={() => { haptics.light(); setMode("manual"); }}

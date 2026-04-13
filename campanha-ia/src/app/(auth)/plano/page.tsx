@@ -15,6 +15,12 @@ interface StoreUsage {
   models_limit: number;
 }
 
+interface StoreCredits {
+  campaigns: number;
+  models: number;
+  regenerations: number;
+}
+
 interface StoreData {
   id: string;
   name: string;
@@ -44,6 +50,7 @@ export default function Plano() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [store, setStore] = useState<StoreData | null>(null);
   const [usage, setUsage] = useState<StoreUsage | null>(null);
+  const [credits, setCredits] = useState<StoreCredits | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [trialUsed, setTrialUsed] = useState(false);
 
@@ -101,9 +108,10 @@ export default function Plano() {
   useEffect(() => {
     async function loadStoreData() {
       try {
-        const [storeRes, usageRes] = await Promise.all([
+        const [storeRes, usageRes, creditsRes] = await Promise.all([
           fetch("/api/store"),
           fetch("/api/store/usage"),
+          fetch("/api/store/credits"),
         ]);
 
         if (storeRes.ok) {
@@ -114,6 +122,11 @@ export default function Plano() {
         if (usageRes.ok) {
           const usageData = await usageRes.json();
           setUsage(usageData.data);
+        }
+
+        if (creditsRes.ok) {
+          const creditsData = await creditsRes.json();
+          setCredits(creditsData.data);
         }
       } catch {
         console.error("[Plano] Erro ao carregar dados da loja");
@@ -307,22 +320,36 @@ export default function Plano() {
             <div className="flex justify-between text-xs mb-2">
               <span style={{ color: "var(--muted)" }}>Campanhas</span>
               <span className="font-bold">
-                {dataLoading ? "..." : `${campaignsUsed}/${campaignsLimit}`}
+                {dataLoading ? "..." : (
+                  <>
+                    {campaignsLimit > 0 ? `${campaignsUsed}/${campaignsLimit}` : "—"}
+                    {(credits?.campaigns ?? 0) > 0 && (
+                      <span style={{ color: "var(--success)", marginLeft: 4 }}>+{credits!.campaigns} avulso{credits!.campaigns > 1 ? "s" : ""}</span>
+                    )}
+                  </>
+                )}
               </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${usagePercent}%`, background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${campaignsLimit > 0 ? usagePercent : (credits?.campaigns ?? 0) > 0 ? 50 : 0}%`, background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)" }} />
             </div>
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
             <div className="flex justify-between text-xs mb-2">
               <span style={{ color: "var(--muted)" }}>Modelos</span>
               <span className="font-bold">
-                {dataLoading ? "..." : `${usage?.models_used ?? 0}/${usage?.models_limit ?? 0}`}
+                {dataLoading ? "..." : (
+                  <>
+                    {(usage?.models_limit ?? 0) > 0 ? `${usage?.models_used ?? 0}/${usage?.models_limit ?? 0}` : "—"}
+                    {(credits?.models ?? 0) > 0 && (
+                      <span style={{ color: "var(--success)", marginLeft: 4 }}>+{credits!.models} avulso{credits!.models > 1 ? "s" : ""}</span>
+                    )}
+                  </>
+                )}
               </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full" style={{ width: `${usage?.models_limit ? ((usage?.models_used ?? 0) / usage.models_limit) * 100 : 0}%`, background: "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full" style={{ width: `${usage?.models_limit ? ((usage?.models_used ?? 0) / usage.models_limit) * 100 : (credits?.models ?? 0) > 0 ? 50 : 0}%`, background: "var(--gradient-brand)" }} />
             </div>
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>

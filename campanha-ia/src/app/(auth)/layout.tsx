@@ -93,7 +93,7 @@ export default function AuthLayout({
   const usagePercent = campaignsLimit > 0 ? Math.min((campaignsUsed / campaignsLimit) * 100, 100) : 0;
 
   return (
-    <div className="flex min-h-screen" style={{ background: "var(--surface)", overflowX: "hidden", maxWidth: "100vw" }}>
+    <div className="flex min-h-[100dvh]" style={{ background: "var(--surface)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Sidebar — Desktop */}
       <aside
         className="hidden lg:flex flex-col w-64 fixed inset-y-0 left-0 z-30"
@@ -310,17 +310,13 @@ export default function AuthLayout({
         })}
       </nav>
 
-      {/* Main Content — pb accounts for floating bottom nav on mobile */}
-      <main 
-        className="flex-1 lg:ml-64 pt-14 lg:pt-0 lg:pb-0 min-h-screen"
-        style={{ 
-          overflowX: "hidden",
-          /* 8px nav offset + ~52px nav height + 12px breathing = 72px + safe-area */
-          paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
-        }}
-      >
-        {/* On desktop lg:, override inline pb via important — sidebar has no bottom nav */}
-        <style>{`@media (min-width: 1024px) { main { padding-bottom: 0 !important; } }`}</style>
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0">
+        <style>{`
+          @media (max-width: 1023px) {
+            main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; }
+          }
+        `}</style>
         <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>
