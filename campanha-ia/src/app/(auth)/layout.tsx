@@ -303,8 +303,8 @@ export default function AuthLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-0 min-h-screen" style={{ overflowX: "hidden" }}>
-        <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
+      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 min-h-screen" style={{ overflowX: "hidden", paddingBottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))" }}>
+        <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto lg:!pb-8">{children}</div>
       </main>
     </div>
   );
