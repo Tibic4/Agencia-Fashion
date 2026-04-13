@@ -123,6 +123,18 @@ async function handlePaymentEvent(paymentId: string) {
       if (storeId && creditType && quantity > 0) {
         const validTypes = ["campaigns", "models", "regenerations"];
         if (validTypes.includes(creditType)) {
+          // ── Idempotência: verificar se este pagamento já foi processado ──
+          const supabase = createAdminClient();
+          const { count: existingCount } = await supabase
+            .from("credit_purchases")
+            .select("id", { count: "exact", head: true })
+            .eq("mercadopago_payment_id", paymentId);
+
+          if ((existingCount ?? 0) > 0) {
+            console.log(`[Webhook:MercadoPago] ⚠️ Pagamento ${paymentId} já processado — ignorando duplicata`);
+            return;
+          }
+
           console.log(`[Webhook:MercadoPago] ✅ Crédito aprovado! Store: ${storeId}, Tipo: ${creditType}, Qtd: ${quantity}`);
 
           await addCreditsToStore(
