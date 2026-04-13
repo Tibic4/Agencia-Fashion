@@ -26,8 +26,8 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     data: {
-      campaigns: packages.filter(p => p.type === "campaigns"),
-      models: packages.filter(p => p.type === "models"),
+      campaigns: packages.filter(p => (p.type as string) === "campaigns"),
+      models: packages.filter(p => (p.type as string) === "models"),
     },
   });
 }
