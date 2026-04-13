@@ -302,9 +302,18 @@ export default function AuthLayout({
         })}
       </nav>
 
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 min-h-screen" style={{ overflowX: "hidden", paddingBottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))" }}>
-        <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto lg:!pb-8">{children}</div>
+      {/* Main Content — pb accounts for floating bottom nav on mobile */}
+      <main 
+        className="flex-1 lg:ml-64 pt-14 lg:pt-0 lg:pb-0 min-h-screen"
+        style={{ 
+          overflowX: "hidden",
+          /* 12px nav bottom offset + ~60px nav height + 16px breathing room = 88px + safe-area */
+          paddingBottom: "calc(88px + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
+        {/* On desktop lg:, override inline pb via important — sidebar has no bottom nav */}
+        <style>{`@media (min-width: 1024px) { main { padding-bottom: 0 !important; } }`}</style>
+        <div className="px-4 py-4 sm:p-4 md:p-8 max-w-5xl mx-auto">{children}</div>
       </main>
     </div>
   );
