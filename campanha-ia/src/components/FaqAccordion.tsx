@@ -39,7 +39,7 @@ const faqs: FAQ[] = [
   },
   {
     q: "Quero assinar. É seguro?",
-    a: "Utilizamos a Stripe para pagamentos (a mesma processadora da Amazon e Google). Seus dados estão 100% blindados e você pode cancelar a assinatura com 1 clique no painel, sem taxas escondidas."
+    a: "Utilizamos o Mercado Pago para pagamentos — a maior plataforma de pagamentos da América Latina. Seus dados estão 100% protegidos e você pode cancelar a assinatura com 1 clique no painel, sem taxas escondidas."
   }
 ];
 

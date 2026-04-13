@@ -24,7 +24,7 @@ export default function PricingTabs() {
       qty: "15 Campanhas / mês",
       price: "179",
       sub: "R$ 11,93 por campanha",
-      features: ["Modelos Virtuais Exclusivos", "Legenda e Hashtags IA", "Geração em 60s", "Suporte Email"],
+      features: ["Modelos Virtuais Exclusivos", "Legenda e Hashtags IA", "Fundo Inteligente Adaptável", "Suporte WhatsApp"],
       popular: false,
     },
     {
@@ -40,7 +40,7 @@ export default function PricingTabs() {
       qty: "100 Campanhas / mês",
       price: "749",
       sub: "R$ 7,49 por campanha",
-      features: ["Acesso Ilimitado ao Painel", "API de Integração Comercial", "Treinamento Dedicado", "Tudo do plano Pro", "Gerente de Conta"],
+      features: ["Modelos Virtuais Exclusivos", "Legenda e Hashtags IA", "Prioridade Máxima na Fila", "Fundo Inteligente Adaptável", "Suporte VIP Dedicado"],
       popular: false,
     }
   ];
@@ -74,28 +74,31 @@ export default function PricingTabs() {
 
   return (
     <div className="w-full max-w-6xl mx-auto py-12">
-      <div className="flex justify-center mb-10">
-        <div className="bg-gray-100 dark:bg-gray-900 p-1 rounded-full inline-flex border border-gray-200 dark:border-gray-800 shadow-sm relative">
+      <div className="flex justify-center mb-10 px-4">
+        <div className="bg-gray-100 dark:bg-gray-900 p-1 rounded-full border border-gray-200 dark:border-gray-800 shadow-sm relative grid grid-cols-2 w-full max-w-md">
           <button 
             onClick={() => setActiveTab("assinaturas")}
-            className={`relative z-10 px-6 md:px-8 py-3 rounded-full text-sm font-bold transition-colors ${activeTab === "assinaturas" ? "text-brand-900" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
+            className={`relative z-10 px-3 md:px-6 py-3 rounded-full text-xs md:text-sm font-bold transition-colors text-center ${activeTab === "assinaturas" ? "text-brand-900" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
           >
-            Assinaturas Mensais 
-            <span className="ml-2 inline-block px-2 text-[10px] uppercase tracking-wider bg-brand-500/20 text-brand-700 dark:text-brand-400 rounded-full font-bold">
+            <span className="block">Assinaturas Mensais</span>
+            <span className="mt-0.5 inline-block px-2 text-[9px] md:text-[10px] uppercase tracking-wider bg-brand-500/20 text-brand-700 dark:text-brand-400 rounded-full font-bold">
               Recomendado
             </span>
           </button>
           <button 
             onClick={() => setActiveTab("avulsos")}
-            className={`relative z-10 px-6 md:px-8 py-3 rounded-full text-sm font-bold transition-colors ${activeTab === "avulsos" ? "text-brand-900" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
+            className={`relative z-10 px-3 md:px-6 py-3 rounded-full text-xs md:text-sm font-bold transition-colors text-center ${activeTab === "avulsos" ? "text-brand-900" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
           >
             Packs Avulsos
           </button>
           
           {/* Active indicator */}
           <div 
-            className="absolute top-1 bottom-1 w-1/2 bg-white dark:bg-gray-800 rounded-full shadow-sm transition-transform duration-300 ease-out border border-gray-200/50 dark:border-gray-700"
-            style={{ transform: activeTab === "assinaturas" ? "translateX(0%)" : "translateX(100%)" }}
+            className="absolute top-1 bottom-1 bg-white dark:bg-gray-800 rounded-full shadow-sm transition-all duration-300 ease-out border border-gray-200/50 dark:border-gray-700"
+            style={{ 
+              left: activeTab === "assinaturas" ? '4px' : '50%',
+              right: activeTab === "assinaturas" ? '50%' : '4px',
+            }}
           />
         </div>
       </div>
@@ -153,7 +156,7 @@ export default function PricingTabs() {
 
               <Link 
                 href="/sign-up" 
-                className={`mt-auto btn w-full py-4 ${plan.popular ? 'btn-primary shadow-brand' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-foreground font-bold'}`}
+                className={`mt-auto w-full py-4 rounded-full text-center font-bold transition-all duration-200 inline-flex items-center justify-center ${plan.popular ? 'btn-primary shadow-brand' : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-foreground'}`}
               >
                 Assinar {plan.name}
               </Link>
@@ -162,18 +165,37 @@ export default function PricingTabs() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Security Seals */}
+      {/* Security Seals — Mercado Pago */}
       <div className="mt-16 border-t border-border pt-8 flex flex-col items-center">
-        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground mb-6 uppercase tracking-widest">
+        <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground mb-4 uppercase tracking-widest">
           <ShieldCheck className="w-4 h-4 text-brand-500" />
           Pagamento 100% Seguro
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-300">
-           {/* Logos placehoder representation (we can't use real raw SVG imports without Next.js setup inside here without strings, so text/icon fallbacks for standard look) */}
-           <div className="font-black text-xl tracking-tighter">PIX</div>
-           <div className="font-black text-xl italic tracking-tighter text-blue-800 dark:text-blue-400">VISA</div>
-           <div className="font-black text-xl italic tracking-tighter">Mastercard</div>
-           <div className="px-3 py-1 border border-current rounded-md font-bold text-sm tracking-wider">SSL SECURE</div>
+        <div className="flex flex-col items-center gap-3 opacity-70 hover:opacity-100 transition-all duration-300">
+           {/* Mercado Pago official logo (handshake + wordmark) */}
+           <div className="flex items-center gap-2.5">
+             {/* MP Handshake Icon */}
+             <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mercado Pago">
+               <circle cx="24" cy="24" r="24" fill="#009EE3"/>
+               <path d="M34.5 20.5c-1.2-1.8-3.5-2.5-5.5-2.5-1.5 0-2.8.4-3.8 1.2-.3.2-.5.2-.8 0C23.4 18.4 22 18 20.5 18c-2 0-4.3.7-5.5 2.5-1.5 2.2-1 5.2.8 7.2l7.5 7.5c.4.4 1 .4 1.4 0l7.5-7.5c1.8-2 2.3-5 .8-7.2z" fill="white" opacity="0.95"/>
+               <path d="M16 25c0-2 1-3.5 2.5-4s3 0 4 1c.3.3.7.3 1 0 1-1 2.5-1.5 4-1s2.5 2 2.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6"/>
+             </svg>
+             {/* Mercado Pago wordmark */}
+             <div className="flex flex-col items-start leading-none">
+               <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Checkout oficial</span>
+               <span className="text-lg font-black tracking-tight" style={{ color: '#009EE3' }}>
+                 mercado<span style={{ color: '#009EE3', fontWeight: 900 }}>pago</span>
+               </span>
+             </div>
+           </div>
+           {/* Payment methods accepted */}
+           <div className="flex items-center gap-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+             <span>PIX</span>
+             <span className="w-1 h-1 rounded-full bg-current opacity-30" />
+             <span>Cartão</span>
+             <span className="w-1 h-1 rounded-full bg-current opacity-30" />
+             <span>Boleto</span>
+           </div>
         </div>
       </div>
     </div>
