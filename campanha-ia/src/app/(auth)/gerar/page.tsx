@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
 import { friendlyError } from "@/lib/friendly-error";
+import { useWakeLock } from "@/lib/hooks/useWakeLock";
 import QuotaExceededModal from "@/components/QuotaExceededModal";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 import GenerationLoadingScreen from "@/components/GenerationLoadingScreen";
@@ -89,6 +90,9 @@ export default function GerarCampanha() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
+
+  // 📱 Prevent screen from sleeping during generation
+  useWakeLock(isGenerating);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const closeUpInputRef = useRef<HTMLInputElement>(null);
   const secondInputRef = useRef<HTMLInputElement>(null);
@@ -955,221 +959,224 @@ export default function GerarCampanha() {
                 ))}
               </div>
             </div>
-            {/* Grid de Modelos (Aleatória + Customizadas) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
-              {/* Opção aleatória */}
-              <button
-                onClick={() => setSelectedModelId("random")}
-                className="aspect-[3/4] rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-sm active:scale-[0.98]"
-                style={{
-                  background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
-                }}
-              >
-                {/* Border Overlay */}
-                <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
-                  selectedModelId === "random" 
-                    ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.2)]" 
-                    : "ring-1 ring-inset ring-[var(--border)] opacity-50"
-                }`} />
-                <span className="text-lg drop-shadow-sm relative z-20">🎲</span>
-                <span className="text-[10px] font-medium mt-1 relative z-20" style={{ color: "var(--muted)" }}>Aleatória</span>
-              </button>
+            {/* Grid de Modelos (Aleatória + Customizadas + Stock) */}
+            {(() => {
+              const filteredCustom = customModels.filter(m => matchesFilter(m.body_type, modelFilter));
+              const filteredStock = modelBank.filter(m => matchesFilter(m.body_type, modelFilter));
+              const allModels = [
+                ...filteredCustom.map(m => ({ ...m, _type: "custom" as const })),
+                ...filteredStock.map(m => ({ ...m, _type: "stock" as const, body_type: m.body_type })),
+              ];
+              const INITIAL_VISIBLE = 5;
+              const visibleModels = showAllModels ? allModels : allModels.slice(0, INITIAL_VISIBLE);
+              const hasMore = allModels.length > INITIAL_VISIBLE;
 
-              {/* ⭐ Modelos personalizadas da loja (borda dourada) */}
-              {customModels
-                .filter(m => matchesFilter(m.body_type, modelFilter))
-                .map((model) => (
-                <div key={`custom-${model.id}`} className="relative group">
-                  <button
-                    onClick={() => setSelectedModelId(model.id)}
-                    className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all active:scale-[0.98]"
-                    title={`⭐ ${model.name} (sua modelo)`}
-                  >
-                    {model.photo_url ? (
-                      <img
-                        src={model.photo_url}
-                        alt={model.name}
-                        className="w-full h-full object-cover object-[center_15%]"
-                        style={{ animation: "fadeIn 0.5s ease-in" }}
-                      />
-                    ) : (
-                      <ModelPlaceholder
-                        skinTone={model.skin_tone}
-                        bodyType={model.body_type}
-                        name={model.name}
-                        isGenerating={true}
-                      />
-                    )}
-                    {/* Borda dourada/selecionada Overlay */}
-                    <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
-                      selectedModelId === model.id 
-                        ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]" 
-                        : "ring-2 ring-inset ring-[#D4A017] shadow-[inset_0_0_8px_rgba(212,160,23,0.25)]"
-                    }`} />
-                    {/* Badge ⭐ */}
-                    <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full z-20" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
-                      ⭐ Sua
-                    </div>
-                    {selectedModelId === model.id && (
-                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center z-20">
-                        <span className="text-white text-sm font-bold shadow-sm">✓</span>
+              return (
+                <>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3">
+                    {/* Opção aleatória */}
+                    <button
+                      onClick={() => setSelectedModelId("random")}
+                      className="aspect-[3/4] rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-sm active:scale-[0.98]"
+                      style={{
+                        background: selectedModelId === "random" ? "var(--brand-50)" : "var(--surface)",
+                      }}
+                    >
+                      <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
+                        selectedModelId === "random" 
+                          ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.2)]" 
+                          : "ring-1 ring-inset ring-[var(--border)] opacity-50"
+                      }`} />
+                      <span className="text-lg drop-shadow-sm relative z-20">🎲</span>
+                      <span className="text-[10px] font-medium mt-1 relative z-20" style={{ color: "var(--muted)" }}>Aleatória</span>
+                    </button>
+
+                    {/* Modelos visíveis (custom + stock combinados) */}
+                    {visibleModels.map((model) => {
+                      const isCustom = model._type === "custom";
+                      return isCustom ? (
+                        <div key={`custom-${model.id}`} className="relative group">
+                          <button
+                            onClick={() => setSelectedModelId(model.id)}
+                            className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all active:scale-[0.98]"
+                            title={`⭐ ${model.name} (sua modelo)`}
+                          >
+                            {(model as any).photo_url ? (
+                              <img
+                                src={(model as any).photo_url}
+                                alt={model.name}
+                                className="w-full h-full object-cover object-[center_15%]"
+                                loading="lazy"
+                                style={{ animation: "fadeIn 0.5s ease-in" }}
+                              />
+                            ) : (
+                              <ModelPlaceholder
+                                skinTone={(model as any).skin_tone}
+                                bodyType={model.body_type}
+                                name={model.name}
+                                isGenerating={true}
+                              />
+                            )}
+                            <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
+                              selectedModelId === model.id 
+                                ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]" 
+                                : "ring-2 ring-inset ring-[#D4A017] shadow-[inset_0_0_8px_rgba(212,160,23,0.25)]"
+                            }`} />
+                            <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full z-20" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
+                              ⭐ Sua
+                            </div>
+                            {selectedModelId === model.id && (
+                              <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center z-20">
+                                <span className="text-white text-sm font-bold shadow-sm">✓</span>
+                              </div>
+                            )}
+                          </button>
+
+                          {confirmDeleteId !== model.id && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(model.id); }}
+                              className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:scale-110"
+                              style={{
+                                background: "rgba(220,38,38,0.85)",
+                                color: "white",
+                                fontSize: "14px",
+                                lineHeight: 1,
+                                backdropFilter: "blur(4px)",
+                              }}
+                              title="Excluir modelo"
+                            >
+                              ×
+                            </button>
+                          )}
+
+                          {confirmDeleteId === model.id && (
+                            <div
+                              className="absolute inset-0 rounded-lg flex flex-col items-center justify-center gap-2 z-10"
+                              style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+                            >
+                              <p className="text-white text-xs font-semibold text-center px-2">Excluir modelo?</p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setDeletingModelId(model.id);
+                                    try {
+                                      const res = await fetch(`/api/models/${model.id}`, { method: "DELETE" });
+                                      if (res.ok) {
+                                        setCustomModels(prev => prev.filter(m => m.id !== model.id));
+                                        if (selectedModelId === model.id) setSelectedModelId("random");
+                                      }
+                                    } catch { /* ignore */ }
+                                    setDeletingModelId(null);
+                                    setConfirmDeleteId(null);
+                                  }}
+                                  disabled={deletingModelId === model.id}
+                                  className="px-4 py-2 rounded-lg text-xs font-bold transition-all min-h-[44px]"
+                                  style={{ background: "#DC2626", color: "white", opacity: deletingModelId === model.id ? 0.6 : 1 }}
+                                >
+                                  {deletingModelId === model.id ? "..." : "Sim"}
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                                  className="px-4 py-2 rounded-lg text-xs font-bold min-h-[44px]"
+                                  style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
+                                >
+                                  Não
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Stock model */
+                        <button
+                          key={model.id}
+                          onClick={() => setSelectedModelId(model.id)}
+                          className="group aspect-[3/4] rounded-lg overflow-hidden relative transition-all duration-300 hover:scale-[1.03] hover:z-10"
+                          title={model.name}
+                        >
+                          <img
+                            src={(model as any).thumbnail_url || (model as any).image_url}
+                            alt={model.name}
+                            className="w-full h-full object-cover object-[center_15%]"
+                            loading="lazy"
+                          />
+                          <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
+                            selectedModelId === model.id 
+                              ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]"
+                              : "ring-1 ring-inset ring-[var(--border)] opacity-50 group-hover:ring-brand-500/50 group-hover:opacity-100"
+                          }`} />
+                          {selectedModelId === model.id && (
+                            <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center z-20">
+                              <span className="text-white text-sm font-bold shadow-sm">✓</span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+
+                    {/* Empty state */}
+                    {allModels.length === 0 && (
+                      <div className="col-span-3 sm:col-span-4 aspect-[3/4] max-h-[160px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all mx-0" style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
+                        <span className="text-xl mb-1 opacity-70">📭</span>
+                        <span className="text-xs font-semibold">Nenhuma modelo salva.</span>
+                        <Link href="/modelo" className="text-[10px] mt-1 font-bold underline transition-opacity hover:opacity-70" style={{ color: "var(--brand-500)" }}>Criar personalizada</Link>
                       </div>
                     )}
-                  </button>
 
-                  {/* Botão excluir — visível no hover (desktop) e sempre no mobile */}
-                  {confirmDeleteId !== model.id && (
+                    {/* + Criar nova modelo / Upgrade CTA */}
+                    {customModels.length < maxModels ? (
+                      <a
+                        href="/modelo"
+                        className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] active:scale-[0.98]"
+                        style={{
+                          border: "2px dashed #D4A017",
+                          background: "var(--surface)",
+                          color: "#8B6914",
+                        }}
+                        title="Criar modelo personalizada"
+                      >
+                        <span className="text-lg">+</span>
+                        <span className="text-[10px] font-semibold mt-1">Nova modelo</span>
+                        <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
+                      </a>
+                    ) : maxModels > 0 ? (
+                      <a
+                        href="/plano"
+                        className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] active:scale-[0.98]"
+                        style={{
+                          border: "1px solid var(--border)",
+                          background: "linear-gradient(135deg, var(--surface), var(--brand-50))",
+                          color: "var(--brand-600)",
+                        }}
+                        title="Faça upgrade para mais modelos"
+                      >
+                        <span className="text-lg">⬆️</span>
+                        <span className="text-[10px] font-semibold mt-1">+ Modelos</span>
+                        <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
+                      </a>
+                    ) : null}
+                  </div>
+
+                  {/* Botão ver mais/menos modelos */}
+                  {hasMore && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(model.id); }}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:scale-110"
+                      onClick={() => setShowAllModels(!showAllModels)}
+                      className="mt-2 w-full py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px] flex items-center justify-center gap-1.5"
                       style={{
-                        background: "rgba(220,38,38,0.85)",
-                        color: "white",
-                        fontSize: "14px",
-                        lineHeight: 1,
-                        backdropFilter: "blur(4px)",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--brand-600)",
                       }}
-                      title="Excluir modelo"
                     >
-                      ×
+                      {showAllModels ? (
+                        <>▲ Mostrar menos</>
+                      ) : (
+                        <>▼ Ver todas ({allModels.length - INITIAL_VISIBLE} mais)</>
+                      )}
                     </button>
                   )}
-
-                  {/* Overlay de confirmação */}
-                  {confirmDeleteId === model.id && (
-                    <div
-                      className="absolute inset-0 rounded-lg flex flex-col items-center justify-center gap-2 z-10"
-                      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
-                    >
-                      <p className="text-white text-xs font-semibold text-center px-2">Excluir modelo?</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            setDeletingModelId(model.id);
-                            try {
-                              const res = await fetch(`/api/models/${model.id}`, { method: "DELETE" });
-                              if (res.ok) {
-                                setCustomModels(prev => prev.filter(m => m.id !== model.id));
-                                if (selectedModelId === model.id) setSelectedModelId("random");
-                              }
-                            } catch { /* ignore */ }
-                            setDeletingModelId(null);
-                            setConfirmDeleteId(null);
-                          }}
-                          disabled={deletingModelId === model.id}
-                          className="px-4 py-2 rounded-lg text-xs font-bold transition-all min-h-[44px]"
-                          style={{ background: "#DC2626", color: "white", opacity: deletingModelId === model.id ? 0.6 : 1 }}
-                        >
-                          {deletingModelId === model.id ? "..." : "Sim"}
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                          className="px-4 py-2 rounded-lg text-xs font-bold min-h-[44px]"
-                          style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
-                        >
-                          Não
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {customModels.filter(m => matchesFilter(m.body_type, modelFilter)).length === 0 && 
-               modelBank.filter(m => matchesFilter(m.body_type, modelFilter)).length === 0 && (
-                <div className="col-span-2 sm:col-span-3 aspect-[3/4] max-h-[160px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all mx-0" style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
-                  <span className="text-xl mb-1 opacity-70">📭</span>
-                  <span className="text-xs font-semibold">Nenhuma modelo salva.</span>
-                  <Link href="/modelo" className="text-[10px] mt-1 font-bold underline transition-opacity hover:opacity-70" style={{ color: "var(--brand-500)" }}>Criar personalizada</Link>
-                </div>
-              )}
-
-              {/* + Criar nova modelo / Upgrade CTA */}
-              {customModels.length < maxModels ? (
-                <a
-                  href="/modelo"
-                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] active:scale-[0.98]"
-                  style={{
-                    border: "2px dashed #D4A017",
-                    background: "var(--surface)",
-                    color: "#8B6914",
-                  }}
-                  title="Criar modelo personalizada"
-                >
-                  <span className="text-lg">+</span>
-                  <span className="text-[10px] font-semibold mt-1">Nova modelo</span>
-                  <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
-                </a>
-              ) : maxModels > 0 ? (
-                <a
-                  href="/plano"
-                  className="aspect-[3/4] rounded-lg flex flex-col items-center justify-center text-center transition-all hover:scale-[1.03] active:scale-[0.98]"
-                  style={{
-                    border: "1px solid var(--border)",
-                    background: "linear-gradient(135deg, var(--surface), var(--brand-50))",
-                    color: "var(--brand-600)",
-                  }}
-                  title="Faça upgrade para mais modelos"
-                >
-                  <span className="text-lg">⬆️</span>
-                  <span className="text-[10px] font-semibold mt-1">+ Modelos</span>
-                  <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
-                </a>
-              ) : null}
-
-              {/* Modelos stock do banco */}
-              {(() => {
-                const filtered = modelBank.filter(m => matchesFilter(m.body_type, modelFilter));
-                const visibleModels = showAllModels ? filtered : filtered.slice(0, 6);
-                return visibleModels.map((model) => (
-                  <button
-                    key={model.id}
-                    onClick={() => setSelectedModelId(model.id)}
-                    className="group aspect-[3/4] rounded-lg overflow-hidden relative transition-all duration-300 hover:scale-[1.03] hover:z-10"
-                    title={model.name}
-                  >
-                    <img
-                      src={model.thumbnail_url || model.image_url}
-                      alt={model.name}
-                      className="w-full h-full object-cover object-[center_15%]"
-                    />
-                    {/* Border Overlay */}
-                    <div className={`absolute inset-0 pointer-events-none rounded-lg transition-all duration-300 z-10 ${
-                      selectedModelId === model.id 
-                        ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]"
-                        : "ring-1 ring-inset ring-[var(--border)] opacity-50 group-hover:ring-brand-500/50 group-hover:opacity-100"
-                    }`} />
-                    {selectedModelId === model.id && (
-                      <div className="absolute inset-0 bg-brand-500/20 flex items-center justify-center z-20">
-                        <span className="text-white text-sm font-bold shadow-sm">✓</span>
-                      </div>
-                    )}
-                  </button>
-                ));
-              })()}
-            </div>
-
-            {/* Botão ver mais modelos */}
-            {(() => {
-              const filtered = modelBank.filter(m => matchesFilter(m.body_type, modelFilter));
-              if (filtered.length <= 6) return null;
-              return (
-                <button
-                  onClick={() => setShowAllModels(!showAllModels)}
-                  className="mt-2 w-full py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px] flex items-center justify-center gap-1.5"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    color: "var(--brand-600)",
-                  }}
-                >
-                  {showAllModels ? (
-                    <>▲ Mostrar menos</>
-                  ) : (
-                    <>▼ Ver todas ({filtered.length - 6} mais)</>
-                  )}
-                </button>
+                </>
               );
             })()}
 
