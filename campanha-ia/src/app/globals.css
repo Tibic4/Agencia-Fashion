@@ -92,6 +92,10 @@
     --border-hover: #3f3f46;
     --muted: #a1a1aa;
     --muted-foreground: #71717a;
+    --brand-50: rgba(217, 70, 239, 0.06);
+    --brand-100: rgba(217, 70, 239, 0.12);
+    --brand-200: rgba(217, 70, 239, 0.18);
+    --brand-700: #e879f9;
     --gradient-hero: linear-gradient(180deg, #150818 0%, #09090b 40%, #09090b 100%);
     --gradient-brand-soft: linear-gradient(135deg, #150818 0%, #0d0510 50%, #08030d 100%);
     --gradient-card: linear-gradient(135deg, rgba(217,70,239,0.08) 0%, rgba(168,85,247,0.08) 100%);
@@ -110,6 +114,10 @@
   --border-hover: #3f3f46;
   --muted: #a1a1aa;
   --muted-foreground: #71717a;
+  --brand-50: rgba(217, 70, 239, 0.06);
+  --brand-100: rgba(217, 70, 239, 0.12);
+  --brand-200: rgba(217, 70, 239, 0.18);
+  --brand-700: #e879f9;
   --gradient-hero: linear-gradient(180deg, #150818 0%, #09090b 40%, #09090b 100%);
   --gradient-brand-soft: linear-gradient(135deg, #150818 0%, #0d0510 50%, #08030d 100%);
   --gradient-card: linear-gradient(135deg, rgba(217,70,239,0.08) 0%, rgba(168,85,247,0.08) 100%);
@@ -426,6 +434,10 @@ h1, h2 {
 .btn-primary:active {
   transform: translateY(0);
 }
+.btn-primary:focus-visible {
+  outline: 2px solid var(--brand-400);
+  outline-offset: 2px;
+}
 
 .btn-secondary {
   display: inline-flex;
@@ -446,6 +458,28 @@ h1, h2 {
   background: var(--surface-hover);
   border-color: var(--border-hover);
   transform: translateY(-1px);
+}
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--brand-400);
+  outline-offset: 2px;
+}
+
+/* Global focus-visible for interactive elements */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--brand-300);
+  outline-offset: 0;
+  border-color: var(--brand-400) !important;
+}
+button:focus-visible {
+  outline: 2px solid var(--brand-400);
+  outline-offset: 2px;
+}
+a:focus-visible {
+  outline: 2px solid var(--brand-400);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* Card Styles */
