@@ -248,7 +248,7 @@ export default function Sobre() {
                 Sua próxima campanha está a uma <span className="gradient-text">foto de distância</span>.
               </h2>
               <p className="text-sm md:text-base mb-6 max-w-md mx-auto" style={{ color: "var(--muted)" }}>
-                Comece com 5 campanhas por R$ 9,90. Modelo virtual, legendas e score — tudo incluso.
+                Comece com 3 campanhas por R$ 19,90. Modelo virtual, legendas e score — tudo incluso.
               </p>
               <Link href="/sign-up" className="btn-primary text-sm md:text-base !py-3.5 !px-8 hover:animate-pulse-glow inline-flex min-h-[48px] items-center" aria-label="Criar minha primeira campanha com IA">
                 <IconZap />

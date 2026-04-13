@@ -6,6 +6,10 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getModelLimitForPlan, getHistoryDaysForPlan } from "@/lib/plans";
+
+// Re-export for consumers
+export { getModelLimitForPlan, getHistoryDaysForPlan };
 
 // ═══════════════════════════════════════════════════════════
 // STORES
@@ -250,29 +254,7 @@ export async function getStorePlanName(storeId: string): Promise<string> {
   return plans.name || "free";
 }
 
-/** Limites de modelos por plano */
-export function getModelLimitForPlan(planName: string): number {
-  const limits: Record<string, number> = {
-    gratis: 0,
-    free: 0,
-    essencial: 3,
-    pro: 10,
-    business: 25,
-  };
-  return limits[planName] ?? 0;
-}
-
-/** Dias de histórico por plano (0 = ilimitado) */
-export function getHistoryDaysForPlan(planName: string): number {
-  const limits: Record<string, number> = {
-    gratis: 7,
-    free: 7,
-    essencial: 30,
-    pro: 365,
-    business: 0,
-  };
-  return limits[planName] ?? 7;
-}
+/* getModelLimitForPlan and getHistoryDaysForPlan are imported from @/lib/plans */
 
 /** Incrementa o contador de regenerações de uma campanha (ATÔMICO via RPC) */
 export async function incrementRegenCount(campaignId: string): Promise<number> {

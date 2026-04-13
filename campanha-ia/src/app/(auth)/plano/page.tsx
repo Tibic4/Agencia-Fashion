@@ -23,17 +23,18 @@ interface StoreData {
 }
 
 const plans = [
-  { id: "essencial", name: "Essencial", badge: "💡", price: 69, campaigns: 15, models: 3, highlight: false },
-  { id: "pro", name: "Pro", badge: "🚀", price: 149, campaigns: 50, models: 10, highlight: true },
-  { id: "business", name: "Business", badge: "🏢", price: 299, campaigns: 120, models: 25, highlight: false },
+  { id: "essencial", name: "Essencial", badge: "💡", price: 179, campaigns: 15, models: 5, highlight: false },
+  { id: "pro", name: "Pro", badge: "🚀", price: 359, campaigns: 40, models: 15, highlight: true },
+  { id: "business", name: "Business", badge: "🏢", price: 749, campaigns: 100, models: 40, highlight: false },
 ];
 
 const extras = [
-  { label: "+5 campanhas", price: "R$ 19,90", packageId: "5_campanhas" },
-  { label: "+15 campanhas", price: "R$ 49,90", packageId: "15_campanhas" },
-  { label: "+30 campanhas", price: "R$ 89,90", packageId: "30_campanhas" },
-  { label: "+3 modelos virtuais", price: "R$ 9,90", packageId: "3_modelos" },
-  { label: "+5 modelos virtuais", price: "R$ 14,90", packageId: "5_modelos" },
+  { label: "+3 campanhas", price: "R$ 49,90", packageId: "3_campanhas" },
+  { label: "+10 campanhas", price: "R$ 149,90", packageId: "10_campanhas" },
+  { label: "+20 campanhas", price: "R$ 249,00", packageId: "20_campanhas" },
+  { label: "+3 modelos virtuais", price: "R$ 19,90", packageId: "3_modelos" },
+  { label: "+10 modelos virtuais", price: "R$ 49,90", packageId: "10_modelos" },
+  { label: "+25 modelos virtuais", price: "R$ 99,90", packageId: "25_modelos" },
 ];
 
 export default function Plano() {
@@ -337,11 +338,11 @@ export default function Plano() {
               <h4 className="text-lg font-bold">Teste na Prática</h4>
             </div>
             <div className="flex items-baseline justify-center gap-1 mb-1">
-              <span className="text-2xl font-black">R$ 9,90</span>
+              <span className="text-2xl font-black">R$ 19,90</span>
               <span className="text-sm" style={{ color: "var(--muted)" }}>único</span>
             </div>
             <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>
-              5 campanhas + 1 modelo virtual • Sem mensalidade
+              3 campanhas + 1 modelo virtual • Sem mensalidade
             </p>
             <button
               onClick={() => handleCreditCheckout("trial")}
@@ -349,7 +350,7 @@ export default function Plano() {
               className="w-full max-w-xs mx-auto py-3 px-2 rounded-full text-[12px] sm:text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
               style={{ background: "var(--gradient-brand)", color: "white" }}
             >
-              {creditLoading === "trial" ? "Abrindo checkout..." : "⚡ Testar por R$ 9,90"}
+              {creditLoading === "trial" ? "Abrindo checkout..." : "⚡ Testar por R$ 19,90"}
             </button>
           </div>
         </div>
