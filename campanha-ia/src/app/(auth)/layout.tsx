@@ -163,21 +163,25 @@ export default function AuthLayout({
             ) : campaignsLimit === 0 ? (
               /* Sem plano — CTA para comprar */
               <>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🎯</span>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">✨</span>
                   <span className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>
-                    Sem créditos
+                    Comece a criar
                   </span>
                 </div>
+                <p className="text-[11px] mb-3 leading-relaxed" style={{ color: "var(--muted)" }}>
+                  Assine um plano e gere fotos profissionais com IA.
+                </p>
                 <Link
                   href="/plano"
-                  className="block w-full text-center text-xs font-bold py-2 rounded-lg transition-all hover:scale-[1.02]"
+                  className="block w-full text-center text-xs font-bold py-2.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: "var(--gradient-brand)",
                     color: "white",
+                    boxShadow: "0 4px 12px rgba(236,72,153,0.2)",
                   }}
                 >
-                  Comece agora →
+                  ⚡ Ativar plano →
                 </Link>
               </>
             ) : (
@@ -256,14 +260,18 @@ export default function AuthLayout({
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {usage && campaignsLimit === 0 ? (
-            <Link href="/plano" className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: "rgba(217,70,239,0.12)", color: "var(--brand-500)", border: "1px solid rgba(217,70,239,0.2)" }}>
-              Sem plano
+            <Link 
+              href="/plano" 
+              className="text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 min-h-[32px] active:scale-95 transition-transform"
+              style={{ background: "var(--gradient-brand)", color: "white", boxShadow: "0 2px 8px rgba(236,72,153,0.3)" }}
+            >
+              ⚡ Ativar plano
             </Link>
-          ) : (
-            <span className="text-[10px] font-bold gradient-text">
-              {usage ? `${campaignsUsed}/${campaignsLimit}` : ""}
+          ) : usage ? (
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+              {`${campaignsUsed}/${campaignsLimit}`}
             </span>
-          )}
+          ) : null}
         </div>
       </header>
 
