@@ -471,8 +471,10 @@ export default function GerarCampanha() {
   }
 
   return (
-    <div className="animate-fade-in-up w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
-      {/* Quota Exceeded Modal (seção 5.5) */}
+    <>
+      {/* ── Modals — FORA da div com transform (senão fixed fica broken no mobile) ── */}
+
+      {/* Quota Exceeded Modal */}
       {quotaExceeded && (
         <QuotaExceededModal
           used={quotaExceeded.used}
@@ -481,7 +483,6 @@ export default function GerarCampanha() {
           onClose={() => setQuotaExceeded(null)}
           onUpgrade={() => { window.location.href = "/plano"; }}
           onBuyCredits={async (type, qty) => {
-            // Mapear type+qty para packageId que a API espera
             const packageMap: Record<string, string> = {
               "campaigns_3": "3_campanhas",
               "campaigns_10": "10_campanhas",
@@ -492,9 +493,8 @@ export default function GerarCampanha() {
             };
             const packageId = packageMap[`${type}_${qty}`];
             if (!packageId) return;
-
             try {
-              const res = await fetch("/api/credits", {
+              const res = await fetch("/api/credits/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ packageId }),
@@ -506,16 +506,16 @@ export default function GerarCampanha() {
         />
       )}
 
-      {/* Error Modal — mobile-first overlay */}
+      {/* Error Modal — centralizado na viewport */}
       {error && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fade-in-up"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
           onClick={() => setError(null)}
         >
           <div
-            className="w-full sm:max-w-md mx-auto rounded-t-3xl sm:rounded-2xl overflow-hidden animate-fade-in-up"
-            style={{ background: "var(--background)", boxShadow: "0 -4px 40px rgba(0,0,0,0.15)" }}
+            className="w-full max-w-sm mx-auto rounded-2xl overflow-hidden"
+            style={{ background: "var(--background)", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Visual header */}
@@ -582,6 +582,9 @@ export default function GerarCampanha() {
           </div>
         </div>
       )}
+
+      {/* ── Main Form ── */}
+      <div className="animate-fade-in-up w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
 
       {/* Header */}
       <div className="mb-8">
@@ -1583,6 +1586,7 @@ export default function GerarCampanha() {
           </div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 }
