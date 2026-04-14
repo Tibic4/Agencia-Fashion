@@ -1,8 +1,6 @@
 import { requireAdmin } from "@/lib/admin/guard";
 import { redirect } from "next/navigation";
-import dynamic from "next/dynamic";
-
-const InstagramEditor = dynamic(() => import("@/components/InstagramEditor"), { ssr: false });
+import EditorClient from "./EditorClient";
 
 export default async function EditorPage() {
   const admin = await requireAdmin();
@@ -16,7 +14,7 @@ export default async function EditorPage() {
           Monte posts prontos para Instagram — feed 4:5 ou stories 9:16
         </p>
       </div>
-      <InstagramEditor />
+      <EditorClient />
     </div>
   );
 }
