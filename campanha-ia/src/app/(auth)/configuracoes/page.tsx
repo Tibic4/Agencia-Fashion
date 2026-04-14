@@ -31,6 +31,8 @@ export default function Configuracoes() {
   const [backdropGenerating, setBackdropGenerating] = useState(false);
   const [backdropCanRegenerate, setBackdropCanRegenerate] = useState(true);
   const [backdropNextDate, setBackdropNextDate] = useState<string | null>(null);
+  const [backdropSeason, setBackdropSeason] = useState<string>("primavera");
+  const [backdropStoredSeason, setBackdropStoredSeason] = useState<string | null>(null);
   const backdropPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const segments = [
@@ -99,6 +101,10 @@ export default function Configuracoes() {
           }
           setBackdropCanRegenerate(data.data.canRegenerate ?? true);
           setBackdropNextDate(data.data.nextAvailableDate || null);
+          if (data.data.season) {
+            setBackdropSeason(data.data.season);
+            setBackdropStoredSeason(data.data.season);
+          }
         }
       })
       .catch(() => {}); // non-critical
@@ -150,7 +156,7 @@ export default function Configuracoes() {
       const res = await fetch("/api/store/backdrop", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brandColor }),
+        body: JSON.stringify({ brandColor, season: backdropSeason }),
       });
 
       if (!res.ok) {
@@ -383,6 +389,54 @@ export default function Configuracoes() {
               Fundo exclusivo gerado por IA na cor da sua marca — garante fotos com identidade visual consistente
             </p>
 
+            {/* Season selector */}
+            <div className="mb-4">
+              <p className="text-xs font-semibold mb-2" style={{ color: "var(--foreground)" }}>
+                ✨ Estação do estúdio
+              </p>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "primavera", emoji: "🌸", label: "Primavera" },
+                  { id: "verao", emoji: "☀️", label: "Verão" },
+                  { id: "outono", emoji: "🍂", label: "Outono" },
+                  { id: "inverno", emoji: "❄️", label: "Inverno" },
+                ].map((s) => {
+                  const isActive = backdropSeason === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setBackdropSeason(s.id);
+                        haptics.light();
+                      }}
+                      disabled={backdropGenerating}
+                      className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all duration-200 min-h-[60px]"
+                      style={{
+                        background: isActive
+                          ? "var(--gradient-brand)"
+                          : "var(--surface)",
+                        border: isActive
+                          ? "1.5px solid var(--brand-500)"
+                          : "1px solid var(--border)",
+                        color: isActive ? "white" : "var(--foreground)",
+                        boxShadow: isActive
+                          ? "0 4px 16px rgba(var(--brand-rgb, 123,46,191), 0.25)"
+                          : "none",
+                        transform: isActive ? "scale(1.02)" : "scale(1)",
+                        opacity: backdropGenerating ? 0.5 : 1,
+                      }}
+                    >
+                      <span className="text-lg leading-none">{s.emoji}</span>
+                      <span className="text-[10px] font-semibold leading-tight">{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] mt-1.5 text-center" style={{ color: "var(--muted)" }}>
+                Define a iluminação e clima do cenário
+              </p>
+            </div>
+
             {/* Backdrop preview */}
             {backdropUrl ? (
               <div className="rounded-xl overflow-hidden mb-4 relative" style={{ border: "1px solid var(--border)" }}>
@@ -454,7 +508,7 @@ export default function Configuracoes() {
             )}
 
             {/* Generate/Regenerate button */}
-            {backdropCanRegenerate ? (
+            {(backdropCanRegenerate || (backdropStoredSeason && backdropSeason !== backdropStoredSeason)) ? (
               <button
                 onClick={handleGenerateBackdrop}
                 disabled={backdropGenerating || !brandColor}
@@ -489,7 +543,7 @@ export default function Configuracoes() {
               </div>
             )}
 
-            {!backdropCanRegenerate && (
+            {!backdropCanRegenerate && backdropSeason === backdropStoredSeason && (
               <p className="text-[11px] text-center mt-2" style={{ color: "var(--muted)" }}>
                 Atualização disponível 1x a cada 30 dias
               </p>

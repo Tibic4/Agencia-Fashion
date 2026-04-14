@@ -23,6 +23,7 @@ interface StoreDetail extends StoreRow {
   credit_regenerations: number;
   backdrop_ref_url: string | null;
   backdrop_color: string | null;
+  backdrop_season: string | null;
   backdrop_updated_at: string | null;
   brand_color: string | null;
   logo_url: string | null;
@@ -46,10 +47,19 @@ export default function AdminClientes() {
   const [creditCampaigns, setCreditCampaigns] = useState(0);
   const [creditModels, setCreditModels] = useState(0);
 
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteTyped, setDeleteTyped] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   // Fetch stores
   const fetchStores = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/stores/list");
+      if (!res.ok) {
+        console.error("Erro ao carregar lojas:", res.status);
+        return;
+      }
       const json = await res.json();
       // Normalizar joins (Supabase retorna array)
       const normalized = (json.stores || []).map((s: Record<string, unknown>) => ({
@@ -58,8 +68,8 @@ export default function AdminClientes() {
         plans: Array.isArray(s.plans) ? s.plans[0] || null : s.plans,
       }));
       setStores(normalized);
-    } catch {
-      console.error("Erro ao carregar lojas");
+    } catch (err) {
+      console.error("Erro ao carregar lojas:", err);
     } finally {
       setLoading(false);
     }
@@ -71,8 +81,16 @@ export default function AdminClientes() {
   const openModal = async (storeId: string) => {
     setModalOpen(true);
     setModalLoading(true);
+    setDeleteConfirm(false);
+    setDeleteTyped("");
     try {
       const res = await fetch(`/api/admin/stores?id=${storeId}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast(`❌ ${err.error || "Erro ao carregar detalhes"}`);
+        setModalOpen(false);
+        return;
+      }
       const json = await res.json();
       if (json.store) {
         // Normalizar joins do Supabase (vêm como array)
@@ -84,7 +102,8 @@ export default function AdminClientes() {
         setCreditModels(raw.credit_models || 0);
       }
     } catch {
-      console.error("Erro ao carregar detalhes");
+      showToast("❌ Erro de conexão");
+      setModalOpen(false);
     } finally {
       setModalLoading(false);
     }
@@ -93,6 +112,8 @@ export default function AdminClientes() {
   const closeModal = () => {
     setModalOpen(false);
     setSelectedStore(null);
+    setDeleteConfirm(false);
+    setDeleteTyped("");
   };
 
   // Save credits
@@ -109,21 +130,27 @@ export default function AdminClientes() {
           credit_models: creditModels,
         }),
       });
-      if (res.ok) {
-        showToast("✅ Créditos atualizados");
-        fetchStores();
-        // Refresh modal data
-        const fresh = await fetch(`/api/admin/stores?id=${selectedStore.id}`);
-        const json = await fresh.json();
-        if (json.store) {
-          const raw = json.store;
-          raw.store_usage = Array.isArray(raw.store_usage) ? raw.store_usage[0] || null : raw.store_usage;
-          raw.plans = Array.isArray(raw.plans) ? raw.plans[0] || null : raw.plans;
-          setSelectedStore(raw);
-        }
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        showToast(`❌ ${data.error || "Erro ao salvar"}`);
+        return;
+      }
+
+      showToast("✅ Créditos atualizados");
+      fetchStores();
+      // Refresh modal data
+      const fresh = await fetch(`/api/admin/stores?id=${selectedStore.id}`);
+      const json = await fresh.json();
+      if (json.store) {
+        const raw = json.store;
+        raw.store_usage = Array.isArray(raw.store_usage) ? raw.store_usage[0] || null : raw.store_usage;
+        raw.plans = Array.isArray(raw.plans) ? raw.plans[0] || null : raw.plans;
+        setSelectedStore(raw);
       }
     } catch {
-      showToast("❌ Erro ao salvar");
+      showToast("❌ Erro de conexão ao salvar");
     } finally {
       setSaving(false);
     }
@@ -142,14 +169,48 @@ export default function AdminClientes() {
           reset_backdrop: true,
         }),
       });
-      if (res.ok) {
-        showToast("✅ Backdrop liberado para regeneração");
-        setSelectedStore(prev => prev ? { ...prev, backdrop_updated_at: null } : null);
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        showToast(`❌ ${data.error || "Erro ao liberar backdrop"}`);
+        return;
       }
+
+      showToast("✅ Backdrop liberado para regeneração");
+      setSelectedStore(prev => prev ? { ...prev, backdrop_updated_at: null } : null);
     } catch {
-      showToast("❌ Erro ao liberar backdrop");
+      showToast("❌ Erro de conexão");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Delete store
+  const handleDeleteStore = async () => {
+    if (!selectedStore) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/admin/stores", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeId: selectedStore.id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        showToast(`❌ ${data.error || "Erro ao deletar"}`);
+        return;
+      }
+
+      showToast(`✅ "${selectedStore.name}" deletada`);
+      closeModal();
+      fetchStores();
+    } catch {
+      showToast("❌ Erro de conexão ao deletar");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -165,6 +226,14 @@ export default function AdminClientes() {
     if (n.includes("essencial")) return "bg-blue-500/15 text-blue-400 border-blue-500/30";
     if (n.includes("pro")) return "bg-amber-500/15 text-amber-400 border-amber-500/30";
     return "bg-gray-500/15 text-gray-400 border-gray-500/30";
+  };
+
+  // Season emoji
+  const seasonEmoji = (s: string | null) => {
+    if (s === "verao") return "☀️";
+    if (s === "outono") return "🍂";
+    if (s === "inverno") return "❄️";
+    return "🌸";
   };
 
   if (loading) {
@@ -328,6 +397,9 @@ export default function AdminClientes() {
                     {selectedStore.backdrop_ref_url && (
                       <span className="text-[10px] text-emerald-400 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Gerado
+                        {selectedStore.backdrop_season && (
+                          <span className="ml-1">{seasonEmoji(selectedStore.backdrop_season)}</span>
+                        )}
                       </span>
                     )}
                   </div>
@@ -451,6 +523,59 @@ export default function AdminClientes() {
                     "💾 Salvar alterações"
                   )}
                 </button>
+
+                {/* ── Zona de perigo ── */}
+                <div className="rounded-xl p-4 border border-red-900/40 bg-red-950/20 space-y-3">
+                  <h3 className="text-sm font-semibold text-red-400 flex items-center gap-2">⚠️ Zona de perigo</h3>
+
+                  {!deleteConfirm ? (
+                    <button
+                      onClick={() => setDeleteConfirm(true)}
+                      disabled={saving || deleting}
+                      className="w-full py-2.5 rounded-lg text-xs font-semibold transition bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-40"
+                    >
+                      🗑️ Apagar loja e todos os dados
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-[11px] text-red-300">
+                        Essa ação é <strong>irreversível</strong>. Todos os dados serão apagados: campanhas, modelos, fotos, custos e configurações.
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        Digite <strong className="text-red-400">{selectedStore.name}</strong> para confirmar:
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteTyped}
+                        onChange={(e) => setDeleteTyped(e.target.value)}
+                        placeholder={selectedStore.name}
+                        className="w-full bg-gray-800 border border-red-500/30 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-red-500/60"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setDeleteConfirm(false); setDeleteTyped(""); }}
+                          className="flex-1 py-2.5 rounded-lg text-xs font-semibold transition bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleDeleteStore}
+                          disabled={deleteTyped !== selectedStore.name || deleting}
+                          className="flex-1 py-2.5 rounded-lg text-xs font-semibold transition bg-red-600 text-white hover:bg-red-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                        >
+                          {deleting ? (
+                            <>
+                              <div className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin border-white" />
+                              Apagando...
+                            </>
+                          ) : (
+                            "🗑️ Confirmar exclusão"
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Footer info */}
                 <p className="text-[10px] text-gray-600 text-center">

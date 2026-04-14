@@ -299,6 +299,7 @@ export const generateModelPreviewJob = inngest.createFunction(
 interface BackdropGenerateEvent {
   storeId: string;
   brandColor: string;
+  season?: string;
 }
 
 /**
@@ -327,9 +328,10 @@ export const generateBackdropJob = inngest.createFunction(
 
     // Step 1: Gerar backdrop via Gemini
     const result = await step.run("generate-backdrop-image", async () => {
-      console.log(`[Inngest:Backdrop] 🎨 Gerando estúdio para store ${data.storeId} (${data.brandColor})...`);
+      console.log(`[Inngest:Backdrop] 🎨 Gerando estúdio para store ${data.storeId} (${data.brandColor}) [${data.season || 'primavera'}]...`);
       const { generateBackdrop } = await import("@/lib/ai/backdrop-generator");
-      return await generateBackdrop(data.storeId, data.brandColor);
+      const season = (data.season as any) || "primavera";
+      return await generateBackdrop(data.storeId, data.brandColor, season);
     });
 
     console.log(`[Inngest:Backdrop] ✅ Backdrop salvo: ${result.url.slice(0, 60)}...`);

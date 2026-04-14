@@ -37,6 +37,7 @@ export interface StoreRecord {
   brand_colors: { primary?: string } | null;
   backdrop_ref_url: string | null;
   backdrop_color: string | null;
+  backdrop_season: string | null;
   backdrop_updated_at: string | null;
   onboarding_completed: boolean;
   created_at: string;
