@@ -239,6 +239,44 @@ export async function generateBackdrop(
 
   console.log(`[Backdrop] 🏪 Store ${storeId} updated — backdrop: ${publicUrl}`);
 
+  // ── Logar custo no admin ──
+  try {
+    const { getModelPricing, getExchangeRate } = await import("@/lib/pricing");
+    const pricing = await getModelPricing();
+    const exchangeRate = await getExchangeRate();
+    const modelPrice = pricing[MODEL] || { inputPerMTok: 2.00, outputPerMTok: 120.00 };
+
+    // Backdrop: text-only prompt (~1000 tokens input), 1 imagem gerada (~4000 tokens output)
+    const inputTokens = 1000;
+    const outputTokens = 4000;
+    const costUsd =
+      (inputTokens * modelPrice.inputPerMTok) / 1_000_000 +
+      (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
+    const costBrl = costUsd * exchangeRate;
+
+    await supabase.from("api_cost_logs").insert({
+      store_id: storeId,
+      campaign_id: null,
+      provider: "google",
+      model_used: MODEL,
+      action: "backdrop_studio",
+      cost_usd: costUsd,
+      cost_brl: costBrl,
+      exchange_rate: exchangeRate,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      tokens_used: inputTokens + outputTokens,
+      response_time_ms: durationMs,
+    });
+
+    console.log(
+      `[Backdrop] 💰 Custo: $${costUsd.toFixed(4)} / R$ ${costBrl.toFixed(4)}` +
+      ` | pricing: $${modelPrice.inputPerMTok}/MTok in, $${modelPrice.outputPerMTok}/MTok out`
+    );
+  } catch (costErr) {
+    console.warn("[Backdrop] ⚠️ Falha ao logar custo:", costErr);
+  }
+
   return {
     url: publicUrl,
     color: hex,
