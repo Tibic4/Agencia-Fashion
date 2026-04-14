@@ -194,11 +194,8 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      haptics.light();
-                      fileInputRef.current?.click();
-                    }}
-                    className="w-full py-12 rounded-xl flex flex-col items-center gap-3 transition hover:opacity-80 cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-12 rounded-xl flex flex-col items-center gap-3 transition hover:opacity-80 cursor-pointer active:scale-[0.98]"
                     style={{ border: "2px dashed var(--border)", background: "var(--surface)" }}
                   >
                     <span className="text-4xl">📤</span>
