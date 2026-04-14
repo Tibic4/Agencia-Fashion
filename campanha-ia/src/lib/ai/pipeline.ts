@@ -130,18 +130,49 @@ export async function runCampaignPipeline(
   const imageProgressEnd = 85;   // ending progress after all images
   const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
-  // ── Backdrop injection: PROGRAMMATIC override ──
-  // Instead of trusting the AI text model to copy backdrop text identically
-  // into all 3 scene_prompts (which fails ~70% of the time), we inject the
-  // EXACT SAME backdrop string into each prompt here in the pipeline.
+  // ── Backdrop injection: VISUAL REFERENCE or text fallback ──
+  // If the store has a generated backdrop reference image (empty studio in brand color),
+  // we send it as the LAST image to each VTO call for visual consistency.
+  // If not available, falls back to text-based backdrop prompt.
   let finalPrompts = analyzerResult.vto_hints.scene_prompts as [string, string, string];
+  let backdropBase64: string | undefined;
+  let backdropMime: string | undefined;
 
   if (input.backgroundType === "minha_marca" && input.brandColor) {
-    const backdropText = getTexturedBackdropPrompt(input.brandColor);
-    console.log(`[Pipeline] 🎨 Injecting programmatic backdrop for ${input.brandColor} into all 3 prompts`);
-    finalPrompts = finalPrompts.map(
-      (prompt) => `${prompt}\n\n${backdropText}`
-    ) as [string, string, string];
+    // Try to load visual backdrop reference from store
+    if (input.storeId) {
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/admin");
+        const supabase = createAdminClient();
+        const { data: store } = await supabase
+          .from("stores")
+          .select("backdrop_ref_url, backdrop_color")
+          .eq("id", input.storeId)
+          .single();
+
+        const normalizeHex = (h: string) => h.replace(/^#/, "").toLowerCase();
+        if (store?.backdrop_ref_url && normalizeHex(store.backdrop_color || "") === normalizeHex(input.brandColor)) {
+          const { downloadBackdropBase64 } = await import("./backdrop-generator");
+          const downloaded = await downloadBackdropBase64(store.backdrop_ref_url);
+          if (downloaded) {
+            backdropBase64 = downloaded;
+            backdropMime = "image/png";
+            console.log(`[Pipeline] 🖼️ Backdrop ref loaded for ${input.brandColor}`);
+          }
+        }
+      } catch (err) {
+        console.warn("[Pipeline] ⚠️ Failed to load backdrop ref:", err);
+      }
+    }
+
+    // Fallback: inject text-based backdrop prompt if no visual available
+    if (!backdropBase64) {
+      const backdropText = getTexturedBackdropPrompt(input.brandColor);
+      console.log(`[Pipeline] 🎨 Fallback: text backdrop for ${input.brandColor}`);
+      finalPrompts = finalPrompts.map(
+        (prompt) => `${prompt}\n\n${backdropText}`
+      ) as [string, string, string];
+    }
   }
 
   const imageResult = await generateWithGeminiVTO({
@@ -150,6 +181,8 @@ export async function runCampaignPipeline(
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
     modelMediaType: input.modelMediaType,
+    backdropImageBase64: backdropBase64,
+    backdropMediaType: backdropMime,
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
     aspectRatio: analyzerResult.vto_hints.aspect_ratio,
     gender: input.modelInfo?.gender,
