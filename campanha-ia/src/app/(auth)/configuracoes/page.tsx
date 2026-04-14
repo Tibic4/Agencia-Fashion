@@ -77,7 +77,26 @@ export default function Configuracoes() {
         if (!res.ok) return;
         const data = await res.json();
         if (data?.data) {
-          setBackdropUrl(data.data.url || null);
+          if (data.data.url) {
+            setBackdropUrl(data.data.url);
+            // Backdrop exists — clear any stale generating flag
+            localStorage.removeItem("backdrop_generating");
+          } else {
+            // No URL yet — check if we should resume polling (generation in progress)
+            const flag = localStorage.getItem("backdrop_generating");
+            if (flag) {
+              const startedAt = parseInt(flag, 10);
+              const elapsed = Date.now() - startedAt;
+              if (elapsed < 90_000) {
+                // Still within timeout — resume polling
+                setBackdropGenerating(true);
+                startBackdropPolling();
+              } else {
+                // Expired — clear flag
+                localStorage.removeItem("backdrop_generating");
+              }
+            }
+          }
           setBackdropCanRegenerate(data.data.canRegenerate ?? true);
           setBackdropNextDate(data.data.nextAvailableDate || null);
         }
@@ -88,6 +107,38 @@ export default function Configuracoes() {
       if (backdropPollRef.current) clearInterval(backdropPollRef.current);
     };
   }, []);
+
+  // ── Backdrop polling helper (reusable) ──
+  const startBackdropPolling = () => {
+    let attempts = 0;
+    const maxAttempts = 30; // 30 * 3s = 90s max
+
+    if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+
+    backdropPollRef.current = setInterval(async () => {
+      attempts++;
+      try {
+        const pollRes = await fetch("/api/store/backdrop");
+        if (pollRes.ok) {
+          const pollData = await pollRes.json();
+          if (pollData?.data?.url) {
+            setBackdropUrl(pollData.data.url);
+            setBackdropGenerating(false);
+            setBackdropCanRegenerate(pollData.data.canRegenerate ?? false);
+            setBackdropNextDate(pollData.data.nextAvailableDate || null);
+            localStorage.removeItem("backdrop_generating");
+            if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+          }
+        }
+      } catch {}
+
+      if (attempts >= maxAttempts) {
+        setBackdropGenerating(false);
+        localStorage.removeItem("backdrop_generating");
+        if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+      }
+    }, 3000);
+  };
 
   // ── Generate/regenerate backdrop ──
   const handleGenerateBackdrop = async () => {
@@ -112,33 +163,11 @@ export default function Configuracoes() {
         throw new Error(data.error || "Erro ao gerar estúdio");
       }
 
-      // Start polling for backdrop completion
-      let attempts = 0;
-      const maxAttempts = 20; // 20 * 3s = 60s max
+      // Persist generating state for page navigation resilience
+      localStorage.setItem("backdrop_generating", String(Date.now()));
 
-      if (backdropPollRef.current) clearInterval(backdropPollRef.current);
-
-      backdropPollRef.current = setInterval(async () => {
-        attempts++;
-        try {
-          const pollRes = await fetch("/api/store/backdrop");
-          if (pollRes.ok) {
-            const pollData = await pollRes.json();
-            if (pollData?.data?.url && pollData.data.url !== backdropUrl) {
-              setBackdropUrl(pollData.data.url);
-              setBackdropGenerating(false);
-              setBackdropCanRegenerate(pollData.data.canRegenerate ?? false);
-              setBackdropNextDate(pollData.data.nextAvailableDate || null);
-              if (backdropPollRef.current) clearInterval(backdropPollRef.current);
-            }
-          }
-        } catch {}
-
-        if (attempts >= maxAttempts) {
-          setBackdropGenerating(false);
-          if (backdropPollRef.current) clearInterval(backdropPollRef.current);
-        }
-      }, 3000);
+      // Start polling
+      startBackdropPolling();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao gerar estúdio";
       setError(message);

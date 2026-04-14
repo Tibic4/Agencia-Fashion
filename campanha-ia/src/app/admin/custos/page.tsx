@@ -46,7 +46,7 @@ async function getCosts() {
   });
 
   // Group by pipeline step — only show current v6 actions
-  const v6Actions = new Set(["gemini_analyzer", "sonnet_analyzer", "gemini_vto_v5", "gemini_vto_v6", "model_preview"]);
+  const v6Actions = new Set(["gemini_analyzer", "sonnet_analyzer", "gemini_vto_v5", "gemini_vto_v6", "model_preview", "backdrop_studio"]);
   const byStep: Record<string, { calls: number; cost: number }> = {};
   filteredThisMonth.forEach((row) => {
     const step = row.action || "unknown";
@@ -123,6 +123,7 @@ const stepLabels: Record<string, string> = {
   gemini_vto_v5: "👗 Virtual Try-On v5 (legacy)",
   gemini_vto_v6: "👗 Virtual Try-On v6 (Gemini 3 Pro Image)",
   model_preview: "🧍 Preview de modelo (Gemini 3.1 Flash Image)",
+  backdrop_studio: "🎨 Fundo personalizado (Gemini 3 Pro Image)",
   smart_tips: "✍️ Copywriter Pro (removido — legacy)",
   sonnet_analyzer: "🧠 Análise (Sonnet — legacy)",
 };
