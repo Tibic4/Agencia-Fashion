@@ -38,98 +38,42 @@ function getAI(): GoogleGenAI {
 }
 
 // ═══════════════════════════════════════
-// Prompt builder
+// Season types & Prompt builder
 // ═══════════════════════════════════════
+
+export type BackdropSeason = "primavera" | "verao" | "outono" | "inverno";
+
+const SEASON_LIGHTING: Record<BackdropSeason, string> = {
+  primavera: `Soft, naturally diffused daylight as if streaming through large studio windows on a bright spring morning. The light has a clean, airy quality — neither warm nor cool, just pure natural white light with a very subtle pink warmth. It creates gentle, barely-visible shadows that keep the scene feeling open and fresh. A delicate pool of light falls on the center of the white floor. The overall mood is fresh, light, and delicate — like a crisp spring morning.`,
+
+  verao: `Bright, warm golden-hour light flooding the studio from the front-left. The light has a noticeable warm golden cast that makes the wall color appear rich and sun-kissed. Strong, confident illumination with minimal shadows — the scene feels vibrant and energetic. A generous pool of warm golden light falls across the center floor, creating a gentle warm reflection. The overall mood is energetic, warm, and tropical — like a radiant summer afternoon.`,
+
+  outono: `Soft, warm amber-toned lighting as if from late afternoon sun filtering through the studio. The light has a cozy, intimate quality with golden-amber undertones that enrich the wall color. It creates gentle directional shadows with soft edges, adding depth and warmth. A muted amber-tinted pool of light rests on the center floor. The overall mood is earthy, warm, and intimate — like a golden autumn sunset.`,
+
+  inverno: `Crisp, cool-toned daylight as if from an overcast winter sky streaming through north-facing windows. The light has a subtle blue-white quality that feels clean and ethereal. Sharp, even illumination with minimal warmth — the scene feels pure and sophisticated. The white floor takes on a very subtle cool blue tint from the reflected light. The overall mood is minimal, icy, and sophisticated — like a serene winter morning.`,
+};
 
 /**
  * Builds the prompt for generating an empty studio backdrop.
- * Only the wall color ({hex}) is variable — everything else is fixed.
+ * Uses narrative-style description (per Gemini docs best practices).
+ * Season controls ONLY the lighting mood — wall stays flat solid color.
  */
-function buildBackdropPrompt(hex: string): string {
-  return `CONTEXT & OBJECTIVE:
-Generate a hyper-realistic image of a COMPLETELY EMPTY fashion store fitting room background.
+function buildBackdropPrompt(hex: string, season: BackdropSeason = "primavera"): string {
+  const lighting = SEASON_LIGHTING[season];
 
----
+  return `A photorealistic interior photograph of a completely empty fashion photography studio, captured with an 85mm portrait lens at eye level, approximately 1.5 meters height. The composition is vertical 9:16 portrait format.
 
-ABSOLUTE RULE — EMPTY:
-The scene must be 100% empty.
-No people, no objects, no furniture, nothing.
+The back wall occupies the upper 60% of the frame and the floor occupies the lower 40%. The wall-to-floor junction sits slightly below the vertical center, creating a sharp, clean straight-line horizontal transition. A realistic contact shadow runs along the entire wall-floor junction line — this shadow is essential for depth and must not be omitted.
 
----
+The wall is painted in a single, exact solid color: ${hex}. It has a perfectly flat matte finish with very subtle plaster micro-texture. The color is completely uniform across the entire wall surface — absolutely no gradient, no pattern, no color variation whatsoever. There is only a natural 2% light falloff toward the far corners.
 
-COMPOSITION:
-- Front-facing camera at eye-level (~1.5m height)
-- 85mm portrait lens equivalent
-- Vertical 9:16
-- Natural perspective with slight depth of field
-- Wall fills ~60% of frame (top), floor fills ~40% (bottom)
-- Wall-floor junction sits slightly below center of frame
+The floor is clean white (#FFFFFF) smooth matte painted concrete with subtle micro-texture that makes it look like a real physical surface. The floor is NOT glossy, NOT reflective, and NOT mirror-like. Near the wall junction, a very faint color bounce from the ${hex} wall tints the white floor — this tint gradually fades to pure white as it approaches the camera. The floor has a soft natural luminosity gradient: slightly darker near the wall, brighter near the camera.
 
----
+${lighting}
 
-WALL:
-- Color: EXACT ${hex}
-- Matte finish with very subtle plaster texture
-- Uniform color — no gradients, no patterns
-- Slight natural falloff toward corners (2% darker at edges)
+The scene must be completely empty — there are zero objects, zero furniture, zero decoration, zero props, zero plants, and zero people anywhere in the frame. No mannequin, no text, no watermark, no logo. The entire center of the frame is open negative space designed for placing a standing fashion model later. This is a clean, minimalist, real retail studio environment with natural depth.
 
----
-
-FLOOR (REALISM FIX):
-- Color base: EXACT #FFFFFF
-
-IMPORTANT — The floor MUST look real, not flat:
-- Add VERY subtle micro texture (like smooth painted concrete)
-- Add a soft light gradient (slightly darker toward the back near the wall)
-- Add realistic contact shadow where the wall meets the floor
-- Add minimal soft reflection (diffused, not glossy)
-- Near the wall: a VERY subtle color tint from the wall color bouncing onto the white floor — fades to pure white toward camera
-
-DO NOT:
-- make it perfectly flat white
-- remove contact shadow
-- make it glossy, shiny, or reflective in ANY way
-- show any reflection of objects on the floor
-
----
-
-WALL + FLOOR CONNECTION:
-- Straight corner with clean transition
-- Slight natural shadow at the base (ESSENTIAL for depth)
-
----
-
-LIGHTING:
-- Soft, natural indoor lighting from slightly above and front
-- A gentle pool of light falls on the center floor area
-- Creates natural falloff toward edges
-- No harsh shadows, no visible light sources
-
----
-
-ATMOSPHERE:
-- Clean, minimalist, real retail environment
-- Natural depth (NOT artificial or flat)
-- Smooth color transitions with no visible banding
-
----
-
-NEGATIVE PROMPT:
-no objects, no chair, no frame, no decor, no mirror, no rack, no clothing, no people, no mannequin, no props, no text, no logos, no watermark, no banding, no flat shading
-
----
-
-FINAL VALIDATION:
-If the floor looks flat or artificial, the image is incorrect.
-If any object appears, the image is invalid.
-If wall-floor junction has no shadow, the image is invalid.
-
----
-
-OUTPUT:
-- Photorealistic
-- 2K resolution
-- Vertical 9:16`;
+If the floor looks flat or artificial, the image is incorrect. If any object appears, the image is invalid. If the wall-floor junction has no contact shadow, the image is invalid.`;
 }
 
 // ═══════════════════════════════════════
@@ -139,6 +83,7 @@ OUTPUT:
 export interface BackdropResult {
   url: string;
   color: string;
+  season: BackdropSeason;
   generatedAt: string;
 }
 
@@ -148,15 +93,16 @@ export interface BackdropResult {
  */
 export async function generateBackdrop(
   storeId: string,
-  brandHex: string
+  brandHex: string,
+  season: BackdropSeason = "primavera"
 ): Promise<BackdropResult> {
   const startTime = Date.now();
   const hex = brandHex.startsWith("#") ? brandHex : `#${brandHex}`;
 
-  console.log(`[Backdrop] 🎨 Generating studio backdrop for store ${storeId} (${hex})...`);
+  console.log(`[Backdrop] 🎨 Generating studio backdrop for store ${storeId} (${hex}) [${season}]...`);
 
   const ai = getAI();
-  const prompt = buildBackdropPrompt(hex);
+  const prompt = buildBackdropPrompt(hex, season);
 
   // ── Generate image ──
   const response = await callGeminiSafe(
@@ -228,6 +174,7 @@ export async function generateBackdrop(
     .update({
       backdrop_ref_url: publicUrl,
       backdrop_color: hex,
+      backdrop_season: season,
       backdrop_updated_at: now,
     })
     .eq("id", storeId);
@@ -281,6 +228,7 @@ export async function generateBackdrop(
   return {
     url: publicUrl,
     color: hex,
+    season,
     generatedAt: now,
   };
 }
@@ -291,17 +239,19 @@ export async function generateBackdrop(
 
 /**
  * Checks if a store can regenerate its backdrop (30-day cooldown).
+ * Changing color OR season always bypasses the cooldown.
  * Returns { allowed: true } or { allowed: false, nextAvailableDate }.
  */
 export async function canRegenerateBackdrop(
   storeId: string,
-  newColor: string
+  newColor: string,
+  newSeason?: BackdropSeason
 ): Promise<{ allowed: boolean; nextAvailableDate?: string; currentColor?: string }> {
   const supabase = createAdminClient();
 
   const { data: store } = await supabase
     .from("stores")
-    .select("backdrop_color, backdrop_updated_at")
+    .select("backdrop_color, backdrop_season, backdrop_updated_at")
     .eq("id", storeId)
     .single();
 
@@ -322,7 +272,12 @@ export async function canRegenerateBackdrop(
     return { allowed: true, currentColor: store.backdrop_color || "" };
   }
 
-  // Same color — check 30-day cooldown
+  // Season changed → allow
+  if (newSeason && store.backdrop_season !== newSeason) {
+    return { allowed: true, currentColor: store.backdrop_color || "" };
+  }
+
+  // Same color + same season — check 30-day cooldown
   const lastUpdated = new Date(store.backdrop_updated_at);
   const now = new Date();
   const daysSince = Math.floor((now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24));

@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     .select(`
       id, name, segment_primary, brand_color, logo_url,
       credit_campaigns, credit_models, credit_regenerations,
-      backdrop_ref_url, backdrop_color, backdrop_updated_at,
+      backdrop_ref_url, backdrop_color, backdrop_season, backdrop_updated_at,
       onboarding_completed, created_at,
       plans!stores_plan_id_fkey(display_name, campaigns_per_period),
       store_usage!store_usage_store_id_fkey(campaigns_generated, campaigns_limit, period_start, period_end)
@@ -100,4 +100,79 @@ export async function GET(req: NextRequest) {
       models_used: modelsCount || 0,
     },
   });
+}
+
+/**
+ * DELETE /api/admin/stores
+ * Body: { storeId }
+ * Apaga a loja e todos os dados relacionados (modelos, campanhas, usage, custos).
+ */
+export async function DELETE(req: NextRequest) {
+  const admin = await requireAdmin();
+  if (!admin.isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { storeId } = body;
+
+  if (!storeId) {
+    return NextResponse.json({ error: "storeId é obrigatório" }, { status: 400 });
+  }
+
+  const supabase = createAdminClient();
+
+  // Verificar se a loja existe
+  const { data: store } = await supabase
+    .from("stores")
+    .select("id, name")
+    .eq("id", storeId)
+    .single();
+
+  if (!store) {
+    return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
+  }
+
+  console.log(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId})...`);
+
+  // Deletar em ordem para respeitar FKs
+  const deletions = [
+    { table: "api_cost_logs", filter: "store_id" },
+    { table: "campaign_photos", filter: "store_id" },
+    { table: "campaigns", filter: "store_id" },
+    { table: "store_models", filter: "store_id" },
+    { table: "store_usage", filter: "store_id" },
+  ];
+
+  for (const del of deletions) {
+    const { error } = await supabase
+      .from(del.table)
+      .delete()
+      .eq(del.filter, storeId);
+
+    if (error) {
+      console.warn(`[Admin:Stores] ⚠️ Erro ao deletar ${del.table}:`, error.message);
+    }
+  }
+
+  // Deletar storage (backdrops)
+  try {
+    await supabase.storage.from("assets").remove([`backdrops/${storeId}.png`, `backdrops/${storeId}.jpg`]);
+  } catch {
+    console.warn("[Admin:Stores] ⚠️ Erro ao limpar storage");
+  }
+
+  // Deletar a loja
+  const { error: deleteError } = await supabase
+    .from("stores")
+    .delete()
+    .eq("id", storeId);
+
+  if (deleteError) {
+    console.error("[Admin:Stores] ❌ Erro ao deletar loja:", deleteError);
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
+
+  console.log(`[Admin:Stores] ✅ Loja "${store.name}" deletada com sucesso`);
+  return NextResponse.json({ success: true, deleted: store.name });
 }
