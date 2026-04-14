@@ -320,7 +320,7 @@ export default function InstagramEditor() {
               <Transformer
                 ref={transformerRef}
                 enabledAnchors={["middle-left", "middle-right", "top-center", "bottom-center"]}
-                boundBoxFunc={(o: Konva.Box, n: Konva.Box) => n.width < 50 ? o : n}
+                boundBoxFunc={(_o: unknown, n: { width: number; height: number; x: number; y: number; rotation: number }) => n.width < 50 ? _o as typeof n : n}
                 borderStroke="#D946EF"
                 anchorStroke="#D946EF"
                 anchorFill="#fff"
