@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { z } from "zod";
+
+const StorePatchSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  city: z.string().max(50).optional(),
+  state: z.string().max(50).optional(),
+  instagram: z.string().max(60).optional(),
+  segment: z.string().max(80).optional(),
+  brand_colors: z.object({ primary: z.string().max(20).optional() }).optional(),
+});
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +57,13 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
     }
 
-    const body = await req.json();
+    const rawBody = await req.json();
+    const parsed = StorePatchSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const body = parsed.data;
     const updates: Record<string, unknown> = {};
 
     if (body.name !== undefined) updates.name = body.name;

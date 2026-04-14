@@ -642,3 +642,38 @@ a:focus-visible {
   box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.1);
   outline: none;
 }
+
+/* ─── Mobile Utilities ─────────────────────────────────── */
+
+/* Momentum scroll para iOS */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area helpers para notches e home indicator */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Glass: blur reduzido no mobile para melhor performance */
+@media (max-width: 639px) {
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Acessibilidade: respeitar preferência por menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer,
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-bounce-subtle,
+  .animate-gradient {
+    animation: none !important;
+    transition: none !important;
+  }
+}

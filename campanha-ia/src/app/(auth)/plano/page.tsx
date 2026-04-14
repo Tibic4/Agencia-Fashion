@@ -297,8 +297,8 @@ export default function Plano() {
               <h2 className="text-xl font-bold">Plano {currentPlanName}</h2>
               {store?.mercadopago_subscription_id ? (
                 <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--success)", color: "white" }}>Ativo</span>
-                  {renewalStr && <span className="text-[11px]" style={{ color: "var(--muted)" }}>Renova em {renewalStr}</span>}
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--success)", color: "white" }}>Ativo</span>
+                  {renewalStr && <span className="text-xs" style={{ color: "var(--muted)" }}>Renova em {renewalStr}</span>}
                 </div>
               ) : (
                 <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
@@ -313,7 +313,7 @@ export default function Plano() {
             <button
               onClick={handleCancelSubscription}
               disabled={cancelLoading}
-              className="text-xs px-4 py-2.5 rounded-full transition-all hover:opacity-80 disabled:opacity-50 min-h-[44px]"
+              className="text-xs px-4 py-3 rounded-full transition-all hover:opacity-80 disabled:opacity-50 min-h-[44px]"
               style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--muted)" }}
             >
               {cancelLoading ? "Cancelando..." : "Cancelar assinatura"}
@@ -384,13 +384,13 @@ export default function Plano() {
               ...(isUpgrade ? { cursor: "pointer" } : {}),
             }}>
             {isCurrentPlan && (
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full self-start mb-2"
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full self-start mb-2"
                 style={{ background: "var(--brand-500)", color: "white" }}>
                 ✓ Seu plano atual
               </span>
             )}
             {plan.highlight && !isCurrentPlan && !isLowerPlan && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full self-start mb-2"
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full self-start mb-2"
                 style={{ background: "rgba(255,255,255,0.25)" }}>
                 Recomendado
               </span>
@@ -406,7 +406,7 @@ export default function Plano() {
             <button
               onClick={() => !isCurrentPlan && !isLowerPlan && handleCheckout(plan.id)}
               disabled={loading === plan.id || isCurrentPlan || isLowerPlan}
-              className="w-full mt-4 py-3 px-2 rounded-full text-[12px] sm:text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
+              className="w-full mt-4 py-3 px-2 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
               style={{
                 background: isCurrentPlan ? "var(--brand-500)" : isLowerPlan ? "var(--border)" : plan.highlight ? "white" : "var(--gradient-brand)",
                 color: isCurrentPlan ? "white" : isLowerPlan ? "var(--muted)" : plan.highlight ? "var(--brand-600)" : "white",
@@ -441,7 +441,7 @@ export default function Plano() {
             <button
               onClick={() => handleCreditCheckout("trial")}
               disabled={creditLoading === "trial"}
-              className="w-full max-w-xs mx-auto py-3 px-2 rounded-full text-[12px] sm:text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
+              className="w-full max-w-xs mx-auto py-3 px-2 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
               style={{ background: "var(--gradient-brand)", color: "white" }}
             >
               {creditLoading === "trial" ? "Abrindo checkout..." : "⚡ Testar por R$ 19,90"}
@@ -461,7 +461,7 @@ export default function Plano() {
             style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
             <p className="text-sm font-semibold">{extra.label}</p>
             <p className="text-lg font-black gradient-text mt-1">{extra.price}</p>
-            <p className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>
+            <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
               {creditLoading === extra.packageId ? "Abrindo checkout..." : "Comprar agora"}
             </p>
           </button>
@@ -475,7 +475,7 @@ export default function Plano() {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          <span className="text-[10px] font-medium tracking-widest uppercase" style={{ color: "var(--muted)" }}>
+          <span className="text-xs font-medium tracking-widest uppercase" style={{ color: "var(--muted)" }}>
             Pagamento 100% Seguro
           </span>
         </div>
@@ -491,14 +491,14 @@ export default function Plano() {
           </svg>
           {/* Mercado Pago wordmark */}
           <div className="flex flex-col items-start leading-none">
-            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Checkout oficial</span>
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Checkout oficial</span>
             <span className="text-lg font-black tracking-tight" style={{ color: '#00AAFF' }}>
               mercado<span className="font-black">pago</span>
             </span>
           </div>
         </div>
         {/* Payment methods */}
-        <div className="flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
+        <div className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted)" }}>
           <span>PIX</span>
           <span className="w-0.5 h-0.5 rounded-full" style={{ background: "var(--muted)" }} />
           <span>Cartão</span>

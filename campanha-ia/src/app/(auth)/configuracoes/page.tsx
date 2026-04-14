@@ -333,7 +333,7 @@ export default function Configuracoes() {
                 />
                 <button
                   onClick={() => logoInputRef.current?.click()}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg min-h-[44px] transition w-full sm:w-auto"
+                  className="text-xs font-semibold px-4 py-2.5 rounded-lg min-h-[44px] transition w-full sm:w-auto"
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
                 >
                   {logoUrl ? "Trocar logo" : "Fazer upload"}
@@ -394,7 +394,7 @@ export default function Configuracoes() {
               <p className="text-xs font-semibold mb-2" style={{ color: "var(--foreground)" }}>
                 ✨ Estação do estúdio
               </p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 {[
                   { id: "primavera", emoji: "🌸", label: "Primavera" },
                   { id: "verao", emoji: "☀️", label: "Verão" },
@@ -410,7 +410,7 @@ export default function Configuracoes() {
                         haptics.light();
                       }}
                       disabled={backdropGenerating}
-                      className="flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-center transition-all duration-200 min-h-[60px]"
+                      className="flex flex-col items-center gap-1 py-3 px-1 rounded-xl text-center transition-all duration-200 min-h-[56px]"
                       style={{
                         background: isActive
                           ? "var(--gradient-brand)"
@@ -427,12 +427,12 @@ export default function Configuracoes() {
                       }}
                     >
                       <span className="text-lg leading-none">{s.emoji}</span>
-                      <span className="text-[10px] font-semibold leading-tight">{s.label}</span>
+                      <span className="text-xs font-semibold leading-tight">{s.label}</span>
                     </button>
                   );
                 })}
               </div>
-              <p className="text-[10px] mt-1.5 text-center" style={{ color: "var(--muted)" }}>
+              <p className="text-xs mt-1.5 text-center" style={{ color: "var(--muted)" }}>
                 Define a iluminação e clima do cenário
               </p>
             </div>
@@ -443,21 +443,21 @@ export default function Configuracoes() {
                 <img
                   src={backdropUrl}
                   alt="Estúdio personalizado"
-                  className="w-full h-44 object-cover"
+                  className="w-full h-32 md:h-44 object-cover"
                   style={{ objectPosition: "center 40%" }}
                 />
                 <div className="absolute bottom-0 inset-x-0 p-3 flex items-center justify-between" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.55))" }}>
-                  <span className="text-white text-[11px] font-semibold drop-shadow-md flex items-center gap-1">
+                  <span className="text-white text-xs font-semibold drop-shadow-md flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> Ativo
                   </span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3.5 h-3.5 rounded-full" style={{ background: brandColor, border: "1.5px solid white" }} />
-                    <span className="text-white text-[11px] font-mono drop-shadow-md">{brandColor}</span>
+                    <span className="text-white text-xs font-mono drop-shadow-md">{brandColor}</span>
                   </div>
                 </div>
               </div>
             ) : backdropGenerating ? (
-              <div className="rounded-xl h-44 flex flex-col items-center justify-center gap-2 mb-4 relative overflow-hidden" style={{ background: `linear-gradient(165deg, ${brandColor}18, ${brandColor}08)`, border: "1px solid var(--border)" }}>
+              <div className="rounded-xl h-32 md:h-44 flex flex-col items-center justify-center gap-2 mb-4 relative overflow-hidden" style={{ background: `linear-gradient(165deg, ${brandColor}18, ${brandColor}08)`, border: "1px solid var(--border)" }}>
                 {/* Shimmer — mesmo padrão da modelo */}
                 <div
                   className="absolute inset-0 pointer-events-none"
@@ -470,7 +470,7 @@ export default function Configuracoes() {
                 <div className="w-7 h-7 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
                 <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>Criando estúdio...</p>
                 <span
-                  className="text-[9px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1"
+                  className="text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1"
                   style={{ background: "rgba(212,160,23,0.15)", color: "#8B6914", border: "1px solid rgba(212,160,23,0.3)" }}
                 >
                   <span
@@ -491,10 +491,10 @@ export default function Configuracoes() {
                 `}</style>
               </div>
             ) : (
-              <div className="rounded-xl h-44 flex flex-col items-center justify-center gap-2 mb-4" style={{ background: `linear-gradient(165deg, ${brandColor}15, ${brandColor}08)`, border: "1px dashed var(--border)" }}>
+              <div className="rounded-xl h-32 md:h-44 flex flex-col items-center justify-center gap-2 mb-4" style={{ background: `linear-gradient(165deg, ${brandColor}15, ${brandColor}08)`, border: "1px dashed var(--border)" }}>
                 <span className="text-3xl">🎨</span>
                 <p className="text-sm font-semibold text-center" style={{ color: "var(--foreground)" }}>Nenhum estúdio gerado</p>
-                <p className="text-[11px] text-center px-6" style={{ color: "var(--muted)" }}>
+                <p className="text-xs text-center px-6" style={{ color: "var(--muted)" }}>
                   Clique abaixo para criar — usa a cor da marca acima
                 </p>
               </div>
@@ -502,7 +502,7 @@ export default function Configuracoes() {
 
             {/* Info notice — first time only */}
             {!backdropUrl && !backdropGenerating && (
-              <p className="text-[11px] text-center mb-3" style={{ color: "var(--muted)" }}>
+              <p className="text-xs text-center mb-3" style={{ color: "var(--muted)" }}>
                 💡 Após gerar, a próxima troca fica disponível em 30 dias
               </p>
             )}
@@ -544,7 +544,7 @@ export default function Configuracoes() {
             )}
 
             {!backdropCanRegenerate && backdropSeason === backdropStoredSeason && (
-              <p className="text-[11px] text-center mt-2" style={{ color: "var(--muted)" }}>
+              <p className="text-xs text-center mt-2" style={{ color: "var(--muted)" }}>
                 Atualização disponível 1x a cada 30 dias
               </p>
             )}
@@ -590,11 +590,11 @@ export default function Configuracoes() {
         {/* ── Segment ── */}
         <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
           <h2 className="text-lg font-semibold mb-5">Segmento</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {segments.map((seg) => (
               <button key={seg.value}
                 onClick={() => setSegment(seg.value)}
-                className="p-2 sm:p-3 rounded-xl text-[11px] sm:text-sm font-medium text-center transition-all min-h-[44px] flex items-center justify-center gap-1.5 sm:gap-2 truncate min-w-0"
+                className="p-2.5 sm:p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all min-h-[44px] flex items-center justify-center gap-2 truncate min-w-0"
                 style={{
                   background: segment === seg.value ? "var(--gradient-brand)" : "var(--surface)",
                   color: segment === seg.value ? "white" : "var(--muted)",
@@ -633,10 +633,10 @@ export default function Configuracoes() {
             </svg>
           </div>
           
-          <h2 className="text-[17px] font-bold tracking-tight mb-1" style={{ color: "var(--foreground)" }}>
+          <h2 className="text-lg font-bold tracking-tight mb-1" style={{ color: "var(--foreground)" }}>
             Conta e Segurança
           </h2>
-          <p className="text-[14px] leading-relaxed mb-6 max-w-[280px]" style={{ color: "var(--muted)" }}>
+          <p className="text-sm leading-relaxed mb-6 max-w-[280px]" style={{ color: "var(--muted)" }}>
             Você precisará fazer login novamente para acessar seus créditos e o histórico de campanhas.
           </p>
           
@@ -645,7 +645,7 @@ export default function Configuracoes() {
               haptics.error();
               signOut({ redirectUrl: "/" });
             }}
-            className="w-full py-3.5 px-4 rounded-xl text-[15px] font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] flex items-center justify-center gap-2.5"
+            className="w-full py-3.5 px-4 rounded-xl text-base font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] flex items-center justify-center gap-2.5"
             style={{
               background: "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(220,38,38,0.12) 100%)",
               color: "#EF4444",

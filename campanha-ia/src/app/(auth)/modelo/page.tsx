@@ -423,7 +423,7 @@ export default function ModeloVirtual() {
                 {model.is_active && (
                   <div className="absolute top-2 right-2 z-10">
                     <div 
-                      className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-md transition-transform active:scale-95"
+                      className="flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full backdrop-blur-md transition-transform active:scale-95"
                       style={{ background: "rgba(236,72,153,0.85)", color: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -440,7 +440,7 @@ export default function ModeloVirtual() {
                   <h3 className="font-bold text-white truncate text-sm leading-tight mb-0.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
                     {model.name}
                   </h3>
-                  <p className="text-[10px] text-white/85 line-clamp-2 mb-2.5 font-medium tracking-wide">
+                  <p className="text-xs text-white/85 line-clamp-2 mb-2.5 font-medium tracking-wide">
                     {labelSkin} • {labelHair} • {labelBody}
                   </p>
 
@@ -449,7 +449,7 @@ export default function ModeloVirtual() {
                     {!model.is_active && (
                       <button
                         onClick={(e) => { e.stopPropagation(); haptics.medium(); handleSetActive(model.id); }}
-                        className="flex-1 text-[11px] font-bold py-2 px-2 rounded-lg transition-all active:scale-95 backdrop-blur-md"
+                        className="flex-1 text-xs font-bold py-2 px-2 rounded-lg transition-all active:scale-95 backdrop-blur-md"
                         style={{
                           background: "var(--brand-500)",
                           color: "white",
@@ -465,7 +465,7 @@ export default function ModeloVirtual() {
                         <button
                           onClick={(e) => { e.stopPropagation(); haptics.error(); handleDelete(model.id); }}
                           disabled={deletingId === model.id}
-                          className="flex-1 text-[11px] font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center shadow-lg"
+                          className="flex-1 text-xs font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center shadow-lg"
                           style={{ background: "#EF4444", color: "white", opacity: deletingId === model.id ? 0.5 : 1 }}
                         >
                           {deletingId === model.id ? "..." : "Sim"}
@@ -481,7 +481,7 @@ export default function ModeloVirtual() {
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); haptics.medium(); setConfirmDeleteId(model.id); }}
-                        className="text-[11px] font-bold py-2 px-2.5 rounded-lg transition-all active:scale-95 backdrop-blur-sm"
+                        className="text-xs font-bold py-2 px-2.5 rounded-lg transition-all active:scale-95 backdrop-blur-sm"
                         style={{
                           background: "rgba(0,0,0,0.4)",
                           color: "#FCA5A5",
@@ -515,7 +515,7 @@ export default function ModeloVirtual() {
                 <span className="text-xl font-bold group-hover:text-brand-500 transition-colors">+</span>
               </div>
               <span className="text-xs font-semibold group-hover:text-brand-500 transition-colors">Nova modelo</span>
-              <span className="text-[10px] mt-1 opacity-70">
+              <span className="text-xs mt-1 opacity-70">
                 {models.length}/{maxModels} slots
               </span>
             </button>
@@ -554,6 +554,7 @@ export default function ModeloVirtual() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => {
+                  haptics.light();
                   setGender("feminino");
                   setBody("media");
                   setHairLength("medio");
@@ -569,6 +570,7 @@ export default function ModeloVirtual() {
               </button>
               <button
                 onClick={() => {
+                  haptics.light();
                   setGender("masculino");
                   setBody("medio");
                   setHairLength("curto");
@@ -592,15 +594,15 @@ export default function ModeloVirtual() {
               {skinTones.map((s) => (
                 <button
                   key={s.value}
-                  onClick={() => setSkin(s.value)}
+                  onClick={() => { haptics.light(); setSkin(s.value); }}
                   className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-h-[44px]"
                   style={{
                     border: skin === s.value ? "2px solid var(--brand-500)" : "1px solid var(--border)",
                     background: skin === s.value ? "var(--gradient-card)" : "var(--surface)",
                   }}
                 >
-                  <div className="w-10 h-10 rounded-full" style={{ background: s.color }} />
-                  <span className="text-[11px] sm:text-xs font-medium leading-tight text-center">{s.label}</span>
+                  <div className="w-11 h-11 rounded-full" style={{ background: s.color }} />
+                  <span className="text-xs font-medium leading-tight text-center">{s.label}</span>
                 </button>
               ))}
             </div>
@@ -617,7 +619,7 @@ export default function ModeloVirtual() {
               {hairTextures.map((h) => (
                 <button
                   key={h.value}
-                  onClick={() => setHairTexture(h.value)}
+                  onClick={() => { haptics.light(); setHairTexture(h.value); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
                   style={{
                     background: hairTexture === h.value ? "var(--brand-100)" : "var(--surface)",
@@ -636,7 +638,7 @@ export default function ModeloVirtual() {
               {hairLengths.map((h) => (
                 <button
                   key={h.value}
-                  onClick={() => setHairLength(h.value)}
+                  onClick={() => { haptics.light(); setHairLength(h.value); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
                   style={{
                     background: hairLength === h.value ? "var(--brand-100)" : "var(--surface)",
@@ -655,7 +657,7 @@ export default function ModeloVirtual() {
               {hairColors.map((h) => (
                 <button
                   key={h.value}
-                  onClick={() => setHairColor(h.value)}
+                  onClick={() => { haptics.light(); setHairColor(h.value); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
                   style={{
                     background: hairColor === h.value ? "var(--brand-100)" : "var(--surface)",
@@ -676,7 +678,7 @@ export default function ModeloVirtual() {
               {bodyTypes.map((b) => (
                 <button
                   key={b.value}
-                  onClick={() => setBody(b.value)}
+                  onClick={() => { haptics.light(); setBody(b.value); }}
                   className="p-2 sm:p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all truncate min-w-0"
                   style={{
                     background: body === b.value ? "var(--gradient-brand)" : "var(--surface)",
@@ -742,7 +744,7 @@ export default function ModeloVirtual() {
           )}
 
           {/* Generate (Sticky no Mobile) */}
-          <div className="lg:static sticky bottom-20 md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ backdropFilter: "blur(12px)", backgroundColor: "var(--background)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0", opacity: 0.97 }}>
+          <div className="lg:static sticky md:bottom-0 p-4 lg:p-0 -mx-4 lg:mx-0 mt-6 lg:mt-0 z-20 lg:bg-transparent lg:backdrop-blur-none" style={{ bottom: "calc(80px + env(safe-area-inset-bottom, 0px))", backdropFilter: "blur(12px)", backgroundColor: "var(--background)", borderTop: "1px solid var(--border)", borderRadius: "24px 24px 0 0", opacity: 0.97 }}>
             <button
               className="btn-primary w-full !py-3.5"
               onClick={handleCreate}
