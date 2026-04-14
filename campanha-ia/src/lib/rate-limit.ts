@@ -2,13 +2,17 @@
  * Rate limiter simples em memória por IP
  * Previne abuso de geração de campanhas (múltiplas contas, spam)
  * 
- * Limites:
- * - Máx 5 campanhas por IP por hora
- * - Máx 15 campanhas por IP por dia
+ * Limites ANÔNIMOS (sem auth):
+ * - Máx 3 campanhas por IP por hora
+ * - Máx 8 campanhas por IP por dia
  * 
- * NOTA (D3 audit): Este rate limiter é IN-MEMORY e perde estado no restart
- * do servidor. Para produção de alta escala, migrar para Redis ou usar
- * Supabase Edge Functions com KV store. Aceitável para o volume atual.
+ * Limites AUTENTICADOS (com Clerk userId):
+ * - Máx 15 campanhas por IP por hora
+ * - Máx 50 campanhas por IP por dia
+ * (Usuários autenticados já têm limite de plano, rate limit é só anti-abuso)
+ * 
+ * NOTA: Este rate limiter é IN-MEMORY e perde estado no restart.
+ * Ideal para VPS com processo único. Para multi-instância, usar Redis.
  */
 
 interface RateEntry {
@@ -19,8 +23,13 @@ interface RateEntry {
 const hourlyMap = new Map<string, RateEntry>();
 const dailyMap = new Map<string, RateEntry>();
 
-const HOURLY_LIMIT = 5;
-const DAILY_LIMIT = 15;
+// Limites para usuários NÃO autenticados (anti-abuso)
+const ANON_HOURLY_LIMIT = 3;
+const ANON_DAILY_LIMIT = 8;
+
+// Limites para usuários autenticados (bem mais generosos)
+const AUTH_HOURLY_LIMIT = 15;
+const AUTH_DAILY_LIMIT = 50;
 
 // Limpa entradas expiradas a cada 10 minutos
 setInterval(() => {
@@ -33,35 +42,44 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
-export function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number } {
+export function checkRateLimit(
+  ip: string,
+  options?: { authenticated?: boolean }
+): { allowed: boolean; retryAfterMs?: number } {
   const now = Date.now();
+  const isAuth = options?.authenticated ?? false;
+  const hourlyLimit = isAuth ? AUTH_HOURLY_LIMIT : ANON_HOURLY_LIMIT;
+  const dailyLimit = isAuth ? AUTH_DAILY_LIMIT : ANON_DAILY_LIMIT;
+
+  // Chave separada para auth vs anon (evita poluição cruzada)
+  const key = isAuth ? `auth:${ip}` : ip;
 
   // ── Check horário ──
-  const hourly = hourlyMap.get(ip);
+  const hourly = hourlyMap.get(key);
   if (hourly) {
     if (now > hourly.resetAt) {
-      hourlyMap.set(ip, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    } else if (hourly.count >= HOURLY_LIMIT) {
+      hourlyMap.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    } else if (hourly.count >= hourlyLimit) {
       return { allowed: false, retryAfterMs: hourly.resetAt - now };
     } else {
       hourly.count++;
     }
   } else {
-    hourlyMap.set(ip, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    hourlyMap.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 });
   }
 
   // ── Check diário ──
-  const daily = dailyMap.get(ip);
+  const daily = dailyMap.get(key);
   if (daily) {
     if (now > daily.resetAt) {
-      dailyMap.set(ip, { count: 1, resetAt: now + 24 * 60 * 60 * 1000 });
-    } else if (daily.count >= DAILY_LIMIT) {
+      dailyMap.set(key, { count: 1, resetAt: now + 24 * 60 * 60 * 1000 });
+    } else if (daily.count >= dailyLimit) {
       return { allowed: false, retryAfterMs: daily.resetAt - now };
     } else {
       daily.count++;
     }
   } else {
-    dailyMap.set(ip, { count: 1, resetAt: now + 24 * 60 * 60 * 1000 });
+    dailyMap.set(key, { count: 1, resetAt: now + 24 * 60 * 60 * 1000 });
   }
 
   return { allowed: true };

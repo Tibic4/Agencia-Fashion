@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
       || request.headers.get("x-real-ip")
       || "unknown";
-    const rateCheck = checkRateLimit(ip);
+    const rateCheck = checkRateLimit(ip, { authenticated: !!clerkUserId });
     if (!rateCheck.allowed) {
       const retryMin = Math.ceil((rateCheck.retryAfterMs || 60000) / 60000);
       return NextResponse.json({

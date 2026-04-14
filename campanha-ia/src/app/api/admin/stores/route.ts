@@ -160,9 +160,11 @@ export async function DELETE(req: NextRequest) {
 
   console.log(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId})...`);
 
-  // Deletar em ordem para respeitar FKs
+  // Deletar em ordem para respeitar FKs (todas tabelas com store_id FK)
   const deletions = [
     { table: "api_cost_logs", filter: "store_id" },
+    { table: "credit_purchases", filter: "store_id" },
+    { table: "api_keys", filter: "store_id" },
     { table: "campaign_photos", filter: "store_id" },
     { table: "campaigns", filter: "store_id" },
     { table: "store_models", filter: "store_id" },
