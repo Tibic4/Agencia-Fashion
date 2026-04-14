@@ -732,7 +732,7 @@ export function getAvailableBackgrounds(): Array<{ id: BackgroundStyle; label: s
     { id: "natureza", label: "Natureza", description: "Ambiente natural com vegetação e luz dourada" },
     { id: "interior", label: "Interior", description: "Loft moderno com luz natural" },
     { id: "gradiente", label: "Gradiente", description: "Gradiente suave rosa-dourado" },
-    { id: "minha_marca", label: "Minha Marca", description: "Fundo com a cor da sua marca" },
+    { id: "minha_marca", label: "Meu Estúdio", description: "Fundo com a cor da sua marca" },
     { id: "personalizado", label: "Personalizado", description: "Descreva o cenário que deseja" },
   ];
 }
