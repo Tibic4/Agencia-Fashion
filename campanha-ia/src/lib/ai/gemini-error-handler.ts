@@ -110,10 +110,10 @@ export function classifyGeminiError(error: unknown): GeminiClassifiedError {
   }
 
   // ── Safety Block ──
-  if (msg.includes("SAFETY") || msg.includes("safety") || msg.includes("blocked") || msg.includes("filtrado")) {
+  if (msg.includes("SAFETY") || msg.includes("safety") || msg.includes("blocked") || msg.includes("filtrado") || msg.includes("Conteúdo bloqueado")) {
     return {
       code: "SAFETY_BLOCKED",
-      userMessage: "A foto contém conteúdo que não é permitido pela nossa política. Envie apenas fotos de peças de roupa (sobre cabide, manequim ou mesa). Seu crédito foi devolvido.",
+      userMessage: "A IA bloqueou esta foto por segurança. Dica: manequins brancos/sem roupa podem ser confundidos com nudez. Fotografe a peça sobre um cabide, mesa ou manequim vestido. Seu crédito foi devolvido.",
       technicalMessage: `Gemini Safety Block: ${msg}`,
       retryable: false,
       httpStatus: 400,
