@@ -70,7 +70,10 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  const { data: store, error } = await supabase
+  // Tentar query detalhada primeiro
+  let store: Record<string, unknown> | null = null;
+
+  const { data: detailData, error: detailError } = await supabase
     .from("stores")
     .select(`
       id, name, segment_primary, brand_color, logo_url,
@@ -83,7 +86,29 @@ export async function GET(req: NextRequest) {
     .eq("id", storeId)
     .single();
 
-  if (error || !store) {
+  if (detailError) {
+    console.warn("[Admin:Stores] Detail query failed, trying fallback:", detailError.message);
+    // Fallback: select all (sem joins explícitos que podem quebrar)
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("stores")
+      .select("*")
+      .eq("id", storeId)
+      .single();
+
+    if (fallbackError || !fallbackData) {
+      console.error("[Admin:Stores] Fallback also failed:", fallbackError?.message);
+      return NextResponse.json(
+        { error: `Loja não encontrada: ${detailError.message}` },
+        { status: 404 }
+      );
+    }
+
+    store = fallbackData as Record<string, unknown>;
+  } else {
+    store = detailData as Record<string, unknown>;
+  }
+
+  if (!store) {
     return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
   }
 
