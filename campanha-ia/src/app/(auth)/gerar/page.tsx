@@ -448,7 +448,7 @@ export default function GerarCampanha() {
   }
 
   return (
-    <div className="animate-fade-in-up pb-24 md:pb-0 w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
+    <div className="animate-fade-in-up w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
       {/* Quota Exceeded Modal (seção 5.5) */}
       {quotaExceeded && (
         <QuotaExceededModal

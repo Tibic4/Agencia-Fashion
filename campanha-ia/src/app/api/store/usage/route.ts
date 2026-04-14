@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, getCurrentUsage, getStorePlanName, getModelLimitForPlan, getHistoryDaysForPlan } from "@/lib/db";
+import { getStoreByClerkId, getCurrentUsage, getStorePlanName, getModelLimitForPlan, getHistoryDaysForPlan, getStoreCredits } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/store/usage
  * 
- * Retorna o uso atual e limites baseados no plano real da loja.
- * Usa helpers centralizados do db/index.ts como fonte de verdade.
+ * Retorna o uso atual e limites baseados no plano real da loja + créditos avulsos.
  */
 export async function GET() {
   try {
@@ -24,6 +23,7 @@ export async function GET() {
 
     const usage = await getCurrentUsage(store.id);
     const planName = await getStorePlanName(store.id);
+    const credits = await getStoreCredits(store.id);
 
     // Contar modelos criados
     let modelsUsed = 0;
@@ -37,14 +37,17 @@ export async function GET() {
       modelsUsed = count || 0;
     } catch {}
 
+    const planCampaignLimit = usage?.campaigns_limit ?? 0;
+    const planModelLimit = getModelLimitForPlan(planName);
+
     return NextResponse.json({
       success: true,
       data: {
         plan_name: planName,
         campaigns_generated: usage?.campaigns_generated ?? 0,
-        campaigns_limit: usage?.campaigns_limit ?? 0,
+        campaigns_limit: planCampaignLimit + (credits.campaigns || 0),
         models_used: modelsUsed,
-        models_limit: getModelLimitForPlan(planName),
+        models_limit: planModelLimit + (credits.models || 0),
         history_days: getHistoryDaysForPlan(planName),
         period_start: usage?.period_start ?? null,
         period_end: usage?.period_end ?? null,

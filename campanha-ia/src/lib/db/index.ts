@@ -414,12 +414,18 @@ export async function incrementCampaignsUsed(storeId: string) {
 /** Verifica se a loja pode gerar mais campanhas neste período */
 export async function canGenerateCampaign(storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const usage = await getCurrentUsage(storeId);
-  if (!usage) return { allowed: false, used: 0, limit: 0 }; // Sem registro de uso = sem plano ativo
+  const credits = await getStoreCredits(storeId);
+  const avulso = credits.campaigns || 0;
+
+  const used = usage?.campaigns_generated ?? 0;
+  const planLimit = usage?.campaigns_limit ?? 0;
+  // Total limit = plan limit + avulso credits
+  const totalLimit = planLimit + avulso;
 
   return {
-    allowed: usage.campaigns_generated < usage.campaigns_limit,
-    used: usage.campaigns_generated,
-    limit: usage.campaigns_limit,
+    allowed: used < totalLimit,
+    used,
+    limit: totalLimit,
   };
 }
 

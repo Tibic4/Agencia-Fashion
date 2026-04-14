@@ -311,7 +311,7 @@ export default function AuthLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0">
+      <main className="w-full lg:flex-1 lg:ml-64 pt-14 lg:pt-0">
         <style>{`
           @media (max-width: 1023px) {
             main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; }

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, listStoreModels, getStorePlanName, getModelLimitForPlan } from "@/lib/db";
+import { getStoreByClerkId, listStoreModels, getStorePlanName, getModelLimitForPlan, getStoreCredits } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/model/list
  * Lista todos os modelos da loja do usuário autenticado.
- * Retorna também o plano e limites.
+ * Retorna também o plano e limites (plano + avulsos).
  */
 export async function GET() {
   try {
@@ -22,12 +22,13 @@ export async function GET() {
       return NextResponse.json({ models: [], plan: "free", limit: 0 });
     }
 
-    const [models, planName] = await Promise.all([
+    const [models, planName, credits] = await Promise.all([
       listStoreModels(store.id),
       getStorePlanName(store.id),
+      getStoreCredits(store.id),
     ]);
 
-    const limit = getModelLimitForPlan(planName);
+    const limit = getModelLimitForPlan(planName) + (credits.models || 0);
 
     return NextResponse.json({
       models: models.map((m) => ({
