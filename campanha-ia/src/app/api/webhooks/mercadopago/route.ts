@@ -170,8 +170,10 @@ async function handlePaymentEvent(paymentId: string) {
       if (storeId && planId) {
         console.log(`[Webhook:MercadoPago] ✅ Pagamento recorrente aprovado! Store: ${storeId}, Plano: ${planId}`);
 
-        // Atualizar plano + resetar quotas do mês
-        await updateStorePlan(storeId, planId, paymentId);
+        // Atualizar plano + resetar quotas do mês.
+        // Não passar paymentId como 3º argumento — esse campo é mpSubscriptionId,
+        // já salvo corretamente pelo evento subscription_preapproval (handleSubscriptionEvent).
+        await updateStorePlan(storeId, planId);
 
         // Salvar customer ID do Mercado Pago
         const supabase = createAdminClient();
