@@ -64,6 +64,16 @@ export default function Plano() {
 
     if (status === "approved") {
       setStatusMsg("✅ Pagamento aprovado! Seu plano será atualizado em instantes.");
+      // Polling para atualizar usage após webhook processar
+      const pollUsage = setInterval(async () => {
+        try {
+          const res = await fetch("/api/store/usage");
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data?.data) setUsage(data.data);
+        } catch { /* ignore */ }
+      }, 2000);
+      setTimeout(() => clearInterval(pollUsage), 30000);
     } else if (status === "rejected") {
       setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
     } else if (status === "pending") {
@@ -72,6 +82,24 @@ export default function Plano() {
 
     if (creditsStatus === "approved") {
       setStatusMsg("✅ Créditos adicionados com sucesso!");
+      // Polling para atualizar usage e credits após webhook processar
+      const pollCredits = setInterval(async () => {
+        try {
+          const [usageRes, creditsRes] = await Promise.all([
+            fetch("/api/store/usage"),
+            fetch("/api/store/credits"),
+          ]);
+          if (usageRes.ok) {
+            const d = await usageRes.json();
+            if (d?.data) setUsage(d.data);
+          }
+          if (creditsRes.ok) {
+            const d = await creditsRes.json();
+            if (d?.data) setCredits(d.data);
+          }
+        } catch { /* ignore */ }
+      }, 2000);
+      setTimeout(() => clearInterval(pollCredits), 30000);
     } else if (creditsStatus === "rejected") {
       setStatusMsg("❌ Pagamento não aprovado. Tente novamente.");
     } else if (creditsStatus === "pending") {

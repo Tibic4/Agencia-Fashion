@@ -39,15 +39,18 @@ export async function GET() {
 
     const planCampaignLimit = usage?.campaigns_limit ?? 0;
     const planModelLimit = getModelLimitForPlan(planName);
+    // Garantir que créditos nunca sejam negativos
+    const creditCampaigns = Math.max(0, credits.campaigns || 0);
+    const creditModels = Math.max(0, credits.models || 0);
 
     return NextResponse.json({
       success: true,
       data: {
         plan_name: planName,
         campaigns_generated: usage?.campaigns_generated ?? 0,
-        campaigns_limit: planCampaignLimit + (credits.campaigns || 0),
+        campaigns_limit: planCampaignLimit + creditCampaigns,
         models_used: modelsUsed,
-        models_limit: planModelLimit + (credits.models || 0),
+        models_limit: planModelLimit + creditModels,
         history_days: getHistoryDaysForPlan(planName),
         period_start: usage?.period_start ?? null,
         period_end: usage?.period_end ?? null,
