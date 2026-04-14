@@ -449,6 +449,8 @@ export default function GerarCampanha() {
         clearTimeout(abortTimeout);
         setIsGenerating(false);
         setError("Conexão interrompida. Verifique sua internet e tente novamente.");
+        setErrorCode("PIPELINE_ERROR");
+        setErrorRetryable(true);
       }
 
     } catch (err: any) {
@@ -458,8 +460,12 @@ export default function GerarCampanha() {
       // Distinguish abort (phone slept) from real errors
       if (err?.name === "AbortError") {
         setError("Tempo limite atingido. O celular pode ter entrado em modo de espera. Tente novamente.");
+        setErrorCode("TIMEOUT");
+        setErrorRetryable(true);
       } else {
         setError(friendlyError(err, "Erro ao gerar campanha. Tente novamente."));
+        setErrorCode("PIPELINE_ERROR");
+        setErrorRetryable(true);
       }
     }
   };
