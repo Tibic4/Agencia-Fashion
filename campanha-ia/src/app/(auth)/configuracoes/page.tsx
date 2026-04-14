@@ -339,7 +339,7 @@ export default function Configuracoes() {
             <div className="flex-1 space-y-3">
               <label className="text-sm font-semibold block">🎨 Cor da marca</label>
               <p className="text-xs" style={{ color: "var(--muted)" }}>
-                Define a cor do fundo "Minha Marca" e do estúdio
+                Define a cor do cenário "Meu Estúdio" nas campanhas
               </p>
 
               <div className="flex items-center gap-3">

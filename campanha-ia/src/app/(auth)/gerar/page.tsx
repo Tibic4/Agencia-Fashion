@@ -1205,12 +1205,12 @@ export default function GerarCampanha() {
             <label className="block text-sm font-semibold mb-3">Cenário da foto</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
               {(() => {
-                // Build dynamic backgrounds with "Minha Marca" if store has brand color
+                // Build dynamic backgrounds with "Meu Estúdio" if store has brand color
                 const allBgs = [...backgrounds];
                 if (storeBrandColor) {
                   allBgs.splice(1, 0, {
                     value: "minha_marca",
-                    label: "Minha Marca",
+                    label: "Meu Estúdio",
                     thumb: null,
                     ai: true,
                   });
@@ -1272,23 +1272,24 @@ export default function GerarCampanha() {
                         )}
                         
                         <div
-                          className="w-7 h-7 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.2)] relative z-10 flex items-center justify-center backdrop-blur-md"
+                          className="w-6 h-6 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.2)] relative z-10 flex items-center justify-center backdrop-blur-md"
                           style={{
                             background: "rgba(255,255,255,0.25)",
                             border: "1px solid rgba(255,255,255,0.5)",
                           }}
                         >
-                          <span className="text-[10px] drop-shadow-md">✨</span>
+                          <span className="text-[9px] drop-shadow-md">📸</span>
                         </div>
                         <span 
-                          className="text-[9px] font-bold tracking-widest uppercase relative z-10" 
+                          className="text-[8px] font-bold tracking-wide uppercase relative z-10 px-1.5 py-0.5 rounded-full backdrop-blur-sm" 
                           style={{ 
                             color: "white", 
-                            textShadow: "0 1px 3px rgba(0,0,0,0.6), 0 0 10px rgba(0,0,0,0.3)",
-                            letterSpacing: "0.05em"
+                            background: "rgba(0,0,0,0.3)",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+                            letterSpacing: "0.04em"
                           }}
                         >
-                          Marca
+                          Estúdio
                         </span>
                       </div>
                     ) : bg.value === "personalizado" ? (
