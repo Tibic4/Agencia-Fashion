@@ -327,7 +327,7 @@ export default function ResultadoCampanha() {
   // ── Loading / empty ──
   if (!result) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
+      <div className="flex-1 flex items-center justify-center" style={{ background: "var(--background)" }}>
         <div className="text-center space-y-4 px-6">
           {loadingFromApi ? (
             <>
@@ -363,7 +363,7 @@ export default function ResultadoCampanha() {
   const selectedImage = selectedIndex !== null ? images[selectedIndex] : null;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
+    <div style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Header */}
       <div
         className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3"
@@ -789,7 +789,7 @@ export default function ResultadoCampanha() {
         )}
 
         {/* ── Nova campanha ── */}
-        <div className="flex justify-center pb-24 sm:pb-8">
+        <div className="flex justify-center pb-4">
           <button
             onClick={() => router.push("/gerar")}
             className="btn-secondary px-8 py-3 text-sm font-semibold"
