@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { canRegenerateBackdrop } from "@/lib/ai/backdrop-generator";
+import type { BackdropSeason } from "@/lib/ai/backdrop-generator";
 import { inngest } from "@/lib/inngest/client";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
  * POST /api/store/backdrop
  *
  * Dispara geração (ou regeneração) do backdrop via Inngest.
- * Body: { brandColor?: string } — se não informado, usa brand_colors.primary
+ * Body: { brandColor?: string, season?: string } — se não informado, usa brand_colors.primary
  *
  * Rate limit: 1 regeneração a cada 30 dias (exceto 1ª vez ou troca de cor).
  */
@@ -51,8 +52,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limit check
-    const rateCheck = await canRegenerateBackdrop(store.id, brandColor);
+    // Validate season (optional — defaults to primavera)
+    const VALID_SEASONS: BackdropSeason[] = ["primavera", "verao", "outono", "inverno"];
+    const season: BackdropSeason = VALID_SEASONS.includes(body.season) ? body.season : "primavera";
+
+    // Rate limit check (season change also bypasses cooldown)
+    const rateCheck = await canRegenerateBackdrop(store.id, brandColor, season);
     if (!rateCheck.allowed) {
       const nextDate = rateCheck.nextAvailableDate
         ? new Date(rateCheck.nextAvailableDate).toLocaleDateString("pt-BR")
@@ -74,10 +79,11 @@ export async function POST(request: NextRequest) {
       data: {
         storeId: store.id,
         brandColor: brandColor.startsWith("#") ? brandColor : `#${brandColor}`,
+        season,
       },
     });
 
-    console.log(`[API:store/backdrop] 🚀 Backdrop disparado via Inngest para store ${store.id} (${brandColor})`);
+    console.log(`[API:store/backdrop] 🚀 Backdrop disparado via Inngest para store ${store.id} (${brandColor}) [${season}]`);
 
     return NextResponse.json({
       success: true,
@@ -85,6 +91,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: "generating",
         color: brandColor,
+        season,
       },
     });
   } catch (error: unknown) {
@@ -129,6 +136,7 @@ export async function GET() {
       data: {
         url: store.backdrop_ref_url || null,
         color: store.backdrop_color || null,
+        season: store.backdrop_season || null,
         updatedAt: store.backdrop_updated_at || null,
         canRegenerate: rateCheck.allowed,
         nextAvailableDate: rateCheck.nextAvailableDate || null,
