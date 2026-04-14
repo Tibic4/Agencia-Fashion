@@ -179,6 +179,23 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
             </div>
 
             <div className="p-5 space-y-4">
+              {/* Canvas always in DOM so ref is available for drawImageOnCanvas */}
+              <canvas
+                ref={canvasRef}
+                onClick={handleCanvasClick}
+                onMouseMove={handleCanvasMove}
+                onTouchStart={handleCanvasTouch}
+                onTouchMove={handleCanvasTouch}
+                className="rounded-xl max-w-full cursor-crosshair"
+                style={{
+                  border: "1px solid var(--border)",
+                  maxHeight: "300px",
+                  touchAction: "none",
+                  display: mode === "canvas" ? "block" : "none",
+                  margin: "0 auto",
+                }}
+              />
+
               {mode === "upload" && (
                 <div>
                   <input
@@ -222,17 +239,6 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
                   <p className="text-xs font-medium text-center" style={{ color: "var(--muted)" }}>
                     👆 Toque/clique na cor que deseja extrair
                   </p>
-                  <div className="flex justify-center">
-                    <canvas
-                      ref={canvasRef}
-                      onClick={handleCanvasClick}
-                      onMouseMove={handleCanvasMove}
-                      onTouchStart={handleCanvasTouch}
-                      onTouchMove={handleCanvasTouch}
-                      className="rounded-xl max-w-full cursor-crosshair"
-                      style={{ border: "1px solid var(--border)", maxHeight: "300px", touchAction: "none" }}
-                    />
-                  </div>
 
                   <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                     <div className="flex gap-2">
