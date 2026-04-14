@@ -378,7 +378,7 @@ function EditorInner() {
                 editing === item.id ? null : (
                   <KText
                     key={item.id}
-                    ref={(node) => {
+                    ref={(node: import("konva").Text | null) => {
                       if (node) textNodesRef.current.set(item.id, node);
                       else textNodesRef.current.delete(item.id);
                     }}
@@ -401,8 +401,8 @@ function EditorInner() {
                     onTap={() => setSelectedId(item.id)}
                     onDblClick={() => startEdit(item)}
                     onDblTap={() => startEdit(item)}
-                    onDragEnd={(e) => updateTextById(item.id, { x: e.target.x(), y: e.target.y() })}
-                    onTransformEnd={(e) => {
+                    onDragEnd={(e: import("konva").KonvaEventObject<DragEvent>) => updateTextById(item.id, { x: e.target.x(), y: e.target.y() })}
+                    onTransformEnd={(e: import("konva").KonvaEventObject<Event>) => {
                       const node = e.target;
                       updateTextById(item.id, {
                         x: node.x(),
@@ -421,7 +421,7 @@ function EditorInner() {
               <Transformer
                 ref={transformerRef}
                 enabledAnchors={["middle-left", "middle-right", "top-center", "bottom-center"]}
-                boundBoxFunc={(oldBox, newBox) => {
+                boundBoxFunc={(oldBox: { x: number; y: number; width: number; height: number; rotation: number }, newBox: { x: number; y: number; width: number; height: number; rotation: number }) => {
                   if (newBox.width < 50) return oldBox;
                   return newBox;
                 }}
