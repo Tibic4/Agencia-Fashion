@@ -45,7 +45,7 @@ export default function FloatingWhatsApp() {
         }
         .wa-btn {
           position: fixed;
-          bottom: 80px;
+          bottom: 100px;
           right: 16px;
           z-index: 9999;
           cursor: pointer;

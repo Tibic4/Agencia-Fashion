@@ -187,7 +187,7 @@ export default function LiveCampaignDemo() {
       <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-surface shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
         
         {/* Left Side: Empty State / Generating / Result Image */}
-        <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 relative flex items-center justify-center p-8 min-h-[400px] md:min-h-[500px]">
+        <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 relative flex items-center justify-center p-6 sm:p-8 min-h-[300px] sm:min-h-[380px] md:min-h-[500px]">
           <AnimatePresence mode="wait">
             {!isGenerating && !isDone && (
               <motion.div 
@@ -219,10 +219,10 @@ export default function LiveCampaignDemo() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col items-center justify-center px-4"
+                className="absolute inset-0 flex flex-col items-center justify-center px-6 gap-3"
               >
                 {/* Circular Progress */}
-                <div className="relative w-32 h-32 md:w-40 md:h-40 mb-6 mx-auto">
+                <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mx-auto shrink-0">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-gray-200 dark:text-gray-800" />
                     <circle 
@@ -234,12 +234,12 @@ export default function LiveCampaignDemo() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl md:text-3xl font-black">{Math.round(progress)}%</span>
+                    <span className="text-xl sm:text-2xl md:text-3xl font-black">{Math.round(progress)}%</span>
                   </div>
                 </div>
-                
+
                 {/* Status text jumping updates based on progress */}
-                <div className="h-8 overflow-hidden text-sm md:text-lg font-bold text-brand-600 dark:text-brand-400 text-center w-full">
+                <div className="min-h-[2rem] text-xs sm:text-sm md:text-lg font-bold text-brand-600 dark:text-brand-400 text-center w-full px-2">
                   <AnimatePresence mode="wait">
                     {progress < 30 && <motion.span key="1" className="block text-center" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Recortando peça...</motion.span>}
                     {progress >= 30 && progress < 60 && <motion.span key="2" className="block text-center" initial={{y: 20, opacity:0}} animate={{y:0, opacity:1}} exit={{y:-20, opacity:0}}>Gerando modelo realista...</motion.span>}
