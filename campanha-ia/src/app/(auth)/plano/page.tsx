@@ -13,6 +13,8 @@ interface StoreUsage {
   campaigns_limit: number;
   models_used: number;
   models_limit: number;
+  period_start: string | null;
+  period_end: string | null;
 }
 
 interface StoreCredits {
@@ -236,9 +238,10 @@ export default function Plano() {
     ? planNameMap[usage.plan_name] || "Avulso"
     : "Avulso";
 
-  const nextRenewal = new Date();
-  nextRenewal.setMonth(nextRenewal.getMonth() + 1, 1);
-  const renewalStr = nextRenewal.toLocaleDateString("pt-BR");
+  // Use period_end from usage API as renewal date (real data)
+  const renewalStr = usage?.period_end
+    ? new Date(usage.period_end + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+    : null;
 
   if (dataLoading) {
     return (
@@ -292,14 +295,18 @@ export default function Plano() {
             <span className="text-3xl">{currentPlanName === "Avulso" ? "💳" : plans.find((p) => p.name === currentPlanName)?.badge || "⭐"}</span>
             <div>
               <h2 className="text-xl font-bold">Plano {currentPlanName}</h2>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
-                {store?.mercadopago_subscription_id 
-                  ? `🔄 Assinatura ativa — Renova em ${renewalStr}` 
-                  : currentPlanName === "Avulso" 
-                    ? "Sem assinatura — compre créditos ou assine um plano"
-                    : `Renova em ${renewalStr}`
-                }
-              </p>
+              {store?.mercadopago_subscription_id ? (
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--success)", color: "white" }}>Ativo</span>
+                  {renewalStr && <span className="text-[11px]" style={{ color: "var(--muted)" }}>Renova em {renewalStr}</span>}
+                </div>
+              ) : (
+                <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                  {currentPlanName === "Avulso" 
+                    ? "Compre créditos ou assine um plano"
+                    : renewalStr ? `Renova em ${renewalStr}` : ""}
+                </p>
+              )}
             </div>
           </div>
           {store?.mercadopago_subscription_id && (
@@ -354,18 +361,35 @@ export default function Plano() {
         </div>
       </div>
 
-      {/* Upgrade options */}
-      <h3 className="text-lg font-bold mb-4">Fazer upgrade</h3>
+      {/* Plan options */}
+      <h3 className="text-lg font-bold mb-4">
+        {currentPlanName === "Avulso" ? "Fazer upgrade" : "Planos"}
+      </h3>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {plans.map((plan) => (
-          <div key={plan.name} className="rounded-2xl p-5 transition-all hover:-translate-y-1 flex flex-col"
+        {plans.map((plan) => {
+          const planRank = plans.findIndex(p => p.id === plan.id);
+          const currentRank = plans.findIndex(p => p.name === currentPlanName);
+          const isCurrentPlan = plan.name === currentPlanName;
+          const isLowerPlan = planRank < currentRank;
+          const isUpgrade = planRank > currentRank;
+
+          return (
+          <div key={plan.name} className="rounded-2xl p-5 transition-all flex flex-col relative"
             style={{
-              background: plan.highlight ? "var(--gradient-brand)" : "var(--background)",
-              color: plan.highlight ? "white" : "var(--foreground)",
-              border: plan.highlight ? "none" : "1px solid var(--border)",
-              boxShadow: plan.highlight ? "var(--shadow-glow)" : "none",
+              background: isCurrentPlan ? "var(--gradient-brand-soft)" : plan.highlight && !isLowerPlan ? "var(--gradient-brand)" : "var(--background)",
+              color: plan.highlight && !isCurrentPlan && !isLowerPlan ? "white" : "var(--foreground)",
+              border: isCurrentPlan ? "2px solid var(--brand-500)" : plan.highlight && !isLowerPlan ? "none" : "1px solid var(--border)",
+              boxShadow: isCurrentPlan ? "var(--shadow-glow)" : plan.highlight && !isLowerPlan ? "var(--shadow-glow)" : "none",
+              opacity: isLowerPlan ? 0.5 : 1,
+              ...(isUpgrade ? { cursor: "pointer" } : {}),
             }}>
-            {plan.highlight && (
+            {isCurrentPlan && (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full self-start mb-2"
+                style={{ background: "var(--brand-500)", color: "white" }}>
+                ✓ Seu plano atual
+              </span>
+            )}
+            {plan.highlight && !isCurrentPlan && !isLowerPlan && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full self-start mb-2"
                 style={{ background: "rgba(255,255,255,0.25)" }}>
                 Recomendado
@@ -375,22 +399,23 @@ export default function Plano() {
             <h4 className="font-bold">{plan.name}</h4>
             <p className="text-2xl font-black mt-1">R$ {plan.price}<span className="text-xs font-normal opacity-70">/mês</span></p>
             <div className="mt-4 space-y-2 flex-1">
-              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.campaigns} campanhas/mês</div>
-              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>{plan.models} modelos virtuais</div>
-              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight ? "white" : "var(--success)" }}><IconCheck /></span>Modelo + fundo profissional</div>
+              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight && !isCurrentPlan && !isLowerPlan ? "white" : "var(--success)" }}><IconCheck /></span>{plan.campaigns} campanhas/mês</div>
+              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight && !isCurrentPlan && !isLowerPlan ? "white" : "var(--success)" }}><IconCheck /></span>{plan.models} modelos virtuais</div>
+              <div className="flex items-center gap-2 text-xs"><span style={{ color: plan.highlight && !isCurrentPlan && !isLowerPlan ? "white" : "var(--success)" }}><IconCheck /></span>Modelo + fundo profissional</div>
             </div>
             <button
-              onClick={() => handleCheckout(plan.id)}
-              disabled={loading === plan.id}
+              onClick={() => !isCurrentPlan && !isLowerPlan && handleCheckout(plan.id)}
+              disabled={loading === plan.id || isCurrentPlan || isLowerPlan}
               className="w-full mt-4 py-3 px-2 rounded-full text-[12px] sm:text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
               style={{
-                background: plan.highlight ? "white" : "var(--gradient-brand)",
-                color: plan.highlight ? "var(--brand-600)" : "white",
+                background: isCurrentPlan ? "var(--brand-500)" : isLowerPlan ? "var(--border)" : plan.highlight ? "white" : "var(--gradient-brand)",
+                color: isCurrentPlan ? "white" : isLowerPlan ? "var(--muted)" : plan.highlight ? "var(--brand-600)" : "white",
               }}>
-              {loading === plan.id ? "Abrindo checkout..." : `Assinar ${plan.name}`}
+              {isCurrentPlan ? "✓ Plano atual" : isLowerPlan ? plan.name : loading === plan.id ? "Abrindo checkout..." : `Assinar ${plan.name}`}
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Trial — only show for free plan users who haven't used it */}
