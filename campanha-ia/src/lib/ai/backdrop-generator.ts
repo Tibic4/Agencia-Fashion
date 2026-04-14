@@ -246,8 +246,9 @@ export async function generateBackdrop(
     const exchangeRate = await getExchangeRate();
     const modelPrice = pricing[MODEL] || { inputPerMTok: 2.00, outputPerMTok: 120.00 };
 
-    // Backdrop: text-only prompt (~1000 tokens input), 1 imagem gerada (~4000 tokens output)
-    const inputTokens = 1000;
+    // Backdrop = 1 imagem, mesma lógica do VTO (que faz 3 imagens)
+    // VTO fallback por imagem: 4600 input + 4000 output → backdrop = VTO ÷ 3
+    const inputTokens = 4600;
     const outputTokens = 4000;
     const costUsd =
       (inputTokens * modelPrice.inputPerMTok) / 1_000_000 +
