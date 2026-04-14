@@ -18,6 +18,32 @@ import ScrollTracker from "@/components/ScrollTracker";
    ═══════════════════════════════════════ */
 export const revalidate = 3600;
 
+/* ─── Contadores diários deterministicos ─────────────────────────────────────
+   Usam a data como semente para gerar incrementos pseudo-aleatórios estáveis.
+   Cada dia acumula: lojistas +10~20, campanhas +80~100.
+   ──────────────────────────────────────────────────────────────────────────── */
+function dailyCounters() {
+  const BASE_DATE = new Date("2025-01-15").getTime();
+  const BASE_LOJISTAS = 1247;
+  const BASE_CAMPANHAS = 8900;
+  const MS_PER_DAY = 86400000;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysSinceBase = Math.max(0, Math.floor((today.getTime() - BASE_DATE) / MS_PER_DAY));
+
+  // Semente simples mas deterministica por dia
+  let lojistas = BASE_LOJISTAS;
+  let campanhas = BASE_CAMPANHAS;
+  for (let d = 0; d < daysSinceBase; d++) {
+    const seed = (d * 2654435761) >>> 0; // Knuth multiplicative hash
+    lojistas  += 10 + (seed % 11);           // +10 a +20
+    campanhas += 80 + ((seed >> 4) % 21);    // +80 a +100
+  }
+
+  return { lojistas, campanhas };
+}
+
 import { IconCamera, IconZap, IconDownload, IconSparkles, IconShirt, IconTarget, IconBarChart, IconShield, IconUsers, IconCheck, IconArrowRight, IconInstagram, IconWhatsApp, IconChevronUp } from "@/components/Icons";
 
 
@@ -51,6 +77,7 @@ const steps = [
    Page Component
    ═══════════════════════════════════════ */
 export default function Home() {
+  const { lojistas, campanhas } = dailyCounters();
   return (
     <div className="flex flex-col min-h-screen">
       {/* ═══ NAVBAR ═══ */}
@@ -220,7 +247,7 @@ export default function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--success)' }}></span>
                   <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: 'var(--success)' }}></span>
                 </span>
-                <strong style={{ color: 'var(--foreground)' }}>1.247 lojistas</strong> já criaram 8.900+ campanhas esta semana
+                <strong style={{ color: 'var(--foreground)' }}>{lojistas.toLocaleString("pt-BR")} lojistas</strong> já criaram {campanhas.toLocaleString("pt-BR")}+ campanhas esta semana
               </p>
               <div className="flex flex-wrap justify-center items-center gap-5 md:gap-16 opacity-60 grayscale blur-[0.5px]">
                 <span className="text-base sm:text-xl font-black tracking-tighter">DONNA</span>
