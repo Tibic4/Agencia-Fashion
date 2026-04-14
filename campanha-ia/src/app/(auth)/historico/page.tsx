@@ -37,7 +37,6 @@ interface Campaign {
 interface PlanInfo {
   name: string;
   historyDays: number;
-  regenLimit: number;
   fullScore: boolean;
   allChannels: boolean;
   previewLink: boolean;
@@ -205,7 +204,7 @@ export default function Historico() {
           </div>
           <Link
             href="/gerar"
-            className="btn-primary text-sm !py-2.5 !px-5 min-h-[44px] flex items-center justify-center flex-shrink-0"
+            className="btn-primary text-sm !py-3 !px-5 min-h-[44px] flex items-center justify-center flex-shrink-0"
           >
             + Nova
           </Link>
@@ -214,10 +213,10 @@ export default function Historico() {
 
       {/* ── Filter Tabs ── */}
       {campaigns.length > 0 && (
-        <div className="flex gap-2 mb-5 overflow-x-auto pb-2 snap-x hide-scrollbar" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-2 snap-x hide-scrollbar scroll-touch">
           <button
             onClick={() => setFilter("all")}
-            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
+            className="text-sm font-semibold px-5 py-3 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
             style={{
               background: filter === "all" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "all" ? "white" : "var(--muted)",
@@ -228,7 +227,7 @@ export default function Historico() {
           </button>
           <button
             onClick={() => setFilter("favorites")}
-            className="text-sm font-semibold px-5 py-2.5 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
+            className="text-sm font-semibold px-5 py-3 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
             style={{
               background: filter === "favorites" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "favorites" ? "white" : "var(--muted)",
@@ -242,7 +241,7 @@ export default function Historico() {
 
       {/* Nota de filtro de histórico — só mostra quando há campanhas e o plano limita */}
       {planInfo && planInfo.historyDays > 0 && campaigns.length > 0 && (
-        <div className="mb-4 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="mb-4 px-4 py-3 rounded-xl flex items-center gap-2 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <span style={{ color: "var(--muted)" }}>📅</span>
           <p style={{ color: "var(--muted)" }}>
             Mostrando últimos <strong style={{ color: "var(--foreground)" }}>{historyLabel}</strong>
@@ -364,7 +363,7 @@ export default function Historico() {
                         toggleFavorite(campaign.id, isFav);
                       }}
                       disabled={isToggling}
-                      className="flex-shrink-0 w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                      className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90"
                       style={{
                         background: isFav ? "var(--brand-100, rgba(236,72,153,0.12))" : "var(--surface)",
                         border: isFav ? "1px solid var(--brand-300, rgba(236,72,153,0.3))" : "1px solid var(--border)",
@@ -395,7 +394,7 @@ export default function Historico() {
                     >
                       {/* Thumbnail or status icon */}
                       {campaign.output?.image_urls?.find(Boolean) ? (
-                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid var(--border)" }}>
+                        <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid var(--border)" }}>
                           <img
                             src={campaign.output.image_urls.find(Boolean) as string}
                             alt={headline}
@@ -404,24 +403,24 @@ export default function Historico() {
                           />
                         </div>
                       ) : (
-                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center text-base sm:text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: "var(--gradient-card)" }}>
                           {campaign.status === "completed" ? "✅" : campaign.status === "failed" ? "❌" : "⏳"}
                         </div>
                       )}
 
                       {/* Info */}
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="font-semibold text-[13px] sm:text-[15px] leading-snug truncate">
+                        <p className="font-semibold text-sm leading-snug truncate">
                           {headline}
                         </p>
                         <div className="flex items-center gap-2 mt-1 min-w-0">
                           <span
-                            className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0 truncate max-w-[50%]"
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 truncate max-w-[50%]"
                             style={{ background: objStyle.bg, color: objStyle.color }}
                           >
                             {objLabel || "—"}
                           </span>
-                          <span className="text-[10px] sm:text-xs truncate" style={{ color: "var(--muted)" }}>
+                          <span className="text-xs truncate" style={{ color: "var(--muted)" }}>
                             {campaign.price > 0 ? `R$ ${Number(campaign.price).toFixed(2).replace(".", ",")}` : ""} · {formatDate(campaign.created_at)}
                           </span>
                         </div>
@@ -450,7 +449,7 @@ export default function Historico() {
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
-                className="flex items-center gap-1 text-sm font-semibold px-3 py-2.5 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 text-sm font-semibold px-3 py-3 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -465,7 +464,7 @@ export default function Historico() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center"
+                        className="w-11 h-11 rounded-xl text-sm font-semibold transition-all flex items-center justify-center"
                         style={{
                           background: page === currentPage ? "var(--brand-500)" : "transparent",
                           color: page === currentPage ? "white" : "var(--muted)",
@@ -489,7 +488,7 @@ export default function Historico() {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="flex items-center gap-1 text-sm font-semibold px-3 py-2.5 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 text-sm font-semibold px-3 py-3 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
               >
                 <span className="hidden sm:inline">Próxima</span>

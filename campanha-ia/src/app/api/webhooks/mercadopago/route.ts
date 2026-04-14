@@ -17,8 +17,8 @@ function validateWebhookSignature(
 ): boolean {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
   if (!secret) {
-    console.warn("[Webhook:MercadoPago] ⚠️ MERCADOPAGO_WEBHOOK_SECRET não configurado — pulando validação");
-    return true;
+    console.error("[Webhook:MercadoPago] ❌ MERCADOPAGO_WEBHOOK_SECRET não configurado — rejeitando webhook");
+    return false;
   }
 
   const xSignature = request.headers.get("x-signature") || "";

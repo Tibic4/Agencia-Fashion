@@ -277,7 +277,7 @@ export default function AuthLayout({
 
       {/* Mobile Bottom Tab Bar — Floating Island Style */}
       <nav
-        className="lg:hidden fixed left-2 right-2 z-30 glass grid grid-flow-col auto-cols-fr px-1 py-1 rounded-2xl shadow-xl shadow-black/5"
+        className="lg:hidden fixed left-2 right-2 z-30 glass grid grid-flow-col auto-cols-fr px-1 py-1.5 rounded-2xl shadow-xl shadow-black/5"
         style={{ 
           bottom: "calc(8px + env(safe-area-inset-bottom))",
           border: "1px solid var(--border)" 
@@ -301,8 +301,8 @@ export default function AuthLayout({
                   style={{ background: "rgba(217,70,239,0.1)", zIndex: -1 }} 
                 />
               )}
-              <div className="flex-shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px]">{item.icon}</div>
-              <span className="block w-full text-[9px] font-bold leading-none truncate text-center" style={{ opacity: isActive ? 1 : 0.8 }}>
+              <div className="flex-shrink-0 [&_svg]:w-5 [&_svg]:h-5">{item.icon}</div>
+              <span className="block w-full text-[10px] font-bold leading-none truncate text-center" style={{ opacity: isActive ? 1 : 0.8 }}>
                 {item.shortLabel}
               </span>
             </Link>
