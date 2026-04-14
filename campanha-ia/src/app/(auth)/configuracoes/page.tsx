@@ -26,6 +26,13 @@ export default function Configuracoes() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Backdrop state
+  const [backdropUrl, setBackdropUrl] = useState<string | null>(null);
+  const [backdropGenerating, setBackdropGenerating] = useState(false);
+  const [backdropCanRegenerate, setBackdropCanRegenerate] = useState(true);
+  const [backdropNextDate, setBackdropNextDate] = useState<string | null>(null);
+  const backdropPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const segments = [
     { value: "feminina", label: "Moda Feminina", emoji: "👗" },
     { value: "masculina", label: "Moda Masculina", emoji: "👔" },
@@ -63,7 +70,81 @@ export default function Configuracoes() {
         setError("Erro de conexão ao carregar configurações.");
       })
       .finally(() => setLoading(false));
+
+    // Load backdrop status
+    fetch("/api/store/backdrop")
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.data) {
+          setBackdropUrl(data.data.url || null);
+          setBackdropCanRegenerate(data.data.canRegenerate ?? true);
+          setBackdropNextDate(data.data.nextAvailableDate || null);
+        }
+      })
+      .catch(() => {}); // non-critical
+
+    return () => {
+      if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+    };
   }, []);
+
+  // ── Generate/regenerate backdrop ──
+  const handleGenerateBackdrop = async () => {
+    if (!brandColor || backdropGenerating) return;
+    setBackdropGenerating(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/store/backdrop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandColor }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.code === "RATE_LIMITED") {
+          setBackdropCanRegenerate(false);
+          setBackdropNextDate(data.nextAvailableDate || null);
+          throw new Error(data.error);
+        }
+        throw new Error(data.error || "Erro ao gerar estúdio");
+      }
+
+      // Start polling for backdrop completion
+      let attempts = 0;
+      const maxAttempts = 20; // 20 * 3s = 60s max
+
+      if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+
+      backdropPollRef.current = setInterval(async () => {
+        attempts++;
+        try {
+          const pollRes = await fetch("/api/store/backdrop");
+          if (pollRes.ok) {
+            const pollData = await pollRes.json();
+            if (pollData?.data?.url && pollData.data.url !== backdropUrl) {
+              setBackdropUrl(pollData.data.url);
+              setBackdropGenerating(false);
+              setBackdropCanRegenerate(pollData.data.canRegenerate ?? false);
+              setBackdropNextDate(pollData.data.nextAvailableDate || null);
+              if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+            }
+          }
+        } catch {}
+
+        if (attempts >= maxAttempts) {
+          setBackdropGenerating(false);
+          if (backdropPollRef.current) clearInterval(backdropPollRef.current);
+        }
+      }, 3000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao gerar estúdio";
+      setError(message);
+      setBackdropGenerating(false);
+    }
+  };
 
   // ── Upload logo ──
   const handleLogoUpload = async (file: File) => {
@@ -276,7 +357,92 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        {/* ── Store info ── */}
+        {/* ── Studio backdrop ── */}
+        {brandColor && (
+          <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+            <h2 className="text-lg font-semibold mb-2">📸 Estúdio personalizado</h2>
+            <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
+              Imagem de fundo gerada pela IA na cor da sua marca. Usada como referência em todas as fotos de campanha para garantir consistência visual.
+            </p>
+
+            {/* Backdrop preview */}
+            {backdropUrl ? (
+              <div className="rounded-xl overflow-hidden mb-4 relative" style={{ border: "1px solid var(--border)" }}>
+                <img
+                  src={backdropUrl}
+                  alt="Estúdio personalizado"
+                  className="w-full h-48 object-cover"
+                  style={{ objectPosition: "center bottom" }}
+                />
+                <div className="absolute bottom-0 inset-x-0 p-3 flex items-center justify-between" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+                  <span className="text-white text-xs font-semibold drop-shadow-md">✅ Estúdio ativo</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-4 rounded-full" style={{ background: brandColor, border: "2px solid white" }} />
+                    <span className="text-white text-xs font-mono drop-shadow-md">{brandColor}</span>
+                  </div>
+                </div>
+              </div>
+            ) : backdropGenerating ? (
+              <div className="rounded-xl h-48 flex flex-col items-center justify-center gap-3 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+                <div className="text-center">
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Criando seu estúdio...</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Isso leva ~30 segundos</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl h-48 flex flex-col items-center justify-center gap-3 mb-4" style={{ background: `linear-gradient(180deg, ${brandColor}22 0%, ${brandColor}11 100%)`, border: "1px dashed var(--border)" }}>
+                <span className="text-3xl">🎨</span>
+                <div className="text-center">
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Estúdio não gerado</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Gere seu estúdio personalizado para campanhas</p>
+                </div>
+              </div>
+            )}
+
+            {/* Generate/Regenerate button */}
+            {backdropCanRegenerate ? (
+              <button
+                onClick={handleGenerateBackdrop}
+                disabled={backdropGenerating || !brandColor}
+                className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{
+                  background: backdropGenerating ? "var(--surface)" : "var(--gradient-brand)",
+                  color: backdropGenerating ? "var(--muted)" : "white",
+                  border: backdropGenerating ? "1px solid var(--border)" : "none",
+                }}
+              >
+                {backdropGenerating ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+                    Gerando estúdio...
+                  </>
+                ) : backdropUrl ? (
+                  "🔄 Regenerar estúdio"
+                ) : (
+                  "✨ Gerar estúdio personalizado"
+                )}
+              </button>
+            ) : (
+              <div className="w-full py-3 px-4 rounded-xl text-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-medium" style={{ color: "var(--muted)" }}>
+                  🔒 Próxima troca disponível em{" "}
+                  <span className="font-bold" style={{ color: "var(--foreground)" }}>
+                    {backdropNextDate
+                      ? new Date(backdropNextDate).toLocaleDateString("pt-BR")
+                      : "30 dias"}
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {!backdropCanRegenerate && (
+              <p className="text-[11px] text-center mt-2" style={{ color: "var(--muted)" }}>
+                O estúdio pode ser atualizado 1x a cada 30 dias
+              </p>
+            )}
+          </div>
+        )}
         <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
           <h2 className="text-lg font-semibold mb-5">Dados da loja</h2>
           <div className="space-y-4">

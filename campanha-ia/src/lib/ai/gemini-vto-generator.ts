@@ -31,6 +31,9 @@ export interface GeminiVTOInput {
   /** Base64 da foto da modelo do banco (sem prefixo data:) */
   modelImageBase64: string;
   modelMediaType?: string;
+  /** Base64 do backdrop de referência (estúdio vazio na cor da marca) */
+  backdropImageBase64?: string;
+  backdropMediaType?: string;
   /** Tipo de corpo */
   bodyType?: "normal" | "plus";
   /** Gênero do modelo */
@@ -92,7 +95,7 @@ function getAI(): GoogleGenAI {
 // Prompt de VTO (narrativo — força do Gemini)
 // ═══════════════════════════════════════
 
-function buildVTOPrompt(stylingPrompt: string, bodyType: string, gender?: string): string {
+function buildVTOPrompt(stylingPrompt: string, bodyType: string, gender?: string, hasBackdrop?: boolean): string {
   const isMale = gender === 'masculino' || gender === 'male' || gender === 'm';
 
   const fitContext = bodyType === "plus"
@@ -141,11 +144,21 @@ FIT DIRECTIVES:
 • The overall look must feel COMPLETE — as if a professional stylist prepared every detail
 • Think: this image will be posted on Instagram by a luxury fashion brand`;
 
+  const imageLabels = hasBackdrop
+    ? `I am providing reference images in this order:
+• FIRST image: THE MODEL — a person whose identity you must preserve EXACTLY in the output.
+• SECOND image: THE GARMENT — a product photo showing the clothing piece(s) that must appear on the model.
+• LAST image: BACKDROP REFERENCE — an empty studio environment photo. Reproduce this EXACT backdrop
+  (wall color, floor, lighting, texture, shadow). Do NOT use any person or object from this image.
+  It is ONLY a visual reference for the environment/background of the output photo.
+  The floor in the output should remain MATTE — do NOT add glossy reflections of the person on the floor.`
+    : `I am providing exactly TWO reference images:
+• IMAGE 1 (first image): THE MODEL — a person whose identity you must preserve EXACTLY in the output.
+• IMAGE 2 (second image): THE GARMENT — a product photo showing the clothing piece(s) that must appear on the model.`;
+
   return `You are an elite commercial fashion photographer with 20 years of experience shooting campaigns for Vogue, ELLE, and luxury e-commerce brands.
 
-I am providing exactly TWO reference images:
-• IMAGE 1 (first image): THE MODEL — a person whose identity you must preserve EXACTLY in the output.
-• IMAGE 2 (second image): THE GARMENT — a product photo showing the clothing piece(s) that must appear on the model.
+${imageLabels}
 
 YOUR MISSION: Produce a SINGLE stunning photorealistic fashion photograph of the person from IMAGE 1 wearing the COMPLETE outfit from IMAGE 2. This image must be indistinguishable from a real professional photoshoot.
 
@@ -224,6 +237,10 @@ ${stylingPrompt}
 
 🚨 BACKGROUND CONSISTENCY (CRITICAL FOR CAMPAIGN COHESION):
 • This image is ONE photo in a 3-photo campaign series — the backdrop MUST be visually identical across all photos
+• If a BACKDROP REFERENCE image was provided (LAST image), reproduce that EXACT environment:
+  — Same wall color, same floor color (white matte), same wall-floor junction shadow
+  — Same lighting setup, same surface texture, same proportions
+  — The floor MUST remain MATTE — no glossy reflections of the model on the floor
 • Same background color, same surface texture, same lighting angle and intensity
 • The ONLY differences between photos should be: POSE, CAMERA ANGLE, and EXPRESSION
 • If the scene description above specifies a backdrop color (hex code), reproduce that EXACT color — do NOT approximate
@@ -350,7 +367,9 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
           input.bodyType || "normal",
           input.aspectRatio || DEFAULT_ASPECT,
           index,
-          input.gender
+          input.gender,
+          input.backdropImageBase64,
+          input.backdropMediaType
         );
         await input.onImageComplete?.(index, true);
         return result;
@@ -411,14 +430,17 @@ async function generateSingleImage(
   bodyType: string,
   aspectRatio: string,
   index: number,
-  gender?: string
+  gender?: string,
+  backdropBase64?: string,
+  backdropMime?: string
 ): Promise<GeneratedImage> {
   const start = Date.now();
   const conceptName = `Look ${index + 1}`;
   console.log(`[Gemini VTO] 🎨 #${index + 1} "${conceptName}" — iniciando (${MODEL} ${IMAGE_SIZE})...`);
 
   const ai = getAI();
-  const vtoPrompt = buildVTOPrompt(stylingPrompt, bodyType, gender);
+  const hasBackdrop = !!backdropBase64;
+  const vtoPrompt = buildVTOPrompt(stylingPrompt, bodyType, gender, hasBackdrop);
 
   // Map aspect ratio to Gemini format
   const geminiAspect = mapAspectRatio(aspectRatio);
@@ -442,6 +464,13 @@ async function generateSingleImage(
             data: productBase64,
           },
         },
+        // LAST IMAGE: Backdrop reference (if provided)
+        ...(backdropBase64 ? [{
+          inlineData: {
+            mimeType: (backdropMime || "image/png") as any,
+            data: backdropBase64,
+          },
+        }] : []),
       ],
       config: {
         responseModalities: ["IMAGE", "TEXT"],

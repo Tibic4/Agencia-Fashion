@@ -291,12 +291,58 @@ export const generateModelPreviewJob = inngest.createFunction(
   }
 );
 
+// ═══════════════════════════════════════════════════════════
+// BACKDROP GENERATOR — Estúdio vazio na cor da marca
+// ═══════════════════════════════════════════════════════════
+
+interface BackdropGenerateEvent {
+  storeId: string;
+  brandColor: string;
+}
+
+/**
+ * Job: Gerar backdrop de referência (estúdio vazio) em background.
+ * Usado como imagem de referência visual pelo VTO para consistência de fundos.
+ * Retry automático: 2 tentativas com backoff exponencial.
+ */
+export const generateBackdropJob = inngest.createFunction(
+  {
+    id: "generate-backdrop",
+    retries: 2,
+    triggers: [{ event: "store/backdrop.requested" }],
+    onFailure: async ({ event }) => {
+      try {
+        const data = event.data?.event?.data as BackdropGenerateEvent;
+        if (data?.storeId) {
+          console.error(`[Inngest:Backdrop] ❌ Todas as tentativas falharam para store ${data.storeId}`);
+        }
+      } catch (e) {
+        console.error("[Inngest:Backdrop] Erro no onFailure:", e);
+      }
+    },
+  },
+  async ({ event, step }) => {
+    const data = event.data as BackdropGenerateEvent;
+
+    // Step 1: Gerar backdrop via Gemini
+    const result = await step.run("generate-backdrop-image", async () => {
+      console.log(`[Inngest:Backdrop] 🎨 Gerando estúdio para store ${data.storeId} (${data.brandColor})...`);
+      const { generateBackdrop } = await import("@/lib/ai/backdrop-generator");
+      return await generateBackdrop(data.storeId, data.brandColor);
+    });
+
+    console.log(`[Inngest:Backdrop] ✅ Backdrop salvo: ${result.url.slice(0, 60)}...`);
+    return { storeId: data.storeId, backdropUrl: result.url, color: result.color };
+  }
+);
+
 /**
  * Lista de todas as functions Inngest para registrar no handler.
  */
 export const inngestFunctions = [
   generateCampaignJob,
   generateModelPreviewJob,
+  generateBackdropJob,
   storageGarbageCollectorCron,
   storageGarbageCollectorManual,
 ];

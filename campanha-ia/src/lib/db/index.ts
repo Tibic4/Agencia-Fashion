@@ -35,6 +35,9 @@ export interface StoreRecord {
   instagram_handle: string | null;
   plan_id: string | null;
   brand_colors: { primary?: string } | null;
+  backdrop_ref_url: string | null;
+  backdrop_color: string | null;
+  backdrop_updated_at: string | null;
   onboarding_completed: boolean;
   created_at: string;
 }
@@ -540,9 +543,10 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
     })
     .eq("id", storeId);
 
-  // Resetar store_usage do período atual
+  // Resetar ou criar store_usage do período
   const usage = await getCurrentUsage(storeId);
   if (usage) {
+    // Período ativo existe — resetar contadores
     await supabase
       .from("store_usage")
       .update({
@@ -550,6 +554,22 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
         campaigns_limit: plan.campaigns_per_month,
       })
       .eq("id", usage.id);
+  } else {
+    // Período expirado ou inexistente — criar novo período de 30 dias
+    const now = new Date();
+    const periodStart = now.toISOString().split("T")[0];
+    const periodEndDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const periodEnd = periodEndDate.toISOString().split("T")[0];
+
+    await supabase.from("store_usage").insert({
+      store_id: storeId,
+      period_start: periodStart,
+      period_end: periodEnd,
+      campaigns_generated: 0,
+      campaigns_limit: plan.campaigns_per_month,
+    });
+
+    console.log(`[DB] ✅ Novo período criado para store ${storeId}: ${periodStart} → ${periodEnd}`);
   }
 }
 
