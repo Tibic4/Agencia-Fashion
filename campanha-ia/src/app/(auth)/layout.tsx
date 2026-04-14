@@ -205,7 +205,7 @@ export default function AuthLayout({
                   />
                 </div>
                 <p className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>
-                  Créditos avulsos · Não expiram
+                  Créditos disponíveis
                 </p>
               </>
             )}
