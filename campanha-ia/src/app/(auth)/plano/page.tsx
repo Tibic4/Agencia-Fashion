@@ -321,17 +321,12 @@ export default function Plano() {
               <span style={{ color: "var(--muted)" }}>Campanhas</span>
               <span className="font-bold">
                 {dataLoading ? "..." : (
-                  <>
-                    {campaignsLimit > 0 ? `${campaignsUsed}/${campaignsLimit}` : "—"}
-                    {(credits?.campaigns ?? 0) > 0 && (
-                      <span style={{ color: "var(--success)", marginLeft: 4 }}>+{credits!.campaigns} avulso{credits!.campaigns > 1 ? "s" : ""}</span>
-                    )}
-                  </>
+                  campaignsLimit > 0 ? `${campaignsUsed}/${campaignsLimit}` : "—"
                 )}
               </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${campaignsLimit > 0 ? usagePercent : (credits?.campaigns ?? 0) > 0 ? 50 : 0}%`, background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${campaignsLimit > 0 ? usagePercent : 0}%`, background: usagePercent > 80 ? "var(--warning)" : "var(--gradient-brand)" }} />
             </div>
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
@@ -339,17 +334,12 @@ export default function Plano() {
               <span style={{ color: "var(--muted)" }}>Modelos</span>
               <span className="font-bold">
                 {dataLoading ? "..." : (
-                  <>
-                    {(usage?.models_limit ?? 0) > 0 ? `${usage?.models_used ?? 0}/${usage?.models_limit ?? 0}` : "—"}
-                    {(credits?.models ?? 0) > 0 && (
-                      <span style={{ color: "var(--success)", marginLeft: 4 }}>+{credits!.models} avulso{credits!.models > 1 ? "s" : ""}</span>
-                    )}
-                  </>
+                  (usage?.models_limit ?? 0) > 0 ? `${usage?.models_used ?? 0}/${usage?.models_limit ?? 0}` : "—"
                 )}
               </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div className="h-full rounded-full" style={{ width: `${usage?.models_limit ? ((usage?.models_used ?? 0) / usage.models_limit) * 100 : (credits?.models ?? 0) > 0 ? 50 : 0}%`, background: "var(--gradient-brand)" }} />
+              <div className="h-full rounded-full" style={{ width: `${usage?.models_limit ? ((usage?.models_used ?? 0) / usage.models_limit) * 100 : 0}%`, background: "var(--gradient-brand)" }} />
             </div>
           </div>
           <div className="rounded-xl p-4" style={{ background: "var(--background)" }}>
