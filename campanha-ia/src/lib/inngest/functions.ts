@@ -201,8 +201,9 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
       const exchangeRate = await getExchangeRate();
       const modelPrice = pricing["gemini-3.1-flash-image-preview"] || { inputPerMTok: 0.50, outputPerMTok: 60.00 };
 
-      // Estimar tokens: ~250 input (prompt + imagem ref), ~4000 output (imagem gerada)
-      const inputTokens = faceBase64 ? 1300 : 250;
+      // Mesma lógica do VTO por imagem: 4600 input + 4000 output
+      // Flash Image = metade do custo do Pro Image (~R$1.39 vs ~R$2.85)
+      const inputTokens = faceBase64 ? 4600 : 250;
       const outputTokens = 4000;
       const costUsd = (inputTokens * modelPrice.inputPerMTok + outputTokens * modelPrice.outputPerMTok) / 1_000_000;
       const costBrl = costUsd * exchangeRate;
