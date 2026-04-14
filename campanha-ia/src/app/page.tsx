@@ -74,7 +74,7 @@ export default function Home() {
             <div>
               <ThemeToggle />
             </div>
-            <Link href="/sign-up" className="btn-primary w-full sm:w-auto text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px] whitespace-nowrap">
+            <Link href="/sign-up" className="btn-primary w-auto text-sm !py-2.5 !px-4 sm:!py-2.5 sm:!px-5 min-h-[44px] whitespace-nowrap">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
             </Link>
@@ -84,7 +84,7 @@ export default function Home() {
 
       <main className="flex-1 pb-16 md:pb-0">
         {/* ═══ HERO — VTO-first above the fold ═══ */}
-        <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
+        <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-x-hidden" style={{ background: 'var(--gradient-hero)' }}>
           {/* Mesh gradient orbs */}
           <div className="absolute top-10 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.15] blur-[100px]" style={{ background: 'var(--brand-400)' }} />
           <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-[120px]" style={{ background: 'var(--accent-400)' }} />
@@ -136,9 +136,9 @@ export default function Home() {
 
               {/* CTAs */}
               <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
-                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
-                  <IconZap />
-                  Criar Minha 1ª Campanha — R$ 19,90
+                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
+                  <IconZap className="shrink-0" />
+                  <span>Criar Minha 1ª Campanha<br className="xs:hidden" /> — R$ 19,90</span>
                 </Link>
                 <a href="#demo-viva" className="btn-secondary w-full text-sm !py-3">
                   Ver Exemplo Pronto
@@ -222,12 +222,12 @@ export default function Home() {
                 </span>
                 <strong style={{ color: 'var(--foreground)' }}>1.247 lojistas</strong> já criaram 8.900+ campanhas esta semana
               </p>
-              <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale blur-[0.5px]">
-                <span className="text-xl font-black tracking-tighter">DONNA</span>
-                <span className="text-xl font-black tracking-widest font-serif">ELEGANCE</span>
-                <span className="text-xl font-bold uppercase">ML Fashion</span>
-                <span className="text-xl font-bold italic">Boutique</span>
-                <span className="text-xl font-black">CiaBrand</span>
+              <div className="flex flex-wrap justify-center items-center gap-5 md:gap-16 opacity-60 grayscale blur-[0.5px]">
+                <span className="text-base sm:text-xl font-black tracking-tighter">DONNA</span>
+                <span className="text-base sm:text-xl font-black tracking-widest font-serif">ELEGANCE</span>
+                <span className="text-base sm:text-xl font-bold uppercase">ML Fashion</span>
+                <span className="text-base sm:text-xl font-bold italic">Boutique</span>
+                <span className="text-base sm:text-xl font-black">CiaBrand</span>
               </div>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function Home() {
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Invista na Sua <span className="gradient-text">Agência Virtual</span>
               </h2>
-              <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold mb-4 bg-brand-500/10 text-brand-600 border border-brand-200 dark:border-brand-800 dark:text-brand-400">
+              <div className="inline-flex items-center gap-2 rounded-xl sm:rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-4 bg-brand-500/10 text-brand-600 border border-brand-200 dark:border-brand-800 dark:text-brand-400 text-center">
                 ⚡ Preço de lançamento — válido até final do mês
               </div>
             </div>
@@ -432,10 +432,10 @@ export default function Home() {
             <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
               Comece com o Pack Teste por R$ 19,90. 3 campanhas completas: Modelo virtual, logo na imagem e legendas de alta conversão.
             </p>
-            <Link href="/sign-up" className="btn-primary text-base !py-4 !px-10 hover:animate-pulse-glow" aria-label="Criar minha primeira campanha com IA">
-              <IconZap />
-              Criar minha primeira campanha — R$ 19,90
-              <IconArrowRight />
+            <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-4 !px-6 sm:!px-10 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar minha primeira campanha com IA">
+              <IconZap className="shrink-0" />
+              <span>Criar minha primeira campanha — R$ 19,90</span>
+              <IconArrowRight className="shrink-0" />
             </Link>
 
           </div>
