@@ -289,7 +289,8 @@ export default function Configuracoes() {
       <div className="space-y-8">
         {/* ── Logo + Cor da marca ── */}
         <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-          <h2 className="text-lg font-semibold mb-5">Identidade da marca</h2>
+          <h2 className="text-lg font-semibold mb-1">Identidade da marca</h2>
+          <p className="text-xs mb-5" style={{ color: "var(--muted)" }}>Logo e cor que aparecem nas suas campanhas</p>
           <div className="flex flex-col sm:flex-row gap-6">
             {/* Logo */}
             <div className="flex flex-row sm:flex-col items-center sm:items-center gap-4 sm:gap-3">
@@ -298,15 +299,13 @@ export default function Configuracoes() {
                 style={{ background: "var(--surface)", border: "2px dashed var(--border)" }}
                 onClick={() => logoInputRef.current?.click()}
               >
-                {uploadingLogo ? (
-                  <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
-                ) : logoUrl ? (
-                  <>
-                    <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white text-xs font-semibold">Trocar</span>
-                    </div>
-                  </>
+                {uploadingLogo && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10" style={{ background: "rgba(255,255,255,0.8)" }}>
+                    <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+                  </div>
+                )}
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
                 ) : (
                   <div className="text-center">
                     <span className="text-2xl sm:text-3xl">📷</span>
@@ -326,13 +325,12 @@ export default function Configuracoes() {
                     if (file) handleLogoUpload(file);
                   }}
                 />
-                {!logoUrl && <label className="text-sm font-semibold sm:hidden block mb-1">Sua Logo</label>}
                 <button
                   onClick={() => logoInputRef.current?.click()}
                   className="text-xs font-semibold px-4 py-2 rounded-lg min-h-[44px] transition w-full sm:w-auto"
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
                 >
-                  {logoUrl ? "Trocar logo da marca" : "Fazer upload"}
+                  {logoUrl ? "Trocar logo" : "Fazer upload"}
                 </button>
               </div>
             </div>
@@ -341,19 +339,19 @@ export default function Configuracoes() {
             <div className="flex-1 space-y-3">
               <label className="text-sm font-semibold block">🎨 Cor da marca</label>
               <p className="text-xs" style={{ color: "var(--muted)" }}>
-                Usada como fundo "Minha Marca" nas campanhas. Extraia da sua logo!
+                Define a cor do fundo "Minha Marca" e do estúdio
               </p>
 
               <div className="flex items-center gap-3">
                 {brandColor ? (
                   <div
-                    className="w-14 h-14 rounded-xl cursor-pointer transition hover:scale-105"
+                    className="w-12 h-12 rounded-xl cursor-pointer transition hover:scale-105"
                     style={{ background: brandColor, border: "2px solid var(--border)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                     onClick={() => setShowColorPicker(true)}
                   />
                 ) : (
                   <div
-                    className="w-14 h-14 rounded-xl flex items-center justify-center cursor-pointer transition hover:scale-105"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer transition hover:scale-105"
                     style={{ background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)", border: "2px dashed var(--border)" }}
                     onClick={() => setShowColorPicker(true)}
                   >
@@ -366,32 +364,23 @@ export default function Configuracoes() {
                   )}
                   <button
                     onClick={() => setShowColorPicker(true)}
-                    className="text-xs font-semibold mt-1 transition"
+                    className="text-xs font-semibold mt-0.5 transition"
                     style={{ color: "var(--brand-500)" }}
                   >
-                    {brandColor ? "Trocar cor →" : "Escolher cor da marca →"}
+                    {brandColor ? "Trocar cor →" : "Escolher cor →"}
                   </button>
                 </div>
               </div>
-
-              {/* Preview */}
-              {brandColor && (
-                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                  <div className="h-16 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${brandColor}33, ${brandColor}, ${brandColor}CC)` }}>
-                    <span className="text-white text-sm font-bold drop-shadow-md">Preview do fundo "Minha Marca"</span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* ── Studio backdrop ── */}
+        {/* ── Estúdio personalizado (fundo "Minha Marca") ── */}
         {brandColor && (
           <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-            <h2 className="text-lg font-semibold mb-2">📸 Estúdio personalizado</h2>
+            <h2 className="text-lg font-semibold mb-1">📸 Estúdio IA</h2>
             <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
-              Imagem de fundo gerada pela IA na cor da sua marca. Usada como referência em todas as fotos de campanha para garantir consistência visual.
+              Fundo exclusivo gerado por IA na cor da sua marca — garante fotos com identidade visual consistente
             </p>
 
             {/* Backdrop preview */}
@@ -400,33 +389,68 @@ export default function Configuracoes() {
                 <img
                   src={backdropUrl}
                   alt="Estúdio personalizado"
-                  className="w-full h-48 object-cover"
-                  style={{ objectPosition: "center bottom" }}
+                  className="w-full h-44 object-cover"
+                  style={{ objectPosition: "center 40%" }}
                 />
-                <div className="absolute bottom-0 inset-x-0 p-3 flex items-center justify-between" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-                  <span className="text-white text-xs font-semibold drop-shadow-md">✅ Estúdio ativo</span>
+                <div className="absolute bottom-0 inset-x-0 p-3 flex items-center justify-between" style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.55))" }}>
+                  <span className="text-white text-[11px] font-semibold drop-shadow-md flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> Ativo
+                  </span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-4 h-4 rounded-full" style={{ background: brandColor, border: "2px solid white" }} />
-                    <span className="text-white text-xs font-mono drop-shadow-md">{brandColor}</span>
+                    <div className="w-3.5 h-3.5 rounded-full" style={{ background: brandColor, border: "1.5px solid white" }} />
+                    <span className="text-white text-[11px] font-mono drop-shadow-md">{brandColor}</span>
                   </div>
                 </div>
               </div>
             ) : backdropGenerating ? (
-              <div className="rounded-xl h-48 flex flex-col items-center justify-center gap-3 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
-                <div className="text-center">
-                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Criando seu estúdio...</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Isso leva ~30 segundos</p>
-                </div>
+              <div className="rounded-xl h-44 flex flex-col items-center justify-center gap-2 mb-4 relative overflow-hidden" style={{ background: `linear-gradient(165deg, ${brandColor}18, ${brandColor}08)`, border: "1px solid var(--border)" }}>
+                {/* Shimmer — mesmo padrão da modelo */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%)",
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer 2s ease-in-out infinite",
+                  }}
+                />
+                <div className="w-7 h-7 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+                <p className="text-xs font-medium" style={{ color: "var(--foreground)" }}>Criando estúdio...</p>
+                <span
+                  className="text-[9px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1"
+                  style={{ background: "rgba(212,160,23,0.15)", color: "#8B6914", border: "1px solid rgba(212,160,23,0.3)" }}
+                >
+                  <span
+                    className="inline-block w-2 h-2 rounded-full"
+                    style={{ background: "#D4A017", animation: "pulse 1.5s ease-in-out infinite" }}
+                  />
+                  ~30 segundos
+                </span>
+                <style jsx>{`
+                  @keyframes shimmer {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                  }
+                  @keyframes pulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.4; transform: scale(0.8); }
+                  }
+                `}</style>
               </div>
             ) : (
-              <div className="rounded-xl h-48 flex flex-col items-center justify-center gap-3 mb-4" style={{ background: `linear-gradient(180deg, ${brandColor}22 0%, ${brandColor}11 100%)`, border: "1px dashed var(--border)" }}>
+              <div className="rounded-xl h-44 flex flex-col items-center justify-center gap-2 mb-4" style={{ background: `linear-gradient(165deg, ${brandColor}15, ${brandColor}08)`, border: "1px dashed var(--border)" }}>
                 <span className="text-3xl">🎨</span>
-                <div className="text-center">
-                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Estúdio não gerado</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Gere seu estúdio personalizado para campanhas</p>
-                </div>
+                <p className="text-sm font-semibold text-center" style={{ color: "var(--foreground)" }}>Nenhum estúdio gerado</p>
+                <p className="text-[11px] text-center px-6" style={{ color: "var(--muted)" }}>
+                  Clique abaixo para criar — usa a cor da marca acima
+                </p>
               </div>
+            )}
+
+            {/* Info notice — first time only */}
+            {!backdropUrl && !backdropGenerating && (
+              <p className="text-[11px] text-center mb-3" style={{ color: "var(--muted)" }}>
+                💡 Após gerar, a próxima troca fica disponível em 30 dias
+              </p>
             )}
 
             {/* Generate/Regenerate button */}
@@ -444,18 +468,18 @@ export default function Configuracoes() {
                 {backdropGenerating ? (
                   <>
                     <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
-                    Gerando estúdio...
+                    Gerando...
                   </>
                 ) : backdropUrl ? (
                   "🔄 Regenerar estúdio"
                 ) : (
-                  "✨ Gerar estúdio personalizado"
+                  "✨ Gerar estúdio"
                 )}
               </button>
             ) : (
               <div className="w-full py-3 px-4 rounded-xl text-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p className="text-xs font-medium" style={{ color: "var(--muted)" }}>
-                  🔒 Próxima troca disponível em{" "}
+                  🔒 Próxima troca em{" "}
                   <span className="font-bold" style={{ color: "var(--foreground)" }}>
                     {backdropNextDate
                       ? new Date(backdropNextDate).toLocaleDateString("pt-BR")
@@ -467,7 +491,7 @@ export default function Configuracoes() {
 
             {!backdropCanRegenerate && (
               <p className="text-[11px] text-center mt-2" style={{ color: "var(--muted)" }}>
-                O estúdio pode ser atualizado 1x a cada 30 dias
+                Atualização disponível 1x a cada 30 dias
               </p>
             )}
           </div>

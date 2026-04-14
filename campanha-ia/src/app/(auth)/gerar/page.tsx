@@ -87,6 +87,7 @@ export default function GerarCampanha() {
   const [background, setBackground] = useState("branco");
   const [customBg, setCustomBg] = useState("");
   const [storeBrandColor, setStoreBrandColor] = useState<string | null>(null);
+  const [storeBackdropUrl, setStoreBackdropUrl] = useState<string | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
@@ -159,6 +160,7 @@ export default function GerarCampanha() {
       .then(data => {
         const bc = data?.data?.brand_colors as { primary?: string } | null;
         if (bc?.primary) setStoreBrandColor(bc.primary);
+        if (data?.data?.backdrop_ref_url) setStoreBackdropUrl(data.data.backdrop_ref_url);
       })
       .catch(() => {});
     // Verificar se tem créditos/quota proativamente
@@ -1230,34 +1232,44 @@ export default function GerarCampanha() {
                         className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative overflow-hidden"
                         style={{
                           backgroundColor: storeBrandColor,
-                          backgroundImage: `
+                          backgroundImage: storeBackdropUrl
+                            ? `url(${storeBackdropUrl})`
+                            : `
                             radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4) 0%, transparent 60%),
                             linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.3) 100%)
                           `,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center 40%",
                         }}
                       >
-                        {/* Organic noise texture */}
-                        <div
-                          className="absolute inset-0 opacity-[0.25] mix-blend-multiply pointer-events-none"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                            backgroundSize: "150px 150px",
-                          }}
-                        />
+                        {/* Organic noise texture — only when no real preview */}
+                        {!storeBackdropUrl && (
+                          <div
+                            className="absolute inset-0 opacity-[0.25] mix-blend-multiply pointer-events-none"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                              backgroundSize: "150px 150px",
+                            }}
+                          />
+                        )}
                         {/* Cyclorama curve shadow - studio style */}
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 h-[45%] pointer-events-none" 
-                          style={{
-                            background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, transparent 100%)"
-                          }}
-                        />
+                        {!storeBackdropUrl && (
+                          <div 
+                            className="absolute bottom-0 left-0 right-0 h-[45%] pointer-events-none" 
+                            style={{
+                              background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, transparent 100%)"
+                            }}
+                          />
+                        )}
                         {/* Spotlight effect */}
-                        <div 
-                          className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] pointer-events-none opacity-40 mix-blend-overlay"
-                          style={{
-                            background: "radial-gradient(circle at 50% 30%, #fff 0%, transparent 50%)"
-                          }}
-                        />
+                        {!storeBackdropUrl && (
+                          <div 
+                            className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] pointer-events-none opacity-40 mix-blend-overlay"
+                            style={{
+                              background: "radial-gradient(circle at 50% 30%, #fff 0%, transparent 50%)"
+                            }}
+                          />
+                        )}
                         
                         <div
                           className="w-7 h-7 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.2)] relative z-10 flex items-center justify-center backdrop-blur-md"
