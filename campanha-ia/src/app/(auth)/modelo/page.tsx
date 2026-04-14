@@ -123,6 +123,13 @@ export default function ModeloVirtual() {
     async function loadModels() {
       try {
         const res = await fetch("/api/model/list");
+        if (res.status === 404) {
+          const d = await res.json().catch(() => ({}));
+          if (d?.code === "NO_STORE") {
+            window.location.replace("/onboarding");
+            return;
+          }
+        }
         if (res.ok) {
           const data = await res.json();
           setModels(data.models || []);

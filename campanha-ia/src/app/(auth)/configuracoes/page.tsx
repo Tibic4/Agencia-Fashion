@@ -50,6 +50,13 @@ export default function Configuracoes() {
   useEffect(() => {
     fetch("/api/store")
       .then(async (res) => {
+        if (res.status === 404) {
+          const d = await res.json().catch(() => ({}));
+          if (d?.code === "NO_STORE") {
+            window.location.replace("/onboarding");
+            return;
+          }
+        }
         if (!res.ok) {
           setError("Não foi possível carregar os dados da loja.");
           return;

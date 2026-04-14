@@ -128,17 +128,25 @@ export default function Onboarding() {
   const totalSteps = 4; // 0-3
 
   useEffect(() => {
-    // Check if user is free tier
+    // Se já tem loja, redirecionar para /gerar (evitar re-onboarding)
     fetch("/api/store")
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 404) return null; // sem loja — continuar onboarding
+        return res.json();
+      })
       .then((data) => {
+        if (!data) return;
+        if (data.success && data.data?.id) {
+          router.replace("/gerar");
+          return;
+        }
         if (data.success && data.data) {
           const plan = data.data.plan_name;
           setIsFreeTier(!plan || plan === "gratis" || plan === "free");
         }
       })
       .catch(() => setIsFreeTier(true)); // default to true on error
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (step === 3) {
