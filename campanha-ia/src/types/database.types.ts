@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -596,6 +596,9 @@ export type Database = {
       }
       stores: {
         Row: {
+          backdrop_color: string | null
+          backdrop_ref_url: string | null
+          backdrop_updated_at: string | null
           brand_colors: Json | null
           city: string | null
           clerk_user_id: string
@@ -614,6 +617,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          backdrop_color?: string | null
+          backdrop_ref_url?: string | null
+          backdrop_updated_at?: string | null
           brand_colors?: Json | null
           city?: string | null
           clerk_user_id: string
@@ -632,6 +638,9 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          backdrop_color?: string | null
+          backdrop_ref_url?: string | null
+          backdrop_updated_at?: string | null
           brand_colors?: Json | null
           city?: string | null
           clerk_user_id?: string

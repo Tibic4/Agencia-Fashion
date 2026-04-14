@@ -94,6 +94,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 3. Gerar backdrop personalizado via Inngest (fire-and-forget)
+    if (brandColor && process.env.GOOGLE_AI_API_KEY) {
+      try {
+        const { inngest } = await import("@/lib/inngest/client");
+        await inngest.send({
+          name: "store/backdrop.requested",
+          data: {
+            storeId: store.id,
+            brandColor: brandColor.startsWith("#") ? brandColor : `#${brandColor}`,
+          },
+        });
+        console.log(`[Onboarding] 🚀 Backdrop disparado via Inngest (${brandColor})`);
+      } catch (backdropErr) {
+        console.warn("[Onboarding] Backdrop dispatch falhou (não fatal):", backdropErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: { store, model: storeModel },
