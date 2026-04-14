@@ -850,7 +850,7 @@ export default function GerarCampanha() {
             </div>
             <div>
               <p className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>Envie apenas fotos de roupas e acessórios</p>
-              <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
+              <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
                 Fotos com pessoas sem roupa, conteúdo íntimo ou impróprio serão bloqueadas automaticamente pela IA. Use fotos da peça sobre cabide, manequim ou mesa.
               </p>
             </div>
@@ -909,8 +909,8 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl mb-1">👤</span>
-                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Padrão</span>
-                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</span>
+                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Padrão</span>
+                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>P · M</span>
               </button>
               <button
                 onClick={() => { setBodyType("plus"); setModelFilter("curvilinea"); setShowAllModels(false); }}
@@ -923,8 +923,8 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl mb-1">💃</span>
-                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Plus</span>
-                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
+                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Plus</span>
+                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
               </button>
               <button
                 onClick={() => { setBodyType("masculino"); setModelFilter("homem"); setShowAllModels(false); }}
@@ -937,8 +937,8 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl mb-1">🧍‍♂️</span>
-                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Homem Padrão</span>
-                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>P · M</span>
+                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Homem Padrão</span>
+                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>P · M</span>
               </button>
               <button
                 onClick={() => { setBodyType("robusto"); setModelFilter("homem_plus"); setShowAllModels(false); }}
@@ -951,8 +951,8 @@ export default function GerarCampanha() {
                 }}
               >
                 <span className="text-2xl mb-1">🏋️‍♂️</span>
-                <span className="text-[11px] sm:text-xs font-semibold leading-tight text-balance break-words w-full">Homem Plus</span>
-                <span className="text-[10px] mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
+                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Homem Plus</span>
+                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
               </button>
             </div>
           </div>
@@ -973,6 +973,7 @@ export default function GerarCampanha() {
                   <button
                     key={f}
                     onClick={() => {
+                      haptics.light();
                       setModelFilter(f);
                       // Sync biotipo selector
                       if (f === "padrao") setBodyType("normal");
@@ -981,7 +982,7 @@ export default function GerarCampanha() {
                       else if (f === "homem_plus") setBodyType("robusto");
                       setShowAllModels(false);
                     }}
-                    className="px-3 py-2 rounded-md text-[11px] sm:text-xs font-medium transition-all min-h-[44px] whitespace-nowrap flex-shrink-0"
+                    className="px-3 py-2 rounded-md text-xs font-medium transition-all min-h-[44px] whitespace-nowrap flex-shrink-0"
                     style={{
                       background: modelFilter === f ? "var(--brand-100)" : "transparent",
                       color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
@@ -1248,7 +1249,7 @@ export default function GerarCampanha() {
                 return allBgs.map((bg) => (
                   <button
                     key={bg.value}
-                    onClick={() => setBackground(bg.value)}
+                    onClick={() => { setBackground(bg.value); haptics.light(); }}
                     className="group rounded-xl overflow-hidden text-center transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative"
                   >
                     {/* Border Overlay */}
@@ -1402,7 +1403,7 @@ export default function GerarCampanha() {
                     {tones.map((t) => (
                       <button
                         key={t.value}
-                        onClick={() => setTone(tone === t.value ? "" : t.value)}
+                        onClick={() => { haptics.light(); setTone(tone === t.value ? "" : t.value); }}
                         className="px-4 py-2 rounded-full text-xs font-medium transition-all min-h-[44px]"
                         style={{
                           background: tone === t.value ? "var(--brand-100)" : "var(--surface)",
@@ -1420,7 +1421,7 @@ export default function GerarCampanha() {
           </div>
 
           {/* Generate button (Flutuante no Mobile, Natural no Desktop) */}
-          <div className="sticky bottom-[84px] md:bottom-6 lg:static lg:bottom-auto px-4 py-3 lg:p-0 my-4 lg:my-0 z-20 w-full rounded-2xl lg:rounded-none shadow-[0_8px_30px_rgba(0,0,0,0.12)] lg:shadow-none border border-border lg:border-none bg-background/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none transition-all">
+          <div className="sticky md:bottom-6 lg:static lg:bottom-auto px-4 py-3 lg:p-0 my-4 lg:my-0 z-20 w-full rounded-2xl lg:rounded-none shadow-[0_8px_30px_rgba(0,0,0,0.12)] lg:shadow-none border border-border lg:border-none bg-background/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none transition-all" style={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}>
             {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
               <Link
                 href="/plano"

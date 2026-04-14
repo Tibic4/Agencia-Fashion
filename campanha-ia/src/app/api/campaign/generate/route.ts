@@ -95,19 +95,20 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Verificar quota e reservar crédito UPFRONT (FIX: race condition) ──
+    // Reservamos o slot ANTES de gerar — se a geração falhar devolvemos depois.
     let needsAvulsoCredit = false;
     let creditReserved = false;
+    let planSlotReserved = false;
     if (store) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
-        // Plano esgotou — tentar consumir crédito avulso IMEDIATAMENTE (lock otimista)
+        // Plano esgotado — consumir crédito avulso atomicamente
         const consumed = await consumeCredit(store.id, "campaigns");
         if (consumed) {
           needsAvulsoCredit = true;
           creditReserved = true;
           console.log(`[Generate] 💳 Crédito avulso RESERVADO upfront (plano esgotado: ${quota.used}/${quota.limit})`);
         } else {
-          // Sem créditos — bloquear
           const credits = await getStoreCredits(store.id);
           return NextResponse.json({
             error: `Suas ${quota.limit} campanhas do mês acabaram!`,
@@ -118,6 +119,11 @@ export async function POST(request: NextRequest) {
             upgradeHint: true,
           }, { status: 429 });
         }
+      } else {
+        // Plano tem quota — reservar slot atomicamente agora (evita race condition)
+        await incrementCampaignsUsed(store.id);
+        planSlotReserved = true;
+        console.log(`[Generate] 📋 Slot de plano RESERVADO upfront (${quota.used + 1}/${quota.limit})`);
       }
     }
 
@@ -228,8 +234,8 @@ export async function POST(request: NextRequest) {
 
       if (campaignRecord) {
         if (needsAvulsoCredit) {
-          await consumeCredit(store!.id, "campaigns");
-        } else {
+          // Crédito avulso já consumido upfront
+        } else if (!planSlotReserved) {
           await incrementCampaignsUsed(store!.id);
         }
       }
@@ -334,7 +340,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (modelImageUrl) {
-          const modelRes = await fetch(modelImageUrl);
+          const modelRes = await fetch(modelImageUrl, { signal: AbortSignal.timeout(8000) });
           const modelBuf = Buffer.from(await modelRes.arrayBuffer());
           modelImageBase64 = modelBuf.toString("base64");
           const ct = modelRes.headers.get("content-type");
@@ -410,6 +416,23 @@ export async function POST(request: NextRequest) {
                 console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
               }
             }
+            // Devolver slot de plano se reservado upfront
+            if (planSlotReserved && store) {
+              try {
+                const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+                const sb = createAdmin();
+                const { getCurrentUsage: getUsage } = await import("@/lib/db");
+                const usage = await getUsage(store.id);
+                if (usage) {
+                  await sb.from("store_usage").update({
+                    campaigns_generated: Math.max(0, (usage.campaigns_generated || 0) - 1),
+                  }).eq("id", usage.id);
+                  console.log(`[Generate] 📋 Slot de plano DEVOLVIDO (0 imagens geradas)`);
+                }
+              } catch (refundErr) {
+                console.error(`[Generate] ❌ Falha ao devolver slot de plano:`, refundErr);
+              }
+            }
             await sendSSE("error", {
               error: "Nenhuma foto foi gerada. Tente novamente.",
               retry: true,
@@ -470,8 +493,11 @@ export async function POST(request: NextRequest) {
             });
 
             if (needsAvulsoCredit) {
-              // Crédito já foi consumido upfront (reserva otimista)
+              // Crédito avulso já consumido upfront
               console.log(`[Generate] 💳 Crédito avulso já reservado upfront (${successCount}/3 imagens geradas)`);
+            } else if (planSlotReserved) {
+              // Slot de plano já reservado upfront (evita double-count)
+              console.log(`[Generate] 📋 Slot de plano já reservado upfront (${successCount}/3 imagens geradas)`);
             } else {
               await incrementCampaignsUsed(store!.id);
             }
