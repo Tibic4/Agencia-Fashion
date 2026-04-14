@@ -265,6 +265,10 @@ export default function GerarCampanha() {
     setGenerationStep(0);
     setError(null);
 
+    // Abort controller — kills fetch if phone sleeps or network dies (3 min max)
+    const abortController = new AbortController();
+    const abortTimeout = setTimeout(() => abortController.abort(), 180_000);
+
     // Fallback interval — advances steps slowly if SSE events are delayed
     // Capped at step 3 ("Montando editoriais") to never get ahead of real Gemini progress
     const fallbackInterval = setInterval(() => {
@@ -312,12 +316,14 @@ export default function GerarCampanha() {
       const response = await fetch("/api/campaign/generate", {
         method: "POST",
         body: formData,
+        signal: abortController.signal,
       });
 
-      // Handle non-streaming error responses (quota exceeded, etc.)
+      // Handle non-streaming error responses (quota exceeded, rate limited, etc.)
       const contentType = response.headers.get("content-type") || "";
       if (contentType.includes("application/json")) {
         clearInterval(fallbackInterval);
+        clearTimeout(abortTimeout);
         const errorData = await response.json().catch(() => ({}));
         if (errorData.code === "QUOTA_EXCEEDED") {
           setIsGenerating(false);
@@ -328,7 +334,12 @@ export default function GerarCampanha() {
           });
           return;
         }
-        throw new Error(friendlyError(errorData.error || `Erro ${response.status}`));
+        // Tratar TODOS os erros JSON com errorCode correto
+        setIsGenerating(false);
+        setError(friendlyError(errorData.error || `Erro ${response.status}`));
+        setErrorCode(errorData.code || null);
+        setErrorRetryable(errorData.code === "RATE_LIMITED" || errorData.code === "MODEL_OVERLOADED");
+        return;
       }
 
       if (!response.ok || !response.body) {
@@ -390,12 +401,15 @@ export default function GerarCampanha() {
 
             // Show completion then redirect
             setGenerationStep(generationSteps.length - 1);
+            clearTimeout(abortTimeout);
             setTimeout(() => {
+              setIsGenerating(false);
               router.push("/gerar/demo");
             }, 1500);
             return true; // signals "done handled"
           } else if (eventType === "error") {
             clearInterval(fallbackInterval);
+            clearTimeout(abortTimeout);
             streamDone = true;
             setIsGenerating(false);
             setError(friendlyError(payload.error, "Erro ao gerar campanha. Tente novamente."));
@@ -432,14 +446,21 @@ export default function GerarCampanha() {
       // If stream ended without done/error event
       if (!streamDone) {
         clearInterval(fallbackInterval);
+        clearTimeout(abortTimeout);
         setIsGenerating(false);
         setError("Conexão interrompida. Verifique sua internet e tente novamente.");
       }
 
     } catch (err: any) {
       clearInterval(fallbackInterval);
+      clearTimeout(abortTimeout);
       setIsGenerating(false);
-      setError(friendlyError(err, "Erro ao gerar campanha. Tente novamente."));
+      // Distinguish abort (phone slept) from real errors
+      if (err?.name === "AbortError") {
+        setError("Tempo limite atingido. O celular pode ter entrado em modo de espera. Tente novamente.");
+      } else {
+        setError(friendlyError(err, "Erro ao gerar campanha. Tente novamente."));
+      }
     }
   };
 
