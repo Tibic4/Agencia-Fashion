@@ -92,6 +92,18 @@ export default function AuthLayout({
   const campaignsLimit = usage?.campaigns_limit ?? 0;
   const usagePercent = campaignsLimit > 0 ? Math.min((campaignsUsed / campaignsLimit) * 100, 100) : 0;
 
+  // Bloquear renderização enquanto verificação de loja está pendente
+  if (!storeChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-[100dvh]" style={{ background: "var(--surface)" }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "3px solid var(--border)", borderTopColor: "var(--brand-500)" }} />
+          <span className="text-sm" style={{ color: "var(--muted)" }}>Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[100dvh]" style={{ background: "var(--surface)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Sidebar — Desktop */}
