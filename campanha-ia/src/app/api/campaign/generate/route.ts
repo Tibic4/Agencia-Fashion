@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const modelBankId = formData.get("modelBankId") as string | null;
     const customModelId = formData.get("customModelId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
-    const brandColor = formData.get("brandColor") as string | null;
+
 
     const bodyType = (formData.get("bodyType") as string) as "normal" | "plus" | null;
 
@@ -387,7 +387,7 @@ export async function POST(request: NextRequest) {
               storeName: store?.name || storeName,
               bodyType: bodyType === "plus" ? "plus" : (activeModelBodyType || "normal"),
               backgroundType: backgroundType || undefined,
-              brandColor: brandColor || undefined,
+
               modelInfo,
               storeId: store?.id,
               campaignId: campaignRecord?.id,

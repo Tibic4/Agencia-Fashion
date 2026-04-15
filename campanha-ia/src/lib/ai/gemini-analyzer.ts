@@ -182,7 +182,7 @@ export interface AnalyzerInput {
   bodyType?: "normal" | "plus";
   backgroundType?: string;
   storeName?: string;
-  brandColor?: string;
+
   modelInfo?: ModelInfo;
 }
 
@@ -598,7 +598,7 @@ function buildUserPrompt(input: AnalyzerInput): string {
   const extras: string[] = [];
   if (input.price) extras.push(`Preço de venda: R$ ${input.price}`);
   if (input.storeName) extras.push(`Loja: ${input.storeName}`);
-  if (input.brandColor) extras.push(`Cor da marca da loja: ${input.brandColor}`);
+
 
   // Body type context
   if (input.bodyType === "plus" || input.modelInfo?.bodyType === "plus_size" || input.modelInfo?.bodyType === "plus") {
@@ -608,7 +608,7 @@ function buildUserPrompt(input: AnalyzerInput): string {
   // ── Helpers: delegate to module-level exported functions ──
   // (kept as local aliases for backward compat within buildUserPrompt)
   const _hexToRgb = hexToRgb;
-  const _getTexturedBackdropPrompt = getTexturedBackdropPrompt;
+
 
   // ── Scene context (cenário selecionado) ──
   const SCENE_MOODS: Record<string, { name: string; description: string; details: string }> = {
@@ -647,26 +647,52 @@ function buildUserPrompt(input: AnalyzerInput): string {
       description: "Chic fashion boutique interior with curated clothing racks, mirrors, and tasteful displays",
       details: "Warm pin-spot lighting highlighting the subject against softly blurred racks. Intimate, feminine shopping atmosphere."
     },
-    gradiente: {
-      name: "Gradiente Editorial",
-      description: "Smooth color gradient backdrop transitioning between two harmonious tones",
-      details: "Even front lighting with no harsh shadows. Fashion editorial aesthetic with color that complements the garment."
+    praia: {
+      name: "Praia Paradisíaca",
+      description: "Stunning tropical beach with turquoise ocean waves, fine white sand, and palm trees",
+      details: "Warm golden sunlight with coastal breeze atmosphere. Model walks naturally along the shoreline. Shallow depth of field on the ocean background. Bright, aspirational summer mood."
+    },
+    noturno: {
+      name: "Noturno / Night Editorial",
+      description: "Dramatic urban nighttime setting with city lights, wet street reflections, and cinematic atmosphere",
+      details: "Moody low-key lighting mixing warm streetlamps with cool ambient city glow. Bokeh city lights in background. High contrast editorial night photography with dramatic shadows."
+    },
+    tropical: {
+      name: "Tropical / Exótico",
+      description: "Lush tropical paradise with exotic monstera leaves, palm fronds, and vibrant green foliage",
+      details: "Dappled warm sunlight filtering through the canopy creating light patterns. Rich saturated greens and golden tones. Organic, immersive botanical atmosphere."
+    },
+    minimalista: {
+      name: "Minimalista Contemporâneo",
+      description: "Ultra-clean minimalist backdrop with subtle concrete or plaster texture and neutral gray tones",
+      details: "Professional even front lighting with no harsh shadows. Architectural geometric lines. Contemporary gallery aesthetic. Less is more — the garment is the hero."
+    },
+    luxo: {
+      name: "Luxo / High-End",
+      description: "Opulent luxury hotel lobby, upscale restaurant, or five-star resort interior",
+      details: "Warm sophisticated ambient lighting mixing with focused accent lights. Marble floors, gold accents, elegant chandeliers, velvet textures. Aspirational wealth and refinement."
+    },
+    rural: {
+      name: "Rural / Country",
+      description: "Beautiful countryside setting with golden wheat fields, rolling green hills, and rustic wooden elements",
+      details: "Warm golden hour sunlight creating long shadows. Pastoral tranquil atmosphere with organic earth tones. Fashion meets nature — effortless rural elegance."
+    },
+    neon: {
+      name: "Neon / Cyberpunk",
+      description: "Vibrant neon-lit environment with glowing pink, blue, and purple neon signs and colorful reflections",
+      details: "Bold colorful neon light painting the subject with vivid hues. Modern cyberpunk or nightclub aesthetic. High-fashion editorial with saturated neon color palette."
+    },
+    arte: {
+      name: "Galeria de Arte",
+      description: "Contemporary art gallery interior with white walls, bold abstract paintings or installations",
+      details: "Dramatic directional track lighting creating gallery atmosphere. Polished concrete floor. The model becomes part of the art — sophisticated, intellectual, avant-garde."
     },
   };
 
   let sceneInstruction = "";
   const bgType = input.backgroundType || "";
 
-  if (bgType.startsWith("personalizado:")) {
-    const customText = bgType.replace("personalizado:", "").trim();
-    if (customText) {
-      sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO PELA LOJISTA:\n"${customText}"\nUse este cenário como fundo para TODOS os 3 prompts (scene_prompts[0], [1] e [2]).\nTODOS os prompts devem ter o MESMO ambiente e iluminação — varie apenas POSE e ÂNGULO DE CÂMERA.`;
-    }
-  } else if (bgType === "minha_marca" && input.brandColor) {
-    const hex = input.brandColor;
-    const backdropSpec = getTexturedBackdropPrompt(hex);
-    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: Meu Estúdio (COR + TEXTURA DA MARCA)\nA lojista quer fotos com a identidade visual da marca — fundo texturizado premium na cor da marca.\n\n${backdropSpec}\n\n🚨 CONSISTÊNCIA OBRIGATÓRIA ENTRE AS 3 FOTOS:\nTODOS os 3 prompts (scene_prompts[0], [1] e [2]) devem incluir a MESMA descrição de backdrop LITERALMENTE — copie o texto acima em CADA prompt.\nO fundo deve ser visualmente IDÊNTICO nas 3 fotos — mesma cor, mesma textura, mesmo setup de iluminação.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts.\nNenhum equipamento de estúdio visível (softboxes, guarda-chuvas, tripés, rebatedores).`;
-  } else if (bgType && SCENE_MOODS[bgType]) {
+  if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
     sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;
   } else {

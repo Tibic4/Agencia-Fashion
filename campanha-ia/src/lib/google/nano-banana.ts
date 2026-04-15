@@ -26,9 +26,15 @@ export type BackgroundStyle =
   | "urbano"          // Cenário urbano/rua da cidade
   | "natureza"        // Ambiente ao ar livre com natureza
   | "interior"        // Interior de loft/apartamento
-  | "gradiente"       // Gradiente suave rosa-dourado
-  | "minha_marca"     // Cor da marca do cliente como fundo gradiente
-  | "personalizado";  // Texto livre do cliente
+  | "praia"           // Praia paradisíaca
+  | "noturno"         // Cenário noturno urbano
+  | "tropical"        // Paisagem tropical exótica
+  | "minimalista"     // Fundo clean, textura sutil
+  | "luxo"            // Hotel/restaurante de luxo
+  | "rural"           // Campo/fazenda, estilo country
+  | "neon"            // Iluminação neon colorida
+  | "arte";           // Galeria de arte contemporânea
+
 
 export interface NanoBananaResult {
   status: "completed" | "failed";
@@ -282,12 +288,8 @@ export interface NanoBananaTryOnParams {
   background?: BackgroundStyle;
   /** Tipo de campanha (define aspect ratio) */
   campaignType?: "instagram_feed" | "instagram_story" | "ecommerce" | "banner";
-  /** Base64 da foto de cenário personalizado (quando background = "personalizado") */
-  customBackgroundBase64?: string;
-  /** MIME type da foto de cenário personalizado */
-  customBackgroundMimeType?: string;
-  /** Cor hex da marca do cliente (quando background = "minha_marca") */
-  brandColorHex?: string;
+
+
   /** Store ID para tracking de custo */
   storeId?: string;
   /** Campaign ID para tracking de custo */
@@ -315,9 +317,14 @@ const BACKGROUND_PROMPTS: Record<string, string> = {
   urbano: "Urban city street background, stylish neighborhood with modern architecture, natural daylight. The model appears to be casually walking on a clean sidewalk.",
   natureza: "Beautiful outdoor setting with soft natural light, lush green vegetation slightly blurred in background, golden hour lighting.",
   interior: "Modern minimalist loft interior with large windows and abundant natural light, neutral tones, elegant furniture subtly blurred in background.",
-  gradiente: "Smooth soft gradient background transitioning from pastel pink to warm peach-gold, fashion brand aesthetic, studio lighting.",
-  minha_marca: "Smooth elegant gradient studio background using the brand's signature color tones, professional fashion photography lighting, subtle shadows.",
-  personalizado: "Use the provided background/store photo as the environment. Place the model naturally in this exact location, matching the lighting and perspective.",
+  praia: "Stunning paradise beach background with turquoise ocean, fine white sand, palm trees gently swaying, golden sunlight, clear blue sky. The model walks naturally along the shoreline with warm coastal light.",
+  noturno: "Dramatic urban nighttime setting with city lights bokeh, wet street reflections, warm streetlamps and cool ambient light creating cinematic contrast. Moody editorial night photography.",
+  tropical: "Lush tropical paradise backdrop with exotic large monstera leaves, palm fronds, vibrant green foliage, dappled warm sunlight filtering through the canopy. Rich, saturated colors.",
+  minimalista: "Ultra-clean minimalist backdrop with subtle concrete or plaster texture, soft neutral gray tones, architectural geometric lines, professional even front lighting. Contemporary gallery aesthetic.",
+  luxo: "Opulent luxury hotel lobby or upscale restaurant interior with marble floors, gold accents, elegant chandeliers, rich velvet textures, warm sophisticated ambient lighting.",
+  rural: "Beautiful countryside setting with golden wheat fields or rolling green hills, rustic wooden elements, warm golden hour sunlight, pastoral tranquil atmosphere. Fashion meets nature.",
+  neon: "Vibrant neon-lit environment with glowing pink, blue, and purple neon signs, colorful light reflections on surfaces, modern cyberpunk aesthetic. High-fashion editorial night vibe.",
+  arte: "Contemporary art gallery interior with white walls, bold abstract paintings or installations as backdrop, polished concrete floor, dramatic directional track lighting. Artistic sophisticated atmosphere.",
 };
 
 // ═══════════════════════════════════════
@@ -331,7 +338,7 @@ function buildTryOnPrompt(params: {
   bodyType?: "normal" | "plus";
   hasCloseUp?: boolean;
   hasSecondPiece?: boolean;
-  hasCustomBackground?: boolean;
+
   gender?: string;
   visionData?: {
     fabricDescriptor?: string;
@@ -341,22 +348,9 @@ function buildTryOnPrompt(params: {
   };
 }): string {
   const bgRaw = params.background || "estudio";
-  // Handle "personalizado:descrição livre" format from frontend
-  let bg = bgRaw as string;
-  let customBgText = "";
-  if (bg.startsWith("personalizado:")) {
-    customBgText = bg.substring("personalizado:".length).trim();
-    bg = "personalizado";
-  }
+  const bg = bgRaw as string;
   let bgPrompt = BACKGROUND_PROMPTS[bg] || BACKGROUND_PROMPTS["estudio"];
-  // Inject custom text into personalizado prompt
-  if (bg === "personalizado" && customBgText) {
-    bgPrompt = `Background scene: ${customBgText}. Place the model naturally in this setting with matching lighting and perspective. Professional fashion photography style.`;
-  }
-  // Inject brand color hex into minha_marca prompt
-  if (bg === "minha_marca" && params.brandColorHex) {
-    bgPrompt = `Smooth elegant gradient studio background centered around the brand color ${params.brandColorHex}. Create a subtle gradient from a lighter tint of this color to a darker shade, professional fashion photography lighting, subtle shadows. The background must harmonize with the brand identity.`;
-  }
+
   const isPlus = params.bodyType === "plus";
 
   // Gender-aware descriptors
@@ -371,9 +365,7 @@ function buildTryOnPrompt(params: {
     ? "\n- The FOURTH image is the SECOND PIECE of the set/conjunto (e.g., matching skirt, pants, or top). The model must wear BOTH pieces together as a coordinated set."
     : "";
 
-  const customBgInstruction = params.hasCustomBackground
-    ? "\n- One of the images is the CLIENT'S STORE/LOCATION. Use it as the background environment, matching perspective and lighting."
-    : "";
+
 
   const bodyTypeInstruction = isPlus
     ? isMale
@@ -389,7 +381,7 @@ TASK: Generate a SINGLE photorealistic image of a real-looking ${personWord} mod
 
 IMAGE INPUTS (in order):
 - The FIRST image is the REFERENCE MODEL — match ${isMale ? "his" : "her"} EXACT face, skin tone, hair style, and body proportions.
-- The SECOND image is the MAIN PRODUCT on a mannequin — this is the garment to recreate EXACTLY.${closeUpInstruction}${secondPieceInstruction}${customBgInstruction}
+- The SECOND image is the MAIN PRODUCT on a mannequin — this is the garment to recreate EXACTLY.${closeUpInstruction}${secondPieceInstruction}
 
 MODEL BODY TYPE (CRITICAL):
 1. ${bodyTypeInstruction}
@@ -492,15 +484,7 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       });
     }
 
-    // 4. Cenário personalizado (opcional)
-    if (params.background === "personalizado" && params.customBackgroundBase64) {
-      parts.push({
-        inlineData: {
-          mimeType: params.customBackgroundMimeType || "image/jpeg",
-          data: params.customBackgroundBase64,
-        },
-      });
-    }
+
 
     // 5. Segunda peça do conjunto (opcional)
     if (params.secondPieceBase64) {
@@ -517,11 +501,11 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
       text: buildTryOnPrompt({
         description: params.productDescription,
         background: params.background,
-        brandColorHex: params.brandColorHex,
+
         bodyType: params.bodyType,
         hasCloseUp: !!params.closeUpBase64,
         hasSecondPiece: !!params.secondPieceBase64,
-        hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
+
         gender: params.gender,
         visionData: params.visionData,
       }),
@@ -614,11 +598,11 @@ export async function nanoBananaTryOn(params: NanoBananaTryOnParams): Promise<Na
             const correctedPrompt = buildTryOnPrompt({
               description: params.productDescription,
               background: params.background,
-              brandColorHex: params.brandColorHex,
+      
               bodyType: params.bodyType,
               hasCloseUp: !!params.closeUpBase64,
               hasSecondPiece: !!params.secondPieceBase64,
-              hasCustomBackground: params.background === "personalizado" && !!params.customBackgroundBase64,
+
               gender: params.gender,
               visionData: params.visionData,
             });
@@ -731,9 +715,14 @@ export function getAvailableBackgrounds(): Array<{ id: BackgroundStyle; label: s
     { id: "urbano", label: "Urbano", description: "Cenário de rua com arquitetura moderna" },
     { id: "natureza", label: "Natureza", description: "Ambiente natural com vegetação e luz dourada" },
     { id: "interior", label: "Interior", description: "Loft moderno com luz natural" },
-    { id: "gradiente", label: "Gradiente", description: "Gradiente suave rosa-dourado" },
-    { id: "minha_marca", label: "Meu Estúdio", description: "Fundo com a cor da sua marca" },
-    { id: "personalizado", label: "Personalizado", description: "Descreva o cenário que deseja" },
+    { id: "praia", label: "Praia", description: "Praia paradisíaca com sol e areia" },
+    { id: "noturno", label: "Noturno", description: "Cenário noturno urbano com luzes" },
+    { id: "tropical", label: "Tropical", description: "Paisagem tropical com folhagens exóticas" },
+    { id: "minimalista", label: "Minimalista", description: "Fundo clean com texturas sutis" },
+    { id: "luxo", label: "Luxo", description: "Hotel ou restaurante de luxo" },
+    { id: "rural", label: "Rural", description: "Campo ou fazenda, estilo country" },
+    { id: "neon", label: "Neon", description: "Iluminação neon colorida, vibe moderna" },
+    { id: "arte", label: "Arte", description: "Galeria de arte contemporânea" },
   ];
 }
 
