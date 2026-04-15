@@ -54,17 +54,24 @@ const tones = [
   { value: "divertido", label: "😄 Divertido" },
 ];
 
-const backgrounds = [
-  { value: "branco",     label: "Branco",       thumb: "/bg/branco.png",    ai: false },
-  { value: "estudio",    label: "Estúdio",       thumb: "/bg/estudio.png",   ai: false },
-  { value: "lifestyle",  label: "Lifestyle",    thumb: "/bg/lifestyle.png", ai: true },
-  { value: "urbano",     label: "Urbano",       thumb: "/bg/urbano.png",    ai: true },
-  { value: "natureza",   label: "Natureza",     thumb: "/bg/natureza.png",  ai: true },
-  { value: "interior",   label: "Interior",     thumb: "/bg/interior.png",  ai: true },
-  { value: "boutique",   label: "Boutique",     thumb: "/bg/boutique.png",  ai: true },
-  { value: "gradiente",  label: "Gradiente",    thumb: "/bg/gradiente.png", ai: false },
-  { value: "personalizado", label: "Personalizado", thumb: null,            ai: true },
+const backgrounds: { value: string; label: string; thumb: string | null; ai: boolean }[] = [
+  { value: "branco",       label: "Branco",       thumb: "/bg/branco.png",       ai: false },
+  { value: "estudio",      label: "Estúdio",      thumb: "/bg/estudio.png",      ai: false },
+  { value: "lifestyle",    label: "Lifestyle",    thumb: "/bg/lifestyle.png",    ai: true },
+  { value: "urbano",       label: "Urbano",       thumb: "/bg/urbano.png",       ai: true },
+  { value: "natureza",     label: "Natureza",     thumb: "/bg/natureza.png",     ai: true },
+  { value: "interior",     label: "Interior",     thumb: "/bg/interior.png",     ai: true },
+  { value: "boutique",     label: "Boutique",     thumb: "/bg/boutique.png",     ai: true },
+  { value: "praia",        label: "Praia",        thumb: "/bg/praia.png",        ai: true },
+  { value: "noturno",      label: "Noturno",      thumb: "/bg/noturno.png",      ai: true },
+  { value: "tropical",     label: "Tropical",     thumb: "/bg/tropical.png",     ai: true },
+  { value: "minimalista",  label: "Minimalista",  thumb: "/bg/minimalista.png",  ai: true },
+  { value: "luxo",         label: "Luxo",         thumb: "/bg/luxo.png",         ai: true },
+  { value: "rural",        label: "Rural",        thumb: "/bg/rural.png",        ai: true },
+  { value: "neon",         label: "Neon",         thumb: "/bg/neon.png",         ai: true },
+  { value: "arte",         label: "Arte",         thumb: "/bg/arte.png",         ai: true },
 ];
+
 
 interface ModelBankItem {
   id: string;
@@ -85,9 +92,9 @@ export default function GerarCampanha() {
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("");
   const [background, setBackground] = useState("branco");
-  const [customBg, setCustomBg] = useState("");
-  const [storeBrandColor, setStoreBrandColor] = useState<string | null>(null);
-  const [storeBackdropUrl, setStoreBackdropUrl] = useState<string | null>(null);
+
+
+
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
@@ -132,6 +139,9 @@ export default function GerarCampanha() {
     used: number; limit: number; credits: number;
   } | null>(null);
   const [showSinglePhotoWarning, setShowSinglePhotoWarning] = useState(false);
+  const [previewModel, setPreviewModel] = useState<{
+    id: string; name: string; imageUrl: string; bodyType: string; isCustom: boolean;
+  } | null>(null);
 
   // Model limit from API (source of truth — not hardcoded)
   const [maxModels, setMaxModels] = useState(0);
@@ -154,15 +164,7 @@ export default function GerarCampanha() {
         if (typeof data.limit === "number") setMaxModels(data.limit);
       })
       .catch(() => {});
-    // Carregar cor da marca da loja
-    fetch("/api/store")
-      .then(res => res.json())
-      .then(data => {
-        const bc = data?.data?.brand_colors as { primary?: string } | null;
-        if (bc?.primary) setStoreBrandColor(bc.primary);
-        if (data?.data?.backdrop_ref_url) setStoreBackdropUrl(data.data.backdrop_ref_url);
-      })
-      .catch(() => {});
+
     // Verificar se tem créditos/quota proativamente
     fetch("/api/store/usage")
       .then(res => res.ok ? res.json() : null)
@@ -291,9 +293,9 @@ export default function GerarCampanha() {
       if (tone) formData.append("toneOverride", tone);
       formData.append("bodyType", bodyType);
 
-      const bgFinal = background === "personalizado" ? `personalizado:${customBg}` : background;
+      const bgFinal = background;
       formData.append("backgroundType", bgFinal);
-      if (storeBrandColor) formData.append("brandColor", storeBrandColor);
+
       // Modelo selecionada: custom da loja ou stock do banco
       const isCustomModel = customModels.some(m => m.id === selectedModelId);
       if (selectedModelId !== "random" && isCustomModel) {
@@ -897,10 +899,11 @@ export default function GerarCampanha() {
           {/* Body Type — Biotipo */}
           <div className="animate-fade-in">
             <label className="block text-sm font-semibold mb-2">Biotipo do modelo</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {/* Mobile: horizontal scroll chips · Desktop: 4-col card grid */}
+            <div className="flex overflow-x-auto gap-2 pb-1 hide-scrollbar snap-x snap-mandatory md:grid md:grid-cols-4 md:overflow-visible md:pb-0 md:snap-none">
               <button
                 onClick={() => { setBodyType("normal"); setModelFilter("padrao"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
+                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
                 style={{
                   border: bodyType === "normal"
                     ? "2px solid var(--brand-500)"
@@ -908,13 +911,13 @@ export default function GerarCampanha() {
                   background: bodyType === "normal" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl mb-1">👤</span>
-                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Padrão</span>
-                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>P · M</span>
+                <span className="text-lg md:text-2xl md:mb-1">👤</span>
+                <span className="text-xs font-semibold whitespace-nowrap">Mulher Padrão</span>
+                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>P · M</span>
               </button>
               <button
                 onClick={() => { setBodyType("plus"); setModelFilter("curvilinea"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
+                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
                 style={{
                   border: bodyType === "plus"
                     ? "2px solid var(--brand-500)"
@@ -922,13 +925,13 @@ export default function GerarCampanha() {
                   background: bodyType === "plus" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl mb-1">💃</span>
-                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Mulher Plus</span>
-                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
+                <span className="text-lg md:text-2xl md:mb-1">💃</span>
+                <span className="text-xs font-semibold whitespace-nowrap">Mulher Plus</span>
+                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>G · GG</span>
               </button>
               <button
                 onClick={() => { setBodyType("masculino"); setModelFilter("homem"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
+                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
                 style={{
                   border: bodyType === "masculino"
                     ? "2px solid var(--brand-500)"
@@ -936,13 +939,13 @@ export default function GerarCampanha() {
                   background: bodyType === "masculino" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl mb-1">🧍‍♂️</span>
-                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Homem Padrão</span>
-                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>P · M</span>
+                <span className="text-lg md:text-2xl md:mb-1">🧍‍♂️</span>
+                <span className="text-xs font-semibold whitespace-nowrap">Homem Padrão</span>
+                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>P · M</span>
               </button>
               <button
                 onClick={() => { setBodyType("robusto"); setModelFilter("homem_plus"); setShowAllModels(false); }}
-                className="p-2 md:p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center h-full"
+                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
                 style={{
                   border: bodyType === "robusto"
                     ? "2px solid var(--brand-500)"
@@ -950,9 +953,9 @@ export default function GerarCampanha() {
                   background: bodyType === "robusto" ? "var(--brand-50)" : "var(--surface)",
                 }}
               >
-                <span className="text-2xl mb-1">🏋️‍♂️</span>
-                <span className="text-xs font-semibold leading-tight text-balance break-words w-full">Homem Plus</span>
-                <span className="text-xs mt-1" style={{ color: "var(--muted)" }}>G · GG</span>
+                <span className="text-lg md:text-2xl md:mb-1">🏋️‍♂️</span>
+                <span className="text-xs font-semibold whitespace-nowrap">Homem Plus</span>
+                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>G · GG</span>
               </button>
             </div>
           </div>
@@ -1031,7 +1034,11 @@ export default function GerarCampanha() {
                       return isCustom ? (
                         <div key={`custom-${model.id}`} className="relative group">
                           <button
-                            onClick={() => setSelectedModelId(model.id)}
+                            onClick={() => {
+                              const imgUrl = (model as any).photo_url;
+                              if (imgUrl) setPreviewModel({ id: model.id, name: model.name, imageUrl: imgUrl, bodyType: model.body_type, isCustom: true });
+                              else setSelectedModelId(model.id);
+                            }}
                             className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all active:scale-[0.98]"
                             title={`⭐ ${model.name} (sua modelo)`}
                           >
@@ -1125,7 +1132,11 @@ export default function GerarCampanha() {
                         /* Stock model */
                         <button
                           key={model.id}
-                          onClick={() => setSelectedModelId(model.id)}
+                          onClick={() => {
+                            const imgUrl = (model as any).thumbnail_url || (model as any).image_url;
+                            if (imgUrl) setPreviewModel({ id: model.id, name: model.name, imageUrl: imgUrl, bodyType: model.body_type, isCustom: false });
+                            else setSelectedModelId(model.id);
+                          }}
                           className="group aspect-[3/4] rounded-lg overflow-hidden relative transition-all duration-300 hover:scale-[1.03] hover:z-10"
                           title={model.name}
                         >
@@ -1234,23 +1245,13 @@ export default function GerarCampanha() {
           {/* Cenário */}
           <div>
             <label className="block text-sm font-semibold mb-3">Cenário da foto</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-              {(() => {
-                // Build dynamic backgrounds with "Meu Estúdio" if store has brand color
-                const allBgs = [...backgrounds];
-                if (storeBrandColor) {
-                  allBgs.splice(1, 0, {
-                    value: "minha_marca",
-                    label: "Meu Estúdio",
-                    thumb: null,
-                    ai: true,
-                  });
-                }
-                return allBgs.map((bg) => (
+            {/* Mobile: horizontal scroll carousel · Desktop: grid */}
+            <div className="flex overflow-x-auto gap-2 pb-2 hide-scrollbar snap-x snap-mandatory md:grid md:grid-cols-4 lg:grid-cols-5 md:overflow-visible md:pb-0 md:snap-none">
+                {backgrounds.map((bg) => (
                   <button
                     key={bg.value}
                     onClick={() => { setBackground(bg.value); haptics.light(); }}
-                    className="group rounded-xl overflow-hidden text-center transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative"
+                    className="group flex-shrink-0 w-20 md:w-auto rounded-xl overflow-hidden text-center transition-all duration-300 md:hover:scale-[1.02] md:hover:-translate-y-0.5 relative snap-start"
                   >
                     {/* Border Overlay */}
                     <div className={`absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 z-20 ${
@@ -1258,114 +1259,21 @@ export default function GerarCampanha() {
                         ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.2)]" 
                         : "ring-1 ring-inset ring-[var(--border)] opacity-50 group-hover:ring-brand-500/50 group-hover:opacity-100"
                     }`} />
-                    {bg.value === "minha_marca" && storeBrandColor ? (
-                      <div
-                        className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 relative overflow-hidden"
-                        style={{
-                          backgroundColor: storeBrandColor,
-                          backgroundImage: storeBackdropUrl
-                            ? `url(${storeBackdropUrl})`
-                            : `
-                            radial-gradient(circle at 50% 0%, rgba(255,255,255,0.4) 0%, transparent 60%),
-                            linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.3) 100%)
-                          `,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center 40%",
-                        }}
-                      >
-                        {/* Organic noise texture — only when no real preview */}
-                        {!storeBackdropUrl && (
-                          <div
-                            className="absolute inset-0 opacity-[0.25] mix-blend-multiply pointer-events-none"
-                            style={{
-                              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                              backgroundSize: "150px 150px",
-                            }}
-                          />
-                        )}
-                        {/* Cyclorama curve shadow - studio style */}
-                        {!storeBackdropUrl && (
-                          <div 
-                            className="absolute bottom-0 left-0 right-0 h-[45%] pointer-events-none" 
-                            style={{
-                              background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 40%, transparent 100%)"
-                            }}
-                          />
-                        )}
-                        {/* Spotlight effect */}
-                        {!storeBackdropUrl && (
-                          <div 
-                            className="absolute top-[-20%] left-[-20%] w-[140%] h-[140%] pointer-events-none opacity-40 mix-blend-overlay"
-                            style={{
-                              background: "radial-gradient(circle at 50% 30%, #fff 0%, transparent 50%)"
-                            }}
-                          />
-                        )}
-                        
-                        <div
-                          className="w-6 h-6 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.2)] relative z-10 flex items-center justify-center backdrop-blur-md"
-                          style={{
-                            background: "rgba(255,255,255,0.25)",
-                            border: "1px solid rgba(255,255,255,0.5)",
-                          }}
-                        >
-                          <span className="text-[9px] drop-shadow-md">📸</span>
-                        </div>
-                        <span 
-                          className="text-[8px] font-bold tracking-wide uppercase relative z-10 px-1.5 py-0.5 rounded-full backdrop-blur-sm" 
-                          style={{ 
-                            color: "white", 
-                            background: "rgba(0,0,0,0.3)",
-                            textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                            letterSpacing: "0.04em"
-                          }}
-                        >
-                          Estúdio
-                        </span>
-                      </div>
-                    ) : bg.value === "personalizado" ? (
-                      <div
-                        className="w-full aspect-square flex flex-col items-center justify-center gap-1"
-                        style={{ background: "linear-gradient(135deg, var(--surface) 0%, var(--brand-50) 100%)" }}
-                      >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-400)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                        </svg>
-                        <span className="text-[9px] font-medium" style={{ color: "var(--muted)" }}>Descreva</span>
-                      </div>
-                    ) : bg.thumb ? (
-                      <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover object-top" />
+                    {bg.thumb ? (
+                      <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover object-top" loading="lazy" />
                     ) : (
                       <div className="w-full aspect-square flex items-center justify-center" style={{ background: "var(--surface)" }}>
                         <span className="text-lg">✏️</span>
                       </div>
                     )}
-                    <div className="py-1.5 px-1" style={{ background: "var(--surface)" }}>
+                    <div className="py-1 md:py-1.5 px-1" style={{ background: "var(--surface)" }}>
                       <p className="text-[10px] sm:text-xs font-medium truncate">
-                        {bg.value === "personalizado" ? "Personalizar" : bg.label}
+                        {bg.label}
                       </p>
                     </div>
                   </button>
-                ));
-              })()}
+                ))}
             </div>
-            {background === "personalizado" && (
-              <input
-                type="text"
-                value={customBg}
-                onChange={(e) => setCustomBg(e.target.value)}
-                onFocus={(e) => {
-                  if (window.innerWidth < 1024) {
-                    setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
-                  }
-                }}
-                placeholder="Descreva: parede rosa da loja, praia ao pôr do sol…"
-                maxLength={60}
-                className="w-full h-10 px-3 mt-2 rounded-xl text-sm outline-none transition-all"
-                style={{ background: "var(--surface)", border: "1px solid var(--brand-300)", color: "var(--foreground)" }}
-                autoFocus
-              />
-            )}
           </div>
 
           {/* Advanced options */}
@@ -1463,6 +1371,92 @@ export default function GerarCampanha() {
           </div>
         </div>
       </div>
+
+      {/* ── Model Preview Modal ── */}
+      <AnimatePresence>
+        {previewModel && (
+          <div
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6"
+            onClick={() => setPreviewModel(null)}
+          >
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/70"
+              style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            />
+
+            {/* Sheet */}
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 350 }}
+              className="relative w-full md:max-w-sm max-h-[85vh] rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col"
+              style={{ background: "var(--background)", boxShadow: "0 -10px 50px rgba(0,0,0,0.5)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close X */}
+              <button
+                onClick={() => setPreviewModel(null)}
+                className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ background: "rgba(0,0,0,0.5)", color: "white", backdropFilter: "blur(4px)" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+
+              {/* Image */}
+              <div className="flex-1 min-h-0 bg-black/5 overflow-hidden">
+                <img
+                  src={previewModel.imageUrl}
+                  alt={previewModel.name}
+                  className="w-full h-full object-cover object-[center_15%]"
+                />
+              </div>
+
+              {/* Info + Actions */}
+              <div className="p-5 pb-7 md:pb-5">
+                {/* Drag handle (mobile) */}
+                <div className="md:hidden w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
+
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg truncate">{previewModel.name}</h3>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                      {previewModel.isCustom ? "⭐ Sua modelo · " : ""}
+                      {previewModel.bodyType === "media" || previewModel.bodyType === "normal" ? "Mulher Padrão" :
+                       previewModel.bodyType === "plus_size" || previewModel.bodyType === "plus" ? "Mulher Plus" :
+                       previewModel.bodyType === "medio" || previewModel.bodyType === "masculino" ? "Homem Padrão" :
+                       previewModel.bodyType === "robusto" ? "Homem Plus" : previewModel.bodyType}
+                    </p>
+                  </div>
+                  {selectedModelId === previewModel.id && (
+                    <span className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
+                      ✓ Selecionada
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedModelId(previewModel.id);
+                      setPreviewModel(null);
+                      haptics.success();
+                    }}
+                    className="btn-primary flex-1 !py-3.5 text-sm font-semibold"
+                    style={{ borderRadius: "14px", minHeight: "52px" }}
+                  >
+                    {selectedModelId === previewModel.id ? "✓ Selecionada" : "Selecionar modelo"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Single Photo Warning — Bottom Sheet (mobile-first, touch-friendly) */}
       <AnimatePresence>

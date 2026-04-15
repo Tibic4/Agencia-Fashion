@@ -98,7 +98,7 @@ async function getMetrics() {
 
 function StatCard({ label, value, subtitle, color }: { label: string; value: string | number; subtitle?: string; color: string }) {
   return (
-    <div className="relative bg-[#0A0A0A] border border-white/5 rounded-2xl p-6 overflow-hidden group">
+    <div className="relative bg-[#0A0A0A] border border-white/5 rounded-2xl p-4 sm:p-6 overflow-hidden group">
       {/* Subtle top glow */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50" />
       {/* Subtle inner gradient */}
@@ -106,7 +106,7 @@ function StatCard({ label, value, subtitle, color }: { label: string; value: str
       
       <div className="relative z-10">
         <p className="text-[13px] font-medium text-[#A1A1AA] mb-1">{label}</p>
-        <p className={`text-3xl font-black tracking-tight ${color}`}>{value}</p>
+        <p className={`text-xl sm:text-3xl font-black tracking-tight ${color}`}>{value}</p>
         {subtitle && <p className="text-[11px] uppercase tracking-wider text-[#71717A] mt-2 font-medium">{subtitle}</p>}
       </div>
     </div>
@@ -149,7 +149,7 @@ export default async function AdminDashboard() {
   const totalMrrCredits = m.mrr + m.creditStats.totalRevenue;
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-4 sm:space-y-8 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-[#FAFAFA] tracking-tight">Dashboard Overview</h1>
@@ -169,10 +169,10 @@ export default async function AdminDashboard() {
         {/* Distribuição por plano */}
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-          <div className="px-6 py-5 border-b border-white/5">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/5">
             <h2 className="text-[13px] font-bold text-[#FAFAFA] uppercase tracking-widest">Distribuição por Plano</h2>
           </div>
-          <div className="p-6 space-y-5 relative z-10">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 relative z-10">
             {Object.entries(m.planCounts)
               .sort(([,a], [,b]) => b.price - a.price)
               .map(([key, plan]) => {
@@ -208,17 +208,17 @@ export default async function AdminDashboard() {
         {/* Créditos Avulsos */}
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden relative flex flex-col">
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-          <div className="px-6 py-5 border-b border-white/5">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/5">
             <h2 className="text-[13px] font-bold text-[#FAFAFA] uppercase tracking-widest">Marketplace de Créditos</h2>
           </div>
-          <div className="p-6 flex-1 flex flex-col relative z-10">
+          <div className="p-4 sm:p-6 flex-1 flex flex-col relative z-10">
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-5 text-center">
-                <p className="text-3xl font-black text-[#FAFAFA]">{m.creditStats.totalPurchases}</p>
+              <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-3 sm:p-5 text-center">
+                <p className="text-xl sm:text-3xl font-black text-[#FAFAFA]">{m.creditStats.totalPurchases}</p>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-[#71717A] mt-1">Transações</p>
               </div>
-              <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-5 text-center">
-                <p className="text-3xl font-black text-[#FBBF24]">R$ {m.creditStats.totalRevenue.toFixed(0)}</p>
+              <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-3 sm:p-5 text-center">
+                <p className="text-xl sm:text-3xl font-black text-[#FBBF24]">R$ {m.creditStats.totalRevenue.toFixed(0)}</p>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-[#71717A] mt-1">Volume R$</p>
               </div>
             </div>
@@ -280,7 +280,7 @@ export default async function AdminDashboard() {
       <div className="grid lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Recent Campaigns */}
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
             <h2 className="text-[12px] font-bold text-[#FAFAFA] uppercase tracking-widest">Activity Feed</h2>
             <a href="/admin/campanhas" className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Ver Full Log →</a>
           </div>
@@ -291,7 +291,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               m.recentCampaigns.map((campaign: Record<string, unknown>) => (
-                <div key={campaign.id as string} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[56px]">
+                <div key={campaign.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[48px] sm:min-h-[56px]">
                   <div>
                     <p className="text-[13px] font-semibold text-[#E4E4E7]">{(campaign.stores as Record<string, string>)?.name || "Store desativada"}</p>
                     <p className="text-[11px] text-[#71717A] font-medium mt-0.5">
@@ -318,7 +318,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               m.recentStores.map((store: Record<string, unknown>) => (
-                <div key={store.id as string} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[56px]">
+                <div key={store.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[48px] sm:min-h-[56px]">
                   <div className="flex items-center gap-4">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#D946EF] to-[#8B5CF6] flex items-center justify-center text-white text-[13px] font-black shadow-[0_0_12px_rgba(217,70,239,0.3)]">
                       {(store.name as string)?.charAt(0)?.toUpperCase()}
