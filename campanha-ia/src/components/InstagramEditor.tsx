@@ -174,6 +174,7 @@ export default function InstagramEditor() {
   const [downloading, setDownloading] = useState(false);
   const [scale, setScale] = useState(0.35);
   const [tab, setTab] = useState<"text" | "visual" | "templates">("text");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -215,6 +216,14 @@ export default function InstagramEditor() {
     link.rel = "stylesheet";
     link.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;700&family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Poppins:wght@400;700&family=Bangers&family=Permanent+Marker&display=swap";
     document.head.appendChild(link);
+  }, []);
+
+  // Restore saved logo from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("editor_logo");
+      if (saved) setLogoSrc(saved);
+    } catch {}
   }, []);
 
   // Scale — fill container width
@@ -276,8 +285,18 @@ export default function InstagramEditor() {
 
   function handleUpload(slot: 1 | 2 | "logo", e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (slot === 1) setPhoto1(url); else if (slot === 2) setPhoto2(url); else setLogoSrc(url);
+    if (slot === "logo") {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setLogoSrc(dataUrl);
+        try { localStorage.setItem("editor_logo", dataUrl); } catch {}
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const url = URL.createObjectURL(file);
+      if (slot === 1) setPhoto1(url); else setPhoto2(url);
+    }
   }
 
   function addText(partial?: Partial<TextItem> & { text: string }) {
@@ -345,10 +364,10 @@ export default function InstagramEditor() {
 
   // ─── RENDER ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col lg:flex-row gap-3 lg:gap-5">
+    <div className="flex flex-col md:flex-row gap-3 md:gap-5">
 
       {/* ═══ Coluna do Canvas ═══ */}
-      <div className="flex-1 flex flex-col items-center gap-2">
+      <div className="flex-1 flex flex-col items-center gap-2 pb-14 md:pb-0">
 
         {/* Toggles */}
         <div className="flex gap-1.5 flex-wrap justify-center w-full">
@@ -563,29 +582,21 @@ export default function InstagramEditor() {
         )}
       </div>
 
-      {/* ═══ Side Panel (always visible — stacks on mobile) ═══ */}
-      <div className="lg:w-80 shrink-0 flex flex-col gap-0">
-
-        {/* Tabs */}
+      {/* ═══ Desktop Sidebar (hidden on mobile) ═══ */}
+      <div className="hidden md:flex md:w-72 lg:w-80 shrink-0 flex-col gap-0">
         <div className="flex bg-[#0A0A0A] rounded-t-2xl border border-white/5 border-b-0 p-1 gap-1">
           {([["text", "🔤 Texto"], ["visual", "🎨 Visual"], ["templates", "📋 Layouts"]] as const).map(([key, label]) => (
             <button key={key} onClick={() => setTab(key as typeof tab)}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${tab === key ? "bg-white/10 text-white" : "text-[#71717A] active:bg-white/5"}`}>{label}</button>
           ))}
         </div>
-
-        <div className="bg-[#0A0A0A] border border-white/5 rounded-b-2xl p-4 space-y-4 max-h-[60vh] lg:max-h-[75vh] overflow-y-auto">
-
-          {/* ─ TAB: Text ─ */}
+        <div className="bg-[#0A0A0A] border border-white/5 rounded-b-2xl p-4 space-y-4 max-h-[75vh] overflow-y-auto">
           {tab === "text" && (
             <>
-              {/* Upload */}
               <Section title={mode === "single" ? "Foto" : "Fotos"}>
                 <UploadSlot label={mode === "split" ? "Esquerda" : "Foto"} preview={photo1} onChange={e => handleUpload(1, e)} onClear={() => setPhoto1(null)} />
                 {mode === "split" && <UploadSlot label="Direita" preview={photo2} onChange={e => handleUpload(2, e)} onClear={() => setPhoto2(null)} />}
               </Section>
-
-              {/* Frases */}
               <Section title="Frases prontas">
                 <div className="flex flex-wrap gap-1.5">
                   {PRESET_PHRASES.map((p, i) => (
@@ -596,8 +607,6 @@ export default function InstagramEditor() {
                   ))}
                 </div>
               </Section>
-
-              {/* Stickers */}
               <Section title="Stickers">
                 <div className="flex flex-wrap gap-1.5">
                   {STICKER_EMOJIS.map(e => (
@@ -606,8 +615,6 @@ export default function InstagramEditor() {
                   ))}
                 </div>
               </Section>
-
-              {/* Text list */}
               <Section title={`Textos (${texts.length})`}>
                 {texts.length === 0 && <p className="text-xs text-[#52525B] text-center py-3">Adicione textos acima</p>}
                 <div className="space-y-1.5 max-h-44 overflow-y-auto">
@@ -623,8 +630,6 @@ export default function InstagramEditor() {
               </Section>
             </>
           )}
-
-          {/* ─ TAB: Visual ─ */}
           {tab === "visual" && (
             <>
               <Section title="Overlay">
@@ -635,7 +640,6 @@ export default function InstagramEditor() {
                   ))}
                 </div>
               </Section>
-
               <Section title="Moldura">
                 <div className="grid grid-cols-4 gap-1.5 mb-2">
                   {([["none", "Sem"], ["thin", "Fina"], ["thick", "Grossa"], ["double", "Dupla"]] as [Frame, string][]).map(([v, label]) => (
@@ -653,9 +657,8 @@ export default function InstagramEditor() {
                   </div>
                 )}
               </Section>
-
               <Section title="Logo / Marca d&apos;água">
-                <UploadSlot label="Logo" preview={logoSrc} onChange={e => handleUpload("logo", e)} onClear={() => setLogoSrc(null)} />
+                <UploadSlot label="Logo" preview={logoSrc} onChange={e => handleUpload("logo", e)} onClear={() => { setLogoSrc(null); try { localStorage.removeItem("editor_logo"); } catch {} }} />
                 {logoSrc && (
                   <div className="space-y-2 mt-2">
                     <div className="grid grid-cols-4 gap-1.5">
@@ -675,8 +678,6 @@ export default function InstagramEditor() {
               </Section>
             </>
           )}
-
-          {/* ─ TAB: Templates ─ */}
           {tab === "templates" && (
             <Section title="Layouts prontos">
               <p className="text-[11px] text-[#52525B] mb-2">Aplica textos e visual. Fotos são mantidas.</p>
@@ -696,6 +697,132 @@ export default function InstagramEditor() {
               </div>
             </Section>
           )}
+        </div>
+      </div>
+
+      {/* ═══ Mobile Bottom Sheet (hidden on desktop) ═══ */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex flex-col">
+        {/* Expandable content — slides up above the tab bar */}
+        {mobileOpen && (
+          <div className="bg-[#0A0A0A]/98 backdrop-blur-xl border-t border-white/10 rounded-t-2xl p-4 space-y-4 max-h-[45vh] overflow-y-auto">
+            {tab === "text" && (
+              <>
+                <Section title={mode === "single" ? "Foto" : "Fotos"}>
+                  <UploadSlot label={mode === "split" ? "Esquerda" : "Foto"} preview={photo1} onChange={e => handleUpload(1, e)} onClear={() => setPhoto1(null)} />
+                  {mode === "split" && <UploadSlot label="Direita" preview={photo2} onChange={e => handleUpload(2, e)} onClear={() => setPhoto2(null)} />}
+                </Section>
+                <Section title="Frases prontas">
+                  <div className="flex flex-wrap gap-1.5">
+                    {PRESET_PHRASES.map((p, i) => (
+                      <button key={i} onClick={() => { addText({ text: p.text, fontSize: p.fontSize, bgColor: p.bgColor ?? "", bgPadding: p.bgColor ? 14 : 16 }); setMobileOpen(false); }}
+                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-white/5 text-[#A1A1AA] active:bg-fuchsia-500/20 transition border border-transparent active:border-fuchsia-500/30 truncate max-w-full">
+                        {p.text}
+                      </button>
+                    ))}
+                  </div>
+                </Section>
+                <Section title="Stickers">
+                  <div className="flex flex-wrap gap-1.5">
+                    {STICKER_EMOJIS.map(e => (
+                      <button key={e} onClick={() => { addSticker(e); setMobileOpen(false); }}
+                        className="w-10 h-10 rounded-xl bg-white/5 text-lg active:bg-white/10 transition flex items-center justify-center">{e}</button>
+                    ))}
+                  </div>
+                </Section>
+                <Section title={`Textos (${texts.length})`}>
+                  {texts.length === 0 && <p className="text-xs text-[#52525B] text-center py-3">Adicione textos acima</p>}
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {texts.map(t => (
+                      <div key={t.id} onClick={() => { setSelectedId(t.id); setMobileOpen(false); }}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl transition border cursor-pointer ${selectedId === t.id ? "bg-fuchsia-500/20 border-fuchsia-500/30" : "bg-white/5 border-transparent active:border-white/20"}`}>
+                        <span className="text-xs text-[#FAFAFA] truncate flex-1">{t.text}</span>
+                        <button onClick={ev => { ev.stopPropagation(); pushHistory(texts.filter(x => x.id !== t.id)); if (selectedId === t.id) setSelectedId(null); }}
+                          className="shrink-0 w-7 h-7 rounded-lg text-sm text-red-400 active:bg-red-500/20 flex items-center justify-center">×</button>
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+              </>
+            )}
+            {tab === "visual" && (
+              <>
+                <Section title="Overlay">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {([["none", "Nenhum"], ["gradient-bottom", "Grad ↓"], ["gradient-top", "Grad ↑"], ["vignette", "Vinheta"], ["brand-warm", "Warm"], ["brand-cool", "Cool"]] as [Overlay, string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setOverlay(v)}
+                        className={`py-2.5 rounded-xl text-xs font-bold transition border ${overlay === v ? "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" : "bg-white/5 text-[#71717A] border-transparent active:bg-white/10"}`}>{label}</button>
+                    ))}
+                  </div>
+                </Section>
+                <Section title="Moldura">
+                  <div className="grid grid-cols-4 gap-1.5 mb-2">
+                    {([["none", "Sem"], ["thin", "Fina"], ["thick", "Grossa"], ["double", "Dupla"]] as [Frame, string][]).map(([v, label]) => (
+                      <button key={v} onClick={() => setFrame(v)}
+                        className={`py-2.5 rounded-xl text-xs font-bold transition border ${frame === v ? "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" : "bg-white/5 text-[#71717A] border-transparent active:bg-white/10"}`}>{label}</button>
+                    ))}
+                  </div>
+                  {frame !== "none" && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {["#FFFFFF", "#000000", "#D946EF", "#F59E0B", "#DC2626", "#10B981"].map(c => (
+                        <button key={c} onClick={() => setFrameColor(c)}
+                          className={`w-8 h-8 rounded-lg transition ${frameColor === c ? "ring-2 ring-fuchsia-400 ring-offset-1 ring-offset-[#0A0A0A]" : "active:scale-110"}`}
+                          style={{ background: c, border: c === "#FFFFFF" ? "1px solid rgba(255,255,255,0.15)" : undefined }} />
+                      ))}
+                    </div>
+                  )}
+                </Section>
+                <Section title="Logo / Marca d&apos;água">
+                  <UploadSlot label="Logo" preview={logoSrc} onChange={e => handleUpload("logo", e)} onClear={() => { setLogoSrc(null); try { localStorage.removeItem("editor_logo"); } catch {} }} />
+                  {logoSrc && (
+                    <div className="space-y-2 mt-2">
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {([["tl", "↖"], ["tr", "↗"], ["bl", "↙"], ["br", "↘"]] as ["tl" | "tr" | "bl" | "br", string][]).map(([v, icon]) => (
+                          <button key={v} onClick={() => setLogoPos(v)}
+                            className={`py-2 rounded-xl text-sm font-bold transition border ${logoPos === v ? "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" : "bg-white/5 text-[#71717A] border-transparent"}`}>{icon}</button>
+                        ))}
+                      </div>
+                      <label className="flex items-center gap-2 text-[11px] text-[#71717A]">
+                        Opacidade <input type="range" min={10} max={100} value={Math.round(logoOpacity * 100)} onChange={e => setLogoOpacity(Number(e.target.value) / 100)} className="flex-1 h-1 accent-fuchsia-500" /> {Math.round(logoOpacity * 100)}%
+                      </label>
+                      <label className="flex items-center gap-2 text-[11px] text-[#71717A]">
+                        Tamanho <input type="range" min={5} max={40} value={Math.round(logoScale * 100)} onChange={e => setLogoScale(Number(e.target.value) / 100)} className="flex-1 h-1 accent-fuchsia-500" /> {Math.round(logoScale * 100)}%
+                      </label>
+                    </div>
+                  )}
+                </Section>
+              </>
+            )}
+            {tab === "templates" && (
+              <Section title="Layouts prontos">
+                <p className="text-[11px] text-[#52525B] mb-2">Aplica textos e visual. Fotos são mantidas.</p>
+                <div className="space-y-2">
+                  {TEMPLATES.map((tpl, i) => (
+                    <button key={i} onClick={() => { applyTemplate(tpl); setMobileOpen(false); }}
+                      className="w-full text-left px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 active:border-fuchsia-500/40 active:bg-fuchsia-500/10 transition">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{tpl.icon}</span>
+                        <div>
+                          <p className="text-sm font-bold text-[#FAFAFA]">{tpl.name}</p>
+                          <p className="text-[11px] text-[#52525B]">{tpl.format === "feed" ? "Feed" : "Stories"} · {tpl.mode === "split" ? "Antes/Depois" : "1 foto"} · {tpl.texts.length} textos</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </Section>
+            )}
+          </div>
+        )}
+
+        {/* Tab bar — always visible at the very bottom */}
+        <div className="flex bg-[#0A0A0A] border-t border-white/10 px-1.5 py-1.5 gap-1" style={{ paddingBottom: 'max(6px, env(safe-area-inset-bottom))' }}>
+          {([["text", "🔤 Texto"], ["visual", "🎨 Visual"], ["templates", "📋"]] as const).map(([key, label]) => (
+            <button key={key}
+              onClick={() => { if (tab === key && mobileOpen) { setMobileOpen(false); } else { setTab(key as typeof tab); setMobileOpen(true); } }}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${tab === key && mobileOpen ? "bg-fuchsia-500/20 text-fuchsia-300" : "text-[#71717A] active:bg-white/5"}`}>
+              {label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

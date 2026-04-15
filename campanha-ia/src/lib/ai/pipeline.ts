@@ -10,7 +10,7 @@
  */
 
 import type { GeminiAnalise, GeminiDicasPostagem, GeminiVTOHint } from "./gemini-analyzer";
-import { analyzeWithGemini, getTexturedBackdropPrompt } from "./gemini-analyzer";
+import { analyzeWithGemini } from "./gemini-analyzer";
 import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 
@@ -46,8 +46,7 @@ export interface PipelineInput {
   storeName?: string;
   bodyType?: "normal" | "plus";
   backgroundType?: string;
-  /** Cor da marca da loja (hex) */
-  brandColor?: string;
+
   /** Campos legados — mantidos para compatibilidade com a route */
   objective?: string;
   targetAudience?: string;
@@ -100,7 +99,7 @@ export async function runCampaignPipeline(
     storeName: input.storeName,
     bodyType: (input.bodyType === "plus" ? "plus" : "normal"),
     backgroundType: input.backgroundType,
-    brandColor: input.brandColor,
+
     modelInfo: input.modelInfo,
   });
   const analyzerDurationMs = Date.now() - analyzerStart;
@@ -130,59 +129,14 @@ export async function runCampaignPipeline(
   const imageProgressEnd = 85;   // ending progress after all images
   const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
-  // ── Backdrop injection: VISUAL REFERENCE or text fallback ──
-  // If the store has a generated backdrop reference image (empty studio in brand color),
-  // we send it as the LAST image to each VTO call for visual consistency.
-  // If not available, falls back to text-based backdrop prompt.
-  let finalPrompts = analyzerResult.vto_hints.scene_prompts as [string, string, string];
-  let backdropBase64: string | undefined;
-  let backdropMime: string | undefined;
 
-  if (input.backgroundType === "minha_marca" && input.brandColor) {
-    // Try to load visual backdrop reference from store
-    if (input.storeId) {
-      try {
-        const { createAdminClient } = await import("@/lib/supabase/admin");
-        const supabase = createAdminClient();
-        const { data: store } = await supabase
-          .from("stores")
-          .select("backdrop_ref_url, backdrop_color")
-          .eq("id", input.storeId)
-          .single();
-
-        const normalizeHex = (h: string) => h.replace(/^#/, "").toLowerCase();
-        if (store?.backdrop_ref_url && normalizeHex(store.backdrop_color || "") === normalizeHex(input.brandColor)) {
-          const { downloadBackdropBase64 } = await import("./backdrop-generator");
-          const downloaded = await downloadBackdropBase64(store.backdrop_ref_url);
-          if (downloaded) {
-            backdropBase64 = downloaded;
-            backdropMime = "image/png";
-            console.log(`[Pipeline] 🖼️ Backdrop ref loaded for ${input.brandColor}`);
-          }
-        }
-      } catch (err) {
-        console.warn("[Pipeline] ⚠️ Failed to load backdrop ref:", err);
-      }
-    }
-
-    // Fallback: inject text-based backdrop prompt if no visual available
-    if (!backdropBase64) {
-      const backdropText = getTexturedBackdropPrompt(input.brandColor);
-      console.log(`[Pipeline] 🎨 Fallback: text backdrop for ${input.brandColor}`);
-      finalPrompts = finalPrompts.map(
-        (prompt) => `${prompt}\n\n${backdropText}`
-      ) as [string, string, string];
-    }
-  }
 
   const imageResult = await generateWithGeminiVTO({
-    stylingPrompts: finalPrompts,
+    stylingPrompts: analyzerResult.vto_hints.scene_prompts as [string, string, string],
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
     modelMediaType: input.modelMediaType,
-    backdropImageBase64: backdropBase64,
-    backdropMediaType: backdropMime,
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
     aspectRatio: analyzerResult.vto_hints.aspect_ratio,
     gender: input.modelInfo?.gender,

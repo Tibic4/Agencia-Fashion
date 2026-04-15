@@ -31,7 +31,7 @@ export const CampaignInputSchema = z.object({
   ).default(['instagram_feed', 'instagram_stories', 'whatsapp', 'meta_ads']),
   use_model: z.boolean().default(true),
   model_id: z.string().uuid().optional(),
-  background_type: z.enum(['branco', 'estudio', 'lifestyle', 'personalizado']).default('branco'),
+  background_type: z.enum(['branco', 'estudio', 'lifestyle']).default('branco'),
   background_value: z.string().optional(),
 });
 
