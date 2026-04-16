@@ -113,9 +113,9 @@ export default function Home() {
         {/* ═══ HERO — VTO-first above the fold ═══ */}
         <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-x-hidden" style={{ background: 'var(--gradient-hero)' }}>
           {/* Mesh gradient orbs */}
-          <div className="absolute top-10 -left-20 w-[400px] h-[400px] rounded-full opacity-[0.15] blur-[100px]" style={{ background: 'var(--brand-400)' }} />
-          <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-[120px]" style={{ background: 'var(--accent-400)' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.04] blur-[80px]" style={{ background: 'var(--brand-300)' }} />
+          <div className="absolute top-10 -left-20 w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] rounded-full opacity-[0.15] blur-[100px]" style={{ background: 'var(--brand-400)' }} />
+          <div className="absolute -bottom-20 -right-20 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full opacity-[0.08] blur-[120px]" style={{ background: 'var(--accent-400)' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] rounded-full opacity-[0.04] blur-[80px]" style={{ background: 'var(--brand-300)' }} />
           
           <div className="container relative z-10">
             {/* ── Mobile Layout: text + compact VTO proof ── */}
@@ -125,12 +125,12 @@ export default function Home() {
                 <span>Virtual Try-On com IA</span>
               </div>
 
-              <h1 className="text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
+              <h1 className="text-[22px] sm:text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
                 Transforme a Foto do Manequim em{" "}
                 <span className="gradient-text">Campanha Pronta.</span>
               </h1>
 
-              <p className="text-[15px] sm:text-base leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
+              <p className="text-[13px] sm:text-[15px] leading-relaxed mb-6 max-w-[260px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
                 Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
                 <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
               </p>
@@ -249,12 +249,12 @@ export default function Home() {
                 </span>
                 <strong style={{ color: 'var(--foreground)' }}>{lojistas.toLocaleString("pt-BR")} lojistas</strong> já criaram {campanhas.toLocaleString("pt-BR")}+ campanhas esta semana
               </p>
-              <div className="flex flex-wrap justify-center items-center gap-5 md:gap-16 opacity-60 grayscale blur-[0.5px]">
-                <span className="text-base sm:text-xl font-black tracking-tighter">DONNA</span>
-                <span className="text-base sm:text-xl font-black tracking-widest font-serif">ELEGANCE</span>
-                <span className="text-base sm:text-xl font-bold uppercase">ML Fashion</span>
-                <span className="text-base sm:text-xl font-bold italic">Boutique</span>
-                <span className="text-base sm:text-xl font-black">CiaBrand</span>
+              <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-5 md:gap-16 opacity-60 grayscale blur-[0.5px]">
+                <span className="text-sm sm:text-xl font-black tracking-tighter">DONNA</span>
+                <span className="text-sm sm:text-xl font-black tracking-widest font-serif">ELEGANCE</span>
+                <span className="text-sm sm:text-xl font-bold uppercase">ML Fashion</span>
+                <span className="text-sm sm:text-xl font-bold italic">Boutique</span>
+                <span className="text-sm sm:text-xl font-black">CiaBrand</span>
               </div>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-10">
               <div className="badge badge-brand mb-4 inline-flex">Demonstração Real</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Veja uma <span className="gradient-text">Campanha Viva</span>
               </h2>
               <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
@@ -282,7 +282,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">3 passos simples</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 De uma foto a uma <span className="gradient-text">campanha completa</span>
               </h2>
               <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
@@ -299,7 +299,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Tudo incluso</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Uma foto. <span className="gradient-text">Seis entregas.</span>
               </h2>
               <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
@@ -388,10 +388,10 @@ export default function Home() {
         <section id="precos" className="section scroll-mt-20" style={{ background: 'var(--gradient-brand-soft)' }}>
           <div className="container">
             <div className="text-center mb-10">
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 A verdadeira <span className="gradient-text">Matemática Humilhante</span>
               </h2>
-              <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
+              <p className="text-sm sm:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
                 Descubra o quanto sua concorrência gasta enquanto você corta até 99% de custo (e de estresse).
               </p>
             </div>
@@ -400,7 +400,7 @@ export default function Home() {
 
             <div className="mt-20 text-center mb-8">
               <div className="badge badge-brand mb-4 inline-flex">Planos & Packs</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Invista na Sua <span className="gradient-text">Agência Virtual</span>
               </h2>
               <div className="inline-flex items-center gap-2 rounded-xl sm:rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-4 bg-brand-500/10 text-brand-600 border border-brand-200 dark:border-brand-800 dark:text-brand-400 text-center">
@@ -417,7 +417,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Eles também duvidaram</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 O impacto de quem <span className="gradient-text">já adotou a IA</span>
               </h2>
               <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
@@ -434,7 +434,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-12 md:mb-16">
               <div className="badge badge-brand mb-4 inline-flex">Dúvidas Frequentes</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
                 Ainda tem <span className="gradient-text">perguntas?</span>
               </h2>
               <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
@@ -448,15 +448,15 @@ export default function Home() {
 
         {/* ═══ CTA FINAL ═══ */}
         <section className="section relative overflow-hidden" style={{ background: 'var(--background)' }}>
-          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--brand-400)' }} />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-400)' }} />
+          <div className="absolute top-0 left-1/4 w-60 sm:w-96 h-60 sm:h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--brand-400)' }} />
+          <div className="absolute bottom-0 right-1/4 w-60 sm:w-96 h-60 sm:h-96 rounded-full opacity-10 blur-3xl" style={{ background: 'var(--accent-400)' }} />
           
           <div className="container relative z-10 text-center">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
               Sua próxima campanha está a uma{" "}
               <span className="gradient-text">foto de distância</span>.
             </h2>
-            <p className="text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
+            <p className="text-sm sm:text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
               Comece com o Pack Teste por R$ 19,90. 3 campanhas completas: Modelo virtual, logo na imagem e legendas de alta conversão.
             </p>
             <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-4 !px-6 sm:!px-10 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar minha primeira campanha com IA">

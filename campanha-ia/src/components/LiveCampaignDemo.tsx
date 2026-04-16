@@ -184,10 +184,10 @@ export default function LiveCampaignDemo() {
 
   return (
     <div className="w-full max-w-5xl mx-auto py-8">
-      <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-surface shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
-        
+      <div className="rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-800 bg-surface shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-0 md:min-h-[500px]">
+
         {/* Left Side: Empty State / Generating / Result Image */}
-        <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 relative flex items-center justify-center p-6 sm:p-8 min-h-[300px] sm:min-h-[380px] md:min-h-[500px]">
+        <div className="w-full md:w-1/2 bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 relative flex items-center justify-center p-4 sm:p-6 md:p-8 min-h-[260px] sm:min-h-[340px] md:min-h-[500px]">
           <AnimatePresence mode="wait">
             {!isGenerating && !isDone && (
               <motion.div 
@@ -200,13 +200,13 @@ export default function LiveCampaignDemo() {
                 <div className="w-20 h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-lg mb-6">
                   <Wand2 className="w-10 h-10 text-brand-500" />
                 </div>
-                <h3 className="text-2xl font-bold font-display mb-2">Veja a mágica acontecer</h3>
+                <h3 className="text-xl sm:text-2xl font-bold font-display mb-2">Veja a mágica acontecer</h3>
                 <p className="text-muted-foreground mb-8">
                   Clique no botão abaixo para simular a criação de uma campanha completa a partir de uma foto de manequim.
                 </p>
                 <button 
                   onClick={() => setIsGenerating(true)}
-                  className="btn-primary w-full text-lg shadow-[0_0_20px_rgba(217,70,239,0.4)]"
+                  className="btn-primary w-full text-base sm:text-lg shadow-[0_0_20px_rgba(217,70,239,0.4)]"
                 >
                   <Wand2 className="w-5 h-5 mr-2" /> Gerar Demonstração Grátis
                 </button>
@@ -271,7 +271,7 @@ export default function LiveCampaignDemo() {
         </div>
 
         {/* Right Side: Copy & Actions */}
-        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col bg-surface relative">
+        <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 flex flex-col bg-surface relative">
             {!isDone ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-40 grayscale blur-[2px]">
                 {/* Skeleton UI for text */}
@@ -309,13 +309,13 @@ export default function LiveCampaignDemo() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors min-h-[44px]">
-                      <Download className="w-4 h-4" />
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
+                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors min-h-[44px] text-xs sm:text-sm">
+                      <Download className="w-4 h-4 shrink-0" />
                       Baixar Foto
                     </button>
-                    <button onClick={handleCopy} className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold hover:bg-black dark:hover:bg-white transition-colors min-h-[44px]">
-                      {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <button onClick={handleCopy} className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold hover:bg-black dark:hover:bg-white transition-colors min-h-[44px] text-xs sm:text-sm">
+                      {copied ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <Copy className="w-4 h-4 shrink-0" />}
                       {copied ? "Copiado!" : "Copiar Texto"}
                     </button>
                   </div>

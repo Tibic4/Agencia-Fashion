@@ -16,10 +16,10 @@ export default function Footer({ useLinks = false, currentPage }: FooterProps) {
   ];
 
   return (
-    <footer className="py-12" style={{ background: "var(--gray-950)", color: "var(--gray-400)" }}>
+    <footer className="py-8 sm:py-12" style={{ background: "var(--gray-950)", color: "var(--gray-400)" }}>
       <div className="container">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-          <div className="col-span-2 md:col-span-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8">
+          <div className="sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
               <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
               <span className="text-lg font-bold text-white">CriaLook</span>
