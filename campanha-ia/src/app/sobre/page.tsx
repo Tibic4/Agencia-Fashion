@@ -82,7 +82,7 @@ export default function Sobre() {
               <IconHeart />
               <span>Sobre nós</span>
             </div>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-6">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-6">
               Marketing de moda{" "}
               <span className="gradient-text">inteligente</span>
             </h1>
@@ -93,13 +93,13 @@ export default function Sobre() {
 
           {/* ═══ Nossa história ═══ */}
           <div className="max-w-3xl mx-auto mb-16 md:mb-24">
-            <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-8 md:gap-12">
               {/* Story card */}
               <div className="rounded-2xl p-6 md:p-8 relative overflow-hidden" style={{ 
                 background: "var(--gradient-card)", 
                 border: "1px solid var(--border)",
               }}>
-                <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 blur-2xl" style={{ background: "var(--brand-400)" }} />
+                <div className="hidden sm:block absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 blur-2xl" style={{ background: "var(--brand-400)" }} />
                 <h2 className="text-xl md:text-2xl font-bold mb-4" style={{ color: "var(--foreground)" }}>A dor que nos move</h2>
                 <div className="space-y-4 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
                   <p>
@@ -120,7 +120,7 @@ export default function Sobre() {
                 color: "white",
                 boxShadow: "0 8px 40px rgba(236,72,153,0.15)",
               }}>
-                <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full opacity-20 blur-2xl" style={{ background: "white" }} />
+                <div className="hidden sm:block absolute -bottom-10 -left-10 w-32 h-32 rounded-full opacity-20 blur-2xl" style={{ background: "white" }} />
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)" }}>
                   <IconTarget />
                 </div>
@@ -242,7 +242,7 @@ export default function Sobre() {
 
           {/* ═══ CTA final ═══ */}
           <div className="max-w-3xl mx-auto">
-            <div className="rounded-2xl p-8 md:p-12 text-center relative overflow-hidden" style={{ background: "var(--gradient-brand-soft)", border: "1px solid var(--brand-200)" }}>
+            <div className="rounded-2xl p-5 sm:p-8 md:p-12 text-center relative overflow-hidden" style={{ background: "var(--gradient-brand-soft)", border: "1px solid var(--brand-200)" }}>
               <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 blur-3xl" style={{ background: "var(--brand-400)" }} />
               <h2 className="text-xl md:text-3xl font-bold mb-3">
                 Sua próxima campanha está a uma <span className="gradient-text">foto de distância</span>.

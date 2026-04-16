@@ -36,19 +36,19 @@ export default function HumiliatingMathTable() {
       <div className="rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800" style={{ background: 'var(--surface)' }}>
         {/* Header */}
         <div className="grid grid-cols-2 md:grid-cols-2 divide-x divide-gray-200 dark:divide-gray-800">
-          <div className="bg-gray-50 dark:bg-gray-900/50 p-6 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center mb-3">
-              <X className="w-6 h-6" />
+          <div className="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-6 flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center mb-2 sm:mb-3">
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-display font-bold text-lg md:text-xl text-gray-500 dark:text-gray-400">Modo Tradicional</h3>
+            <h3 className="font-display font-bold text-sm sm:text-lg md:text-xl text-gray-500 dark:text-gray-400">Tradicional</h3>
           </div>
-          
-          <div className="bg-brand-500 p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
+
+          <div className="bg-brand-500 p-3 sm:p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2" />
-            <div className="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center mb-3 backdrop-blur-sm border border-white/30">
-              <Check className="w-6 h-6" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 text-white flex items-center justify-center mb-2 sm:mb-3 backdrop-blur-sm border border-white/30">
+              <Check className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <h3 className="font-display font-bold text-lg md:text-xl text-white">Modo CriaLook</h3>
+            <h3 className="font-display font-bold text-sm sm:text-lg md:text-xl text-white">CriaLook</h3>
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export default function HumiliatingMathTable() {
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="inline-flex items-center gap-4 bg-surface border border-border px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-full shadow-lg"
+          className="inline-flex items-center gap-3 sm:gap-4 bg-surface border border-border px-3 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-full shadow-lg"
         >
           <div className="flex flex-col items-end">
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Economia gerada</span>

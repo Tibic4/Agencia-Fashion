@@ -44,7 +44,7 @@ export default function StickyCTA() {
   return (
     <Link
       href="/sign-up"
-      className="fixed bottom-6 left-4 right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold text-[14px] sm:text-[15px] animate-in slide-in-from-bottom-10 fade-in duration-300 whitespace-nowrap"
+      className="fixed bottom-6 left-3 right-3 sm:left-4 sm:right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold text-[13px] sm:text-[15px] animate-in slide-in-from-bottom-10 fade-in duration-300 whitespace-nowrap"
       style={{ background: 'var(--gradient-brand)', color: 'white', boxShadow: '0 8px 25px rgba(217,70,239,0.4)' }}
     >
       <Zap className="w-5 h-5 shrink-0" />

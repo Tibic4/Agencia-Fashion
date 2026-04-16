@@ -591,6 +591,92 @@ export default function GerarCampanha() {
         </div>
       )}
 
+      {/* ── Model Preview Modal — FORA da div com transform ── */}
+      <AnimatePresence>
+        {previewModel && (
+          <div
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6"
+            onClick={() => setPreviewModel(null)}
+          >
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/70"
+              style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            />
+
+            {/* Sheet */}
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 350 }}
+              className="relative w-full md:max-w-sm max-h-[85vh] rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col"
+              style={{ background: "var(--background)", boxShadow: "0 -10px 50px rgba(0,0,0,0.5)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close X */}
+              <button
+                onClick={() => setPreviewModel(null)}
+                className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{ background: "rgba(0,0,0,0.5)", color: "white", backdropFilter: "blur(4px)" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+
+              {/* Image */}
+              <div className="flex-1 min-h-0 bg-black/5 overflow-hidden">
+                <img
+                  src={previewModel.imageUrl}
+                  alt={previewModel.name}
+                  className="w-full h-full object-cover object-[center_15%]"
+                />
+              </div>
+
+              {/* Info + Actions */}
+              <div className="p-5 pb-7 md:pb-5">
+                {/* Drag handle (mobile) */}
+                <div className="md:hidden w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
+
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg truncate">{previewModel.name}</h3>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
+                      {previewModel.isCustom ? "⭐ Sua modelo · " : ""}
+                      {previewModel.bodyType === "media" || previewModel.bodyType === "normal" ? "Mulher Padrão" :
+                       previewModel.bodyType === "plus_size" || previewModel.bodyType === "plus" ? "Mulher Plus" :
+                       previewModel.bodyType === "medio" || previewModel.bodyType === "masculino" ? "Homem Padrão" :
+                       previewModel.bodyType === "robusto" ? "Homem Plus" : previewModel.bodyType}
+                    </p>
+                  </div>
+                  {selectedModelId === previewModel.id && (
+                    <span className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
+                      ✓ Selecionada
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedModelId(previewModel.id);
+                      setPreviewModel(null);
+                      haptics.success();
+                    }}
+                    className="btn-primary flex-1 !py-3.5 text-sm font-semibold"
+                    style={{ borderRadius: "14px", minHeight: "52px" }}
+                  >
+                    {selectedModelId === previewModel.id ? "✓ Selecionada" : "Selecionar modelo"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ── Main Form ── */}
       <div className="animate-fade-in-up w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
 
@@ -845,153 +931,56 @@ export default function GerarCampanha() {
             </div>
           </div>
 
-          {/* Aviso de conteúdo — peças de roupa apenas */}
-          <div className="flex items-start gap-2.5 p-3 rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <div>
-              <p className="text-xs font-semibold" style={{ color: "var(--foreground)" }}>Envie apenas fotos de roupas e acessórios</p>
-              <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
-                Fotos com pessoas sem roupa, conteúdo íntimo ou impróprio serão bloqueadas automaticamente pela IA. Use fotos da peça sobre cabide, manequim ou mesa.
-              </p>
-            </div>
-          </div>
-
-          {/* Guia Relâmpago — dicas de foto + antes/depois da vitrine */}
+          {/* Aviso compacto + dicas — só no mobile, inline */}
+          <p className="text-[11px] text-center" style={{ color: "var(--muted)" }}>
+            🛡️ Apenas roupas e acessórios · Conteúdo impróprio é bloqueado pela IA
+          </p>
           <PhotoTipsCard hasPhoto={!!preview} />
-
-
-          {/* Price */}
-          <div>
-            <label className="block text-sm font-semibold mb-2">
-              Preço de venda <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional)</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
-                R$
-              </span>
-              <input
-                type="text"
-                value={price}
-                onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
-                onFocus={(e) => {
-                  if (window.innerWidth < 1024) {
-                    setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
-                  }
-                }}
-                placeholder="Ex: 89,90"
-                className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                  color: "var(--foreground)",
-                }}
-              />
-            </div>
-          </div>
         </div>
 
         {/* Right — Options */}
         <div className="space-y-8 min-w-0">
 
 
-          {/* Body Type — Biotipo */}
+          {/* Model Bank Selector — Biotipo integrado como tabs */}
           <div className="animate-fade-in">
-            <label className="block text-sm font-semibold mb-2">Biotipo do modelo</label>
-            {/* Mobile: horizontal scroll chips · Desktop: 4-col card grid */}
-            <div className="flex overflow-x-auto gap-2 pb-1 hide-scrollbar snap-x snap-mandatory md:grid md:grid-cols-4 md:overflow-visible md:pb-0 md:snap-none">
-              <button
-                onClick={() => { setBodyType("normal"); setModelFilter("padrao"); setShowAllModels(false); }}
-                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
-                style={{
-                  border: bodyType === "normal"
-                    ? "2px solid var(--brand-500)"
-                    : "1px solid var(--border)",
-                  background: bodyType === "normal" ? "var(--brand-50)" : "var(--surface)",
-                }}
-              >
-                <span className="text-lg md:text-2xl md:mb-1">👤</span>
-                <span className="text-xs font-semibold whitespace-nowrap">Mulher Padrão</span>
-                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>P · M</span>
-              </button>
-              <button
-                onClick={() => { setBodyType("plus"); setModelFilter("curvilinea"); setShowAllModels(false); }}
-                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
-                style={{
-                  border: bodyType === "plus"
-                    ? "2px solid var(--brand-500)"
-                    : "1px solid var(--border)",
-                  background: bodyType === "plus" ? "var(--brand-50)" : "var(--surface)",
-                }}
-              >
-                <span className="text-lg md:text-2xl md:mb-1">💃</span>
-                <span className="text-xs font-semibold whitespace-nowrap">Mulher Plus</span>
-                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>G · GG</span>
-              </button>
-              <button
-                onClick={() => { setBodyType("masculino"); setModelFilter("homem"); setShowAllModels(false); }}
-                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
-                style={{
-                  border: bodyType === "masculino"
-                    ? "2px solid var(--brand-500)"
-                    : "1px solid var(--border)",
-                  background: bodyType === "masculino" ? "var(--brand-50)" : "var(--surface)",
-                }}
-              >
-                <span className="text-lg md:text-2xl md:mb-1">🧍‍♂️</span>
-                <span className="text-xs font-semibold whitespace-nowrap">Homem Padrão</span>
-                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>P · M</span>
-              </button>
-              <button
-                onClick={() => { setBodyType("robusto"); setModelFilter("homem_plus"); setShowAllModels(false); }}
-                className="flex-shrink-0 flex items-center gap-2 md:flex-col md:gap-0 px-4 py-2.5 md:p-3 rounded-xl transition-all snap-start min-h-[44px]"
-                style={{
-                  border: bodyType === "robusto"
-                    ? "2px solid var(--brand-500)"
-                    : "1px solid var(--border)",
-                  background: bodyType === "robusto" ? "var(--brand-50)" : "var(--surface)",
-                }}
-              >
-                <span className="text-lg md:text-2xl md:mb-1">🏋️‍♂️</span>
-                <span className="text-xs font-semibold whitespace-nowrap">Homem Plus</span>
-                <span className="text-[10px] md:text-xs md:mt-1 ml-1 md:ml-0" style={{ color: "var(--muted)" }}>G · GG</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Model Bank Selector — Unificado (customizadas + stock) */}
-          <div className="animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
-              <div className="flex-shrink-0">
-                <label className="text-sm font-semibold">Modelo virtual</label>
-                {customModels.length > 0 && (
-                  <span className="text-xs ml-2" style={{ color: "var(--muted)" }}>
-                    {customModels.length}/{maxModels} personalizadas
-                  </span>
-                )}
+            <div className="flex flex-col gap-2 mb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-shrink-0">
+                  <label className="text-sm font-semibold">Modelo virtual</label>
+                  {customModels.length > 0 && (
+                    <span className="text-xs ml-2" style={{ color: "var(--muted)" }}>
+                      {customModels.length}/{maxModels} personalizadas
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="w-full md:w-auto min-w-0 flex overflow-x-auto gap-1 hide-scrollbar pb-1">
-                {["all", "padrao", "curvilinea", "homem", "homem_plus"].map((f) => (
+              {/* Biotipo tabs — scroll horizontal no mobile */}
+              <div className="flex overflow-x-auto gap-1.5 hide-scrollbar pb-1 snap-x snap-mandatory">
+                {([
+                  { filter: "all", body: "" as const, label: "Todos", icon: "✨" },
+                  { filter: "padrao", body: "normal" as const, label: "Mulher", icon: "👤" },
+                  { filter: "curvilinea", body: "plus" as const, label: "Mulher Plus", icon: "💃" },
+                  { filter: "homem", body: "masculino" as const, label: "Homem", icon: "🧍‍♂️" },
+                  { filter: "homem_plus", body: "robusto" as const, label: "Homem Plus", icon: "🏋️‍♂️" },
+                ] as const).map((tab) => (
                   <button
-                    key={f}
+                    key={tab.filter}
                     onClick={() => {
                       haptics.light();
-                      setModelFilter(f);
-                      // Sync biotipo selector
-                      if (f === "padrao") setBodyType("normal");
-                      else if (f === "curvilinea") setBodyType("plus");
-                      else if (f === "homem") setBodyType("masculino");
-                      else if (f === "homem_plus") setBodyType("robusto");
+                      setModelFilter(tab.filter);
+                      if (tab.body) setBodyType(tab.body);
                       setShowAllModels(false);
                     }}
-                    className="px-3 py-2 rounded-md text-xs font-medium transition-all min-h-[44px] whitespace-nowrap flex-shrink-0"
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all snap-start min-h-[40px]"
                     style={{
-                      background: modelFilter === f ? "var(--brand-100)" : "transparent",
-                      color: modelFilter === f ? "var(--brand-700)" : "var(--muted)",
+                      background: modelFilter === tab.filter ? "var(--brand-100)" : "var(--surface)",
+                      color: modelFilter === tab.filter ? "var(--brand-700)" : "var(--muted)",
+                      border: modelFilter === tab.filter ? "1px solid var(--brand-300)" : "1px solid var(--border)",
                     }}
                   >
-                    {f === "all" ? "Todos" : f === "padrao" ? "Mulher Padrão" : f === "curvilinea" ? "Mulher Plus" : f === "homem" ? "Homem Padrão" : "Homem Plus"}
+                    <span className="text-sm">{tab.icon}</span>
+                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -1291,6 +1280,34 @@ export default function GerarCampanha() {
 
             {showAdvanced && (
               <div className="mt-4 space-y-4 animate-fade-in">
+                {/* Preço de venda */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Preço de venda <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional)</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
+                      R$
+                    </span>
+                    <input
+                      type="text"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value.replace(/[^0-9.,]/g, ""))}
+                      onFocus={(e) => {
+                        if (window.innerWidth < 1024) {
+                          setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
+                        }
+                      }}
+                      placeholder="Ex: 89,90"
+                      className="w-full h-12 pl-10 pr-4 rounded-xl text-lg font-semibold outline-none transition-all"
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--foreground)",
+                      }}
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-semibold mb-2">Público-alvo</label>
                   <select
@@ -1372,93 +1389,9 @@ export default function GerarCampanha() {
         </div>
       </div>
 
-      {/* ── Model Preview Modal ── */}
-      <AnimatePresence>
-        {previewModel && (
-          <div
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6"
-            onClick={() => setPreviewModel(null)}
-          >
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/70"
-              style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-            />
+      </div>
 
-            {/* Sheet */}
-            <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 28, stiffness: 350 }}
-              className="relative w-full md:max-w-sm max-h-[85vh] rounded-t-3xl md:rounded-2xl overflow-hidden flex flex-col"
-              style={{ background: "var(--background)", boxShadow: "0 -10px 50px rgba(0,0,0,0.5)" }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close X */}
-              <button
-                onClick={() => setPreviewModel(null)}
-                className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
-                style={{ background: "rgba(0,0,0,0.5)", color: "white", backdropFilter: "blur(4px)" }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-              </button>
-
-              {/* Image */}
-              <div className="flex-1 min-h-0 bg-black/5 overflow-hidden">
-                <img
-                  src={previewModel.imageUrl}
-                  alt={previewModel.name}
-                  className="w-full h-full object-cover object-[center_15%]"
-                />
-              </div>
-
-              {/* Info + Actions */}
-              <div className="p-5 pb-7 md:pb-5">
-                {/* Drag handle (mobile) */}
-                <div className="md:hidden w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
-
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-lg truncate">{previewModel.name}</h3>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                      {previewModel.isCustom ? "⭐ Sua modelo · " : ""}
-                      {previewModel.bodyType === "media" || previewModel.bodyType === "normal" ? "Mulher Padrão" :
-                       previewModel.bodyType === "plus_size" || previewModel.bodyType === "plus" ? "Mulher Plus" :
-                       previewModel.bodyType === "medio" || previewModel.bodyType === "masculino" ? "Homem Padrão" :
-                       previewModel.bodyType === "robusto" ? "Homem Plus" : previewModel.bodyType}
-                    </p>
-                  </div>
-                  {selectedModelId === previewModel.id && (
-                    <span className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>
-                      ✓ Selecionada
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setSelectedModelId(previewModel.id);
-                      setPreviewModel(null);
-                      haptics.success();
-                    }}
-                    className="btn-primary flex-1 !py-3.5 text-sm font-semibold"
-                    style={{ borderRadius: "14px", minHeight: "52px" }}
-                  >
-                    {selectedModelId === previewModel.id ? "✓ Selecionada" : "Selecionar modelo"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Single Photo Warning — Bottom Sheet (mobile-first, touch-friendly) */}
+      {/* Single Photo Warning — FORA da div com transform */}
       <AnimatePresence>
         {showSinglePhotoWarning && (
           <div
@@ -1587,7 +1520,6 @@ export default function GerarCampanha() {
           </div>
         )}
       </AnimatePresence>
-      </div>
     </>
   );
 }

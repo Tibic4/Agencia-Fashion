@@ -53,19 +53,19 @@ export default function Privacidade() {
         </div>
       </header>
 
-      <main className="flex-1 pt-28 md:pt-36 pb-16 md:pb-24">
+      <main className="flex-1 pt-20 sm:pt-28 md:pt-36 pb-12 sm:pb-16 md:pb-24">
         <div className="container max-w-3xl">
           {/* Header */}
           <div className="mb-10 md:mb-14">
             <div className="badge badge-brand mb-4 inline-flex text-[11px]">Legal</div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">Política de Privacidade</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">Política de Privacidade</h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>Última atualização: Abril 2026 · Conforme LGPD (Lei 13.709/2018)</p>
           </div>
 
           {/* Content */}
           <div className="space-y-8">
             {sections.map((s) => (
-              <div key={s.title} className="rounded-xl p-5 md:p-6" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div key={s.title} className="rounded-xl p-4 sm:p-5 md:p-6" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <h2 className="text-base md:text-lg font-bold mb-3" style={{ color: "var(--foreground)" }}>{s.title}</h2>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{s.content}</p>
               </div>

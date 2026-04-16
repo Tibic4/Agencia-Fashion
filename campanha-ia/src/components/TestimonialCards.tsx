@@ -37,7 +37,7 @@ export default function TestimonialCards() {
         {testimonials.map((t, i) => (
           <div
             key={i}
-            className={`flex flex-col relative rounded-3xl p-5 sm:p-8 border border-border shadow-sm transition-transform hover:-translate-y-1 ${t.bg}`}
+            className={`flex flex-col relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-border shadow-sm transition-transform hover:-translate-y-1 ${t.bg}`}
           >
             {/* Stars */}
             <div className="flex gap-1 mb-4 sm:mb-6 text-brand-500">

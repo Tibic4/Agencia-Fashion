@@ -67,7 +67,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         {/* Produto */}
         {campaign.product_photo_url && (
           <div className="rounded-2xl overflow-hidden mb-8" style={{ border: "1px solid var(--border)" }}>
-            <img src={campaign.product_photo_url} alt="Produto" className="w-full max-h-96 object-contain" style={{ background: "#f8f8f8" }} />
+            <img src={campaign.product_photo_url} alt="Produto" className="w-full max-h-64 sm:max-h-96 object-contain" style={{ background: "#f8f8f8" }} />
           </div>
         )}
 
@@ -97,7 +97,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         {output?.instagram_feed && (
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>📸 Instagram Feed</h2>
-            <div className="rounded-xl p-5 whitespace-pre-wrap text-sm" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="rounded-xl p-4 sm:p-5 whitespace-pre-wrap break-words text-sm" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
               {output.instagram_feed}
             </div>
           </div>
@@ -107,7 +107,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         {output?.whatsapp && (
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>💬 WhatsApp</h2>
-            <div className="rounded-xl p-5 whitespace-pre-wrap text-sm" style={{ background: "#dcf8c6", border: "1px solid #b5e3a0", color: "#111" }}>
+            <div className="rounded-xl p-4 sm:p-5 whitespace-pre-wrap break-words text-sm" style={{ background: "#dcf8c6", border: "1px solid #b5e3a0", color: "#111" }}>
               {output.whatsapp}
             </div>
           </div>
@@ -128,8 +128,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         )}
 
         {/* CTA */}
-        <div className="text-center mt-12 rounded-2xl p-8" style={{ background: "var(--gradient-brand-soft)", border: "1px solid var(--border)" }}>
-          <h3 className="text-xl font-bold mb-2">Quer criar campanhas assim?</h3>
+        <div className="text-center mt-8 sm:mt-12 rounded-2xl p-5 sm:p-8" style={{ background: "var(--gradient-brand-soft)", border: "1px solid var(--border)" }}>
+          <h3 className="text-lg sm:text-xl font-bold mb-2">Quer criar campanhas assim?</h3>
           <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
             Só com uma foto → Campanha pronta pra postar.
           </p>

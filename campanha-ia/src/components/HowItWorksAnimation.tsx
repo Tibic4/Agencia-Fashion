@@ -42,15 +42,15 @@ export default function HowItWorksAnimation() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className={`relative flex flex-col items-center md:flex-row ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-8 md:gap-16`}
+              className={`relative flex flex-col items-center md:flex-row ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-4 sm:gap-8 md:gap-16`}
             >
               {/* Content Panel */}
               <div className="w-full md:w-1/2 flex flex-col md:text-left text-center">
-                <div className={`md:max-w-md ${isEven ? 'ml-auto' : 'mr-auto'} p-8 rounded-2xl bg-surface border border-border shadow-lg hover:shadow-xl transition-shadow`}>
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-bold mb-4 font-display text-xl">
+                <div className={`md:max-w-md ${isEven ? 'ml-auto' : 'mr-auto'} p-4 sm:p-6 md:p-8 rounded-2xl bg-surface border border-border shadow-lg hover:shadow-xl transition-shadow`}>
+                  <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 font-bold mb-3 sm:mb-4 font-display text-lg sm:text-xl">
                     {step.id}
                   </div>
-                  <h3 className="text-2xl font-bold font-display mb-3 text-foreground">{step.title}</h3>
+                  <h3 className="text-lg sm:text-2xl font-bold font-display mb-2 sm:mb-3 text-foreground">{step.title}</h3>
                   <p className="text-muted-foreground leading-relaxed">{step.description}</p>
                 </div>
               </div>
@@ -62,7 +62,7 @@ export default function HowItWorksAnimation() {
 
               {/* Visual Panel / Mockup */}
               <div className="w-full md:w-1/2 flex justify-center">
-                <div className="relative w-full max-w-[280px] aspect-[9/16] rounded-3xl overflow-hidden shadow-2xl border-4 border-gray-800 bg-gray-900">
+                <div className="relative w-full max-w-[220px] sm:max-w-[280px] aspect-[9/16] rounded-3xl overflow-hidden shadow-2xl border-4 border-gray-800 bg-gray-900">
                   {/* Mock content inside the "phone" */}
                   <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 text-center ${step.color}`}>
                     <motion.div 
