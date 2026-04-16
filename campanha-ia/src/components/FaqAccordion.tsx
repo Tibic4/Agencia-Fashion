@@ -61,9 +61,9 @@ export default function FaqAccordion() {
           >
             <button
               onClick={() => toggle(index)}
-              className="w-full flex items-center justify-between p-5 md:p-6 text-left focus:outline-none"
+              className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus:outline-none min-h-[44px]"
             >
-              <span className={`font-medium md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
+              <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
                 {faq.q}
               </span>
               <motion.div
@@ -83,7 +83,7 @@ export default function FaqAccordion() {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
-                  <div className="px-5 md:px-6 pb-5 md:pb-6 text-muted-foreground leading-relaxed">
+                  <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 text-sm sm:text-base text-muted-foreground leading-relaxed">
                     {faq.a}
                   </div>
                 </motion.div>
