@@ -293,49 +293,9 @@ export default function Historico() {
             <AnimatePresence mode="popLayout">
               {paginatedCampaigns.map((campaign) => {
                 const score = campaign.campaign_scores?.[0]?.nota_geral;
-                const v3Analise = campaign.output?.analise;
-                const v2Name = campaign.campaign_outputs?.[0]?.headline_principal;
                 const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
-
-                // Build smart headline:
-                // For conjuntos: "Peça 1 + Peça 2 · cor/mood"
-                // For single: "Peça descritiva · mood"
-                let headline = "";
-                if (v2Name) {
-                  headline = v2Name;
-                } else if (v3Analise) {
-                  const pecas = v3Analise.pecas || [];
-                  const tipoPeca = v3Analise.tipo_peca;
-                  const cor = v3Analise.cor_principal?.nome;
-                  const mood = v3Analise.mood;
-
-                  // Helper: shorten a piece name to ~4 meaningful words
-                  const shorten = (s: string) => {
-                    const words = s.split(/\s+/);
-                    // Remove filler words like "de", "com", "em", "e"
-                    const meaningful = words.filter(w => !["de", "com", "em", "e", "da", "do", "na", "no", "para"].includes(w.toLowerCase()));
-                    return capitalize(meaningful.slice(0, 4).join(" "));
-                  };
-
-                  if (pecas.length >= 2 && tipoPeca === "conjunto") {
-                    // Conjunto: show both pieces abbreviated
-                    headline = `${shorten(pecas[0])} + ${shorten(pecas[1])}`;
-                  } else if (pecas.length > 0 && pecas[0].length > 3) {
-                    headline = capitalize(pecas[0]);
-                  } else if (tipoPeca) {
-                    headline = capitalize(tipoPeca);
-                  }
-
-                  // Append color or mood as subtitle
-                  if (headline.length < 45) {
-                    if (cor && cor.length > 1) {
-                      headline += ` · ${capitalize(cor)}`;
-                    } else if (mood && mood.length > 2) {
-                      headline += ` · ${capitalize(mood)}`;
-                    }
-                  }
-                }
-                if (!headline) headline = `Campanha ${objLabel}`.trim();
+                const priceStr = campaign.price > 0 ? `R$ ${Number(campaign.price).toFixed(2).replace(".", ",")}` : "";
+                const headline = [objLabel.replace(/^[^\w\s]+\s*/, ""), priceStr].filter(Boolean).join(" · ") || "Campanha";
                 const isFav = campaign.is_favorited;
                 const isToggling = togglingId === campaign.id;
                 const objStyle = objectiveColors[campaign.objective || ""] || { bg: "var(--surface)", color: "var(--muted)" };
@@ -415,13 +375,13 @@ export default function Historico() {
                         </p>
                         <div className="flex items-center gap-2 mt-1 min-w-0">
                           <span
-                            className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 truncate max-w-[50%]"
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: objStyle.bg, color: objStyle.color }}
                           >
                             {objLabel || "—"}
                           </span>
-                          <span className="text-xs truncate" style={{ color: "var(--muted)" }}>
-                            {campaign.price > 0 ? `R$ ${Number(campaign.price).toFixed(2).replace(".", ",")}` : ""} · {formatDate(campaign.created_at)}
+                          <span className="text-xs" style={{ color: "var(--muted)" }}>
+                            {formatDate(campaign.created_at)}
                           </span>
                         </div>
                       </div>
