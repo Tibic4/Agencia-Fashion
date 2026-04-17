@@ -2,6 +2,12 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// Rotas que usam auth própria (não passam pelo Clerk)
+const isEditorRoute = createRouteMatcher([
+  "/editor(.*)",
+  "/api/editor-auth(.*)",
+]);
+
 // Rotas que exigem login
 const isProtectedRoute = createRouteMatcher([
   "/gerar(.*)",
@@ -25,6 +31,9 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")
   .filter(Boolean);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Editor standalone — usa auth própria (cookie), não Clerk
+  if (isEditorRoute(request)) return;
+
   if (isAdminRoute(request)) {
     // 1. Exige login
     await auth.protect();

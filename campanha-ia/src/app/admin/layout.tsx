@@ -33,7 +33,6 @@ const adminNav = [
   { href: "/admin/custos", label: "Custos", icon: <IconCosts /> },
   { href: "/admin/logs", label: "Logs", icon: <IconLogs /> },
   { href: "/admin/vitrine", label: "Vitrine", icon: <span className="text-sm">🖼️</span> },
-  { href: "/admin/editor", label: "Editor", icon: <span className="text-sm">✏️</span> },
   { href: "/admin/configuracoes", label: "Ajustes", icon: <IconSettings /> },
 ];
 

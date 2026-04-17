@@ -294,8 +294,9 @@ export default function Historico() {
               {paginatedCampaigns.map((campaign) => {
                 const score = campaign.campaign_scores?.[0]?.nota_geral;
                 const objLabel = campaign.objective ? objectiveLabels[campaign.objective] || campaign.objective : "";
+                const objName = objLabel.replace(/^[^\w\s]+\s*/, "") || "Campanha";
                 const priceStr = campaign.price > 0 ? `R$ ${Number(campaign.price).toFixed(2).replace(".", ",")}` : "";
-                const headline = [objLabel.replace(/^[^\w\s]+\s*/, ""), priceStr].filter(Boolean).join(" · ") || "Campanha";
+                const headline = priceStr ? `${objName} · ${priceStr}` : objName;
                 const isFav = campaign.is_favorited;
                 const isToggling = togglingId === campaign.id;
                 const objStyle = objectiveColors[campaign.objective || ""] || { bg: "var(--surface)", color: "var(--muted)" };
