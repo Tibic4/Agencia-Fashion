@@ -370,7 +370,7 @@ export default function ResultadoCampanha() {
         style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
       >
         <button
-          onClick={() => router.push("/gerar")}
+          onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70 min-h-[44px]"
           style={{ color: "var(--muted)" }}
         >
