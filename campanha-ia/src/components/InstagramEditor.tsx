@@ -172,13 +172,15 @@ export default function InstagramEditor() {
   const [logoOpacity, setLogoOpacity] = useState(0.8);
   const [logoScale, setLogoScale] = useState(0.15);
   const [downloading, setDownloading] = useState(false);
-  const [scale, setScale] = useState(0.35);
+  const [scale, setScale] = useState(0.22);
   const [tab, setTab] = useState<"text" | "visual" | "templates">("text");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const quickPhotoRef = useRef<HTMLInputElement>(null);
+  const quickPhoto2Ref = useRef<HTMLInputElement>(null);
   const textNodesRef = useRef<Map<string, Konva.Text>>(new Map());
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
@@ -226,11 +228,20 @@ export default function InstagramEditor() {
     } catch {}
   }, []);
 
-  // Scale — fill container width
+  // Scale — fill container width, on mobile also constrain by height
   const updateScale = useCallback(() => {
     if (!containerRef.current) return;
-    setScale((containerRef.current.clientWidth - 2) / CANVAS_W);
-  }, []);
+    const containerW = containerRef.current.clientWidth - 2;
+    const scaleByW = containerW / CANVAS_W;
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      // Cap canvas at ~46% of viewport height so controls stay visible
+      const maxCanvasH = window.innerHeight * 0.46;
+      const scaleByH = maxCanvasH / canvasH;
+      setScale(Math.min(scaleByW, scaleByH));
+    } else {
+      setScale(scaleByW);
+    }
+  }, [canvasH]);
   useEffect(() => { updateScale(); window.addEventListener("resize", updateScale); return () => window.removeEventListener("resize", updateScale); }, [updateScale]);
 
   // Transformer
@@ -367,12 +378,12 @@ export default function InstagramEditor() {
     <div className="flex flex-col md:flex-row gap-3 md:gap-5">
 
       {/* ═══ Coluna do Canvas ═══ */}
-      <div className="flex-1 flex flex-col items-center gap-2 pb-14 md:pb-0">
+      <div className="flex-1 flex flex-col items-center gap-2 pb-28 md:pb-0 overflow-x-hidden">
 
         {/* Toggles */}
-        <div className="flex gap-1.5 flex-wrap justify-center w-full">
+        <div className="flex gap-2 flex-wrap justify-center w-full px-1">
           <Toggle value={format} options={[["feed", "Feed 4:5"], ["story", "Story 9:16"]]} onChange={v => setFormat(v as "feed" | "story")} />
-          <Toggle value={mode} options={[["single", "1 Foto"], ["split", "Antes/Depois"]]} onChange={v => setMode(v as "single" | "split")} />
+          <Toggle value={mode} options={[["single", "1 Foto"], ["split", "2 Fotos"]]} onChange={v => setMode(v as "single" | "split")} />
           {mode === "split" && <Toggle value={dividerStyle} options={[["none", "—"], ["line", "│"], ["gradient", "▓"]]} onChange={v => setDividerStyle(v as "line" | "gradient" | "none")} />}
         </div>
 
@@ -459,18 +470,22 @@ export default function InstagramEditor() {
         </div>
 
         {/* ── Quick Bar (always visible) ── */}
-        <div className="flex gap-1.5 w-full flex-wrap justify-center" style={{ maxWidth: 560 }}>
+        <input ref={quickPhotoRef} type="file" accept="image/*" className="hidden" onChange={e => handleUpload(1, e)} />
+        {mode === "split" && <input ref={quickPhoto2Ref} type="file" accept="image/*" className="hidden" onChange={e => handleUpload(2, e)} />}
+        <div className="flex gap-2 w-full flex-wrap justify-center" style={{ maxWidth: 560 }}>
+          <Btn onClick={() => quickPhotoRef.current?.click()} accent>{photo1 ? "🔄 Foto" : "📷 Foto"}</Btn>
+          {mode === "split" && <Btn onClick={() => quickPhoto2Ref.current?.click()} accent>{photo2 ? "🔄 Foto 2" : "📷 Foto 2"}</Btn>}
           <Btn onClick={() => addText()} accent>+ Texto</Btn>
           <Btn onClick={undo} title="Ctrl+Z">↩</Btn>
           <Btn onClick={redo} title="Ctrl+Y">↪</Btn>
           <Btn onClick={handleDownload} disabled={downloading || (!photo1 && texts.length === 0)} gradient>
-            {downloading ? "…" : `Baixar ${format === "feed" ? "Feed" : "Story"}`}
+            {downloading ? "…" : "⬇ Baixar"}
           </Btn>
         </div>
 
         {/* ── Selected text quick-edit (mobile-friendly) ── */}
         {selected && (
-          <div className="w-full rounded-2xl bg-[#0A0A0A] border border-fuchsia-500/30 p-3 space-y-2.5" style={{ maxWidth: 560 }}>
+          <div className="w-full rounded-2xl bg-[#0A0A0A] border border-fuchsia-500/30 p-3 space-y-2.5 max-h-[50vh] md:max-h-none overflow-y-auto" style={{ maxWidth: 560 }}>
             {/* Text input — big, always accessible */}
             <input
               type="text" value={selected.text}
@@ -840,7 +855,7 @@ function Toggle({ value, options, onChange }: { value: string; options: [string,
     <div className="flex bg-[#121212] rounded-xl border border-white/10 p-0.5 gap-0.5">
       {options.map(([v, label]) => (
         <button key={v} onClick={() => onChange(v)}
-          className={`px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${value === v ? "bg-white/10 text-white" : "text-[#71717A] active:text-white"}`}>{label}</button>
+          className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${value === v ? "bg-white/10 text-white" : "text-[#71717A] active:text-white"}`}>{label}</button>
       ))}
     </div>
   );
@@ -850,7 +865,7 @@ function Btn({ children, onClick, disabled, accent, gradient, danger, title }: {
   children: React.ReactNode; onClick: () => void; disabled?: boolean;
   accent?: boolean; gradient?: boolean; danger?: boolean; title?: string;
 }) {
-  const base = "px-4 py-2.5 rounded-xl text-xs font-bold transition-all";
+  const base = "px-4 py-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center";
   const cls = gradient
     ? `${base} text-white disabled:opacity-40`
     : accent
