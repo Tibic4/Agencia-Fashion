@@ -416,20 +416,24 @@ export async function incrementCampaignsUsed(storeId: string) {
 }
 
 /** Verifica se a loja pode gerar mais campanhas neste período */
-export async function canGenerateCampaign(storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+export async function canGenerateCampaign(storeId: string): Promise<{ allowed: boolean; used: number; limit: number; hasAvulso: boolean }> {
   const usage = await getCurrentUsage(storeId);
   const credits = await getStoreCredits(storeId);
   const avulso = credits.campaigns || 0;
 
   const used = usage?.campaigns_generated ?? 0;
   const planLimit = usage?.campaigns_limit ?? 0;
-  // Total limit = plan limit + avulso credits
-  const totalLimit = planLimit + avulso;
+
+  // Plano ainda tem quota? Usar slot do plano.
+  // Senão, verificar se tem crédito avulso (consumido separadamente no generate).
+  const planAllowed = used < planLimit;
+  const hasAvulso = avulso > 0;
 
   return {
-    allowed: used < totalLimit,
+    allowed: planAllowed || hasAvulso,
     used,
-    limit: totalLimit,
+    limit: planLimit + avulso,
+    hasAvulso: !planAllowed && hasAvulso,
   };
 }
 
@@ -534,6 +538,14 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
 
   if (!plan) throw new Error(`Plano "${planName}" não encontrado`);
 
+  // Buscar plano anterior para detectar mudança (antes do update)
+  const { data: storeData } = await supabase
+    .from("stores")
+    .select("plan_id")
+    .eq("id", storeId)
+    .single();
+  const planChanged = storeData?.plan_id !== plan.id;
+
   // Atualizar loja
   await supabase
     .from("stores")
@@ -547,11 +559,12 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
   // Resetar ou criar store_usage do período
   const usage = await getCurrentUsage(storeId);
   if (usage) {
-    // Período ativo existe — resetar contadores
+    // Período ativo existe — só resetar contador se mudou de plano (upgrade/downgrade).
+    // Se é renovação do mesmo plano (cobrança recorrente mensal), apenas atualizar o limite.
     await supabase
       .from("store_usage")
       .update({
-        campaigns_generated: 0,
+        campaigns_generated: planChanged ? 0 : usage.campaigns_generated,
         campaigns_limit: plan.campaigns_per_month,
       })
       .eq("id", usage.id);
@@ -603,7 +616,7 @@ export async function addCreditsToStore(
     consumed: 0,
   });
 
-  // 2. Incrementar créditos na loja
+  // 2. Incrementar créditos na loja (atômico via RPC)
   const columnMap = {
     campaigns: "credit_campaigns",
     models: "credit_models",
@@ -612,19 +625,26 @@ export async function addCreditsToStore(
 
   const column = columnMap[type];
 
-  // Buscar valor atual e somar
-  const { data: store } = await supabase
-    .from("stores")
-    .select(column)
-    .eq("id", storeId)
-    .single();
+  const { error: rpcError } = await supabase.rpc("add_credits_atomic", {
+    p_store_id: storeId,
+    p_column: column,
+    p_quantity: quantity,
+  });
 
-  const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
-
-  await supabase
-    .from("stores")
-    .update({ [column]: currentValue + quantity })
-    .eq("id", storeId);
+  if (rpcError) {
+    console.warn(`[Credits] ⚠️ add_credits_atomic RPC falhou, usando fallback: ${rpcError.message}`);
+    // Fallback: read-modify-write (melhor que falhar)
+    const { data: store } = await supabase
+      .from("stores")
+      .select(column)
+      .eq("id", storeId)
+      .single();
+    const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
+    await supabase
+      .from("stores")
+      .update({ [column]: currentValue + quantity })
+      .eq("id", storeId);
+  }
 
   console.log(`[Credits] ✅ +${quantity} ${type} adicionados à loja ${storeId}`);
 }

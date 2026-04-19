@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { friendlyError } from "@/lib/friendly-error";
+import { PLANS, CREDIT_PACKAGES_CAMPAIGNS, CREDIT_PACKAGES_MODELS } from "@/lib/plans";
 
 const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -30,19 +31,30 @@ interface StoreData {
   mercadopago_subscription_id?: string | null;
 }
 
-const plans = [
-  { id: "essencial", name: "Essencial", badge: "💡", price: 179, campaigns: 15, models: 5, highlight: false },
-  { id: "pro", name: "Pro", badge: "🚀", price: 359, campaigns: 40, models: 15, highlight: true },
-  { id: "business", name: "Business", badge: "🏢", price: 749, campaigns: 100, models: 40, highlight: false },
-];
+const PLAN_BADGES: Record<string, string> = { essencial: "💡", pro: "🚀", business: "🏢" };
+const PLAN_HIGHLIGHT: Record<string, boolean> = { essencial: false, pro: true, business: false };
+
+const plans = (Object.entries(PLANS) as [string, typeof PLANS[keyof typeof PLANS]][]).map(([id, p]) => ({
+  id,
+  name: p.name,
+  badge: PLAN_BADGES[id] || "",
+  price: p.price,
+  campaigns: p.campaigns_per_month,
+  models: p.models,
+  highlight: PLAN_HIGHLIGHT[id] || false,
+}));
 
 const extras = [
-  { label: "+3 campanhas", price: "R$ 49,90", packageId: "3_campanhas" },
-  { label: "+10 campanhas", price: "R$ 149,90", packageId: "10_campanhas" },
-  { label: "+20 campanhas", price: "R$ 249,00", packageId: "20_campanhas" },
-  { label: "+3 modelos virtuais", price: "R$ 19,90", packageId: "3_modelos" },
-  { label: "+10 modelos virtuais", price: "R$ 49,90", packageId: "10_modelos" },
-  { label: "+25 modelos virtuais", price: "R$ 99,90", packageId: "25_modelos" },
+  ...Object.entries(CREDIT_PACKAGES_CAMPAIGNS).map(([packageId, pkg]) => ({
+    label: `+${pkg.quantity} campanhas`,
+    price: `R$ ${pkg.price.toFixed(2).replace(".", ",")}`,
+    packageId,
+  })),
+  ...Object.entries(CREDIT_PACKAGES_MODELS).map(([packageId, pkg]) => ({
+    label: `+${pkg.quantity} modelos virtuais`,
+    price: `R$ ${pkg.price.toFixed(2).replace(".", ",")}`,
+    packageId,
+  })),
 ];
 
 export default function Plano() {
@@ -61,8 +73,9 @@ export default function Plano() {
     const params = new URLSearchParams(window.location.search);
     const status = params.get("status");
     const creditsStatus = params.get("credits");
+    const source = params.get("source");
 
-    if (status === "approved") {
+    if (status === "approved" || source === "subscription") {
       setStatusMsg("✅ Pagamento aprovado! Seu plano será atualizado em instantes.");
       // Polling para atualizar usage após webhook processar
       const pollUsage = setInterval(async () => {

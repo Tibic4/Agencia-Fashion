@@ -102,16 +102,28 @@ export async function POST(request: NextRequest) {
     if (store) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
-        // Plano esgotado — consumir crédito avulso atomicamente
+        // Sem quota de plano e sem créditos avulsos
+        const credits = await getStoreCredits(store.id);
+        return NextResponse.json({
+          error: `Suas ${quota.limit} campanhas do mês acabaram!`,
+          code: "QUOTA_EXCEEDED",
+          used: quota.used,
+          limit: quota.limit,
+          credits: credits.campaigns,
+          upgradeHint: true,
+        }, { status: 429 });
+      } else if (quota.hasAvulso) {
+        // Plano esgotado mas tem crédito avulso — consumir atomicamente
         const consumed = await consumeCredit(store.id, "campaigns");
         if (consumed) {
           needsAvulsoCredit = true;
           creditReserved = true;
           console.log(`[Generate] 💳 Crédito avulso RESERVADO upfront (plano esgotado: ${quota.used}/${quota.limit})`);
         } else {
+          // Race condition: crédito consumido entre check e consume
           const credits = await getStoreCredits(store.id);
           return NextResponse.json({
-            error: `Suas ${quota.limit} campanhas do mês acabaram!`,
+            error: `Suas campanhas do mês acabaram!`,
             code: "QUOTA_EXCEEDED",
             used: quota.used,
             limit: quota.limit,

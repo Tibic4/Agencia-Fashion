@@ -1,17 +1,13 @@
-import { MercadoPagoConfig, Preference, Payment, PreApproval } from "mercadopago";
+import { MercadoPagoConfig, Payment, PreApproval } from "mercadopago";
 import { PLANS, type PlanId } from "@/lib/plans";
 
 // Re-export for consumers that imported PlanId from here
 export { PLANS, type PlanId };
 
-/**
- * Client do Mercado Pago configurado com access token
- */
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
 });
 
-export const preferenceClient = new Preference(client);
 export const paymentClient = new Payment(client);
 export const preApprovalClient = new PreApproval(client);
 
@@ -42,7 +38,7 @@ export async function createSubscription(params: {
         transaction_amount: plan.price,
         currency_id: "BRL",
       },
-      back_url: `${appUrl}/plano?status=approved`,
+      back_url: `${appUrl}/plano?source=subscription`,
       payer_email: params.userEmail,
       external_reference: `${params.storeId}|${params.planId}`,
       status: "pending",
@@ -87,58 +83,6 @@ export async function getSubscriptionStatus(subscriptionId: string) {
     externalReference: result.external_reference,
     autoRecurring: result.auto_recurring,
     nextPaymentDate: result.next_payment_date,
-  };
-}
-
-// ═══════════════════════════════════════
-// CRÉDITOS AVULSOS (Preference — pagamento único)
-// ═══════════════════════════════════════
-
-/**
- * Cria uma preferência de pagamento PONTUAL (para créditos avulsos).
- * Mantém Preference API pois créditos são compra única.
- */
-export async function createCheckoutPreference(params: {
-  planId: PlanId;
-  userId: string;
-  userEmail: string;
-}) {
-  const plan = PLANS[params.planId];
-  if (!plan) throw new Error(`Plano inválido: ${params.planId}`);
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-  const preference = await preferenceClient.create({
-    body: {
-      items: [
-        {
-          id: params.planId,
-          title: `CriaLook ${plan.name} — Mensal`,
-          description: plan.features.join(", "),
-          quantity: 1,
-          currency_id: "BRL",
-          unit_price: plan.price,
-        },
-      ],
-      payer: {
-        email: params.userEmail,
-      },
-      back_urls: {
-        success: `${appUrl}/plano?status=approved`,
-        failure: `${appUrl}/plano?status=rejected`,
-        pending: `${appUrl}/plano?status=pending`,
-      },
-      auto_return: "approved",
-      external_reference: `${params.userId}|${params.planId}`,
-      notification_url: `${appUrl}/api/webhooks/mercadopago`,
-      statement_descriptor: "CRIALOOK",
-    },
-  });
-
-  return {
-    preferenceId: preference.id,
-    initPoint: preference.init_point,
-    sandboxInitPoint: preference.sandbox_init_point,
   };
 }
 
