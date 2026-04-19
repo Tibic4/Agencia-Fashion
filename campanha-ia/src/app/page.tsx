@@ -161,23 +161,52 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* CTAs */}
+              {/* CTA principal */}
               <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
                 <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
                   <IconZap className="shrink-0" />
                   <span>Criar Minha 1ª Campanha<br className="xs:hidden" /> — R$ 19,90</span>
                 </Link>
+              </div>
+
+              {/* Pack breakdown */}
+              <div className="mt-5 mx-auto max-w-xs rounded-2xl p-4 text-left" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Incluso no Pack Teste</p>
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
+                    <div>
+                      <p className="text-[13px] font-bold">Campanhas completas</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>9 fotos prontas para postar</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>👩</span>
+                    <div>
+                      <p className="text-[13px] font-bold">Modelo virtual personalizada</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Escolha tom de pele, cabelo e corpo</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>✍️</span>
+                    <div>
+                      <p className="text-[13px] font-bold">Legendas + hashtags IA</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Textos de alta conversão prontos</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--muted)' }}>Pague via PIX ou cartão</span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--success)' }}>Sem assinatura</span>
+                </div>
+              </div>
+
+              {/* Ver exemplo — depois do breakdown */}
+              <div className="mt-4 mx-auto max-w-xs">
                 <a href="#demo-viva" className="btn-secondary w-full text-sm !py-3">
                   Ver Exemplo Pronto
                   <IconArrowRight />
                 </a>
-              </div>
-
-              {/* Trust signals */}
-              <div className="flex items-center justify-center gap-4 mt-6 text-[11px]" style={{ color: 'var(--muted)' }}>
-                <span className="flex items-center gap-1"><span style={{ color: 'var(--success)' }}>✔</span> Via PIX</span>
-                <span className="flex items-center gap-1"><span style={{ color: 'var(--success)' }}>✔</span> Sem assinatura</span>
-                <span className="flex items-center gap-1"><span style={{ color: 'var(--success)' }}>✔</span> Cancele quando quiser</span>
               </div>
             </div>
 
@@ -200,31 +229,33 @@ export default function Home() {
                   <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
                 </p>
 
-                <div className="flex flex-wrap items-center gap-4 mb-8">
+                <div className="flex flex-wrap items-center gap-4 mb-6">
                   <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
                     <IconZap />
                     Criar Minha 1ª Campanha — R$ 19,90
                   </Link>
-                  <a href="#demo-viva" className="btn-secondary text-base !py-3.5 !px-8">
-                    Ver Exemplo Pronto
-                    <IconArrowRight />
-                  </a>
                 </div>
 
+                {/* Pack breakdown — desktop */}
                 <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--muted)' }}>
-                  <div className="flex items-center gap-1.5">
-                    <span style={{ color: 'var(--success)' }}>✔</span>
-                    <span>Modelo virtual inclusa</span>
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
+                    <span><strong style={{ color: 'var(--foreground)' }}>9 fotos</strong> prontas</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span style={{ color: 'var(--success)' }}>✔</span>
-                    <span>Pague via PIX</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">👩</span>
+                    <span><strong style={{ color: 'var(--foreground)' }}>Modelo</strong> personalizada</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span style={{ color: 'var(--success)' }}>✔</span>
-                    <span>Cancele quando quiser</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">✍️</span>
+                    <span><strong style={{ color: 'var(--foreground)' }}>Legendas</strong> + hashtags</span>
                   </div>
                 </div>
+
+                <a href="#demo-viva" className="btn-secondary text-sm !py-3 !px-6 mt-6 inline-flex">
+                  Ver Exemplo Pronto
+                  <IconArrowRight />
+                </a>
               </div>
 
               {/* Right — Interactive Before/After Slider */}
@@ -456,14 +487,27 @@ export default function Home() {
               Sua próxima campanha está a uma{" "}
               <span className="gradient-text">foto de distância</span>.
             </h2>
-            <p className="text-sm sm:text-lg max-w-lg mx-auto mb-8" style={{ color: 'var(--muted)' }}>
-              Comece com o Pack Teste por R$ 19,90. 3 campanhas completas: Modelo virtual, logo na imagem e legendas de alta conversão.
-            </p>
+            {/* Pack breakdown inline */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-8 text-sm" style={{ color: 'var(--muted)' }}>
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
+                <span><strong style={{ color: 'var(--foreground)' }}>9 fotos</strong> prontas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">👩</span>
+                <span><strong style={{ color: 'var(--foreground)' }}>Modelo</strong> personalizada</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">✍️</span>
+                <span><strong style={{ color: 'var(--foreground)' }}>Legendas</strong> + hashtags</span>
+              </div>
+            </div>
             <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-4 !px-6 sm:!px-10 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar minha primeira campanha com IA">
               <IconZap className="shrink-0" />
-              <span>Criar minha primeira campanha — R$ 19,90</span>
+              <span>Começar por R$ 19,90</span>
               <IconArrowRight className="shrink-0" />
             </Link>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>Pagamento único via PIX ou cartão. Sem assinatura.</p>
 
           </div>
         </section>
