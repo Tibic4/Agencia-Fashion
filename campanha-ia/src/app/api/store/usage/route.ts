@@ -21,9 +21,35 @@ export async function GET() {
       return NextResponse.json({ error: "Loja não encontrada", code: "NO_STORE" }, { status: 404 });
     }
 
-    const usage = await getCurrentUsage(store.id);
-    const planName = await getStorePlanName(store.id);
+    let usage = await getCurrentUsage(store.id);
+    let planName = await getStorePlanName(store.id);
     const credits = await getStoreCredits(store.id);
+
+    // Auto-downgrade: se o plano é pago mas não tem período ativo nem assinatura,
+    // significa que o período expirou após cancelamento — fazer downgrade para grátis.
+    const isPaidPlan = planName !== "free" && planName !== "gratis";
+    if (isPaidPlan && !usage && !store.plan_id) {
+      // plan_id is null — already free, just stale planName
+    } else if (isPaidPlan && !usage) {
+      // Check if subscription was cancelled (no active subscription)
+      const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+      const sb = createAdmin();
+      const { data: storeCheck } = await sb
+        .from("stores")
+        .select("mercadopago_subscription_id")
+        .eq("id", store.id)
+        .single();
+
+      if (!storeCheck?.mercadopago_subscription_id) {
+        // Período expirou + sem assinatura = downgrade automático
+        const { updateStorePlan } = await import("@/lib/db");
+        await updateStorePlan(store.id, "gratis");
+        // Recarregar dados após downgrade
+        usage = await getCurrentUsage(store.id);
+        planName = "gratis";
+        console.log(`[API:store/usage] 🔻 Auto-downgrade: store ${store.id} → grátis (período expirou, sem assinatura)`);
+      }
+    }
 
     // Contar modelos criados
     let modelsUsed = 0;

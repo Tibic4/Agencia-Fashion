@@ -238,41 +238,18 @@ async function handleSubscriptionEvent(subscriptionId: string) {
         break;
 
       case "cancelled":
-        console.log(`[Webhook:MercadoPago] ❌ Assinatura cancelada. Store: ${storeId} — Downgrade para grátis`);
+        console.log(`[Webhook:MercadoPago] ❌ Assinatura cancelada. Store: ${storeId}`);
 
-        // Downgrade: buscar plano grátis e atribuir (não deixar null)
-        const { data: freePlan } = await supabase
-          .from("plans")
-          .select("id, campaigns_per_month")
-          .eq("name", "gratis")
-          .single();
-
+        // Marcar que a assinatura foi cancelada, mas MANTER o plano ativo
+        // até o fim do período já pago (period_end do store_usage atual).
+        // O downgrade para grátis acontece naturalmente quando o período expira
+        // e nenhum novo pagamento chega (updateStorePlan não é chamado).
         await supabase.from("stores").update({
-          plan_id: freePlan?.id || null,
           mercadopago_subscription_id: null,
           updated_at: new Date().toISOString(),
         }).eq("id", storeId);
 
-        // Resetar store_usage para limites do plano grátis
-        if (freePlan) {
-          const today = new Date().toISOString().split("T")[0];
-          const { data: currentUsage } = await supabase
-            .from("store_usage")
-            .select("id")
-            .eq("store_id", storeId)
-            .lte("period_start", today)
-            .gte("period_end", today)
-            .limit(1)
-            .single();
-
-          if (currentUsage) {
-            await supabase.from("store_usage").update({
-              campaigns_limit: freePlan.campaigns_per_month,
-            }).eq("id", currentUsage.id);
-          }
-        }
-
-        console.log(`[Webhook:MercadoPago] ✅ Store ${storeId} downgraded para plano grátis (${freePlan?.id})`);
+        console.log(`[Webhook:MercadoPago] ✅ Store ${storeId}: assinatura removida, plano mantido até fim do período`);
         break;
 
       default:
