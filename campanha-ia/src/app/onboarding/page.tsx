@@ -1230,7 +1230,7 @@ export default function Onboarding() {
 
                 {!isFreeTier && (
                   <Link
-                    href="/modelos"
+                    href="/modelo"
                     className="onb-skip-btn"
                     style={{ marginTop: "16px", display: "inline-block" }}
                   >

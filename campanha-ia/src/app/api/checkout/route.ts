@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { createSubscription, type PlanId } from "@/lib/payments/mercadopago";
+import { createSubscription, cancelSubscription, type PlanId } from "@/lib/payments/mercadopago";
 import { getStoreByClerkId } from "@/lib/db";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Criar assinatura recorrente via PreApproval
+    // Cancelar assinatura antiga antes de criar nova (evita cobrança dupla)
+    const supabase = createAdminClient();
+    const { data: storeData } = await supabase
+      .from("stores")
+      .select("mercadopago_subscription_id")
+      .eq("id", store.id)
+      .single();
+
+    if (storeData?.mercadopago_subscription_id) {
+      try {
+        await cancelSubscription(storeData.mercadopago_subscription_id);
+        await supabase.from("stores").update({
+          mercadopago_subscription_id: null,
+          updated_at: new Date().toISOString(),
+        }).eq("id", store.id);
+        console.log(`[API:checkout] 🔄 Assinatura anterior cancelada: ${storeData.mercadopago_subscription_id}`);
+      } catch (cancelErr) {
+        console.warn(`[API:checkout] ⚠️ Falha ao cancelar assinatura anterior (continuando):`, cancelErr instanceof Error ? cancelErr.message : cancelErr);
+      }
+    }
+
+    // Criar nova assinatura recorrente via PreApproval
     const result = await createSubscription({
       planId: planId as PlanId,
       storeId: store.id,
