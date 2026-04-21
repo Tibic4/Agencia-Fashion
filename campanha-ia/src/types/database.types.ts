@@ -270,8 +270,10 @@ export type Database = {
           product_photo_url: string
           retry_count: number | null
           status: string | null
+          sequence_number: number | null
           store_id: string
           target_audience: string | null
+          title: string | null
           tone_override: string | null
           updated_at: string | null
           use_model: boolean | null
@@ -295,8 +297,10 @@ export type Database = {
           product_photo_url: string
           retry_count?: number | null
           status?: string | null
+          sequence_number?: number | null
           store_id: string
           target_audience?: string | null
+          title?: string | null
           tone_override?: string | null
           updated_at?: string | null
           use_model?: boolean | null
@@ -320,8 +324,10 @@ export type Database = {
           product_photo_url?: string
           retry_count?: number | null
           status?: string | null
+          sequence_number?: number | null
           store_id?: string
           target_audience?: string | null
+          title?: string | null
           tone_override?: string | null
           updated_at?: string | null
           use_model?: boolean | null
