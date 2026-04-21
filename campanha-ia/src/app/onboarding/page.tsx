@@ -121,6 +121,7 @@ export default function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFreeTier, setIsFreeTier] = useState<boolean>(true);
+  const [checking, setChecking] = useState(true);
 
   // Confetti state for step 3
   const [confettiPieces, setConfettiPieces] = useState<{ left: string; delay: string; color: string; size: number }[]>([]);
@@ -128,14 +129,13 @@ export default function Onboarding() {
   const totalSteps = 4; // 0-3
 
   useEffect(() => {
-    // Se já tem loja, redirecionar para /gerar (evitar re-onboarding)
     fetch("/api/store")
       .then((res) => {
-        if (res.status === 404) return null; // sem loja — continuar onboarding
+        if (res.status === 404) return null;
         return res.json();
       })
       .then((data) => {
-        if (!data) return;
+        if (!data) { setChecking(false); return; }
         if (data.success && data.data?.id) {
           router.replace("/gerar");
           return;
@@ -144,8 +144,9 @@ export default function Onboarding() {
           const plan = data.data.plan_name;
           setIsFreeTier(!plan || plan === "gratis" || plan === "free");
         }
+        setChecking(false);
       })
-      .catch(() => setIsFreeTier(true)); // default to true on error
+      .catch(() => { setIsFreeTier(true); setChecking(false); });
   }, [router]);
 
   useEffect(() => {
@@ -213,6 +214,16 @@ export default function Onboarding() {
 
   // Animation class for step transition
   const slideClass = direction === "forward" ? "onb-slide-in-right" : "onb-slide-in-left";
+
+  if (checking) {
+    return (
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--gradient-hero)" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: "3px solid var(--border)", borderTopColor: "var(--brand-500)", animation: "spin 0.8s linear infinite" }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

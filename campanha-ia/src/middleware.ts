@@ -1,6 +1,7 @@
 // TODO: Next.js 16 deprecou "middleware" em favor de "proxy". Migrar quando API estabilizar.
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 // Rotas que usam auth própria (não passam pelo Clerk)
 const isEditorRoute = createRouteMatcher([
@@ -21,6 +22,15 @@ const isProtectedRoute = createRouteMatcher([
   "/api/store(.*)",
 ]);
 
+const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
+const isAuthAppRoute = createRouteMatcher([
+  "/gerar(.*)",
+  "/historico(.*)",
+  "/modelo(.*)",
+  "/configuracoes(.*)",
+  "/plano(.*)",
+]);
+
 // Rotas que exigem role admin
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
@@ -29,6 +39,24 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
+
+async function hasStore(clerkUserId: string): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return true;
+  const { data } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("clerk_user_id", clerkUserId)
+    .maybeSingle();
+  return !!data;
+}
 
 export default clerkMiddleware(async (auth, request) => {
   // Editor standalone — usa auth própria (cookie), não Clerk
@@ -62,6 +90,23 @@ export default clerkMiddleware(async (auth, request) => {
     }
   } else if (isProtectedRoute(request)) {
     await auth.protect();
+
+    // Redirecionar server-side: /onboarding → /gerar se já tem loja
+    // e /gerar,/historico etc → /onboarding se não tem loja
+    const session = await auth();
+    if (session.userId) {
+      if (isOnboardingRoute(request)) {
+        const storeExists = await hasStore(session.userId);
+        if (storeExists) {
+          return NextResponse.redirect(new URL("/gerar", request.url));
+        }
+      } else if (isAuthAppRoute(request)) {
+        const storeExists = await hasStore(session.userId);
+        if (!storeExists) {
+          return NextResponse.redirect(new URL("/onboarding", request.url));
+        }
+      }
+    }
   }
 });
 
