@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -50,13 +50,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [storeChecked, setStoreChecked] = useState(false);
 
-  // Verificar se usuário tem loja (onboarding completo)
+  // Carregar usage da loja (middleware já garante que loja existe)
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -65,23 +64,13 @@ export default function AuthLayout({
         if (res.ok) {
           const data = await res.json();
           if (data?.data) setUsage(data.data);
-          setStoreChecked(true);
-        } else if (res.status === 404) {
-          const data = await res.json().catch(() => ({}));
-          if (data?.code === "NO_STORE") {
-            // Usuário novo — redirecionar para onboarding
-            router.replace("/onboarding");
-            return;
-          }
-          setStoreChecked(true);
-        } else {
-          setStoreChecked(true);
         }
+        setStoreChecked(true);
       })
       .catch(() => {
         setStoreChecked(true);
       });
-  }, [isLoaded, router]);
+  }, [isLoaded]);
 
   const userName = user?.firstName || user?.fullName || "Minha Loja";
   const userEmail = user?.primaryEmailAddress?.emailAddress || "";
