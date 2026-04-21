@@ -88,6 +88,7 @@ export default function GerarCampanha() {
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [price, setPrice] = useState("");
+  const [campaignTitle, setCampaignTitle] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("");
@@ -288,6 +289,7 @@ export default function GerarCampanha() {
       if (closeUpFile) formData.append("closeUpImage", closeUpFile);
       if (secondFile) formData.append("secondImage", secondFile);
       formData.append("price", price);
+      if (campaignTitle.trim()) formData.append("title", campaignTitle.trim());
       formData.append("storeName", "Minha Loja");
       if (audience) formData.append("targetAudience", audience);
       if (tone) formData.append("toneOverride", tone);
@@ -1280,6 +1282,31 @@ export default function GerarCampanha() {
 
             {showAdvanced && (
               <div className="mt-4 space-y-4 animate-fade-in">
+                {/* Nome da campanha */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Nome da campanha <span className="font-normal" style={{ color: "var(--muted)" }}>(opcional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={campaignTitle}
+                    onChange={(e) => setCampaignTitle(e.target.value)}
+                    onFocus={(e) => {
+                      if (window.innerWidth < 1024) {
+                        setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
+                      }
+                    }}
+                    placeholder="Ex: Vestido floral verão"
+                    maxLength={60}
+                    className="w-full h-12 px-4 rounded-xl text-sm font-semibold outline-none transition-all"
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      color: "var(--foreground)",
+                    }}
+                  />
+                </div>
+
                 {/* Preço de venda */}
                 <div>
                   <label className="block text-sm font-semibold mb-2">

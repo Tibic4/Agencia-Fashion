@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     const secondImage = formData.get("secondImage") as File | null;
     const price = formData.get("price") as string | null;
     const objective = (formData.get("objective") as string) || "venda_imediata";
+    const campaignTitle = formData.get("title") as string | null;
     const storeName = (formData.get("storeName") as string) || "Minha Loja";
     const targetAudience = formData.get("targetAudience") as string | null;
     const toneOverride = formData.get("toneOverride") as string | null;
@@ -235,7 +236,7 @@ export async function POST(request: NextRequest) {
         objective,
         targetAudience: targetAudience || undefined,
         toneOverride: toneOverride || undefined,
-
+        title: campaignTitle || undefined,
       });
     }
 
