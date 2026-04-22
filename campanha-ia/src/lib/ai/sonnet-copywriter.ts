@@ -307,7 +307,7 @@ Gere o JSON:
   "cta": "Call-to-action curto (max 6 palavras)",
   "dica_extra": "1 dica PRÁTICA de marketing (max 40 palavras)",
   "story_idea": "Ideia criativa para Story (max 40 palavras)",
-  "hashtags": ["10-15 hashtags sem #"],
+  "hashtags": ["5-8 hashtags sem #, focadas e específicas"],
   "legendas": [
     { "foto": 1, "plataforma": "Instagram Feed", "legenda": "Legenda completa", "hashtags": ["5-8"], "dica": "Como usar" },
     { "foto": 2, "plataforma": "WhatsApp", "legenda": "Mensagem WhatsApp", "dica": "Abordagem" },
