@@ -134,9 +134,8 @@ export async function runCampaignPipeline(
   const imageProgressEnd = 85;   // ending progress after all images
   const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
-  // Sonnet Copy — roda em paralelo com VTO (com imagem para identificação visual)
+  // Sonnet Copy — roda em paralelo com VTO (análise visual autônoma da foto)
   const copyPromise = generateCopyWithSonnet({
-    analise: analyzerResult.analise,
     price: input.price,
     storeName: input.storeName,
     productImageBase64: input.imageBase64,
