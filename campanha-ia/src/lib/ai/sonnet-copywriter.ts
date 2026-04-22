@@ -113,7 +113,8 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
 
   contentParts.push({ type: "text", text: userPrompt });
 
-  const response = await client.messages.create({
+  // Sonnet call com timeout de 30s + 1 retry
+  const callSonnet = () => client.messages.create({
     model: MODEL,
     max_tokens: 1500,
     temperature: 0.7,
@@ -125,6 +126,26 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
       },
     ],
   });
+
+  let response: Anthropic.Message;
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Sonnet timeout (30s)")), 30_000)
+    );
+    response = await Promise.race([callSonnet(), timeoutPromise]);
+  } catch (firstErr) {
+    console.warn(`[Sonnet Copy] ⚠️ Tentativa 1 falhou: ${firstErr instanceof Error ? firstErr.message : firstErr}. Retrying...`);
+    // Retry 1x
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Sonnet timeout retry (30s)")), 30_000)
+      );
+      response = await Promise.race([callSonnet(), timeoutPromise]);
+    } catch (retryErr) {
+      console.error(`[Sonnet Copy] ❌ Retry também falhou: ${retryErr instanceof Error ? retryErr.message : retryErr}`);
+      throw retryErr;
+    }
+  }
 
   const durationMs = Date.now() - startTime;
 
