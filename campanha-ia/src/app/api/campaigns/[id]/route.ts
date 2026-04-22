@@ -101,27 +101,8 @@ export async function GET(
           legendas: legendas.length > 0 ? legendas : undefined,
         };
 
-        // ── Sanitize: strip clothing-specific terms that leak through ──
-        const forbidden = /\b(calça|blusa|vestido|saia|conjunto|macacão|camisa|camiseta|short|bermuda|regata|jaqueta|casaco|moletom|sapato|tênis|sandália|bota|chinelo|scarpin|sapatilha|bolsa|cinto|algodão|seda|linho|couro|jeans|denim|poliéster|lycra|renda|crochê|tricô|veludo|cetim|chiffon|preto|preta|branco|branca|vermelho|vermelha|azul|rosa|verde|amarelo|amarela|roxo|roxa|marrom|bege|cinza|laranja|lilás|vinho|nude|dourado|dourada|prateado|prateada|estampado|estampada|listrado|listrada|xadrez|floral|liso|lisa)\b/gi;
-        const sanitize = (text: unknown, fallback: string): string => {
-          if (typeof text !== "string" || !text) return fallback;
-          return forbidden.test(text) ? fallback : text;
-        };
-
-        mappedDicas.caption_sugerida = sanitize(mappedDicas.caption_sugerida, "✨ Novidade que você vai amar! Confira no nosso perfil 💕");
-        mappedDicas.caption_alternativa = sanitize(mappedDicas.caption_alternativa, undefined as unknown as string);
-        mappedDicas.tom_legenda = sanitize(mappedDicas.tom_legenda, "Descontraído e acolhedor");
-        mappedDicas.cta = sanitize(mappedDicas.cta, "Chama no direct!");
-        mappedDicas.sequencia_sugerida = sanitize(mappedDicas.sequencia_sugerida, undefined as unknown as string);
-        mappedDicas.dica_extra = sanitize(mappedDicas.dica_extra, undefined as unknown as string);
-        mappedDicas.story_idea = sanitize(mappedDicas.story_idea, undefined as unknown as string);
-
-        // Also sanitize hashtags
-        if (Array.isArray(mappedDicas.hashtags)) {
-          mappedDicas.hashtags = (mappedDicas.hashtags as string[]).filter(
-            (tag) => !forbidden.test(tag)
-          );
-        }
+        // Nota: sanitize de termos de roupa removido — Sonnet v2 agora
+        // identifica visualmente e PODE mencionar peça/cor/tecido no copy.
       }
 
       return NextResponse.json({

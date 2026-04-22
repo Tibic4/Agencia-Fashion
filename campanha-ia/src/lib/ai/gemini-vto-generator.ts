@@ -207,6 +207,16 @@ These marks are the garment's IDENTITY — removing them is like removing the pe
 • Fabric texture: you can SEE the fabric type — ribbed knit shows ridges, silk shows sheen, denim shows weave, chiffon shows transparency
 • Retail tags, price stickers, hang tags, barcode labels: NOT visible (this is a finished campaign shot)
 
+💠 DENIM / JEANS SPECIAL HANDLING (CRITICAL — MOST COMMON AI COLOR ERROR):
+Denim is the fabric AI models get WRONG the most. Follow these rules STRICTLY:
+• Study the EXACT wash/shade of the denim in IMAGE 2 — is it raw dark indigo? Medium stonewash? Light acid wash? Black denim? Grey denim?
+• The output denim MUST be the EXACT SAME shade and wash as IMAGE 2 — pixel-match the color
+• If IMAGE 2 shows dark indigo jeans, the output MUST be dark indigo — NOT medium blue, NOT faded, NOT grey
+• If IMAGE 2 shows light wash jeans, the output MUST be light wash — NOT dark, NOT medium
+• Preserve the denim’s unique characteristics: whiskering patterns, honeycombs behind knees, selvedge lines, pocket stitching color
+• Denim texture: visible diagonal twill weave pattern, with appropriate sheen for the wash type (raw = slight sheen, stonewash = matte)
+• ❌ FORBIDDEN: shifting dark indigo to medium blue, shifting medium wash to light, removing whiskering/fading patterns, making black denim look navy
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 3: FABRIC PHYSICS & TAILORING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -326,6 +336,12 @@ SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
 
 ❌ TEXTURE & COLOR FIDELITY (CRITICAL — COMMON AI FAILURE):
 - NO color shifting: if the garment is cobalt blue in IMAGE 2, it must be cobalt blue in output — not navy, not teal, not royal blue
+- 💠 DENIM COLOR LOCK: Denim/jeans are the #1 color-shift failure in AI. If IMAGE 2 contains denim:
+  • DARK INDIGO denim → output MUST be dark indigo (NOT medium blue, NOT stonewash, NOT faded)
+  • MEDIUM WASH denim → output MUST be medium wash (NOT dark, NOT light)
+  • LIGHT/ACID WASH denim → output MUST be light wash (NOT medium, NOT dark)
+  • BLACK denim → output MUST be true black (NOT charcoal, NOT dark navy, NOT faded grey)
+  • Copy the EXACT tone by matching it to the pixel colors in IMAGE 2 — do NOT interpret or ”improve”
 - NO saturation loss: vibrant colors must stay vibrant — do not desaturate or wash out colors
 - NO texture simplification: if IMAGE 2 shows smocking/shirring (elastic gathered texture), the output MUST show the same 3D gathered ridges — not smooth fabric
 - NO flat shading: fabric must show realistic light interaction — highlights on folds, shadows in creases, specular on satin/silk
