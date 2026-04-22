@@ -4,8 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ThemeToggle = dynamic(() => import("@/components/ThemeToggle"), { ssr: false });
 
@@ -42,6 +43,90 @@ const navItems = [
 interface UsageData {
   campaigns_generated: number;
   campaigns_limit: number;
+}
+
+type NavItem = { href: string; label: string; shortLabel: string; icon: React.ReactNode };
+
+function MobileTabBar({ navItems, pathname }: { navItems: NavItem[]; pathname: string }) {
+  const navRef = useRef<HTMLElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+
+  const activeIndex = navItems.findIndex(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
+  );
+
+  useEffect(() => {
+    if (!navRef.current || activeIndex < 0) return;
+    const el = navRef.current.children[activeIndex] as HTMLElement;
+    if (!el) return;
+    setIndicatorStyle({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [activeIndex]);
+
+  return (
+    <nav
+      ref={navRef}
+      className="lg:hidden fixed left-3 right-3 z-30 flex px-1 py-1 rounded-2xl glass"
+      style={{
+        bottom: "calc(10px + env(safe-area-inset-bottom))",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04)",
+      }}
+    >
+      {indicatorStyle.width > 0 && (
+        <motion.div
+          className="absolute top-1 bottom-1 rounded-xl"
+          style={{
+            background: "var(--gradient-brand)",
+            opacity: 0.12,
+          }}
+          animate={{ left: indicatorStyle.left, width: indicatorStyle.width }}
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+        />
+      )}
+
+      {navItems.map((item, i) => {
+        const isActive = i === activeIndex;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl min-h-[48px] justify-center relative"
+            aria-label={item.label}
+          >
+            <motion.div
+              className="flex-shrink-0 [&_svg]:w-[22px] [&_svg]:h-[22px]"
+              animate={{
+                scale: isActive ? 1 : 0.9,
+                y: isActive ? -1 : 0,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+              style={{ color: isActive ? "var(--brand-500)" : "var(--muted)" }}
+            >
+              {item.icon}
+            </motion.div>
+            <motion.span
+              className="block text-[10px] font-bold leading-none text-center"
+              animate={{
+                opacity: isActive ? 1 : 0.55,
+                scale: isActive ? 1 : 0.95,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+              style={{ color: isActive ? "var(--brand-500)" : "var(--muted)" }}
+            >
+              {item.shortLabel}
+            </motion.span>
+            {isActive && (
+              <motion.div
+                layoutId="tab-dot"
+                className="absolute -top-0.5 w-1 h-1 rounded-full"
+                style={{ background: "var(--brand-500)" }}
+                transition={{ type: "spring", stiffness: 400, damping: 28 }}
+              />
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
 
 export default function AuthLayout({
@@ -277,39 +362,7 @@ export default function AuthLayout({
       </header>
 
       {/* Mobile Bottom Tab Bar — Floating Island Style */}
-      <nav
-        className="lg:hidden fixed left-2 right-2 z-30 glass grid grid-flow-col auto-cols-fr px-1 py-1.5 rounded-2xl shadow-xl shadow-black/5"
-        style={{ 
-          bottom: "calc(8px + env(safe-area-inset-bottom))",
-          border: "1px solid var(--border)" 
-        }}
-      >
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-col items-center gap-0.5 py-1.5 rounded-xl transition-all min-h-[44px] justify-center relative active:scale-[0.95]"
-              style={{
-                color: isActive ? "var(--brand-500)" : "var(--muted)",
-              }}
-              aria-label={item.label}
-            >
-              {isActive && (
-                <div 
-                  className="absolute inset-x-0.5 inset-y-0.5 rounded-xl transition-all" 
-                  style={{ background: "rgba(217,70,239,0.1)", zIndex: -1 }} 
-                />
-              )}
-              <div className="flex-shrink-0 [&_svg]:w-5 [&_svg]:h-5">{item.icon}</div>
-              <span className="block w-full text-[10px] font-bold leading-none truncate text-center" style={{ opacity: isActive ? 1 : 0.8 }}>
-                {item.shortLabel}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
+      <MobileTabBar navItems={navItems} pathname={pathname} />
 
       {/* Main Content */}
       <main className="w-full lg:flex-1 lg:ml-64 pt-14 lg:pt-0">
