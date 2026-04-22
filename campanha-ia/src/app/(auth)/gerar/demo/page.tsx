@@ -692,7 +692,7 @@ export default function ResultadoCampanha() {
                 <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{dicas.caption_sugerida}</p>
                 {dicas.hashtags && dicas.hashtags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                    {dicas.hashtags.slice(0, 20).map((tag, i) => (
+                    {dicas.hashtags.slice(0, 8).map((tag, i) => (
                       <span
                         key={i}
                         className="px-2.5 py-1 rounded-full text-xs font-medium"
