@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
+import path from "path";
+
 const nextConfig: NextConfig = {
+  // Fix turbopack com paths que contém espaço (ex: "Nova pasta")
+  turbopack: {
+    root: path.resolve(import.meta.dirname || __dirname),
+  },
   experimental: {
     cpus: 1,
   },
