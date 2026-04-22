@@ -81,6 +81,10 @@ export interface CopywriterInput {
   /** Imagem do produto em base64 (Sonnet analisa visualmente) */
   productImageBase64?: string;
   productMediaType?: string;
+  /** Público-alvo escolhido pelo usuário (ex: "Mulheres 25-40") */
+  targetAudience?: string;
+  /** Tom de voz escolhido pelo usuário (ex: "Casual e energético") */
+  toneOverride?: string;
 }
 
 // ═══════════════════════════════════════
@@ -343,6 +347,8 @@ function buildUserPrompt(input: CopywriterInput): string {
   const contextParts: string[] = [];
   if (input.price) contextParts.push(`Preço: R$ ${input.price}`);
   if (input.storeName) contextParts.push(`Loja: ${input.storeName}`);
+  if (input.targetAudience) contextParts.push(`Público-alvo: ${input.targetAudience} — adapte vocabulário e referências para esse perfil`);
+  if (input.toneOverride) contextParts.push(`Tom de voz obrigatório: ${input.toneOverride} — escreva NESSE tom, não invente outro`);
 
   const hour = new Date().getHours();
   const dayOfWeek = new Date().toLocaleDateString("pt-BR", { weekday: "long" });
