@@ -15,7 +15,7 @@ import {
 } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-export const maxDuration = 180;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 // v6: Pipeline Gemini Analyzer + Gemini VTO. Demo mode se nenhuma key existe.
