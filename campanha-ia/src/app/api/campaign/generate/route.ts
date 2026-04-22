@@ -62,11 +62,30 @@ export async function POST(request: NextRequest) {
     const objective = (formData.get("objective") as string) || "venda_imediata";
     const campaignTitle = formData.get("title") as string | null;
     const storeName = (formData.get("storeName") as string) || "Minha Loja";
-    const targetAudience = formData.get("targetAudience") as string | null;
-    const toneOverride = formData.get("toneOverride") as string | null;
+    const targetAudienceRaw = formData.get("targetAudience") as string | null;
+    const toneOverrideRaw = formData.get("toneOverride") as string | null;
     const productType = formData.get("productType") as string | null;
     const material = formData.get("material") as string | null;
     const material2 = formData.get("material2") as string | null;
+
+    // Mapear slugs → labels legíveis para o Sonnet
+    const audienceLabels: Record<string, string> = {
+      mulheres_25_40: "Mulheres 25-40 anos",
+      jovens_18_25: "Jovens 18-25 anos",
+      homens_25_45: "Homens 25-45 anos",
+      maes: "Mães",
+      publico_geral: "Público geral",
+      premium: "Público premium / alto padrão",
+    };
+    const toneLabels: Record<string, string> = {
+      casual_energetico: "Casual e energético",
+      sofisticado: "Sofisticado e elegante",
+      urgente: "Urgente e direto",
+      acolhedor: "Acolhedor e próximo",
+      divertido: "Divertido e leve",
+    };
+    const targetAudience = targetAudienceRaw ? (audienceLabels[targetAudienceRaw] || targetAudienceRaw) : null;
+    const toneOverride = toneOverrideRaw ? (toneLabels[toneOverrideRaw] || toneOverrideRaw) : null;
     const modelBankId = formData.get("modelBankId") as string | null;
     const customModelId = formData.get("customModelId") as string | null;
     const backgroundType = (formData.get("backgroundType") as string) || "branco";
@@ -405,6 +424,9 @@ export async function POST(request: NextRequest) {
               storeId: store?.id,
               campaignId: campaignRecord?.id,
               signal: request.signal,
+              // Sonnet copy: público-alvo e tom (só se escolhido pelo usuário)
+              targetAudience: targetAudience && targetAudience !== "auto" ? targetAudience : undefined,
+              toneOverride: toneOverride || undefined,
             },
             async (step, label, progress) => {
               console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
