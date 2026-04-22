@@ -374,9 +374,9 @@ Gere o JSON:
   "story_idea": "Ideia criativa para Story (max 40 palavras)",
   "hashtags": ["6-8 hashtags sem #, mix: 2 genéricas + 4-6 específicas da peça"],
   "legendas": [
-    { "foto": 1, "plataforma": "Instagram Feed", "legenda": "Legenda completa com hashtags", "hashtags": ["6-8"], "dica": "Como usar" },
-    { "foto": 2, "plataforma": "WhatsApp", "legenda": "Mensagem direta e pessoal", "dica": "Abordagem" },
-    { "foto": 3, "plataforma": "Stories", "legenda": "Texto curto + CTA", "dica": "Feature do Insta" }
+    { "foto": 1, "plataforma": "Instagram Feed", "legenda": "MAX 125 chars — gancho acima da dobra + benefício + CTA. Sem hashtags aqui.", "hashtags": ["6-8 hashtags sem #"], "dica": "Como usar no feed" },
+    { "foto": 2, "plataforma": "WhatsApp", "legenda": "MAX 200 chars — mensagem direta e pessoal, tom de conversa 1:1", "dica": "Abordagem" },
+    { "foto": 3, "plataforma": "Stories", "legenda": "MAX 100 chars — frase curta + CTA urgente, cabe na tela", "dica": "Feature do Insta a usar" }
   ]
 }`;
 }
