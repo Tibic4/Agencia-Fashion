@@ -211,6 +211,7 @@ export default function ResultadoCampanha() {
 
   // ── Copy tip actions ──
   const [copiedTip, setCopiedTip] = useState<string | null>(null);
+  const [copyTab, setCopyTab] = useState(0); // 0=Feed, 1=WhatsApp, 2=Stories
 
   useEffect(() => {
     const campaignId = searchParams.get("id");
@@ -664,7 +665,7 @@ export default function ResultadoCampanha() {
           </div>
         )}
 
-        {/* ── Copy de Instagram (gerado pelo Analyzer enriquecido) ── */}
+        {/* ── Copy de Instagram (gerado pelo Sonnet) ── */}
         {dicas && (
           <div className="space-y-3">
             {/* AI Copy badge */}
@@ -672,37 +673,147 @@ export default function ResultadoCampanha() {
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "linear-gradient(135deg, var(--brand-100), var(--brand-200))", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Copy por IA</span>
             </div>
 
-            {/* ── Caption principal ── */}
-            {dicas.caption_sugerida && (
-              <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            {/* ── Legendas por plataforma (tabs) ── */}
+            {dicas.legendas && dicas.legendas.length >= 3 ? (
+              <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                {/* Tab bar */}
+                <div className="flex" style={{ borderBottom: "1px solid var(--border)" }}>
+                  {["📸 Feed", "💬 WhatsApp", "📱 Stories"].map((label, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setCopyTab(i); haptics.light(); }}
+                      className="flex-1 py-3 text-xs font-bold transition-all relative min-h-[48px] active:scale-[0.97]"
+                      style={{
+                        color: copyTab === i ? "var(--brand-700)" : "var(--muted)",
+                        background: copyTab === i ? "var(--brand-50)" : "transparent",
+                      }}
+                    >
+                      {label}
+                      {copyTab === i && (
+                        <span className="absolute bottom-0 left-[15%] right-[15%] h-[2.5px] rounded-full transition-all" style={{ background: "var(--brand-500)" }} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tab content */}
+                <div className="p-4 space-y-3">
+                  {(() => {
+                    const leg = dicas.legendas![copyTab];
+                    if (!leg) return null;
+                    const charLimit = copyTab === 0 ? 125 : copyTab === 2 ? 100 : 200;
+                    const charCount = leg.legenda?.length || 0;
+                    const isOver = charCount > charLimit;
+                    return (
+                      <>
+                        {/* Header + copy + counter */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="text-[10px] sm:text-xs font-bold truncate" style={{ color: "var(--muted)" }}>
+                              {leg.plataforma}
+                            </p>
+                            <span
+                              className="text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                              style={{
+                                background: isOver ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
+                                color: isOver ? "#D97706" : "#16A34A",
+                              }}
+                            >
+                              {charCount}/{charLimit}
+                            </span>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              const textToCopy = leg.legenda + (leg.hashtags?.length ? "\n\n" + leg.hashtags.map(t => t.startsWith("#") ? t : `#${t}`).join(" ") : "");
+                              await navigator.clipboard.writeText(textToCopy);
+                              haptics.success();
+                              setCopiedTip(`tab${copyTab}`);
+                              setTimeout(() => setCopiedTip(null), 2000);
+                            }}
+                            className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] flex-shrink-0 active:scale-[0.95] flex items-center gap-1"
+                            style={{ background: copiedTip === `tab${copyTab}` ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === `tab${copyTab}` ? "white" : "var(--brand-700)" }}
+                          >
+                            {copiedTip === `tab${copyTab}` ? "✓ Copiado!" : "📋 Copiar"}
+                          </button>
+                        </div>
+
+                        {/* Legenda text */}
+                        <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{leg.legenda}</p>
+
+                        {/* Platform tip */}
+                        {leg.dica && (
+                          <p className="text-[11px] italic" style={{ color: "var(--muted)" }}>💡 {leg.dica}</p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              /* Fallback: campanhas antigas sem legendas[] */
+              dicas.caption_sugerida && (
+                <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                        style={{
+                          background: (dicas.caption_sugerida.length > 125) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
+                          color: (dicas.caption_sugerida.length > 125) ? "#D97706" : "#16A34A",
+                        }}
+                      >
+                        {dicas.caption_sugerida.length}/125
+                      </span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(dicas.caption_sugerida);
+                        haptics.success();
+                        setCopiedTip("caption");
+                        setTimeout(() => setCopiedTip(null), 2000);
+                      }}
+                      className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                      style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
+                    >
+                      {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
+                    </button>
+                  </div>
+                  <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{dicas.caption_sugerida}</p>
+                </div>
+              )
+            )}
+
+            {/* ── Hashtags (sempre visíveis, com copiar) ── */}
+            {dicas.hashtags && dicas.hashtags.length > 0 && (
+              <div className="rounded-2xl p-4 space-y-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
+                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}># HASHTAGS</p>
                   <button
                     onClick={async () => {
-                      await navigator.clipboard.writeText(dicas.caption_sugerida);
-                      setCopiedTip("caption");
+                      const hashText = dicas.hashtags.slice(0, 8).map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
+                      await navigator.clipboard.writeText(hashText);
+                      haptics.success();
+                      setCopiedTip("hashtags");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all min-h-[32px]"
-                    style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
+                    className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                    style={{ background: copiedTip === "hashtags" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "hashtags" ? "white" : "var(--brand-700)" }}
                   >
-                    {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
+                    {copiedTip === "hashtags" ? "✓ Copiado!" : "📋 Copiar"}
                   </button>
                 </div>
-                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ wordBreak: "break-word" }}>{dicas.caption_sugerida}</p>
-                {dicas.hashtags && dicas.hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
-                    {dicas.hashtags.slice(0, 8).map((tag, i) => (
-                      <span
-                        key={i}
-                        className="px-2.5 py-1 rounded-full text-xs font-medium"
-                        style={{ background: "var(--brand-50)", color: "var(--brand-600)", border: "1px solid var(--brand-100)" }}
-                      >
-                        {tag.startsWith("#") ? tag : `#${tag}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {dicas.hashtags.slice(0, 8).map((tag, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={{ background: "var(--brand-50)", color: "var(--brand-600)", border: "1px solid var(--brand-100)" }}
+                    >
+                      {tag.startsWith("#") ? tag : `#${tag}`}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -710,14 +821,26 @@ export default function ResultadoCampanha() {
             {dicas.caption_alternativa && (
               <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px dashed var(--border)" }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                      style={{
+                        background: (dicas.caption_alternativa.length > 125) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
+                        color: (dicas.caption_alternativa.length > 125) ? "#D97706" : "#16A34A",
+                      }}
+                    >
+                      {dicas.caption_alternativa.length}/125
+                    </span>
+                  </div>
                   <button
                     onClick={async () => {
                       await navigator.clipboard.writeText(dicas.caption_alternativa!);
+                      haptics.success();
                       setCopiedTip("alt");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg transition-all min-h-[32px]"
+                    className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
                     style={{ background: copiedTip === "alt" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "alt" ? "white" : "var(--brand-700)" }}
                   >
                     {copiedTip === "alt" ? "✓ Copiado!" : "📋 Copiar"}
@@ -743,14 +866,26 @@ export default function ResultadoCampanha() {
               </div>
             </div>
 
-            {/* ── Story idea ── */}
+            {/* ── Story idea (com copiar) ── */}
             {dicas.story_idea && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "linear-gradient(135deg, var(--brand-50), var(--surface))", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">📱</span>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--brand-700)" }}>IDEIA PARA STORY</p>
                   <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{dicas.story_idea}</p>
                 </div>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(dicas.story_idea!);
+                    haptics.success();
+                    setCopiedTip("story");
+                    setTimeout(() => setCopiedTip(null), 2000);
+                  }}
+                  className="text-[9px] font-bold px-2 py-1.5 rounded-md transition-all min-h-[44px] min-w-[44px] flex-shrink-0 active:scale-[0.95] flex items-center justify-center"
+                  style={{ background: copiedTip === "story" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "story" ? "white" : "var(--brand-700)" }}
+                >
+                  {copiedTip === "story" ? "✓" : "📋"}
+                </button>
               </div>
             )}
 
@@ -758,7 +893,7 @@ export default function ResultadoCampanha() {
             {dicas.dica_extra && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "var(--brand-50)", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">💡</span>
-                <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{dicas.dica_extra}</p>
+                <p className="text-xs font-medium flex-1" style={{ color: "var(--brand-700)" }}>{dicas.dica_extra}</p>
               </div>
             )}
           </div>

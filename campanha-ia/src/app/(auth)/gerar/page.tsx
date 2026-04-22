@@ -680,7 +680,7 @@ export default function GerarCampanha() {
       </AnimatePresence>
 
       {/* ── Main Form ── */}
-      <div className="animate-fade-in-up w-full max-w-[100vw]" style={{ overflowX: "clip" }}>
+      <div className="animate-fade-in-up w-full">
 
       {/* Header */}
       <div className="mb-8">
@@ -958,7 +958,7 @@ export default function GerarCampanha() {
                 </div>
               </div>
               {/* Biotipo tabs — scroll horizontal no mobile */}
-              <div className="flex overflow-x-auto gap-1.5 hide-scrollbar pb-1 snap-x snap-mandatory">
+              <div className="flex overflow-x-auto md:overflow-visible md:flex-wrap gap-1.5 hide-scrollbar pb-1 snap-x snap-mandatory md:snap-none">
                 {([
                   { filter: "all", body: "" as const, label: "Todos", icon: "✨" },
                   { filter: "padrao", body: "normal" as const, label: "Mulher", icon: "👤" },
