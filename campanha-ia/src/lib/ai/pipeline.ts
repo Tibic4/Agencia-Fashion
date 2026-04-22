@@ -140,6 +140,8 @@ export async function runCampaignPipeline(
     storeName: input.storeName,
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
+    targetAudience: input.targetAudience,
+    toneOverride: input.toneOverride,
   }).then((copyResult) => {
     // Log custo Sonnet (fire-and-forget)
     if (input.storeId) {
