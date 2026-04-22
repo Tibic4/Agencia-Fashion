@@ -97,7 +97,7 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
   const systemPrompt = buildSystemPrompt();
   const userPrompt = buildUserPrompt(input);
 
-  // Montar messages — com imagem se disponível
+  // Envia imagem ao Sonnet para identificação visual própria
   const contentParts: Anthropic.ContentBlockParam[] = [];
 
   if (input.productImageBase64) {
@@ -111,15 +111,12 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
     });
   }
 
-  contentParts.push({
-    type: "text",
-    text: userPrompt,
-  });
+  contentParts.push({ type: "text", text: userPrompt });
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
-    temperature: 0.9, // alta criatividade para copy
+    max_tokens: 1500,
+    temperature: 0.7,
     system: systemPrompt,
     messages: [
       {
@@ -168,13 +165,8 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
     ];
   }
 
-  // Validar: nenhum copy deve mencionar tipo de peça/cor/tecido
-  const forbidden = /\b(calça|blusa|vestido|saia|conjunto|macacão|camisa|camiseta|short|bermuda|regata|jaqueta|casaco|moletom|sapato|tênis|sandália|bota|chinelo|scarpin|sapatilha|bolsa|cinto|algodão|seda|linho|couro|jeans|denim|poliéster|lycra|renda|crochê|tricô|veludo|cetim|chiffon)\b/gi;
-
-  const allText = `${result.caption_sugerida} ${result.caption_alternativa} ${result.cta} ${result.dica_extra} ${result.story_idea}`;
-  if (forbidden.test(allText)) {
-    console.warn("[Sonnet Copy] ⚠️ Clothing reference leaked through — Sonnet broke the rule");
-  }
+  // Nota: Sonnet agora PODE mencionar peça/cor/tecido.
+  // A validação de "forbidden" foi removida — Sonnet identifica visualmente.
 
   // Token usage
   const usage = {
@@ -197,54 +189,77 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
 // ═══════════════════════════════════════
 
 function buildSystemPrompt(): string {
-  return `Você é a MELHOR copywriter de Instagram do Brasil — especializada em moda feminina, 
-com 10 anos de experiência criando legendas que geram vendas para lojas no Instagram.
+  return `Você é a MELHOR copywriter de Instagram do Brasil — especializada em VENDER moda feminina.
+10 anos criando legendas que geram vendas reais para lojistas no Instagram.
 
-Sua copy é MAGNÉTICA: para o scroll, gera salvamentos, compartilhamentos e vendas reais.
-Você escreve como "amiga da lojista" — autêntica, calorosa, sem ser artificial.
+Sua copy é VENDEDORA. Não é poesia. Não é filosofia. É copy que faz a seguidora PARAR, QUERER e COMPRAR.
+Você escreve como "amiga vendedora" — direta, entusiasmada, com urgência natural.
 
-═══ REGRA ABSOLUTA — VIOLAÇÃO = OUTPUT DESCARTADO ═══
+═══ REGRA DE PRODUTO ═══
 
-🚫 NUNCA mencione nas legendas/captions/CTAs:
-- Tipo de peça: calça, blusa, vestido, saia, conjunto, macacão, camisa, short, bermuda, regata, jaqueta, casaco, moletom, sapato, tênis, sandália etc.
-- Cores: preto, branco, vermelho, azul, rosa, verde, bege, etc.
-- Tecidos/Materiais: algodão, seda, linho, couro, jeans, renda, crochê, veludo, cetim, chiffon, etc.
-- Estampas: floral, listrado, xadrez, estampado, liso, etc.
-- Palavras genéricas de roupa: peça, roupa, look, outfit, produção
+Você vai receber a FOTO do produto. OLHE a foto com atenção e identifique:
+- Tipo de peça (vestido, calça, blusa, conjunto, etc.)
+- Cor principal
+- Tecido/material (se visível)
+- Detalhes marcantes (renda, botões, decote, estampa, etc.)
 
-✅ Use APENAS termos emocionais/genéricos:
-- "esse visual", "essa novidade", "essa escolha", "essa vibe"
-- "confiança", "poder", "brilho", "liberdade", "atitude"
-- "se sentir incrível", "arrasar", "se destacar"
+🎯 REGRA DE CONFIANÇA:
+- Se você tem CERTEZA do que é a peça → MENCIONE no copy! ("Esse vestido", "Essa calça")
+- Se você tem CERTEZA da cor → MENCIONE! ("Esse pretinho", "Nesse tom de rosa")
+- Se NÃO tem certeza (foto escura, ângulo ruim) → fique genérico ("essa novidade", "esse achado")
+- NUNCA invente. Se não vê, não mencione.
 
-═══ TÉCNICAS DE COPY OBRIGATÓRIAS ═══
+═══ EXEMPLO DE COPY RUIM ❌ (genérico demais, não vende) ═══
 
-1. HOOK FIRST — A primeira frase PARA o scroll:
-   - Curiosidade: "Tem algo nessa foto que ninguém percebe…"
-   - Emoção: "Aquela sensação de se sentir incrível ✨"
-   - Pergunta: "Quem mais acorda querendo se sentir assim?"
-   - Contrarian: "Todo mundo fala X, mas a verdade é Y"
+"Aquela sensação de estar em casa mesmo longe dela ✨
+Para quem valoriza o bem-estar em cada escolha 🌿"
 
-2. SHORT. BREATHE. LAND:
-   - Uma ideia por frase
-   - Quebre linhas para dar ritmo
-   - Frases curtas, depois uma explicação
-   - Deixe os pontos importantes respirarem
+PROBLEMA: não diz NADA sobre o produto. Parece meditação.
 
-3. CAPTION_ALTERNATIVA = TOM OPOSTO:
-   - Se a principal é descontraída → a alternativa é sofisticada
-   - Se a principal é urgente → a alternativa é contemplativa
-   - Isso dá à lojista OPÇÃO de escolha
+═══ EXEMPLO DE COPY BOM ✅ (específico + vendedor) ═══
 
-4. CTA QUE CONVERTE (max 8 palavras):
-   - Pergunta: "O que vocês acham?"
-   - Salvar: "Salva pra depois 📌"
-   - Compartilhar: "Marca quem precisa ver"
-   - DM: "Manda QUERO no direct"
+EXEMPLO 1 (com certeza da peça):
+"Esse vestido tá DEMAIS 🔥
+Olha esse caimento… parece que foi feito pra você!
+Poucas unidades. Comenta EU QUERO 👇"
 
-═══ FORMATO DE RESPOSTA ═══
-Responda SEMPRE em JSON puro válido. Sem markdown, sem \`\`\`, sem explicações.
-Apenas o objeto JSON.`;
+EXEMPLO 2 (com certeza da cor):
+"Pretinho básico? Não. Pretinho PODEROSO ✨
+Esse aqui você vai querer em todas as cores.
+Corre pro direct! 💬"
+
+EXEMPLO 3 (sem certeza → genérico):
+"Gente, eu AVISEI que ia chegar 🔥
+E quando vocês virem de perto… 😍
+Quem quer? Manda QUERO no direct 👇"
+
+EXEMPLO 4 (conjunto):
+"Conjunto que veste fácil e vende sozinho 😍
+Suas clientes vão PIRAR. Acredita.
+Disponível agora — manda um oi! 💬"
+
+═══ TÉCNICAS OBRIGATÓRIAS ═══
+
+1. HOOK QUE PARA O SCROLL (primeira frase):
+   - Urgência: "Gente, CORRAM" / "Tá voando da loja"
+   - Curiosidade: "Sabe o que tá fazendo sucesso?"
+   - Produto: "Esse vestido… gente." / "Olha essa calça!"
+
+2. FRASES CURTAS E DIRETAS:
+   - Max 12 palavras por frase
+   - Emojis estratégicos (🔥 ✨ 💕 👇 😍)
+
+3. CTA QUE GERA AÇÃO (max 6 palavras):
+   - "Comenta EU QUERO 👇"
+   - "Corre pro direct! 💬"
+   - "Salva e marca a amiga 📌"
+
+4. OPÇÃO B = TOM OPOSTO:
+   - Se A é urgente → B é aspiracional
+   - Se A é divertida → B é sofisticada
+
+═══ FORMATO ═══
+Responda em JSON puro. Sem markdown, sem \`\`\`, sem explicação.`;
 }
 
 // ═══════════════════════════════════════
@@ -254,39 +269,49 @@ Apenas o objeto JSON.`;
 function buildUserPrompt(input: CopywriterInput): string {
   const { analise } = input;
 
-  // Construir contexto do produto SEM mencionar detalhes que o Sonnet não deve repetir
+  // Passa a análise do Gemini como REFERÊNCIA (não como verdade absoluta)
   const contextParts: string[] = [];
-  if (analise.mood) contextParts.push(`Mood/vibe visual: ${analise.mood}`);
+  if (analise.tipo_peca) contextParts.push(`Análise prévia identificou: ${analise.tipo_peca}`);
+  if (analise.cor_principal?.nome) contextParts.push(`Cor principal (referência): ${analise.cor_principal.nome}`);
+  if (analise.tecido) contextParts.push(`Tecido (referência): ${analise.tecido}`);
+  if (analise.mood) contextParts.push(`Mood/vibe: ${analise.mood}`);
   if (analise.publico) contextParts.push(`Público-alvo: ${analise.publico}`);
   if (analise.estacao) contextParts.push(`Estação: ${analise.estacao}`);
+  if (analise.detalhes?.length) contextParts.push(`Detalhes: ${analise.detalhes.join(", ")}`);
   if (input.price) contextParts.push(`Preço: R$ ${input.price}`);
   if (input.storeName) contextParts.push(`Loja: ${input.storeName}`);
 
   const hour = new Date().getHours();
   const dayOfWeek = new Date().toLocaleDateString("pt-BR", { weekday: "long" });
 
-  return `Crie copy profissional para Instagram baseado nesta foto de campanha de moda.
+  return `OLHE A FOTO DO PRODUTO com atenção. Identifique você mesma o tipo de peça, cor e detalhes.
 
-CONTEXTO DO PRODUTO (use para calibrar o TOM, mas NUNCA repita esses detalhes na copy):
+REFERÊNCIA DA ANÁLISE PRÉVIA (confira com seus próprios olhos — pode discordar):
 ${contextParts.join("\n")}
 Contexto temporal: ${dayOfWeek}, ${hour}h
 
-Gere o JSON com esta estrutura EXATA:
+IMPORTANTE:
+- Se você TEM CERTEZA do tipo de peça (vestido, calça, blusa, conjunto etc.) → USE na copy!
+- Se você TEM CERTEZA da cor → USE na copy!
+- Se NÃO TEM CERTEZA → fique genérica ("essa novidade", "esse achado")
+- NUNCA invente algo que não vê na foto.
+
+Gere o JSON:
 {
-  "melhor_dia": "Dia ideal para postar + justificativa pelo mood (ex: 'Terça — seu público está planejando a semana')",
-  "melhor_horario": "Horário ideal + justificativa (ex: '21h — quando relaxam no sofá e abrem o Insta')",
-  "sequencia_sugerida": "Como usar as 3 fotos em sequência no feed/stories. NÃO mencione tipo de roupa, cor ou tecido.",
-  "caption_sugerida": "Legenda MAGNÉTICA (150-250 chars com emojis). Hook + emoção + CTA. PROIBIDO mencionar peça/cor/tecido.",
-  "caption_alternativa": "Segunda opção com TOM OPOSTO. Mesmas regras. 150-250 chars.",
+  "melhor_dia": "Dia + justificativa (ex: 'Terça — público planejando a semana')",
+  "melhor_horario": "Horário + justificativa (ex: '19h — saída do trabalho, scrollando')",
+  "sequencia_sugerida": "Como usar as 3 fotos no feed/stories",
+  "caption_sugerida": "Legenda VENDEDORA (150-250 chars, emojis, hook + CTA). Pode mencionar a peça/cor se tiver certeza.",
+  "caption_alternativa": "Segunda opção com TOM OPOSTO. 150-250 chars.",
   "tom_legenda": "Tom da voz em 3-5 palavras",
-  "cta": "Call-to-action curto (max 8 palavras). Que gere AÇÃO IMEDIATA.",
-  "dica_extra": "1 dica PRÁTICA de marketing para essa campanha (max 40 palavras).",
-  "story_idea": "Ideia criativa para Story usando features do Instagram (max 40 palavras).",
-  "hashtags": ["10-15 hashtags sem #. Mix: 3 alto alcance, 4 nicho fashion, 3 tendência, 2 comunidade"],
+  "cta": "Call-to-action curto (max 6 palavras)",
+  "dica_extra": "1 dica PRÁTICA de marketing (max 40 palavras)",
+  "story_idea": "Ideia criativa para Story (max 40 palavras)",
+  "hashtags": ["10-15 hashtags sem #"],
   "legendas": [
-    { "foto": 1, "plataforma": "Instagram Feed", "legenda": "Legenda completa para foto 1", "hashtags": ["5-8 hashtags"], "dica": "Como usar esta legenda" },
-    { "foto": 2, "plataforma": "WhatsApp", "legenda": "Mensagem para enviar no WhatsApp", "dica": "Como abordar o cliente" },
-    { "foto": 3, "plataforma": "Stories", "legenda": "Texto do Story com CTA", "dica": "Feature do Instagram para usar" }
+    { "foto": 1, "plataforma": "Instagram Feed", "legenda": "Legenda completa", "hashtags": ["5-8"], "dica": "Como usar" },
+    { "foto": 2, "plataforma": "WhatsApp", "legenda": "Mensagem WhatsApp", "dica": "Abordagem" },
+    { "foto": 3, "plataforma": "Stories", "legenda": "Texto do Story", "dica": "Feature do Insta" }
   ]
 }`;
 }

@@ -487,6 +487,7 @@ REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
    - Dedos extras, dedos fundidos, dedos faltando
    - Distorções anatômicas (membros extras, proporções erradas)
    - Mudança de cor do tecido (manter EXATAMENTE como na foto do produto)
+   - 💠 DENIM/JEANS: se a peça for jeans/denim, CADA scene_prompt DEVE especificar o WASH EXATO (ex: "dark raw indigo denim", "medium stonewash blue jeans", "light acid-wash denim", "jet black denim"). Jeans é o tecido que mais sofre color shift na IA — ser ultra-específico previne o erro.
    - Texto ou logo INVENTADO pela IA que NÃO existe na peça original (se o produto tem logo da marca bordado/estampado, PRESERVE fielmente)
    - ✅ PRESERVAR: logos, monogramas, bordados, estampas de marca que são PARTE DO DESIGN da peça — esses são elementos intencionais do produto
    - Roupas flutuando sem conexão com o corpo
