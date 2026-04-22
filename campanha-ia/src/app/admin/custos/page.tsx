@@ -29,11 +29,11 @@ async function getCosts() {
 
   // Filter out legacy providers globally from this month's data
   const filteredThisMonth = (thisMonthCosts ?? []).filter(
-    (row) => !["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai", "anthropic"].includes((row.provider || "").toLowerCase())
+    (row) => !["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai"].includes((row.provider || "").toLowerCase())
   );
   
   const filteredLastMonth = (lastMonthCosts ?? []).filter(
-    (row) => !["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai", "anthropic"].includes((row.provider || "").toLowerCase())
+    (row) => !["fashnai", "fashn.ai", "fashn", "fal", "stability", "openai"].includes((row.provider || "").toLowerCase())
   );
   // Group by provider
   const byProvider: Record<string, { calls: number; cost: number; tokens: number }> = {};
@@ -45,12 +45,12 @@ async function getCosts() {
     byProvider[p].tokens += row.tokens_used || 0;
   });
 
-  // Group by pipeline step — only show current v6 actions
-  const v6Actions = new Set(["gemini_analyzer", "sonnet_analyzer", "gemini_vto_v5", "gemini_vto_v6", "model_preview", "backdrop_studio"]);
+  // Group by pipeline step — only show current v7 actions
+  const v7Actions = new Set(["gemini_analyzer", "sonnet_analyzer", "sonnet_copywriter", "gemini_vto_v5", "gemini_vto_v6", "model_preview", "backdrop_studio"]);
   const byStep: Record<string, { calls: number; cost: number }> = {};
   filteredThisMonth.forEach((row) => {
     const step = row.action || "unknown";
-    if (!v6Actions.has(step)) return; // skip legacy v2/v3/v4 steps
+    if (!v7Actions.has(step)) return; // skip legacy v2/v3/v4 steps
     if (!byStep[step]) byStep[step] = { calls: 0, cost: 0 };
     byStep[step].calls++;
     byStep[step].cost += row.cost_brl || 0;
@@ -89,7 +89,7 @@ async function getCosts() {
 
   // Custo médio por campanha — usa gemini_analyzer ou gemini_vto como proxy (1 chamada = 1 campanha)
   const totalCampaignCalls = Object.entries(byStep)
-    .filter(([k]) => k === "gemini_analyzer" || k === "sonnet_analyzer" || k === "gemini_vto_v5" || k === "gemini_vto_v6")
+    .filter(([k]) => k === "gemini_analyzer" || k === "sonnet_analyzer" || k === "sonnet_copywriter" || k === "gemini_vto_v5" || k === "gemini_vto_v6")
     .reduce((s, [, v]) => Math.max(s, v.calls), 0);
   const avgCostPerCampaign = totalCampaignCalls > 0 ? totalThisMonth / totalCampaignCalls : 0;
 
@@ -119,7 +119,8 @@ const providerColors: Record<string, string> = {
 };
 
 const stepLabels: Record<string, string> = {
-  gemini_analyzer: "🔍 Análise + Copy IA (Gemini 3.1 Pro)",
+  gemini_analyzer: "🔍 Análise Visual IA (Gemini 3.1 Pro)",
+  sonnet_copywriter: "✍️ Copy Premium (Claude Sonnet 4.6)",
   gemini_vto_v5: "👗 Virtual Try-On v5 (legacy)",
   gemini_vto_v6: "👗 Virtual Try-On v6 (Gemini 3 Pro Image)",
   model_preview: "🧍 Preview de modelo (Gemini 3.1 Flash Image)",
