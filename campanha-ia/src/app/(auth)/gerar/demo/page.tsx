@@ -248,12 +248,25 @@ export default function ResultadoCampanha() {
         setResult(parsed);
         const firstValid = parsed.data?.images?.findIndex(img => img !== null) ?? -1;
         if (firstValid >= 0) setSelectedIndex(firstValid);
-        // Clear sessionStorage after loading so next generation doesn't show stale data
         sessionStorage.removeItem("campaignResult");
+        return;
       }
     } catch {
       // ignore
     }
+
+    // 3. No sessionStorage either → load most recent campaign
+    setLoadingFromApi(true);
+    fetch("/api/campaigns?limit=1")
+      .then(res => res.ok ? res.json() : Promise.reject(new Error(`Erro ${res.status}`)))
+      .then(data => {
+        const latest = data?.data?.[0];
+        if (latest?.id) {
+          router.replace(`/gerar/demo?id=${latest.id}`);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingFromApi(false));
   }, [searchParams]);
 
   const getImageSrc = (img: GeneratedImage) =>
