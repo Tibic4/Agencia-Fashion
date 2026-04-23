@@ -407,7 +407,6 @@ export default function GerarCampanha() {
             setGenerationStep(generationSteps.length - 1);
             clearTimeout(abortTimeout);
             setTimeout(() => {
-              setIsGenerating(false);
               router.push("/gerar/demo");
             }, 1500);
             return true; // signals "done handled"
