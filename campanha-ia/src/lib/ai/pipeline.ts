@@ -134,6 +134,8 @@ export async function runCampaignPipeline(
   const imageProgressEnd = 85;   // ending progress after all images
   const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
+  const isMale = input.modelInfo?.gender === 'masculino' || input.modelInfo?.gender === 'male' || input.modelInfo?.gender === 'm';
+
   // Sonnet Copy — roda em paralelo com VTO (análise visual autônoma da foto)
   const copyPromise = generateCopyWithSonnet({
     price: input.price,
@@ -170,7 +172,7 @@ export async function runCampaignPipeline(
         cta: "Manda QUERO no direct 💬",
         dica_extra: "Poste as 3 fotos como carrossel e peça para seguidores votarem a favorita nos comentários.",
         story_idea: "Faça uma enquete com as 3 fotos: 'Qual é a sua vibe? A, B ou C?' — stories com votação têm 3x mais interação.",
-        hashtags: ["modafeminina", "lookdodia", "novidade", "tendencia", "estilo", "moda2026", "fashion", "instafashion", "ootd", "modabrasileira"],
+        hashtags: isMale ? ["modamasculina", "lookdodia", "novidade", "tendencia", "estilo"] : ["modafeminina", "lookdodia", "novidade", "tendencia", "estilo"],
         legendas: [
           { foto: 1, plataforma: "Instagram Feed", legenda: "✨ Novidade que vai te surpreender! Confira 💕" },
           { foto: 2, plataforma: "WhatsApp", legenda: "Chegou novidade! Manda um oi que eu te conto tudo 😍" },

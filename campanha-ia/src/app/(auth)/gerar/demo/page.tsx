@@ -701,7 +701,7 @@ export default function ResultadoCampanha() {
                   {(() => {
                     const leg = dicas.legendas![copyTab];
                     if (!leg) return null;
-                    const charLimit = copyTab === 0 ? 125 : copyTab === 2 ? 100 : 200;
+                    const charLimit = copyTab === 0 ? 300 : copyTab === 2 ? 100 : 200;
                     const charCount = leg.legenda?.length || 0;
                     const isOver = charCount > charLimit;
                     return (
@@ -724,8 +724,7 @@ export default function ResultadoCampanha() {
                           </div>
                           <button
                             onClick={async () => {
-                              const textToCopy = leg.legenda + (leg.hashtags?.length ? "\n\n" + leg.hashtags.map(t => t.startsWith("#") ? t : `#${t}`).join(" ") : "");
-                              await navigator.clipboard.writeText(textToCopy);
+                              await navigator.clipboard.writeText(leg.legenda);
                               haptics.success();
                               setCopiedTip(`tab${copyTab}`);
                               setTimeout(() => setCopiedTip(null), 2000);
@@ -759,11 +758,11 @@ export default function ResultadoCampanha() {
                       <span
                         className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
                         style={{
-                          background: (dicas.caption_sugerida.length > 125) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
-                          color: (dicas.caption_sugerida.length > 125) ? "#D97706" : "#16A34A",
+                          background: (dicas.caption_sugerida.length > 300) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
+                          color: (dicas.caption_sugerida.length > 300) ? "#D97706" : "#16A34A",
                         }}
                       >
-                        {dicas.caption_sugerida.length}/125
+                        {dicas.caption_sugerida.length}/300
                       </span>
                     </div>
                     <button
@@ -791,7 +790,7 @@ export default function ResultadoCampanha() {
                   <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}># HASHTAGS</p>
                   <button
                     onClick={async () => {
-                      const hashText = dicas.hashtags.slice(0, 8).map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
+                      const hashText = dicas.hashtags.slice(0, 5).map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
                       await navigator.clipboard.writeText(hashText);
                       haptics.success();
                       setCopiedTip("hashtags");
@@ -804,7 +803,7 @@ export default function ResultadoCampanha() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {dicas.hashtags.slice(0, 8).map((tag, i) => (
+                  {dicas.hashtags.slice(0, 5).map((tag, i) => (
                     <span
                       key={i}
                       className="px-2.5 py-1 rounded-full text-xs font-medium"
@@ -826,11 +825,11 @@ export default function ResultadoCampanha() {
                     <span
                       className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
                       style={{
-                        background: (dicas.caption_alternativa.length > 125) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
-                        color: (dicas.caption_alternativa.length > 125) ? "#D97706" : "#16A34A",
+                        background: (dicas.caption_alternativa.length > 300) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
+                        color: (dicas.caption_alternativa.length > 300) ? "#D97706" : "#16A34A",
                       }}
                     >
-                      {dicas.caption_alternativa.length}/125
+                      {dicas.caption_alternativa.length}/300
                     </span>
                   </div>
                   <button
