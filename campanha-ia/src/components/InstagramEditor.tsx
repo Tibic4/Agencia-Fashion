@@ -272,7 +272,7 @@ export default function InstagramEditor() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   // Images
@@ -892,7 +892,7 @@ function UploadSlot({ label, preview, onChange, onClear }: {
       {preview ? (
         <div className="relative rounded-xl overflow-hidden h-16">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="" className="w-full h-full object-cover" />
+          <img src={preview} alt={`Pré-visualização: ${label}`} className="w-full h-full object-cover" />
           <button onClick={onClear} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white text-sm flex items-center justify-center active:bg-red-500/80 transition">×</button>
         </div>
       ) : (

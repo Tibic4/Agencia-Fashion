@@ -349,7 +349,7 @@ function buildTryOnPrompt(params: {
 }): string {
   const bgRaw = params.background || "estudio";
   const bg = bgRaw as string;
-  let bgPrompt = BACKGROUND_PROMPTS[bg] || BACKGROUND_PROMPTS["estudio"];
+  const bgPrompt = BACKGROUND_PROMPTS[bg] || BACKGROUND_PROMPTS["estudio"];
 
   const isPlus = params.bodyType === "plus";
 
