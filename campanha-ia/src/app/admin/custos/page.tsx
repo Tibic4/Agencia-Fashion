@@ -289,11 +289,11 @@ export default async function AdminCustos() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-800">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Provider</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Etapa</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Modelo</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Custo</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Data</th>
+                    <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Provider</th>
+                    <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Etapa</th>
+                    <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Modelo</th>
+                    <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Custo</th>
+                    <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">

@@ -21,7 +21,7 @@ export default function Footer({ useLinks = false, currentPage }: FooterProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8">
           <div className="sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
+              <Image src="/logo.webp" alt="CriaLook" width={40} height={40} className="rounded-full" />
               <span className="text-lg font-bold text-white">CriaLook</span>
             </div>
             <p className="text-sm leading-relaxed">
@@ -49,6 +49,8 @@ export default function Footer({ useLinks = false, currentPage }: FooterProps) {
             <div className="space-y-2 text-sm">
               <Link href="/termos" className="block hover:text-white transition py-2">Termos de Uso</Link>
               <Link href="/privacidade" className="block hover:text-white transition py-2">Privacidade</Link>
+              <Link href="/dpo" className="block hover:text-white transition py-2">Encarregado (DPO)</Link>
+              <Link href="/subprocessadores" className="block hover:text-white transition py-2">Subprocessadores</Link>
               <a href="mailto:contato@crialook.com.br" className="block hover:text-white transition py-2">contato@crialook.com.br</a>
               {currentPage !== "sobre" && (
                 <Link href="/sobre" className="block hover:text-white transition py-2">Sobre nós</Link>
@@ -56,8 +58,14 @@ export default function Footer({ useLinks = false, currentPage }: FooterProps) {
             </div>
           </div>
         </div>
-        <div className="pt-8 text-center text-xs" style={{ borderTop: "1px solid var(--gray-800)" }}>
-          © {new Date().getFullYear()} CriaLook. Todos os direitos reservados.
+        {/* Identificação do fornecedor — Decreto 7.962/2013 art. 2º, I-II */}
+        <div className="pt-6 mt-2 text-center text-[11px] leading-relaxed" style={{ borderTop: "1px solid var(--gray-800)", color: "var(--gray-500)" }}>
+          <p>
+            CriaLook é operado por <strong>Alton Jorge de Souza Vieira</strong> — CPF 075.847.816-08 ·
+            Avenida dos Bálsamos, 418 — Bairro Morada Nova — Patrocínio/MG ·
+            <a href="mailto:contato@crialook.com.br" className="underline hover:text-white"> contato@crialook.com.br</a>
+          </p>
+          <p className="mt-2">© {new Date().getFullYear()} CriaLook. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

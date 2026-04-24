@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { verifyEditorSession } from "@/lib/editor-session";
 
 /**
  * GET /api/editor-auth/check
- * Returns 200 if editor session cookie is valid, 401 otherwise.
+ * Retorna 200 se o cookie HMAC do editor for válido (não expirado), 401 caso contrário.
  */
 export async function GET() {
   const cookieStore = await cookies();
   const session = cookieStore.get("editor_session");
 
-  if (session?.value === "authenticated") {
+  if (verifyEditorSession(session?.value)) {
     return NextResponse.json({ ok: true });
   }
 

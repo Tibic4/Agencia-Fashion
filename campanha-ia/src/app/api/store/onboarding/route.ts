@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Criar modelo virtual (se não pulou E se o plano permite)
     let storeModel = null;
-    let previewUrl: string | null = null;
+    const previewUrl: string | null = null;
     if (model && !model.skip) {
       // ── Verificar se o plano permite criar modelo ──
       const { getStorePlanName, getModelLimitForPlan, listStoreModels } = await import("@/lib/db");

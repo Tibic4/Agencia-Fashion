@@ -26,8 +26,10 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("logo") as File | null;
 
-    if (!file || !file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Arquivo inválido" }, { status: 400 });
+    // FASE B: allowlist estrita de MIME (rejeita image/svg+xml que pode carregar JS)
+    const ALLOWED_MIMES = new Set(["image/png", "image/jpeg", "image/webp"]);
+    if (!file || !ALLOWED_MIMES.has(file.type)) {
+      return NextResponse.json({ error: "Use PNG, JPEG ou WebP" }, { status: 400 });
     }
 
     // Max 5MB
@@ -36,7 +38,11 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
-    const ext = file.name.split(".").pop() || "png";
+    // FASE B: extensão DERIVADA do MIME validado, não do nome do arquivo (anti path-traversal)
+    const ext =
+      file.type === "image/png" ? "png"
+      : file.type === "image/webp" ? "webp"
+      : "jpg";
     const path = `logos/${store.id}.${ext}`;
 
     // Upload to storage

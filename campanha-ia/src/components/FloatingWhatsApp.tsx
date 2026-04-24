@@ -89,7 +89,7 @@ export default function FloatingWhatsApp() {
         {pulse && <span className="wa-ring" />}
         <div className="relative w-12 h-12 sm:w-16 sm:h-16 drop-shadow-2xl">
           <Image
-            src="/zap-buton.png"
+            src="/zap-buton.webp"
             alt="WhatsApp"
             fill
             className="object-contain"

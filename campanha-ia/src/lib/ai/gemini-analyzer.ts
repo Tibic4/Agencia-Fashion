@@ -35,9 +35,9 @@ export function hexToRgb(hex: string): string {
 
 export function hexToHSL(hex: string): { h: number; s: number; l: number } {
   const c = hex.replace("#", "");
-  let r = parseInt(c.substring(0, 2), 16) / 255;
-  let g = parseInt(c.substring(2, 4), 16) / 255;
-  let b = parseInt(c.substring(4, 6), 16) / 255;
+  const r = parseInt(c.substring(0, 2), 16) / 255;
+  const g = parseInt(c.substring(2, 4), 16) / 255;
+  const b = parseInt(c.substring(4, 6), 16) / 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
   const l = (max + min) / 2;
   if (max === min) return { h: 0, s: 0, l: l * 100 };

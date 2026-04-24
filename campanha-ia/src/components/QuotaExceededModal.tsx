@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
 
@@ -36,14 +36,65 @@ export default function QuotaExceededModal({
   onBuyCredits,
 }: QuotaExceededModalProps) {
   const [tab, setTab] = useState<"upgrade" | "credits">("credits");
-  const [visible, setVisible] = useState(false);
+  const [, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const [loadingPkg, setLoadingPkg] = useState<number | null>(null);
 
-  // Animate in on mount
+  // FASE 6.2: focus trap + restore focus + ESC handler
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
     haptics.light();
+
+    // Guarda o elemento focado antes do modal abrir
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+
+    // Foca no primeiro elemento focável do modal
+    requestAnimationFrame(() => {
+      const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
+        "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+      );
+      firstFocusable?.focus();
+    });
+
+    // ESC fecha modal
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        handleClose();
+      }
+      // Tab trap
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+
+    // Previne scroll no body enquanto modal aberto
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      // Restaura foco
+      previouslyFocused.current?.focus?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Calcular dias até renovação (próximo dia 1)
@@ -95,10 +146,15 @@ export default function QuotaExceededModal({
             className="absolute inset-0"
             style={{ background: "rgba(0,0,0,0.65)" }}
             onClick={handleClose}
+            aria-hidden="true"
           />
 
           {/* Modal — Bottom sheet on mobile, centered on desktop */}
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quota-modal-title"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
@@ -120,16 +176,17 @@ export default function QuotaExceededModal({
           />
         </div>
 
-        {/* Close button */}
+        {/* Close button — contraste AA (0.9 em vez de 0.5) + focus ring */}
         <button
+          type="button"
           onClick={handleClose}
-          className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10"
+          className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           style={{
-            background: "rgba(255,255,255,0.08)",
-            color: "rgba(255,255,255,0.5)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(255,255,255,0.12)",
+            color: "rgba(255,255,255,0.9)",
+            border: "1px solid rgba(255,255,255,0.15)",
           }}
-          aria-label="Fechar"
+          aria-label="Fechar modal de quota"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 6 6 18" /><path d="m6 6 12 12" />
@@ -151,7 +208,7 @@ export default function QuotaExceededModal({
               <span className="text-xl">🚀</span>
             </div>
             <div>
-              <h2 className="text-lg md:text-xl font-bold text-white leading-tight">
+              <h2 id="quota-modal-title" className="text-lg md:text-xl font-bold text-white leading-tight">
                 Continue criando!
               </h2>
               <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
