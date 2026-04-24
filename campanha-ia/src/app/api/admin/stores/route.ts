@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       credit_campaigns, credit_models, credit_regenerations,
       backdrop_ref_url, backdrop_color, backdrop_season, backdrop_updated_at,
       onboarding_completed, created_at,
-      plans!stores_plan_id_fkey(display_name, campaigns_per_period),
+      plans!stores_plan_id_fkey(display_name, campaigns_per_month),
       store_usage!store_usage_store_id_fkey(campaigns_generated, campaigns_limit, period_start, period_end)
     `)
     .eq("id", storeId)

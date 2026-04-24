@@ -40,9 +40,18 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# scripts e testes locais
-scripts/
+# scripts e testes locais — versionamos apenas utilitários (introspect, apply-migration, sb-query)
+# NÃO ignoramos mais scripts/ porque agora usamos pra DB tooling.
 test-images/
+
+# poluição de testes manuais de IA
+test-batch-*.json
+test-result-*.json
+test-result-foto*.json
+scratch/
+/1000*.jpg
+/1000*.png
+/*.log
 
 # ══ Arquivos sensíveis — NÃO subir ══
 .env.local

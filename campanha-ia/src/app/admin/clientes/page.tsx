@@ -8,7 +8,7 @@ interface StoreRow {
   segment_primary: string | null;
   onboarding_completed: boolean;
   created_at: string;
-  plans: { display_name: string; campaigns_per_period?: number } | null;
+  plans: { display_name: string; campaigns_per_month?: number } | null;
   store_usage: {
     campaigns_generated: number;
     campaigns_limit: number;

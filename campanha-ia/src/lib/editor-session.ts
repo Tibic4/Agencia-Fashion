@@ -4,21 +4,25 @@
  */
 import { createHmac, timingSafeEqual, randomBytes } from "crypto";
 
-const SECRET = process.env.EDITOR_SESSION_SECRET || process.env.EDITOR_PASSWORD || "";
+function getSecret(): string {
+  return process.env.EDITOR_SESSION_SECRET || process.env.EDITOR_PASSWORD || "";
+}
 
 /** Gera um token session: `issuedAt.nonce.hmac` (base64url) */
 export function signEditorSession(ttlSeconds = 60 * 60 * 24 * 30): string {
-  if (!SECRET) throw new Error("EDITOR_SESSION_SECRET não configurado");
+  const secret = getSecret();
+  if (!secret) throw new Error("EDITOR_SESSION_SECRET não configurado");
   const issuedAt = Math.floor(Date.now() / 1000);
   const expiresAt = issuedAt + ttlSeconds;
   const nonce = randomBytes(12).toString("hex");
   const payload = `${issuedAt}.${expiresAt}.${nonce}`;
-  const hmac = createHmac("sha256", SECRET).update(payload).digest("hex");
+  const hmac = createHmac("sha256", secret).update(payload).digest("hex");
   return `${payload}.${hmac}`;
 }
 
 export function verifyEditorSession(token: string | undefined | null): boolean {
-  if (!token || !SECRET) return false;
+  const secret = getSecret();
+  if (!token || !secret) return false;
   const parts = token.split(".");
   if (parts.length !== 4) return false;
   const [issuedAtStr, expiresAtStr, nonce, signature] = parts;
@@ -26,7 +30,7 @@ export function verifyEditorSession(token: string | undefined | null): boolean {
   if (!Number.isFinite(expiresAt)) return false;
   if (Math.floor(Date.now() / 1000) >= expiresAt) return false;
   const payload = `${issuedAtStr}.${expiresAtStr}.${nonce}`;
-  const expected = createHmac("sha256", SECRET).update(payload).digest("hex");
+  const expected = createHmac("sha256", secret).update(payload).digest("hex");
   try {
     const a = Buffer.from(signature, "hex");
     const b = Buffer.from(expected, "hex");

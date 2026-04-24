@@ -36,7 +36,10 @@ async function getMetrics() {
     // Distribuição por plano
     supabase.from("stores").select("plan_id, plans!stores_plan_id_fkey(name, display_name, price_monthly)"),
     // Compras de créditos do mês
-    supabase.from("credit_purchases").select("*").gte("created_at", monthStart).eq("payment_status", "approved"),
+    // FASE 11.29: coluna era "payment_status" (não existe) — o webhook MP só insere
+    // em credit_purchases depois que o pagamento foi aprovado, então filtrar pela
+    // existência de mercadopago_payment_id já equivale a "approved".
+    supabase.from("credit_purchases").select("*").gte("created_at", monthStart).not("mercadopago_payment_id", "is", null),
     // Lojas pagantes (não-grátis)
     supabase.from("stores").select("*", { count: "exact", head: true }).not("mercadopago_subscription_id", "is", null),
     // Erros de pipeline no mês (para KPI)
@@ -65,9 +68,10 @@ async function getMetrics() {
   const creditStats = {
     totalPurchases: creditPurchases?.length || 0,
     totalRevenue: creditPurchases?.reduce((sum, p) => sum + parseFloat(p.price_brl || "0"), 0) || 0,
-    campaigns: creditPurchases?.filter(p => p.package_type === "campaigns").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
-    models: creditPurchases?.filter(p => p.package_type === "models").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
-    regenerations: creditPurchases?.filter(p => p.package_type === "regenerations").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
+    // FASE 11.29: coluna correta é "type", não "package_type"
+    campaigns: creditPurchases?.filter(p => p.type === "campaigns").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
+    models: creditPurchases?.filter(p => p.type === "models").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
+    regenerations: creditPurchases?.filter(p => p.type === "regenerations").reduce((sum, p) => sum + (p.quantity || 0), 0) || 0,
   };
 
     // Pipeline error breakdown
