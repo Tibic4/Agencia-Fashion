@@ -19,7 +19,9 @@ interface ClaimResponse {
 /**
  * Banner em /gerar que permite reivindicar 1 campanha grátis (Beta).
  * Aparece se: usuário autenticado + ainda não usou + vagas restantes.
- * Some assim que clicar (ou trial já reivindicado anteriormente).
+ * Após reivindicar com sucesso:
+ *   1. Mostra confirmação visual ("✅ Crédito liberado!")
+ *   2. Faz hard reload pra UI puxar o novo saldo de créditos do servidor
  */
 export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => void }) {
   const [status, setStatus] = useState<Status | null>(null);
@@ -43,6 +45,12 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
       if (data.granted) {
         setSuccess(true);
         if (onClaimed) onClaimed();
+        // Aguarda 1.2s pra usuário ver o sucesso, então faz hard reload completo
+        // (router.refresh sozinho não basta porque /gerar busca créditos via server-side
+        // e o ClerkProvider/store data fica em cache na primeira requisição).
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
       } else {
         const reasons: Record<string, string> = {
           already_used: "Você já reivindicou sua vaga grátis 🙂",
@@ -60,8 +68,43 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
     }
   };
 
-  // Não mostra se beta off, esgotado, já usado, ou se já clicou agora
-  if (!status || !status.enabled || !status.eligible || success) return null;
+  // Mostra mensagem de sucesso enquanto faz reload (1.2s)
+  if (success) {
+    return (
+      <div
+        className="rounded-2xl p-4 sm:p-5 mb-4 relative overflow-hidden animate-fade-in"
+        style={{
+          background: "linear-gradient(135deg, var(--success, #10b981), var(--brand-500))",
+          color: "white",
+        }}
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="shrink-0 text-3xl" aria-hidden="true">✅</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base sm:text-lg font-bold">
+              Crédito liberado!
+            </h3>
+            <p className="text-xs sm:text-sm opacity-90">
+              Sua campanha grátis está pronta. Atualizando a página...
+            </p>
+          </div>
+          <div className="shrink-0">
+            <div
+              className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+              role="presentation"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Não mostra se beta off, esgotado, ou já usou anteriormente
+  if (!status || !status.enabled || !status.eligible) {
+    return null;
+  }
 
   return (
     <div
@@ -109,3 +152,4 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
     </div>
   );
 }
+
