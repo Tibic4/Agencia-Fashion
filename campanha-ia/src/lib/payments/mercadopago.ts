@@ -4,12 +4,35 @@ import { PLANS, type PlanId } from "@/lib/plans";
 // Re-export for consumers that imported PlanId from here
 export { PLANS, type PlanId };
 
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || "",
-});
+// FASE 11.22: não aceita string vazia. Se MP_ACCESS_TOKEN faltar, cliente é null
+// e quem tentar usar recebe erro claro em vez de falhar silenciosamente no MP.
+function createMpClient(): MercadoPagoConfig | null {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token || token.length < 20) {
+    if (process.env.NODE_ENV === "production") {
+      // Em prod, logamos um warn inicial (não falha o boot)
+      console.warn("[MP] ⚠️ MERCADOPAGO_ACCESS_TOKEN ausente ou inválido — pagamentos desabilitados");
+    }
+    return null;
+  }
+  return new MercadoPagoConfig({ accessToken: token });
+}
 
-export const paymentClient = new Payment(client);
-export const preApprovalClient = new PreApproval(client);
+const client = createMpClient();
+
+function requireClient(): MercadoPagoConfig {
+  if (!client) {
+    throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado — pagamentos desabilitados");
+  }
+  return client;
+}
+
+function getPaymentClient(): Payment {
+  return new Payment(requireClient());
+}
+function getPreApprovalClient(): PreApproval {
+  return new PreApproval(requireClient());
+}
 
 // ═══════════════════════════════════════
 // ASSINATURA RECORRENTE (PreApproval)
@@ -29,7 +52,7 @@ export async function createSubscription(params: {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  const subscription = await preApprovalClient.create({
+  const subscription = await getPreApprovalClient().create({
     body: {
       reason: `CriaLook ${plan.name} — Mensal`,
       auto_recurring: {
@@ -56,7 +79,7 @@ export async function createSubscription(params: {
  * Cancela uma assinatura recorrente
  */
 export async function cancelSubscription(subscriptionId: string) {
-  const result = await preApprovalClient.update({
+  const result = await getPreApprovalClient().update({
     id: subscriptionId,
     body: {
       status: "cancelled",
@@ -73,7 +96,7 @@ export async function cancelSubscription(subscriptionId: string) {
  * Busca o status de uma assinatura
  */
 export async function getSubscriptionStatus(subscriptionId: string) {
-  const result = await preApprovalClient.get({ id: subscriptionId });
+  const result = await getPreApprovalClient().get({ id: subscriptionId });
 
   return {
     id: result.id,
@@ -90,7 +113,7 @@ export async function getSubscriptionStatus(subscriptionId: string) {
  * Verifica status de um pagamento pelo ID
  */
 export async function getPaymentStatus(paymentId: string) {
-  const payment = await paymentClient.get({ id: paymentId });
+  const payment = await getPaymentClient().get({ id: paymentId });
   return {
     status: payment.status,
     statusDetail: payment.status_detail,

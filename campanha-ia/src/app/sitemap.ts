@@ -5,41 +5,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
   return [
-    {
-      url: baseUrl,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/sobre`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/sign-in`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/sign-up`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/termos`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/privacidade`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    { url: baseUrl, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${baseUrl}/sobre`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    // FASE 5.12: /sign-in removido (não agrega SEO), /sign-up com prioridade moderada
+    { url: `${baseUrl}/sign-up`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/termos`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/privacidade`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/dpo`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${baseUrl}/subprocessadores`, lastModified: now, changeFrequency: "monthly", priority: 0.2 },
+    { url: `${baseUrl}/consentimento-biometrico`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];
 }

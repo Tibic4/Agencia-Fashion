@@ -4,6 +4,7 @@ import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { ALL_CREDIT_PACKAGES, type CreditPackageId } from "@/lib/plans";
+import { checkLoginRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,20 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session.userId) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    // FASE M.6: rate-limit por user (anti-abuso de Preference creation)
+    const rl = checkLoginRateLimit({
+      key: `credits:${session.userId}`,
+      maxAttempts: 10,
+      windowMs: 15 * 60 * 1000,
+      blockDurationMs: 60 * 60 * 1000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Aguarde um momento.", code: "RATE_LIMITED" },
+        { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 0) / 1000)) } },
+      );
     }
 
     const { packageId } = await request.json();

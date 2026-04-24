@@ -301,9 +301,13 @@ export default function KonvaCanvas({
         </div>
       )}
 
-      {/* Canvas */}
+      {/* Canvas — role=img com aria-label descrevendo o conteúdo visual */}
       {!imgLoading && (
-        <div style={{ borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,0.15)" }}>
+        <div
+          role="img"
+          aria-label="Pré-visualização da campanha. Use os controles abaixo para editar."
+          style={{ borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 40px rgba(0,0,0,0.15)" }}
+        >
           <Stage
             ref={stageRef}
             width={CANVAS_W * S}
