@@ -203,10 +203,13 @@ async function handlePaymentEvent(paymentId: string) {
 
           // Trial bonus: se o external_reference contém bonusModels, creditar modelos também
           // Format estendido: credit|storeId|type|quantity|bonusModels:N
+          // FASE 11.18: cap de bonusModels para evitar que bug futuro credite 9999
+          const MAX_BONUS_MODELS = 10;
           const parts = ref.split("|");
           const bonusPart = parts.find(p => p.startsWith("bonusModels:"));
           if (bonusPart) {
-            const bonusQty = parseInt(bonusPart.split(":")[1], 10);
+            const rawBonus = parseInt(bonusPart.split(":")[1], 10);
+            const bonusQty = Math.min(Math.max(0, Number.isFinite(rawBonus) ? rawBonus : 0), MAX_BONUS_MODELS);
             if (bonusQty > 0) {
               await addCreditsToStore(storeId, "models", bonusQty, 0, paymentId);
               console.log(`[Webhook:MercadoPago] 🎁 Bônus trial: +${bonusQty} modelo(s) para store ${storeId}`);

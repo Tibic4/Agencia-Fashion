@@ -154,9 +154,14 @@ export default function GenerationLoadingScreen({ step, steps }: GenerationLoadi
   const currentPhaseIdx = PHASE_KEYS.indexOf(phase === "almostDone" ? "polishing" : phase);
 
   return (
-    <div className="gen-loading animate-fade-in">
+    <div className="gen-loading animate-fade-in" role="status" aria-busy="true">
+      {/* FASE 6.5: live region para screenreaders. Atualiza a cada mudança de fase/status */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        Gerando campanha. Etapa atual: {statusText}. Tempo decorrido: {elapsed} segundos.
+      </span>
       {/* Animated gradient background */}
-      <div className="gen-loading-bg" />
+      <div className="gen-loading-bg" aria-hidden="true" />
+
 
       {/* Floating particles */}
       <div className="gen-particles">

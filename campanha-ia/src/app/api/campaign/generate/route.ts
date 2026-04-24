@@ -208,8 +208,19 @@ export async function POST(request: NextRequest) {
       mediaType = "image/webp";
       const savings = ((1 - imageBuffer.length / originalSize) * 100).toFixed(0);
       console.log(`[Generate] 📐 Imagem principal: ${(originalSize / 1024).toFixed(0)}KB → ${(imageBuffer.length / 1024).toFixed(0)}KB (-${savings}%)`);
-    } catch {
-      console.warn("[Generate] ⚠️ Sharp indisponível, usando imagem original");
+    } catch (sharpErr) {
+      console.warn("[Generate] ⚠️ Sharp indisponível, usando imagem original:", sharpErr);
+    }
+    // FASE 11.6: se Sharp falhou E buffer ainda é grande, rejeita em vez de mandar
+    // 50MB pro Gemini (que retorna erro confuso ou estoura rate-limit).
+    if (imageBuffer.length > 8 * 1024 * 1024) {
+      return NextResponse.json(
+        {
+          error: "Imagem muito grande após otimização. Tente uma foto menor (<8MB).",
+          code: "IMAGE_TOO_LARGE_POST_OPTIM",
+        },
+        { status: 400 },
+      );
     }
     const imageBase64 = imageBuffer.toString("base64");
 

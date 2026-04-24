@@ -447,9 +447,12 @@ export async function canGenerateCampaign(storeId: string): Promise<{ allowed: b
 export async function listCampaigns(storeId: string, limit = 20, historyDays = 0) {
   const supabase = createAdminClient();
   
+  // FASE 11.11: não trazemos `output` (JSONB grande) no listing — reduz payload de MB.
+  // Se o caller precisar do output, busca detalhadamente por campaign id.
+  // Mantemos apenas os campos leves usados no grid + uma preview truncada.
   let query = supabase
     .from("campaigns")
-    .select("id, title, sequence_number, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, is_favorited, output, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
+    .select("id, title, sequence_number, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, is_favorited, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
     .eq("store_id", storeId)
     .eq("is_archived", false)
     .order("created_at", { ascending: false })

@@ -122,7 +122,7 @@ export default function Home() {
             <div className="md:hidden text-center stagger-children">
               <div className="inline-flex items-center gap-2 badge badge-brand mb-3">
                 <IconSparkles />
-                <span>Virtual Try-On com IA</span>
+                <span>Modelo Virtual com IA</span>
               </div>
 
               <h1 className="text-[22px] sm:text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
@@ -216,7 +216,7 @@ export default function Home() {
               <div className="stagger-children">
                 <div className="inline-flex items-center gap-2 badge badge-brand mb-6">
                   <IconSparkles />
-                  <span>Virtual Try-On com IA</span>
+                  <span>Modelo Virtual com IA</span>
                 </div>
 
                 <h1 className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6">
@@ -420,10 +420,10 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                A verdadeira <span className="gradient-text">Matemática Humilhante</span>
+                Quanto você <span className="gradient-text">economiza</span> em cada campanha
               </h2>
               <p className="text-sm sm:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Descubra o quanto sua concorrência gasta enquanto você corta até 99% de custo (e de estresse).
+                Compare o que sua concorrência paga a cada shoot com o seu custo real no CriaLook.
               </p>
             </div>
             

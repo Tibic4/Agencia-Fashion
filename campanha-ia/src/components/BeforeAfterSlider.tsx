@@ -56,26 +56,41 @@ export default function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAft
         handleMove(e.touches[0].clientX);
       }}
     >
-      {/* After Image (Renderizada) */}
+      {/* After Image (Renderizada) - LCP element, priority=true */}
       <div className="absolute inset-0 w-full h-full bg-surface">
         {afterImage ? (
-          <Image src={afterImage} alt="Resultado IA" fill sizes="(max-width: 768px) 100vw, 448px" className="object-cover" priority />
+          <Image
+            src={afterImage}
+            alt="Modelo virtual IA vestindo a peça — resultado CriaLook"
+            fill
+            sizes="(max-width: 768px) 100vw, 448px"
+            className="object-cover"
+            priority
+            fetchPriority="high"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-brand-100 text-brand-700">Resultado 3D</div>
         )}
       </div>
 
-      {/* Before Image (Manequim) - Clip path applied dynamically */}
-      <div 
+      {/* Before Image (Manequim) - sem priority (não é LCP, fica oculto pelo clip) */}
+      <div
         className="absolute inset-0 w-full h-full bg-gray-100"
         style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
       >
         {beforeImage ? (
-          <Image src={beforeImage} alt="Foto Original" fill sizes="(max-width: 768px) 100vw, 448px" className="object-cover" priority />
+          <Image
+            src={beforeImage}
+            alt="Foto original da peça no manequim — antes do CriaLook"
+            fill
+            sizes="(max-width: 768px) 100vw, 448px"
+            className="object-cover"
+            loading="eager"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">Manequim</div>
         )}
-        <div className="absolute inset-0 bg-black/5" /> {/* subtle overlay on before image */}
+        <div className="absolute inset-0 bg-black/5" aria-hidden="true" />
       </div>
 
       {/* Slider Line & Thumb */}
