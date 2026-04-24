@@ -8,7 +8,15 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Read(//d//**)",
-      "Read(//d/d/Nova pasta/Agencia-Fashion/campanha-ia/**)"
+      "Read(//d/d/Nova pasta/Agencia-Fashion/campanha-ia/**)",
+      "Bash(git checkout *)",
+      "Read(//c/Users/bicag/.claude/**)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2184c8652dbf27a1353a51e4aae70544385fff74 npx tsx scripts/introspect-supabase.ts)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2184c8652dbf27a1353a51e4aae70544385fff74 npx tsx scripts/apply-migration.ts supabase/migrations/20260424_add_plan_payments_applied.sql)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2184c8652dbf27a1353a51e4aae70544385fff74 npx tsx scripts/sb-query.ts \"SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename='plan_payments_applied'\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\bicag\\.claude"
     ]
   }
 }

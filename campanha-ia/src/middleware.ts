@@ -47,15 +47,24 @@ function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
-async function hasStore(clerkUserId: string): Promise<boolean> {
+async function hasStore(clerkUserId: string): Promise<boolean | "unknown"> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return true;
-  const { data } = await supabase
-    .from("stores")
-    .select("id")
-    .eq("clerk_user_id", clerkUserId)
-    .maybeSingle();
-  return !!data;
+  if (!supabase) return "unknown";
+  try {
+    const { data, error } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("clerk_user_id", clerkUserId)
+      .maybeSingle();
+    if (error) {
+      console.warn(`[middleware/hasStore] Supabase error: ${error.message}`);
+      return "unknown";
+    }
+    return !!data;
+  } catch (e) {
+    console.warn(`[middleware/hasStore] Exception:`, e);
+    return "unknown";
+  }
 }
 
 export default clerkMiddleware(async (auth, request) => {

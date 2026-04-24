@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPaymentStatus, getSubscriptionStatus } from "@/lib/payments/mercadopago";
 import { updateStorePlan, addCreditsToStore } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createHmac } from "crypto";
+import { PLANS, type PlanId, ALL_CREDIT_PACKAGES } from "@/lib/plans";
+import { createHmac, timingSafeEqual } from "crypto";
+
+// Tolerância de 1 centavo para diferenças de arredondamento do MP
+const PRICE_TOLERANCE_BRL = 0.01;
+
+function amountMatches(paidAmount: number | null | undefined, expectedPrice: number): boolean {
+  if (paidAmount == null) return false;
+  return Math.abs(paidAmount - expectedPrice) <= PRICE_TOLERANCE_BRL;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -39,10 +48,31 @@ function validateWebhookSignature(
     return false;
   }
 
+  // Rejeitar ts fora de janela de 5 minutos (mitiga replay antigo)
+  const tsNum = parseInt(ts, 10);
+  if (Number.isFinite(tsNum)) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    // MP envia ts em MILISSEGUNDOS às vezes — normalizar
+    const tsSec = tsNum > 1e12 ? Math.floor(tsNum / 1000) : tsNum;
+    const skew = Math.abs(nowSec - tsSec);
+    if (skew > 300) {
+      console.warn(`[Webhook:MercadoPago] ⚠️ Timestamp fora da janela (skew=${skew}s)`);
+      return false;
+    }
+  }
+
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   const hmac = createHmac("sha256", secret).update(manifest).digest("hex");
 
-  return hmac === v1;
+  // Comparação timing-safe
+  try {
+    const a = Buffer.from(hmac, "hex");
+    const b = Buffer.from(v1, "hex");
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -123,6 +153,24 @@ async function handlePaymentEvent(paymentId: string) {
       if (storeId && creditType && quantity > 0) {
         const validTypes = ["campaigns", "models", "regenerations"];
         if (validTypes.includes(creditType)) {
+          // ── FRAUD GATE: validar valor pago vs preço esperado do pacote ──
+          // Encontra o pacote que casa type+quantity. Se não houver match, rejeita.
+          const matchingPkg = Object.values(ALL_CREDIT_PACKAGES).find(
+            (p) => p.type === creditType && p.quantity === quantity,
+          );
+          if (!matchingPkg) {
+            console.error(
+              `[Webhook:MercadoPago] 🚨 Rejeitado: nenhum pacote conhecido com type=${creditType} qty=${quantity} — possível forja de external_reference (paymentId=${paymentId})`,
+            );
+            return;
+          }
+          const paidAmount = payment.transactionAmount;
+          if (!amountMatches(paidAmount, matchingPkg.price)) {
+            console.error(
+              `[Webhook:MercadoPago] 🚨 Fraude detectada: pacote ${creditType}/${quantity} custa R$${matchingPkg.price} mas foi pago R$${paidAmount} (paymentId=${paymentId}) — REJEITADO`,
+            );
+            return;
+          }
           // ── Idempotência: verificar se este pagamento já foi processado ──
           const supabase = createAdminClient();
           const { count: existingCount } = await supabase
@@ -168,12 +216,47 @@ async function handlePaymentEvent(paymentId: string) {
       const [storeId, planId] = ref.split("|");
 
       if (storeId && planId) {
+        // ── FRAUD GATE: planId deve existir em PLANS e valor pago deve bater ──
+        const planDef = PLANS[planId as PlanId];
+        if (!planDef) {
+          console.error(
+            `[Webhook:MercadoPago] 🚨 Rejeitado: planId desconhecido "${planId}" (paymentId=${paymentId})`,
+          );
+          return;
+        }
+        const paidAmount = payment.transactionAmount;
+        if (!amountMatches(paidAmount, planDef.price)) {
+          console.error(
+            `[Webhook:MercadoPago] 🚨 Fraude detectada: plano ${planId} custa R$${planDef.price} mas foi pago R$${paidAmount} (paymentId=${paymentId}) — REJEITADO`,
+          );
+          return;
+        }
+
+        // ── Idempotência: verificar se este payment já renovou este plano ──
+        const supabaseIdem = createAdminClient();
+        const { count: planAppliedCount } = await supabaseIdem
+          .from("plan_payments_applied")
+          .select("payment_id", { count: "exact", head: true })
+          .eq("payment_id", paymentId);
+        if ((planAppliedCount ?? 0) > 0) {
+          console.log(`[Webhook:MercadoPago] ⚠️ Pagamento de plano ${paymentId} já aplicado — ignorando duplicata`);
+          return;
+        }
+
         console.log(`[Webhook:MercadoPago] ✅ Pagamento recorrente aprovado! Store: ${storeId}, Plano: ${planId}`);
 
         // Atualizar plano + resetar quotas do mês.
         // Não passar paymentId como 3º argumento — esse campo é mpSubscriptionId,
         // já salvo corretamente pelo evento subscription_preapproval (handleSubscriptionEvent).
         await updateStorePlan(storeId, planId);
+
+        // Registrar pagamento aplicado (idempotência)
+        await supabaseIdem.from("plan_payments_applied").insert({
+          payment_id: paymentId,
+          store_id: storeId,
+          plan_id: planId,
+          applied_at: new Date().toISOString(),
+        });
 
         // Salvar customer ID do Mercado Pago
         const supabase = createAdminClient();

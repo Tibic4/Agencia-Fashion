@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { notFound } from "next/navigation";
 
 const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { ssr: false });
 
@@ -10,6 +11,11 @@ const KonvaCompositor = dynamic(() => import("@/components/KonvaCompositor"), { 
  * Replaces the old hardcoded-only page.
  */
 export default function TestKonvaPage() {
+  // Gate: só disponível em desenvolvimento. Em produção, 404.
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
+
   const [imageUrl, setImageUrl] = useState("/test-images/model-preview.png");
   const [productName, setProductName] = useState("Moletom Oliva + Short Jeans");
   const [price, setPrice] = useState("R$ 119,90");

@@ -182,6 +182,26 @@ async function logTipsCost(
   }
 }
 
+// ── Allowlist de hosts para fetch de imagem (anti-SSRF) ──
+// Apenas Supabase Storage do projeto é aceito.
+const ALLOWED_IMAGE_HOSTS = new Set<string>([
+  "emybirklqhonqodzyzet.supabase.co",
+]);
+
+function isAllowedImageUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return false;
+    if (!ALLOWED_IMAGE_HOSTS.has(u.hostname)) return false;
+    // Bloquear IPs literais e localhost por segurança adicional
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(u.hostname)) return false;
+    if (u.hostname === "localhost" || u.hostname.endsWith(".local")) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -192,43 +212,48 @@ export async function POST(
   }
 
   const { id } = await params;
-  if (!id) {
-    return NextResponse.json({ error: "Campaign ID obrigatório" }, { status: 400 });
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) {
+    return NextResponse.json({ error: "Campaign ID inválido" }, { status: 400 });
   }
 
-  // ── Server-side cache: check if tips already exist in campaign output ──
+  // ── Ownership check + cache: só lê campaign se for da store do user ──
+  let storeId: string | null = null;
+  let campaignOutput: { smart_tips?: unknown } | null = null;
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const cacheClient = createClient(supabaseUrl, supabaseKey);
-    
+    const { getStoreByClerkId } = await import("@/lib/db");
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const store = await getStoreByClerkId(userId);
+    if (!store) {
+      return NextResponse.json({ error: "Loja não encontrada" }, { status: 403 });
+    }
+    storeId = store.id;
+
+    const cacheClient = createAdminClient();
     const { data: campaign } = await cacheClient
       .from("campaigns")
-      .select("output")
+      .select("output, store_id")
       .eq("id", id)
-      .single();
-    
-    if (campaign?.output?.smart_tips) {
-      console.log(`[Tips Pro] ✅ Cache hit for campaign ${id} — zero cost`);
-      return NextResponse.json({ data: campaign.output.smart_tips, cached: true });
+      .eq("store_id", store.id) // IDOR fix: só aceita se for dessa loja
+      .maybeSingle();
+
+    if (!campaign) {
+      return NextResponse.json({ error: "Campanha não encontrada" }, { status: 404 });
     }
-  } catch {
-    // Non-fatal — proceed to generate
+
+    campaignOutput = campaign.output as { smart_tips?: unknown } | null;
+    if (campaignOutput?.smart_tips) {
+      console.log(`[Tips Pro] ✅ Cache hit for campaign ${id} — zero cost`);
+      return NextResponse.json({ data: campaignOutput.smart_tips, cached: true });
+    }
+  } catch (e) {
+    console.error("[Tips Pro] Erro no ownership/cache check:", e);
+    return NextResponse.json({ error: "Erro ao validar campanha" }, { status: 500 });
   }
 
   const apiKey = process.env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "GOOGLE_AI_API_KEY não configurada" }, { status: 500 });
   }
-
-  // Resolve store_id for cost attribution
-  let storeId: string | null = null;
-  try {
-    const { getStoreByClerkId } = await import("@/lib/db");
-    const store = await getStoreByClerkId(userId);
-    storeId = store?.id || null;
-  } catch { /* non-fatal */ }
 
   const startMs = Date.now();
 
@@ -241,16 +266,36 @@ export async function POST(
       toneOverride?: string;
     };
 
-    if (!imageUrl) {
+    if (!imageUrl || typeof imageUrl !== "string") {
       return NextResponse.json({ error: "imageUrl obrigatório" }, { status: 400 });
     }
 
-    // Download image and convert to base64
-    const imageResponse = await fetch(imageUrl);
+    // SSRF fix: só aceitar URLs de hosts permitidos
+    if (!isAllowedImageUrl(imageUrl)) {
+      console.warn(`[Tips Pro] 🚨 imageUrl rejeitada (SSRF guard): ${imageUrl}`);
+      return NextResponse.json({ error: "imageUrl não permitida" }, { status: 400 });
+    }
+
+    // Download image and convert to base64 com tamanho máximo e timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+    let imageResponse: Response;
+    try {
+      imageResponse = await fetch(imageUrl, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     if (!imageResponse.ok) {
       return NextResponse.json({ error: "Falha ao baixar imagem" }, { status: 400 });
     }
+    const contentLength = Number(imageResponse.headers.get("content-length") || "0");
+    if (contentLength > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "Imagem maior que 10MB" }, { status: 400 });
+    }
     const imageBuffer = await imageResponse.arrayBuffer();
+    if (imageBuffer.byteLength > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "Imagem maior que 10MB" }, { status: 400 });
+    }
     const base64 = Buffer.from(imageBuffer).toString("base64");
     const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
 

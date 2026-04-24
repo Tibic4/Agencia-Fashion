@@ -59,14 +59,28 @@ export async function POST(request: NextRequest) {
     const closeUpImage = formData.get("closeUpImage") as File | null;
     const secondImage = formData.get("secondImage") as File | null;
     const price = formData.get("price") as string | null;
-    const objective = (formData.get("objective") as string) || "venda_imediata";
-    const campaignTitle = formData.get("title") as string | null;
-    const storeName = (formData.get("storeName") as string) || "Minha Loja";
-    const targetAudienceRaw = formData.get("targetAudience") as string | null;
-    const toneOverrideRaw = formData.get("toneOverride") as string | null;
-    const productType = formData.get("productType") as string | null;
-    const material = formData.get("material") as string | null;
-    const material2 = formData.get("material2") as string | null;
+
+    // FASE 1.11: whitelist de objetivos + sanitização de strings (anti-injection em prompt)
+    const VALID_OBJECTIVES = new Set(["venda_imediata", "lancamento", "promocao", "engajamento", "trafego"]);
+    const rawObjective = (formData.get("objective") as string) || "venda_imediata";
+    const objective = VALID_OBJECTIVES.has(rawObjective) ? rawObjective : "venda_imediata";
+
+    const safeStr = (v: unknown, max: number): string | null => {
+      if (typeof v !== "string") return null;
+      const trimmed = v.trim();
+      if (trimmed.length === 0) return null;
+      const capped = trimmed.length > max ? trimmed.slice(0, max) : trimmed;
+      // Remove < > apenas (evita XSS quando stored e HTML renderizado)
+      return capped.split("<").join("").split(">").join("");
+    };
+
+    const campaignTitle = safeStr(formData.get("title"), 120);
+    const storeName = safeStr(formData.get("storeName"), 80) || "Minha Loja";
+    const targetAudienceRaw = safeStr(formData.get("targetAudience"), 40);
+    const toneOverrideRaw = safeStr(formData.get("toneOverride"), 40);
+    const productType = safeStr(formData.get("productType"), 80);
+    const material = safeStr(formData.get("material"), 80);
+    const material2 = safeStr(formData.get("material2"), 80);
 
     // Mapear slugs → labels legíveis para o Sonnet
     const audienceLabels: Record<string, string> = {
@@ -98,6 +112,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Envie a foto do produto", code: "MISSING_IMAGE" }, { status: 400 });
     }
     const priceStr = price || "";
+    // FASE 1.11: valida que price é numérico e dentro de range razoável (R$ 0,01 – R$ 99.999)
+    if (priceStr) {
+      const priceNum = parseFloat(priceStr.replace(",", "."));
+      if (!Number.isFinite(priceNum) || priceNum < 0 || priceNum > 99999) {
+        return NextResponse.json(
+          { error: "Preço inválido (use 0 a 99999)", code: "INVALID_PRICE" },
+          { status: 400 },
+        );
+      }
+    }
 
 
     const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -515,6 +539,50 @@ export async function POST(request: NextRequest) {
             } catch (e) {
               console.warn("[Generate] Upload parcial falhou:", e);
               images.forEach(() => imageUrls.push(null));
+            }
+
+            // ── FIX P0: Se TODOS uploads falharam, refundar crédito/slot e abortar ──
+            const allUploadsFailed = imageUrls.length > 0 && imageUrls.every((u) => !u);
+            if (allUploadsFailed) {
+              console.error("[Generate] 🚨 Todos os uploads falharam — refundando e abortando");
+              if (campaignRecord) await failCampaign(campaignRecord.id, "All uploads failed");
+              if (creditReserved && store) {
+                try {
+                  const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+                  const sb = createAdmin();
+                  await sb.rpc("add_credits_atomic", {
+                    p_store_id: store.id,
+                    p_column: "credit_campaigns",
+                    p_quantity: 1,
+                  });
+                  console.log("[Generate] 💳 Crédito avulso DEVOLVIDO (todos uploads falharam)");
+                } catch (refundErr) {
+                  console.error("[Generate] ❌ Falha ao devolver crédito:", refundErr);
+                }
+              }
+              if (planSlotReserved && store) {
+                try {
+                  const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+                  const sb = createAdmin();
+                  const { getCurrentUsage: getUsage } = await import("@/lib/db");
+                  const usage = await getUsage(store.id);
+                  if (usage) {
+                    await sb
+                      .from("store_usage")
+                      .update({ campaigns_generated: Math.max(0, (usage.campaigns_generated || 0) - 1) })
+                      .eq("id", usage.id);
+                    console.log("[Generate] 📋 Slot de plano DEVOLVIDO (todos uploads falharam)");
+                  }
+                } catch (refundErr) {
+                  console.error("[Generate] ❌ Falha ao devolver slot:", refundErr);
+                }
+              }
+              await sendSSE("error", {
+                error: "Falha ao salvar as imagens geradas. Tente novamente.",
+                retry: true,
+                code: "ALL_UPLOADS_FAILED",
+              });
+              return;
             }
 
             await savePipelineResultV3({

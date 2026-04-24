@@ -84,3 +84,58 @@ export function checkRateLimit(
 
   return { allowed: true };
 }
+
+// ═══════════════════════════════════════════════════════════
+// Login brute-force limiter (uso: editor-auth, futuros logins)
+// Janela deslizante: N tentativas em M minutos
+// ═══════════════════════════════════════════════════════════
+
+interface AttemptsEntry {
+  count: number;
+  firstAttemptAt: number;
+  blockedUntil: number;
+}
+
+const loginAttempts = new Map<string, AttemptsEntry>();
+
+export interface LoginLimitOptions {
+  key: string; // e.g. "editor-auth:<ip>"
+  maxAttempts?: number; // default 5
+  windowMs?: number; // default 15min
+  blockDurationMs?: number; // default 1h
+}
+
+export function checkLoginRateLimit(opts: LoginLimitOptions): {
+  allowed: boolean;
+  retryAfterMs?: number;
+  attemptsRemaining?: number;
+} {
+  const now = Date.now();
+  const max = opts.maxAttempts ?? 5;
+  const window = opts.windowMs ?? 15 * 60 * 1000;
+  const blockDur = opts.blockDurationMs ?? 60 * 60 * 1000;
+  const entry = loginAttempts.get(opts.key);
+
+  // Bloqueado?
+  if (entry && now < entry.blockedUntil) {
+    return { allowed: false, retryAfterMs: entry.blockedUntil - now };
+  }
+
+  // Janela expirou: reinicia
+  if (!entry || now - entry.firstAttemptAt > window) {
+    loginAttempts.set(opts.key, { count: 1, firstAttemptAt: now, blockedUntil: 0 });
+    return { allowed: true, attemptsRemaining: max - 1 };
+  }
+
+  // Dentro da janela
+  entry.count++;
+  if (entry.count > max) {
+    entry.blockedUntil = now + blockDur;
+    return { allowed: false, retryAfterMs: blockDur };
+  }
+  return { allowed: true, attemptsRemaining: max - entry.count };
+}
+
+export function resetLoginRateLimit(key: string): void {
+  loginAttempts.delete(key);
+}
