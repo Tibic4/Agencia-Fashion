@@ -15,6 +15,8 @@ const StickyCTA = dynamic(() => import("@/components/StickyCTA"));
 const TestimonialCards = dynamic(() => import("@/components/TestimonialCards"));
 const ScrollTracker = dynamic(() => import("@/components/ScrollTracker"));
 const ShowcaseSection = dynamic(() => import("@/components/ShowcaseSectionLoader"));
+// Hero badge dinâmico — mostra "X/50 vagas grátis" se beta ativo
+import BetaTrialBadge from "@/components/BetaTrialBadge";
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
@@ -124,19 +126,20 @@ export default function Home() {
           <div className="container relative z-10">
             {/* ── Mobile Layout: text + compact VTO proof ── */}
             <div className="md:hidden text-center stagger-children">
+              <BetaTrialBadge />
+
               <div className="inline-flex items-center gap-2 badge badge-brand mb-3">
                 <IconSparkles />
                 <span>Modelo Virtual com IA</span>
               </div>
 
               <h1 className="text-[22px] sm:text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
-                Transforme a Foto do Manequim em{" "}
-                <span className="gradient-text">Campanha Pronta.</span>
+                Sua peça vira <span className="gradient-text">campanha pronta</span> em 60s.
               </h1>
 
-              <p className="text-[13px] sm:text-[15px] leading-relaxed mb-6 max-w-[260px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
-                Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
-                <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
+              <p className="text-[13px] sm:text-[15px] leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
+                Foto no manequim ou cabide → 3 fotos com modelo virtual + legendas prontas.{" "}
+                <strong style={{ color: 'var(--foreground)' }}>Sem fotógrafo. Sem Photoshop.</strong>
               </p>
 
               {/* ── VTO Proof — Before/After Slider (mobile) ── */}
@@ -166,42 +169,45 @@ export default function Home() {
               </div>
 
               {/* CTA principal */}
-              <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
-                <Link href="/sign-up" className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
+              <div className="flex flex-col gap-2 w-full max-w-xs mx-auto">
+                <Link
+                  href="/sign-up"
+                  className="btn-primary w-full text-sm !py-3.5 hover:animate-pulse-glow whitespace-normal text-center leading-tight"
+                  aria-label="Pegar minha vaga grátis no Beta"
+                >
                   <IconZap className="shrink-0" />
-                  <span>Criar Minha 1ª Campanha<br className="xs:hidden" /> — R$ 19,90</span>
+                  <span>Pegar minha vaga grátis</span>
                 </Link>
+                <p className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>
+                  ✓ 1 campanha completa (3 fotos) <strong>grátis</strong> · sem cartão
+                </p>
               </div>
 
-              {/* Pack breakdown */}
+              {/* O que está incluso na vaga grátis */}
               <div className="mt-5 mx-auto max-w-xs rounded-2xl p-4 text-left" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Incluso no Pack Teste</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Incluso na vaga grátis</p>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
                     <div>
-                      <p className="text-[13px] font-bold">Campanhas completas</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>9 fotos prontas para postar</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>👩</span>
-                    <div>
-                      <p className="text-[13px] font-bold">Modelo virtual personalizada</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Escolha tom de pele, cabelo e corpo</p>
+                      <p className="text-[13px] font-bold">Fotos com modelo virtual</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Cenários e poses diferentes</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>✍️</span>
                     <div>
-                      <p className="text-[13px] font-bold">Legendas + hashtags IA</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Textos de alta conversão prontos</p>
+                      <p className="text-[13px] font-bold">Legendas + hashtags</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Textos persuasivos prontos</p>
                     </div>
                   </div>
-                </div>
-                <div className="mt-3 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
-                  <span className="text-[11px]" style={{ color: 'var(--muted)' }}>Pague via PIX ou cartão</span>
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--success)' }}>Sem assinatura</span>
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>⚡</span>
+                    <div>
+                      <p className="text-[13px] font-bold">Pronto em até 90s</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Use sua peça real (não exemplo)</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -218,33 +224,40 @@ export default function Home() {
             <div className="hidden md:grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Left — Copy */}
               <div className="stagger-children">
+                <BetaTrialBadge />
+
                 <div className="inline-flex items-center gap-2 badge badge-brand mb-6">
                   <IconSparkles />
                   <span>Modelo Virtual com IA</span>
                 </div>
 
                 {/* FASE M.15: desktop usa <p> com estilo h1 — só 1 h1 por página (o mobile).
-                    aria-hidden evita screenreader ler 2x (o layout mobile ou desktop sempre
-                    está visível, mas ambos existem no DOM para responsive CSS). */}
+                    aria-hidden evita screenreader ler 2x. */}
                 <p
                   aria-hidden="true"
                   className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6"
                 >
-                  Transforme a Foto do Manequim em{" "}
-                  <span className="gradient-text">Campanha Pronta.</span>
+                  Sua peça vira <span className="gradient-text">campanha pronta</span> em 60s.
                 </p>
 
                 <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
-                  Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
-                  <strong style={{ color: 'var(--foreground)' }}>Em 60 segundos.</strong>
+                  Foto no manequim ou cabide → 3 fotos com modelo virtual + legendas prontas pra postar.{" "}
+                  <strong style={{ color: 'var(--foreground)' }}>Sem fotógrafo. Sem Photoshop.</strong>
                 </p>
 
-                <div className="flex flex-wrap items-center gap-4 mb-6">
-                  <Link href="/sign-up" className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow" aria-label="Criar Minha Primeira Campanha por R$ 19,90">
+                <div className="flex flex-wrap items-center gap-4 mb-3">
+                  <Link
+                    href="/sign-up"
+                    className="btn-primary text-base !py-3.5 !px-8 hover:animate-pulse-glow"
+                    aria-label="Pegar minha vaga grátis no Beta"
+                  >
                     <IconZap />
-                    Criar Minha 1ª Campanha — R$ 19,90
+                    Pegar minha vaga grátis
                   </Link>
                 </div>
+                <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
+                  ✓ 1 campanha completa (3 fotos) <strong style={{ color: 'var(--foreground)' }}>grátis</strong> · sem cartão · sem assinatura
+                </p>
 
                 {/* Pack breakdown — desktop */}
                 <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--muted)' }}>
