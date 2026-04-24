@@ -9,8 +9,9 @@ import { IconCamera, IconZap, IconDownload, IconMail, IconPhone, IconArrowRight,
    N6: Page metadata for SEO
    ═══════════════════════════════════════ */
 export const metadata: Metadata = {
-  title: "Sobre — CriaLook | Marketing de Moda com IA",
+  title: "Sobre | CriaLook — Marketing de Moda com IA",
   description: "Conheça a CriaLook: a plataforma que transforma fotos de roupa em campanhas de marketing completas usando inteligência artificial. Feita para lojistas brasileiros.",
+  alternates: { canonical: "/sobre" },
 };
 
 const steps = [

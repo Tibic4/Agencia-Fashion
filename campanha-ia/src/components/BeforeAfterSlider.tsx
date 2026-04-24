@@ -93,14 +93,39 @@ export default function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAft
         <div className="absolute inset-0 bg-black/5" aria-hidden="true" />
       </div>
 
-      {/* Slider Line & Thumb */}
-      <div 
+      {/* Slider Line & Thumb — operável por teclado (setas) */}
+      <div
         className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)]"
         style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
       >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-[0_4px_10px_rgba(0,0,0,0.3)] border border-gray-200">
-          <ChevronsLeftRight className="w-5 h-5 text-gray-700" />
-        </div>
+        <button
+          type="button"
+          role="slider"
+          aria-label="Comparar antes e depois"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(sliderPosition)}
+          aria-valuetext={`Mostrando ${Math.round(sliderPosition)}% da imagem original e ${100 - Math.round(sliderPosition)}% do resultado IA`}
+          onKeyDown={(e) => {
+            const step = e.shiftKey ? 10 : 5;
+            if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              setSliderPosition((p) => Math.max(0, p - step));
+            } else if (e.key === "ArrowRight") {
+              e.preventDefault();
+              setSliderPosition((p) => Math.min(100, p + step));
+            } else if (e.key === "Home") {
+              e.preventDefault();
+              setSliderPosition(0);
+            } else if (e.key === "End") {
+              e.preventDefault();
+              setSliderPosition(100);
+            }
+          }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-[0_4px_10px_rgba(0,0,0,0.3)] border border-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+        >
+          <ChevronsLeftRight className="w-5 h-5 text-gray-700" aria-hidden="true" />
+        </button>
       </div>
       
       {/* Labels */}

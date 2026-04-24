@@ -114,7 +114,7 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
 
   contentParts.push({ type: "text", text: userPrompt });
 
-  // Sonnet call com timeout de 30s + 1 retry
+  // FASE D: callSonnetSafe — retry com backoff exponencial (2 tentativas)
   const callSonnet = () => client.messages.create({
     model: MODEL,
     max_tokens: 1500,
@@ -128,22 +128,32 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
     ],
   });
 
+  async function callWithTimeout(timeoutMs: number): Promise<Anthropic.Message> {
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Sonnet timeout (${timeoutMs}ms)`)), timeoutMs),
+    );
+    return Promise.race([callSonnet(), timeoutPromise]);
+  }
+
+  function isRetryable(err: unknown): boolean {
+    const msg = err instanceof Error ? err.message : String(err);
+    return /timeout|rate.?limit|429|503|504|overloaded|ECONNRESET/i.test(msg);
+  }
+
   let response: Anthropic.Message;
   try {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Sonnet timeout (30s)")), 30_000)
-    );
-    response = await Promise.race([callSonnet(), timeoutPromise]);
+    response = await callWithTimeout(30_000);
   } catch (firstErr) {
-    console.warn(`[Sonnet Copy] ⚠️ Tentativa 1 falhou: ${firstErr instanceof Error ? firstErr.message : firstErr}. Retrying...`);
-    // Retry 1x
+    if (!isRetryable(firstErr)) {
+      console.error(`[Sonnet Copy] ❌ Erro não-retryable:`, firstErr);
+      throw firstErr;
+    }
+    console.warn(`[Sonnet Copy] ⚠️ Tentativa 1 falhou: ${firstErr instanceof Error ? firstErr.message : firstErr}. Backoff 1s + retry...`);
+    await new Promise((r) => setTimeout(r, 1000));
     try {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Sonnet timeout retry (30s)")), 30_000)
-      );
-      response = await Promise.race([callSonnet(), timeoutPromise]);
+      response = await callWithTimeout(45_000);
     } catch (retryErr) {
-      console.error(`[Sonnet Copy] ❌ Retry também falhou: ${retryErr instanceof Error ? retryErr.message : retryErr}`);
+      console.error(`[Sonnet Copy] ❌ Retry também falhou:`, retryErr);
       throw retryErr;
     }
   }

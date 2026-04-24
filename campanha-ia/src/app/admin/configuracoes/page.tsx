@@ -297,11 +297,11 @@ export default function AdminConfiguracoes() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Plano</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Preço/mês</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Campanhas</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Try-On</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Status</th>
+                <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Plano</th>
+                <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Preço/mês</th>
+                <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Campanhas</th>
+                <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Try-On</th>
+                <th scope="col" className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">

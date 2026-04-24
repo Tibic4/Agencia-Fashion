@@ -103,13 +103,13 @@ export default async function AdminCampanhas() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-800">
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Loja</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Objetivo</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Público</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Preço</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tempo</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Loja</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Objetivo</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Público</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Preço</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tempo</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="text-left px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">

@@ -40,6 +40,26 @@ const faqs: FAQ[] = [
   {
     q: "Quero assinar. É seguro?",
     a: "Utilizamos o Mercado Pago para pagamentos — a maior plataforma de pagamentos da América Latina. Seus dados estão 100% protegidos e você pode cancelar a assinatura com 1 clique no painel, sem taxas escondidas."
+  },
+  {
+    q: "Posso usar as fotos em anúncios pagos (Meta Ads, Google)?",
+    a: "Sim, sem restrição. Tudo que a IA gera fica com você — pode usar em tráfego pago, feed, stories, reels, catálogo, WhatsApp Business. Não cobramos royalties, nem limitamos canal."
+  },
+  {
+    q: "A IA mostra minha peça exatamente ou inventa?",
+    a: "Nosso motor Virtual Try-On preserva cor, estampa, textura e caimento da peça real. Detalhes como botões, costuras visíveis e estampas pequenas podem suavizar em fundo complexo — nesses casos, tiramos outra foto mais próxima. Se o resultado não refletir sua peça, devolvemos o crédito."
+  },
+  {
+    q: "E se a cliente pedir a foto real e perceber diferença?",
+    a: "A maioria dos lojistas usa a foto IA para atrair atenção e fecha venda por DM/WhatsApp mandando a foto real da peça. Recomendamos ser transparente: \"foto ilustrativa, peça disponível\". Cliente consciente valoriza isso."
+  },
+  {
+    q: "Se eu cancelar, perco tudo?",
+    a: "Não. Seus créditos avulsos nunca expiram. Sua assinatura pode ser cancelada a qualquer momento — você continua usando até o fim do período já pago. O histórico de campanhas fica disponível por mais 30 dias após o cancelamento."
+  },
+  {
+    q: "Funciona com foto de celular ruim / fundo bagunçado?",
+    a: "Sim. A IA foi treinada em fotos reais de lojistas brasileiros — celular, luz de loja, manequim com etiqueta, fundo bagunçado. Ela isola a peça e coloca em um cenário novo. Só evite fotos desfocadas ou com muita sombra sobre a roupa."
   }
 ];
 

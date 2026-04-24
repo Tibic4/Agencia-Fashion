@@ -224,17 +224,22 @@ export const generateModelPreviewJob = inngest.createFunction(
     retries: 2,
     triggers: [{ event: "model/preview.requested" }],
     onFailure: async ({ event }) => {
-      // Marcar modelo como 'failed' para não ficar eternamente pendente
+      // FASE E: type-guard robusto — Inngest pode envelopar em estruturas diferentes
       try {
         const { createAdminClient } = await import("@/lib/supabase/admin");
         const supabase = createAdminClient();
-        const data = event.data?.event?.data as ModelPreviewEvent;
-        if (data?.modelId) {
+        const rawData =
+          (event.data as unknown as { event?: { data?: ModelPreviewEvent } })?.event?.data ??
+          (event.data as unknown as ModelPreviewEvent);
+        const modelId = typeof rawData?.modelId === "string" ? rawData.modelId : null;
+        if (modelId) {
           await supabase
             .from("store_models")
             .update({ preview_status: "failed", preview_url: null })
-            .eq("id", data.modelId);
-          console.error(`[Inngest:ModelPreview] ❌ Todas as tentativas falharam para model ${data.modelId} — marcado como failed`);
+            .eq("id", modelId);
+          console.error(`[Inngest:ModelPreview] ❌ Falhou p/ model ${modelId} — marcado failed`);
+        } else {
+          console.error("[Inngest:ModelPreview] onFailure: modelId ausente no evento");
         }
       } catch (e) {
         console.error("[Inngest:ModelPreview] Erro no onFailure:", e);

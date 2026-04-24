@@ -182,6 +182,7 @@ export default function AuthLayout({
     <div className="flex min-h-[100dvh]" style={{ background: "var(--surface)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Sidebar — Desktop */}
       <aside
+        aria-label="Navegação lateral"
         className="hidden lg:flex flex-col w-64 fixed inset-y-0 left-0 z-30"
         style={{
           background: "var(--background)",
@@ -197,7 +198,7 @@ export default function AuthLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav aria-label="Menu principal" className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -365,7 +366,7 @@ export default function AuthLayout({
       <MobileTabBar navItems={navItems} pathname={pathname} />
 
       {/* Main Content */}
-      <main className="w-full lg:flex-1 lg:ml-64 pt-14 lg:pt-0">
+      <main id="main-content" className="w-full lg:flex-1 lg:ml-64 pt-14 lg:pt-0">
         <style>{`
           @media (max-width: 1023px) {
             main { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; }

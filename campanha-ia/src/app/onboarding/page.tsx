@@ -897,68 +897,84 @@ export default function Onboarding() {
                 </div>
 
                 <div className="onb-form-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {/* Store name */}
+                  {/* Store name — label associada + autoComplete organization */}
                   <div>
-                    <label className="onb-label">Nome da loja *</label>
+                    <label htmlFor="onb-store-name" className="onb-label">Nome da loja *</label>
                     <input
+                      id="onb-store-name"
+                      name="storeName"
                       type="text"
                       value={storeName}
                       onChange={(e) => setStoreName(e.target.value)}
                       placeholder="Ex: Boutique da Ana, Moda Bella..."
                       className="onb-input"
                       autoFocus
+                      autoComplete="organization"
+                      required
                     />
                   </div>
 
-                  {/* Segments */}
-                  <div>
-                    <label className="onb-label">Segmento principal * <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: "11px" }}>(até 2)</span></label>
-                    <div className="onb-segments">
-                      {segments.map((seg) => (
-                        <button
-                          key={seg.value}
-                          onClick={() => {
-                            setSegment((prev) => {
-                              if (prev.includes(seg.value)) {
-                                return prev.filter((s) => s !== seg.value);
-                              }
-                              if (prev.length >= 2) return prev; // Max 2
-                              return [...prev, seg.value];
-                            });
-                          }}
-                          className="onb-segment-btn"
-                          data-active={segment.includes(seg.value)}
-                        >
-                          <span className="onb-segment-emoji">{seg.emoji}</span>
-                          <div>
-                            <p className="onb-segment-label">{seg.label}</p>
-                            <p className="onb-segment-desc">{seg.desc}</p>
-                          </div>
-                        </button>
-                      ))}
+                  {/* Segments — fieldset semântico */}
+                  <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+                    <legend className="onb-label">Segmento principal * <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: "11px" }}>(até 2)</span></legend>
+                    <div className="onb-segments" role="group" aria-label="Segmentos da loja">
+                      {segments.map((seg) => {
+                        const isActive = segment.includes(seg.value);
+                        return (
+                          <button
+                            key={seg.value}
+                            type="button"
+                            onClick={() => {
+                              setSegment((prev) => {
+                                if (prev.includes(seg.value)) {
+                                  return prev.filter((s) => s !== seg.value);
+                                }
+                                if (prev.length >= 2) return prev;
+                                return [...prev, seg.value];
+                              });
+                            }}
+                            className="onb-segment-btn"
+                            data-active={isActive}
+                            aria-pressed={isActive}
+                          >
+                            <span className="onb-segment-emoji" aria-hidden="true">{seg.emoji}</span>
+                            <div>
+                              <p className="onb-segment-label">{seg.label}</p>
+                              <p className="onb-segment-desc">{seg.desc}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                  </div>
+                  </fieldset>
 
                   {/* City + Instagram row */}
                   <div className="onb-input-row">
                     <div>
-                      <label className="onb-label">Cidade</label>
+                      <label htmlFor="onb-city" className="onb-label">Cidade</label>
                       <input
+                        id="onb-city"
+                        name="city"
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="São Paulo"
                         className="onb-input"
+                        autoComplete="address-level2"
                       />
                     </div>
                     <div>
-                      <label className="onb-label">Instagram</label>
+                      <label htmlFor="onb-instagram" className="onb-label">Instagram</label>
                       <input
+                        id="onb-instagram"
+                        name="instagram"
                         type="text"
                         value={instagram}
                         onChange={(e) => setInstagram(e.target.value)}
                         placeholder="@sualoja"
                         className="onb-input"
+                        autoComplete="username"
+                        inputMode="text"
                       />
                     </div>
                   </div>

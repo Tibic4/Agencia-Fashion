@@ -14,6 +14,7 @@ const PricingTabs = dynamic(() => import("@/components/PricingTabs"));
 const StickyCTA = dynamic(() => import("@/components/StickyCTA"));
 const TestimonialCards = dynamic(() => import("@/components/TestimonialCards"));
 const ScrollTracker = dynamic(() => import("@/components/ScrollTracker"));
+const ShowcaseSection = dynamic(() => import("@/components/ShowcaseSectionLoader"));
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
@@ -112,7 +113,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 pb-16 md:pb-0">
+      <main id="main-content" className="flex-1 pb-16 md:pb-0">
         {/* ═══ HERO — VTO-first above the fold ═══ */}
         <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-x-hidden" style={{ background: 'var(--gradient-hero)' }}>
           {/* Mesh gradient orbs */}
@@ -328,6 +329,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ═══ SHOWCASE — prova social real (FASE G.1) ═══ */}
+        <ShowcaseSection />
+
         {/* ═══ BENEFÍCIOS — Bento Grid ═══ */}
         <section id="beneficios" className="section scroll-mt-20" style={{ background: 'var(--surface)' }}>
           <div className="container">
@@ -438,7 +442,7 @@ export default function Home() {
                 Invista na Sua <span className="gradient-text">Agência Virtual</span>
               </h2>
               <div className="inline-flex items-center gap-2 rounded-xl sm:rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-4 bg-brand-500/10 text-brand-600 border border-brand-200 dark:border-brand-800 dark:text-brand-400 text-center">
-                ⚡ Preço de lançamento — válido até final do mês
+                ⚡ Cancele quando quiser. Créditos não expiram.
               </div>
             </div>
 
