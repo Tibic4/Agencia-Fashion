@@ -561,15 +561,20 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
   // Resetar ou criar store_usage do período
   const usage = await getCurrentUsage(storeId);
   if (usage) {
-    // Período ativo existe — só resetar contador se mudou de plano (upgrade/downgrade).
-    // Se é renovação do mesmo plano (cobrança recorrente mensal), apenas atualizar o limite.
+    // FASE 2.17: NUNCA resetar campaigns_generated em upgrade mid-period.
+    // Antes: upgrade mid-month zerava contador → usuário ganhava N campanhas grátis.
+    // Agora: preserva consumo, só atualiza limite. Renovação normal cai em "else"
+    // porque getCurrentUsage retorna null quando período expirou.
     await supabase
       .from("store_usage")
       .update({
-        campaigns_generated: planChanged ? 0 : usage.campaigns_generated,
+        campaigns_generated: usage.campaigns_generated,
         campaigns_limit: plan.campaigns_per_month,
       })
       .eq("id", usage.id);
+    if (planChanged) {
+      console.log(`[DB] Plano alterado para store ${storeId}: limite agora ${plan.campaigns_per_month}, consumo preservado (${usage.campaigns_generated})`);
+    }
   } else {
     // Período expirado ou inexistente — criar novo período de 30 dias
     const now = new Date();

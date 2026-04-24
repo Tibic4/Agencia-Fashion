@@ -3,6 +3,7 @@ import { getPaymentStatus, getSubscriptionStatus } from "@/lib/payments/mercadop
 import { updateStorePlan, addCreditsToStore } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PLANS, type PlanId, ALL_CREDIT_PACKAGES } from "@/lib/plans";
+import { captureError, logger } from "@/lib/observability";
 import { createHmac, timingSafeEqual } from "crypto";
 
 // Tolerância de 1 centavo para diferenças de arredondamento do MP
@@ -90,7 +91,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log("[Webhook:MercadoPago] Recebido:", JSON.stringify(body, null, 2));
+    // FASE 7.13: não loga body inteiro (PII: payer.email, cpf, cnpj).
+    // Apenas metadados seguros.
+    logger.info("mp_webhook_received", {
+      type: body?.type,
+      action: body?.action,
+      dataId: body?.data?.id,
+      liveMode: body?.live_mode,
+    });
 
     // ── Validar assinatura HMAC ──
     const dataId = body.data?.id ? String(body.data.id) : "";
@@ -116,9 +124,9 @@ export async function POST(request: NextRequest) {
     // Mercado Pago espera 200 OK
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[Webhook:MercadoPago] Erro:", message);
-    // Retorna 200 mesmo em erro para evitar retries infinitos
+    captureError(error, { route: "/api/webhooks/mercadopago" });
+    // Retorna 200 para erros de PROCESSAMENTO conhecidos (evitar retries infinitos do MP).
+    // Bugs inesperados vão para o Sentry via captureError acima.
     return NextResponse.json({ received: true, error: true }, { status: 200 });
   }
 }

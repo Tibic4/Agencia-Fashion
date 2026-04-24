@@ -468,8 +468,12 @@ export async function POST(request: NextRequest) {
               try {
                 const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
                 const sb = createAdmin();
-                const { data: curr } = await sb.from("stores").select("credit_campaigns").eq("id", store.id).single();
-                await sb.from("stores").update({ credit_campaigns: (curr?.credit_campaigns || 0) + 1 }).eq("id", store.id);
+                // FASE 2.14: usa RPC atômica em vez de read-modify-write
+                await sb.rpc("add_credits_atomic", {
+                  p_store_id: store.id,
+                  p_column: "credit_campaigns",
+                  p_quantity: 1,
+                });
                 console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (0 imagens geradas)`);
               } catch (refundErr) {
                 console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
@@ -483,9 +487,8 @@ export async function POST(request: NextRequest) {
                 const { getCurrentUsage: getUsage } = await import("@/lib/db");
                 const usage = await getUsage(store.id);
                 if (usage) {
-                  await sb.from("store_usage").update({
-                    campaigns_generated: Math.max(0, (usage.campaigns_generated || 0) - 1),
-                  }).eq("id", usage.id);
+                  // FASE 2.14: RPC atômica (evita race condition em read-modify-write)
+                  await sb.rpc("decrement_campaigns_used", { p_usage_id: usage.id });
                   console.log(`[Generate] 📋 Slot de plano DEVOLVIDO (0 imagens geradas)`);
                 }
               } catch (refundErr) {

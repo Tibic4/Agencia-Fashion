@@ -7,10 +7,25 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/gerar", "/historico", "/modelo", "/configuracoes", "/plano", "/admin", "/editor", "/onboarding", "/preview", "/api/", "/test-konva"],
+        allow: ["/", "/sobre", "/termos", "/privacidade", "/dpo", "/subprocessadores", "/consentimento-biometrico"],
+        disallow: [
+          "/gerar",
+          "/historico",
+          "/modelo",
+          "/configuracoes",
+          "/plano",
+          "/admin",
+          "/editor",
+          "/onboarding",
+          "/preview",
+          "/api/",
+          "/monitoring",
+          "/monitoring-analytics",
+          "/test-konva",
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

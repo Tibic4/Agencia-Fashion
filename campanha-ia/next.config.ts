@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-
+import { withSentryConfig } from "@sentry/nextjs";
 import path from "path";
 
 const nextConfig: NextConfig = {
@@ -52,4 +52,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Upload de source maps desabilitado se não houver AUTH_TOKEN
+  // (evita quebrar build em ambientes sem credencial Sentry)
+  silent: !process.env.CI,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Tunnel route — contorna ad-blockers
+  tunnelRoute: "/monitoring",
+  // Não subir source maps do client por default (configurar em CI)
+  widenClientFileUpload: true,
+  disableLogger: true,
+});

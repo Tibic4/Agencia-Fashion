@@ -43,55 +43,82 @@ const faqs: FAQ[] = [
   }
 ];
 
+// FASE 5.2: JSON-LD FAQPage schema.org (rich snippet no Google + citação em LLMs)
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 export default function FaqAccordion() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // Open first by default for engagement
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggle = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-4">
-      {faqs.map((faq, index) => {
-        const isOpen = openIndex === index;
-        return (
-          <div 
-            key={index} 
-            className={`border rounded-2xl overflow-hidden transition-colors duration-300 ${isOpen ? 'bg-surface border-brand-300 shadow-md' : 'bg-transparent border-border hover:border-gray-400'}`}
-          >
-            <button
-              onClick={() => toggle(index)}
-              className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus:outline-none min-h-[44px]"
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <div className="w-full max-w-3xl mx-auto space-y-4">
+        {faqs.map((faq, index) => {
+          const isOpen = openIndex === index;
+          const panelId = `faq-panel-${index}`;
+          const buttonId = `faq-button-${index}`;
+          return (
+            <div
+              key={index}
+              className={`border rounded-2xl overflow-hidden transition-colors duration-300 ${isOpen ? 'bg-surface border-brand-300 shadow-md' : 'bg-transparent border-border hover:border-gray-400'}`}
             >
-              <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
-                {faq.q}
-              </span>
-              <motion.div
-                initial={false}
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-                className={`flex-shrink-0 ml-4 ${isOpen ? 'text-brand-500' : 'text-muted-foreground'}`}
+              {/* FASE 6.x: aria-expanded + aria-controls + id para acessibilidade */}
+              <button
+                id={buttonId}
+                onClick={() => toggle(index)}
+                aria-expanded={isOpen}
+                aria-controls={panelId}
+                className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 min-h-[44px]"
               >
-                <ChevronDown className="w-5 h-5" />
-              </motion.div>
-            </button>
-            <AnimatePresence initial={false}>
-              {isOpen && (
+                <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
+                  {faq.q}
+                </span>
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  initial={false}
+                  animate={{ rotate: isOpen ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex-shrink-0 ml-4 ${isOpen ? 'text-brand-500' : 'text-muted-foreground'}`}
+                  aria-hidden="true"
                 >
-                  <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 text-sm sm:text-base text-muted-foreground leading-relaxed">
-                    {faq.a}
-                  </div>
+                  <ChevronDown className="w-5 h-5" />
                 </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        );
-      })}
-    </div>
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 text-sm sm:text-base text-muted-foreground leading-relaxed">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
