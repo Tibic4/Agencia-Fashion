@@ -58,14 +58,8 @@ export default function Footer({ useLinks = false, currentPage }: FooterProps) {
             </div>
           </div>
         </div>
-        {/* Identificação do fornecedor — Decreto 7.962/2013 art. 2º, I-II */}
-        <div className="pt-6 mt-2 text-center text-[11px] leading-relaxed" style={{ borderTop: "1px solid var(--gray-800)", color: "var(--gray-500)" }}>
-          <p>
-            CriaLook é operado por <strong>Alton Jorge de Souza Vieira</strong> — CPF [REDACTED-CPF] ·
-            [REDACTED-ENDERECO] — [REDACTED] — Patrocínio/MG ·
-            <a href="mailto:contato@crialook.com.br" className="underline hover:text-white"> contato@crialook.com.br</a>
-          </p>
-          <p className="mt-2">© {new Date().getFullYear()} CriaLook. Todos os direitos reservados.</p>
+        <div className="pt-8 text-center text-xs" style={{ borderTop: "1px solid var(--gray-800)" }}>
+          © {new Date().getFullYear()} CriaLook. Todos os direitos reservados.
         </div>
       </div>
     </footer>
