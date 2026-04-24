@@ -260,24 +260,40 @@ export async function getStorePlanName(storeId: string): Promise<string> {
 
 /* getModelLimitForPlan and getHistoryDaysForPlan are imported from @/lib/plans */
 
-/** Incrementa o contador de regenerações de uma campanha (ATÔMICO via RPC) */
-export async function incrementRegenCount(campaignId: string): Promise<number> {
+/**
+ * Incrementa o contador de regenerações de uma campanha (ATÔMICO via RPC).
+ * FASE M.2: usa a nova assinatura com storeId (anti-IDOR).
+ * Se storeId for omitido, cai no fallback legado (compat).
+ */
+export async function incrementRegenCount(campaignId: string, storeId?: string): Promise<number> {
   const supabase = createAdminClient();
 
+  // Tentativa 1: nova RPC com validação de ownership (requer storeId)
+  if (storeId) {
+    const { data, error } = await supabase.rpc("increment_regen_count", {
+      p_campaign_id: campaignId,
+      p_store_id: storeId,
+    });
+    if (!error) return data ?? 0;
+    console.warn(`[DB] ⚠️ increment_regen_count(id,storeId) falhou: ${error.message}. Tentando legado...`);
+  }
+
+  // Tentativa 2: RPC legada sem validação de store
   const { data, error } = await supabase.rpc("increment_regen_count", {
     p_campaign_id: campaignId,
   });
 
   if (error) {
     console.warn(`[DB] ⚠️ incrementRegenCount RPC falhou, usando fallback: ${error.message}`);
-    // Fallback para read-modify-write (melhor que quebrar)
     const { data: campaign } = await supabase
       .from("campaigns")
       .select("regen_count")
       .eq("id", campaignId)
       .single();
     const newCount = (campaign?.regen_count || 0) + 1;
-    await supabase.from("campaigns").update({ regen_count: newCount }).eq("id", campaignId);
+    const q = supabase.from("campaigns").update({ regen_count: newCount }).eq("id", campaignId);
+    if (storeId) q.eq("store_id", storeId);
+    await q;
     return newCount;
   }
 
@@ -448,12 +464,13 @@ export async function canGenerateCampaign(storeId: string): Promise<{ allowed: b
 export async function listCampaigns(storeId: string, limit = 20, historyDays = 0) {
   const supabase = createAdminClient();
   
-  // FASE 11.11: não trazemos `output` (JSONB grande) no listing — reduz payload de MB.
-  // Se o caller precisar do output, busca detalhadamente por campaign id.
-  // Mantemos apenas os campos leves usados no grid + uma preview truncada.
+  // FASE 11.11 / M.4: trazemos só image_urls do output (thumb). Campos grandes
+  // (analise, prompts, dicas_postagem) ficam para o endpoint de detalhe.
   let query = supabase
     .from("campaigns")
-    .select("id, title, sequence_number, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, is_favorited, campaign_scores(nota_geral), campaign_outputs(headline_principal)")
+    .select(
+      "id, title, sequence_number, price, objective, target_audience, status, created_at, pipeline_duration_ms, regen_count, preview_token, is_favorited, output, campaign_scores(nota_geral), campaign_outputs(headline_principal)",
+    )
     .eq("store_id", storeId)
     .eq("is_archived", false)
     .order("created_at", { ascending: false })
@@ -469,7 +486,18 @@ export async function listCampaigns(storeId: string, limit = 20, historyDays = 0
   const { data, error } = await query;
 
   if (error) throw new Error(`Erro ao listar campanhas: ${error.message}`);
-  return data || [];
+
+  // Slim: no output mantemos só image_urls (thumbnail). Remove analise/prompts/dicas.
+  return (data || []).map((row) => {
+    const output = row.output as Record<string, unknown> | null;
+    if (output && typeof output === "object") {
+      return {
+        ...row,
+        output: { image_urls: (output.image_urls ?? null) as unknown },
+      };
+    }
+    return row;
+  });
 }
 
 /** Busca uma campanha completa com outputs e scores */

@@ -31,8 +31,17 @@ const ANON_DAILY_LIMIT = 8;
 const AUTH_HOURLY_LIMIT = 15;
 const AUTH_DAILY_LIMIT = 50;
 
-// Limpa entradas expiradas a cada 10 minutos
-setInterval(() => {
+// Limpa entradas expiradas a cada 10 minutos.
+// FASE M.13: guarda o interval no globalThis para limpar em HMR (Next dev).
+// Em produção roda só uma vez porque module cache não é invalidado.
+declare global {
+  // eslint-disable-next-line no-var
+  var __crialook_ratelimit_interval: ReturnType<typeof setInterval> | undefined;
+}
+if (globalThis.__crialook_ratelimit_interval) {
+  clearInterval(globalThis.__crialook_ratelimit_interval);
+}
+globalThis.__crialook_ratelimit_interval = setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of hourlyMap) {
     if (now > entry.resetAt) hourlyMap.delete(key);

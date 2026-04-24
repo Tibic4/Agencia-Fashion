@@ -45,8 +45,12 @@ export async function PATCH(req: NextRequest) {
     .eq("id", storeId);
 
   if (error) {
+    // FASE M.11: não vaza error.message (pode conter nome de coluna/constraint)
     console.error("[Admin:Stores] Update error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao atualizar loja", code: "UPDATE_FAILED" },
+      { status: 500 },
+    );
   }
 
   console.log(`[Admin:Stores] ✅ Store ${storeId} updated:`, updates);
@@ -158,48 +162,28 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
   }
 
-  console.log(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId})...`);
+  console.log(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId}) via RPC cascade...`);
 
-  // Deletar em ordem para respeitar FKs (todas tabelas com store_id FK)
-  const deletions = [
-    { table: "api_cost_logs", filter: "store_id" },
-    { table: "credit_purchases", filter: "store_id" },
-    { table: "api_keys", filter: "store_id" },
-    { table: "campaign_photos", filter: "store_id" },
-    { table: "campaigns", filter: "store_id" },
-    { table: "store_models", filter: "store_id" },
-    { table: "store_usage", filter: "store_id" },
-  ];
+  // FASE M.3: RPC atômica (SECURITY DEFINER, transacional) em vez do loop legado.
+  const { data: deleted, error: rpcError } = await supabase.rpc("delete_store_cascade", {
+    p_store_id: storeId,
+  });
 
-  for (const del of deletions) {
-    const { error } = await supabase
-      .from(del.table)
-      .delete()
-      .eq(del.filter, storeId);
-
-    if (error) {
-      console.warn(`[Admin:Stores] ⚠️ Erro ao deletar ${del.table}:`, error.message);
-    }
+  if (rpcError) {
+    console.error("[Admin:Stores] ❌ delete_store_cascade falhou:", rpcError);
+    return NextResponse.json(
+      { error: "Erro ao deletar loja", code: "DELETE_FAILED" },
+      { status: 500 },
+    );
   }
 
-  // Deletar storage (backdrops)
+  // Deletar storage (backdrops) — fora da transação porque é outro serviço
   try {
     await supabase.storage.from("assets").remove([`backdrops/${storeId}.png`, `backdrops/${storeId}.jpg`]);
   } catch {
-    console.warn("[Admin:Stores] ⚠️ Erro ao limpar storage");
+    console.warn("[Admin:Stores] ⚠️ Erro ao limpar storage (não-crítico)");
   }
 
-  // Deletar a loja
-  const { error: deleteError } = await supabase
-    .from("stores")
-    .delete()
-    .eq("id", storeId);
-
-  if (deleteError) {
-    console.error("[Admin:Stores] ❌ Erro ao deletar loja:", deleteError);
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
-  }
-
-  console.log(`[Admin:Stores] ✅ Loja "${store.name}" deletada com sucesso`);
-  return NextResponse.json({ success: true, deleted: store.name });
+  console.log(`[Admin:Stores] ✅ Loja "${store.name}" deletada — rows:`, deleted);
+  return NextResponse.json({ success: true, deleted: store.name, rows: deleted });
 }

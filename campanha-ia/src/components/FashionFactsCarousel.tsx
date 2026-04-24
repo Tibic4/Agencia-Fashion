@@ -98,6 +98,13 @@ export default function FashionFactsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  // FASE M.8 — FASE 6.x: autoplay pausa se usuário preferir, OU respeita prefers-reduced-motion
+  const [isPaused, setIsPaused] = useState(() => {
+    if (typeof window !== "undefined" && window.matchMedia) {
+      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+    return false;
+  });
 
   // Fetch dynamic facts from DB and merge with static
   useEffect(() => {
@@ -127,11 +134,12 @@ export default function FashionFactsCarousel() {
     }, 200);
   }, [facts.length]);
 
-  // Auto-rotate every 5s (longer = less jarring)
+  // Auto-rotate a cada 5s — respeita isPaused (WCAG 2.2.2 Pause/Stop/Hide)
   useEffect(() => {
+    if (isPaused) return;
     const interval = setInterval(() => goTo(1), 5000);
     return () => clearInterval(interval);
-  }, [goTo]);
+  }, [goTo, isPaused]);
 
   // Swipe support for mobile — no arrows needed
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -244,7 +252,7 @@ export default function FashionFactsCarousel() {
         )}
       </div>
 
-      {/* Minimal dots — inside wrapper, no arrows */}
+      {/* Dots + botão pause (WCAG 2.2.2) */}
       <div
         style={{
           display: "flex",
@@ -257,6 +265,7 @@ export default function FashionFactsCarousel() {
         {Array.from({ length: totalDots }).map((_, i) => (
           <div
             key={i}
+            aria-hidden="true"
             style={{
               width: activeDot === i ? "16px" : "4px",
               height: "4px",
@@ -267,6 +276,24 @@ export default function FashionFactsCarousel() {
             }}
           />
         ))}
+        <button
+          type="button"
+          onClick={() => setIsPaused((p) => !p)}
+          aria-pressed={isPaused}
+          aria-label={isPaused ? "Retomar curiosidades" : "Pausar curiosidades"}
+          style={{
+            marginLeft: "8px",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--muted)",
+            fontSize: "10px",
+            opacity: 0.7,
+            padding: "2px 4px",
+          }}
+        >
+          {isPaused ? "▶" : "⏸"}
+        </button>
       </div>
     </div>
   );

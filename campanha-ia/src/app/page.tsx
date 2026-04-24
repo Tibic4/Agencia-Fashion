@@ -223,10 +223,16 @@ export default function Home() {
                   <span>Modelo Virtual com IA</span>
                 </div>
 
-                <h1 className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6">
+                {/* FASE M.15: desktop usa <p> com estilo h1 — só 1 h1 por página (o mobile).
+                    aria-hidden evita screenreader ler 2x (o layout mobile ou desktop sempre
+                    está visível, mas ambos existem no DOM para responsive CSS). */}
+                <p
+                  aria-hidden="true"
+                  className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6"
+                >
                   Transforme a Foto do Manequim em{" "}
                   <span className="gradient-text">Campanha Pronta.</span>
-                </h1>
+                </p>
 
                 <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
                   Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
