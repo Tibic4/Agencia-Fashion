@@ -40,58 +40,105 @@ const faqs: FAQ[] = [
   {
     q: "Quero assinar. É seguro?",
     a: "Utilizamos o Mercado Pago para pagamentos — a maior plataforma de pagamentos da América Latina. Seus dados estão 100% protegidos e você pode cancelar a assinatura com 1 clique no painel, sem taxas escondidas."
+  },
+  {
+    q: "Posso usar as fotos em anúncios pagos (Meta Ads, Google)?",
+    a: "Sim, sem restrição. Tudo que a IA gera fica com você — pode usar em tráfego pago, feed, stories, reels, catálogo, WhatsApp Business. Não cobramos royalties, nem limitamos canal."
+  },
+  {
+    q: "A IA mostra minha peça exatamente ou inventa?",
+    a: "Nosso motor Virtual Try-On preserva cor, estampa, textura e caimento da peça real. Detalhes como botões, costuras visíveis e estampas pequenas podem suavizar em fundo complexo — nesses casos, tiramos outra foto mais próxima. Se o resultado não refletir sua peça, devolvemos o crédito."
+  },
+  {
+    q: "E se a cliente pedir a foto real e perceber diferença?",
+    a: "A maioria dos lojistas usa a foto IA para atrair atenção e fecha venda por DM/WhatsApp mandando a foto real da peça. Recomendamos ser transparente: \"foto ilustrativa, peça disponível\". Cliente consciente valoriza isso."
+  },
+  {
+    q: "Se eu cancelar, perco tudo?",
+    a: "Não. Seus créditos avulsos nunca expiram. Sua assinatura pode ser cancelada a qualquer momento — você continua usando até o fim do período já pago. O histórico de campanhas fica disponível por mais 30 dias após o cancelamento."
+  },
+  {
+    q: "Funciona com foto de celular ruim / fundo bagunçado?",
+    a: "Sim. A IA foi treinada em fotos reais de lojistas brasileiros — celular, luz de loja, manequim com etiqueta, fundo bagunçado. Ela isola a peça e coloca em um cenário novo. Só evite fotos desfocadas ou com muita sombra sobre a roupa."
   }
 ];
 
+// FASE 5.2: JSON-LD FAQPage schema.org (rich snippet no Google + citação em LLMs)
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 export default function FaqAccordion() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // Open first by default for engagement
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggle = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-4">
-      {faqs.map((faq, index) => {
-        const isOpen = openIndex === index;
-        return (
-          <div 
-            key={index} 
-            className={`border rounded-2xl overflow-hidden transition-colors duration-300 ${isOpen ? 'bg-surface border-brand-300 shadow-md' : 'bg-transparent border-border hover:border-gray-400'}`}
-          >
-            <button
-              onClick={() => toggle(index)}
-              className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus:outline-none min-h-[44px]"
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <div className="w-full max-w-3xl mx-auto space-y-4">
+        {faqs.map((faq, index) => {
+          const isOpen = openIndex === index;
+          const panelId = `faq-panel-${index}`;
+          const buttonId = `faq-button-${index}`;
+          return (
+            <div
+              key={index}
+              className={`border rounded-2xl overflow-hidden transition-colors duration-300 ${isOpen ? 'bg-surface border-brand-300 shadow-md' : 'bg-transparent border-border hover:border-gray-400'}`}
             >
-              <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
-                {faq.q}
-              </span>
-              <motion.div
-                initial={false}
-                animate={{ rotate: isOpen ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-                className={`flex-shrink-0 ml-4 ${isOpen ? 'text-brand-500' : 'text-muted-foreground'}`}
+              {/* FASE 6.x: aria-expanded + aria-controls + id para acessibilidade */}
+              <button
+                id={buttonId}
+                onClick={() => toggle(index)}
+                aria-expanded={isOpen}
+                aria-controls={panelId}
+                className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 min-h-[44px]"
               >
-                <ChevronDown className="w-5 h-5" />
-              </motion.div>
-            </button>
-            <AnimatePresence initial={false}>
-              {isOpen && (
+                <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
+                  {faq.q}
+                </span>
                 <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  initial={false}
+                  animate={{ rotate: isOpen ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex-shrink-0 ml-4 ${isOpen ? 'text-brand-500' : 'text-muted-foreground'}`}
+                  aria-hidden="true"
                 >
-                  <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 text-sm sm:text-base text-muted-foreground leading-relaxed">
-                    {faq.a}
-                  </div>
+                  <ChevronDown className="w-5 h-5" />
                 </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        );
-      })}
-    </div>
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <div className="px-4 sm:px-5 md:px-6 pb-4 sm:pb-5 md:pb-6 text-sm sm:text-base text-muted-foreground leading-relaxed">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }

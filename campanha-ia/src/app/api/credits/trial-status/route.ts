@@ -33,7 +33,10 @@ export async function GET() {
       .lte("price_brl", 20); // trial = R$ 19,90
 
     return NextResponse.json({ used: (count ?? 0) > 0 });
-  } catch {
-    return NextResponse.json({ used: false });
+  } catch (e) {
+    // FASE M.14: em erro, retornamos `used: null` para a UI mostrar "carregando"
+    // em vez de disponibilizar o trial (que seria comportamento inseguro).
+    console.error("[API:trial-status] Erro:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ used: null, error: "check_failed" });
   }
 }

@@ -19,48 +19,27 @@ interface CampaignGenerateEvent {
  * Job: Gerar campanha de IA de forma assíncrona.
  * Inngest v4: createFunction recebe 2 args (config, handler).
  */
+/**
+ * FASE 11.3: DEPRECATED — nenhum caller em produção envia
+ * `campaign/generate.requested`. A geração real acontece síncrona
+ * via SSE em `/api/campaign/generate` (route.ts), não via Inngest.
+ *
+ * Mantido apenas como stub no-op para não quebrar o schema de eventos
+ * em instalações já registradas. Pode ser removido após confirmar que
+ * nenhum cliente legado envia esse evento.
+ */
 export const generateCampaignJob = inngest.createFunction(
   {
     id: "generate-campaign",
-    retries: 2,
+    retries: 0,
     triggers: [{ event: "campaign/generate.requested" }],
   },
-  async ({ event, step }) => {
-    const data = event.data as CampaignGenerateEvent;
-
-    // Step 1: Rodar pipeline de IA
-    const result = await step.run("run-pipeline", async () => {
-      return await runCampaignPipeline(
-        {
-          imageBase64: data.imageBase64,
-          mediaType: data.mediaType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
-          price: data.price,
-          storeName: data.storeName,
-          // Fallback 1x1 transparent PNG — inngest jobs typically don't have a model
-          modelImageBase64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-          modelMediaType: "image/png",
-        },
-        (stepName: string, label: string, progress: number) => {
-          console.log(`[Inngest:Pipeline] ${stepName} (${progress}%) — ${label}`);
-        }
-      );
-    });
-
-    // Step 2: Salvar resultado no banco
-    await step.run("save-result", async () => {
-      await savePipelineResultV3({
-        campaignId: data.campaignId,
-        durationMs: result.durationMs,
-        analise: result.analise as unknown as Record<string, unknown>,
-        imageUrls: result.images.map(img => (img ? "pending" : null)),
-        prompts: (result.vto_hints?.scene_prompts || []) as unknown as Record<string, unknown>[],
-        dicas_postagem: result.dicas_postagem as unknown as Record<string, unknown>,
-        successCount: result.successCount,
-      });
-      await incrementCampaignsUsed(data.storeId);
-    });
-
-    return { campaignId: data.campaignId, durationMs: result.durationMs };
+  async ({ event }) => {
+    console.warn(
+      "[Inngest] ⚠️ generateCampaignJob acionado mas é DEPRECATED — evento ignorado",
+      { eventId: (event as { id?: string })?.id },
+    );
+    return { deprecated: true };
   }
 );
 
@@ -245,17 +224,22 @@ export const generateModelPreviewJob = inngest.createFunction(
     retries: 2,
     triggers: [{ event: "model/preview.requested" }],
     onFailure: async ({ event }) => {
-      // Marcar modelo como 'failed' para não ficar eternamente pendente
+      // FASE E: type-guard robusto — Inngest pode envelopar em estruturas diferentes
       try {
         const { createAdminClient } = await import("@/lib/supabase/admin");
         const supabase = createAdminClient();
-        const data = event.data?.event?.data as ModelPreviewEvent;
-        if (data?.modelId) {
+        const rawData =
+          (event.data as unknown as { event?: { data?: ModelPreviewEvent } })?.event?.data ??
+          (event.data as unknown as ModelPreviewEvent);
+        const modelId = typeof rawData?.modelId === "string" ? rawData.modelId : null;
+        if (modelId) {
           await supabase
             .from("store_models")
             .update({ preview_status: "failed", preview_url: null })
-            .eq("id", data.modelId);
-          console.error(`[Inngest:ModelPreview] ❌ Todas as tentativas falharam para model ${data.modelId} — marcado como failed`);
+            .eq("id", modelId);
+          console.error(`[Inngest:ModelPreview] ❌ Falhou p/ model ${modelId} — marcado failed`);
+        } else {
+          console.error("[Inngest:ModelPreview] onFailure: modelId ausente no evento");
         }
       } catch (e) {
         console.error("[Inngest:ModelPreview] Erro no onFailure:", e);

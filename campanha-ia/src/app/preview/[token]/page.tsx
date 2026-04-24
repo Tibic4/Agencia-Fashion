@@ -41,7 +41,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: "1px solid var(--border)" }}>
         <div className="container flex items-center justify-between h-14">
           <Link href="/" className="flex items-center gap-1.5">
-            <Image src="/logo.png" alt="CriaLook" width={36} height={36} className="rounded-full" />
+            <Image src="/logo.webp" alt="CriaLook" width={36} height={36} className="rounded-full" />
             <span className="text-sm font-bold">Cria<span className="gradient-text">Look</span></span>
           </Link>
           <span className="text-xs px-3 py-1 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
@@ -64,10 +64,17 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
           )}
         </div>
 
-        {/* Produto */}
+        {/* Produto — next/image com priority (é LCP do preview público) */}
         {campaign.product_photo_url && (
-          <div className="rounded-2xl overflow-hidden mb-8" style={{ border: "1px solid var(--border)" }}>
-            <img src={campaign.product_photo_url} alt="Produto" className="w-full max-h-64 sm:max-h-96 object-contain" style={{ background: "#f8f8f8" }} />
+          <div className="relative rounded-2xl overflow-hidden mb-8 bg-[#f8f8f8]" style={{ border: "1px solid var(--border)", minHeight: "256px", aspectRatio: "4/5" }}>
+            <Image
+              src={campaign.product_photo_url}
+              alt={`Produto da campanha${output?.headline_principal ? ": " + String(output.headline_principal).slice(0, 80) : ""}`}
+              fill
+              sizes="(max-width: 640px) 100vw, 768px"
+              className="object-contain"
+              priority
+            />
           </div>
         )}
 

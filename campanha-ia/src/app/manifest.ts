@@ -13,15 +13,30 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "productivity"],
     lang: "pt-BR",
     icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+    ],
+    // FASE H.2: screenshots para install prompt no Chrome/Android
+    screenshots: [
       {
-        src: "/icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
+        src: "/demo-after.webp",
+        sizes: "1080x1350",
+        type: "image/webp",
+        form_factor: "narrow",
+        label: "Exemplo de campanha gerada pela CriaLook",
+      },
+    ],
+    // FASE H.2: shortcuts para ações comuns
+    shortcuts: [
+      {
+        name: "Criar campanha",
+        short_name: "Criar",
+        url: "/gerar",
       },
       {
-        src: "/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
+        name: "Meu histórico",
+        url: "/historico",
       },
     ],
   };

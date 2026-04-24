@@ -16,7 +16,10 @@ import { runStorageGC } from "@/lib/storage/garbage-collector";
 export const storageGarbageCollectorCron = inngest.createFunction(
   {
     id: "storage-garbage-collector",
-    retries: 1, // Retry 1x em caso de falha transitória
+    retries: 1,
+    // FASE 11.1: concurrency:1 garante que nunca roda 2x em paralelo
+    // (cron + acionamento manual poderia duplicar deleção).
+    concurrency: { limit: 1, key: "storage-gc-global" },
     triggers: [
       { cron: "0 3 * * *" }, // Diário às 03:00 UTC
     ],
@@ -55,7 +58,9 @@ export const storageGarbageCollectorCron = inngest.createFunction(
 export const storageGarbageCollectorManual = inngest.createFunction(
   {
     id: "storage-gc-manual",
-    retries: 0, // Sem retry para trigger manual
+    retries: 0,
+    // FASE 11.1: mesmo key de concorrência que o cron — não roda em paralelo.
+    concurrency: { limit: 1, key: "storage-gc-global" },
     triggers: [{ event: "storage/gc.requested" }],
   },
   async ({ event, step }) => {

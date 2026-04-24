@@ -9,7 +9,7 @@ import Image from "next/image";
    ═══════════════════════════════════════ */
 const demos = [
   {
-    image: "/demo-download.jpg",
+    image: "/demo-download.webp",
     alt: "Cropped laranja + bermuda jeans — campanha gerada pela IA",
     caption: `☀️ Casual chic que funciona de segunda a sábado.
 
@@ -35,7 +35,7 @@ Combo lançamento R$ 129 (economize R$ 19) 💸
     ),
   },
   {
-    image: "/demo-2.png",
+    image: "/demo-2.webp",
     alt: "Vestido longo tropical com flores e araras — campanha gerada pela IA",
     caption: `🌺 A estampa que para o feed e faz o dedo clicar.
 
@@ -61,7 +61,7 @@ Frete grátis acima de R$ 150 🚚
     ),
   },
   {
-    image: "/demo-3.png",
+    image: "/demo-3.webp",
     alt: "Vestido verde esmeralda ombro único — campanha gerada pela IA",
     caption: `💚 A cor que domina a temporada — e o closet da sua cliente.
 
@@ -87,7 +87,7 @@ Parcelamos em até 3x sem juros 💳
     ),
   },
   {
-    image: "/demo-4.png",
+    image: "/demo-4.webp",
     alt: "Macaquinho estampado tropical floral — campanha gerada pela IA",
     caption: `🌸 Peça única, estilo de sobra — é vestir e sair arrasando.
 

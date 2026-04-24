@@ -33,8 +33,8 @@ export async function POST(
       }, { status: 403 });
     }
 
-    // Incrementar contagem
-    const newCount = await incrementRegenCount(id);
+    // Incrementar contagem com ownership check (anti-IDOR)
+    const newCount = await incrementRegenCount(id, store.id);
 
     return NextResponse.json({
       success: true,

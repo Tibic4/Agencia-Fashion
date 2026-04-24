@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+// FASE B: allowlist de keys aceitas (evita envenenamento de settings arbitrários)
+const ALLOWED_SETTING_KEYS = [
+  "usd_brl_rate",
+  "gc_last_run",
+  "gc_dry_run_default",
+  "feature_flags",
+  "admin_notice",
+  "maintenance_mode",
+] as const;
+
+const SettingUpsertSchema = z.object({
+  key: z.enum(ALLOWED_SETTING_KEYS as unknown as [string, ...string[]]),
+  value: z.union([z.string(), z.number(), z.boolean(), z.record(z.string(), z.unknown())]),
+});
 
 /**
  * GET /api/admin/settings
@@ -48,10 +64,15 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    const { key, value } = await req.json();
-    if (!key || value === undefined) {
-      return NextResponse.json({ error: "key e value são obrigatórios" }, { status: 400 });
+    const body = await req.json();
+    const parsed = SettingUpsertSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Key inválida ou não permitida", details: parsed.error.issues },
+        { status: 400 },
+      );
     }
+    const { key, value } = parsed.data;
 
     const supabase = createAdminClient();
 

@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, audit/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-build:
+    name: Lint + Type-check + Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: campanha-ia
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: campanha-ia/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build (dry, no secrets)
+        env:
+          # Placeholders só para o build passar. Em prod os reais vêm do .env
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
+          CLERK_SECRET_KEY: sk_test_placeholder
+          NEXT_PUBLIC_APP_URL: https://crialook.com.br
+        run: npm run build
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: campanha-ia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: campanha-ia/package-lock.json
+      - run: npm ci
+      - name: Run vitest
+        run: npm test --if-present -- --run

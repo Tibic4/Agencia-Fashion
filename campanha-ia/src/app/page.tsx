@@ -1,16 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
+// Above-the-fold — eager (hero LCP)
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
-import HowItWorksAnimation from "@/components/HowItWorksAnimation";
-import FaqAccordion from "@/components/FaqAccordion";
-import LiveCampaignDemo from "@/components/LiveCampaignDemo";
-import HumiliatingMathTable from "@/components/HumiliatingMathTable";
-import PricingTabs from "@/components/PricingTabs";
-import StickyCTA from "@/components/StickyCTA";
-import TestimonialCards from "@/components/TestimonialCards";
-import ScrollTracker from "@/components/ScrollTracker";
+// Below-the-fold — dynamic import reduz bundle inicial da landing (-60KB)
+const HowItWorksAnimation = dynamic(() => import("@/components/HowItWorksAnimation"));
+const FaqAccordion = dynamic(() => import("@/components/FaqAccordion"));
+const LiveCampaignDemo = dynamic(() => import("@/components/LiveCampaignDemo"));
+const HumiliatingMathTable = dynamic(() => import("@/components/HumiliatingMathTable"));
+const PricingTabs = dynamic(() => import("@/components/PricingTabs"));
+const StickyCTA = dynamic(() => import("@/components/StickyCTA"));
+const TestimonialCards = dynamic(() => import("@/components/TestimonialCards"));
+const ScrollTracker = dynamic(() => import("@/components/ScrollTracker"));
+const ShowcaseSection = dynamic(() => import("@/components/ShowcaseSectionLoader"));
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
@@ -84,7 +88,7 @@ export default function Home() {
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-1.5">
-            <Image src="/logo.png" alt="CriaLook" width={52} height={52} className="rounded-full" />
+            <Image src="/logo.webp" alt="CriaLook" width={52} height={52} className="rounded-full" />
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
               Cria<span className="gradient-text">Look</span>
             </span>
@@ -109,7 +113,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 pb-16 md:pb-0">
+      <main id="main-content" className="flex-1 pb-16 md:pb-0">
         {/* ═══ HERO — VTO-first above the fold ═══ */}
         <section className="relative pt-24 pb-8 md:pt-36 md:pb-20 overflow-x-hidden" style={{ background: 'var(--gradient-hero)' }}>
           {/* Mesh gradient orbs */}
@@ -122,7 +126,7 @@ export default function Home() {
             <div className="md:hidden text-center stagger-children">
               <div className="inline-flex items-center gap-2 badge badge-brand mb-3">
                 <IconSparkles />
-                <span>Virtual Try-On com IA</span>
+                <span>Modelo Virtual com IA</span>
               </div>
 
               <h1 className="text-[22px] sm:text-[28px] font-bold tracking-tight leading-[1.1] mb-3">
@@ -138,8 +142,8 @@ export default function Home() {
               {/* ── VTO Proof — Before/After Slider (mobile) ── */}
               <div className="mb-6 mx-auto max-w-xs animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <BeforeAfterSlider 
-                  beforeImage="/demo-before.jpg" 
-                  afterImage="/demo-after.png" 
+                  beforeImage="/demo-before.webp" 
+                  afterImage="/demo-after.webp" 
                 />
                 {/* Smart caption preview */}
                 <div className="mt-3 rounded-xl px-4 py-3 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -216,13 +220,19 @@ export default function Home() {
               <div className="stagger-children">
                 <div className="inline-flex items-center gap-2 badge badge-brand mb-6">
                   <IconSparkles />
-                  <span>Virtual Try-On com IA</span>
+                  <span>Modelo Virtual com IA</span>
                 </div>
 
-                <h1 className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6">
+                {/* FASE M.15: desktop usa <p> com estilo h1 — só 1 h1 por página (o mobile).
+                    aria-hidden evita screenreader ler 2x (o layout mobile ou desktop sempre
+                    está visível, mas ambos existem no DOM para responsive CSS). */}
+                <p
+                  aria-hidden="true"
+                  className="text-4xl lg:text-[56px] font-bold tracking-tight leading-[1.06] mb-6"
+                >
                   Transforme a Foto do Manequim em{" "}
                   <span className="gradient-text">Campanha Pronta.</span>
-                </h1>
+                </p>
 
                 <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
                   Envie uma foto. A IA cria sua modelo virtual, veste a peça, monta o cenário da sua marca e escreve a legenda.{" "}
@@ -261,8 +271,8 @@ export default function Home() {
               {/* Right — Interactive Before/After Slider */}
               <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                 <BeforeAfterSlider 
-                  beforeImage="/demo-before.jpg" 
-                  afterImage="/demo-after.png" 
+                  beforeImage="/demo-before.webp" 
+                  afterImage="/demo-after.webp" 
                 />
               </div>
             </div>
@@ -324,6 +334,9 @@ export default function Home() {
             <HowItWorksAnimation />
           </div>
         </section>
+
+        {/* ═══ SHOWCASE — prova social real (FASE G.1) ═══ */}
+        <ShowcaseSection />
 
         {/* ═══ BENEFÍCIOS — Bento Grid ═══ */}
         <section id="beneficios" className="section scroll-mt-20" style={{ background: 'var(--surface)' }}>
@@ -420,10 +433,10 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                A verdadeira <span className="gradient-text">Matemática Humilhante</span>
+                Quanto você <span className="gradient-text">economiza</span> em cada campanha
               </h2>
               <p className="text-sm sm:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Descubra o quanto sua concorrência gasta enquanto você corta até 99% de custo (e de estresse).
+                Compare o que sua concorrência paga a cada shoot com o seu custo real no CriaLook.
               </p>
             </div>
             
@@ -435,7 +448,7 @@ export default function Home() {
                 Invista na Sua <span className="gradient-text">Agência Virtual</span>
               </h2>
               <div className="inline-flex items-center gap-2 rounded-xl sm:rounded-full px-4 py-2 text-xs sm:text-sm font-semibold mb-4 bg-brand-500/10 text-brand-600 border border-brand-200 dark:border-brand-800 dark:text-brand-400 text-center">
-                ⚡ Preço de lançamento — válido até final do mês
+                ⚡ Cancele quando quiser. Créditos não expiram.
               </div>
             </div>
 

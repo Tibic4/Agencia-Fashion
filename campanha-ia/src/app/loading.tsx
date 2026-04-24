@@ -4,7 +4,7 @@ export default function Loading() {
     <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--gradient-hero)" }}>
       <div className="text-center">
         <img
-          src="/logo.png"
+          src="/logo.webp"
           alt="CriaLook"
           width={64}
           height={64}

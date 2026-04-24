@@ -20,6 +20,7 @@ const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
   "/api/campaigns(.*)",
   "/api/store(.*)",
+  "/api/me(.*)",
 ]);
 
 const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
@@ -47,15 +48,38 @@ function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
-async function hasStore(clerkUserId: string): Promise<boolean> {
+async function hasStore(clerkUserId: string): Promise<boolean | "unknown"> {
   const supabase = getSupabaseAdmin();
-  if (!supabase) return true;
-  const { data } = await supabase
-    .from("stores")
-    .select("id")
-    .eq("clerk_user_id", clerkUserId)
-    .maybeSingle();
-  return !!data;
+  if (!supabase) return "unknown";
+  try {
+    const { data, error } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("clerk_user_id", clerkUserId)
+      .maybeSingle();
+    if (error) {
+      console.warn(`[middleware/hasStore] Supabase error: ${error.message}`);
+      return "unknown";
+    }
+    return !!data;
+  } catch (e) {
+    console.warn(`[middleware/hasStore] Exception:`, e);
+    return "unknown";
+  }
+}
+
+/**
+ * Redireciona preservando a querystring original (FASE 1.15).
+ * `new URL(path, request.url)` descarta ?params — esse helper recupera.
+ */
+function redirectTo(path: string, request: Request): NextResponse {
+  const target = new URL(path, request.url);
+  const original = new URL(request.url);
+  // Preserva query params que o usuário tinha (ex: ?id=123, ?utm_*)
+  original.searchParams.forEach((v, k) => {
+    if (!target.searchParams.has(k)) target.searchParams.append(k, v);
+  });
+  return NextResponse.redirect(target);
 }
 
 export default clerkMiddleware(async (auth, request) => {
@@ -71,7 +95,8 @@ export default clerkMiddleware(async (auth, request) => {
     const userId = session.userId;
 
     if (!userId) {
-      return NextResponse.redirect(new URL("/gerar", request.url));
+      // FASE 1.14: redireciona para /sign-in (não /gerar, que pode loopar)
+      return redirectTo("/sign-in", request);
     }
 
     let isAdmin = ADMIN_USER_IDS.includes(userId);
@@ -86,7 +111,8 @@ export default clerkMiddleware(async (auth, request) => {
     }
 
     if (!isAdmin) {
-      return NextResponse.redirect(new URL("/gerar", request.url));
+      // FASE 1.14: usuário logado mas sem permissão → home, não /gerar
+      return redirectTo("/", request);
     }
   } else if (isProtectedRoute(request)) {
     await auth.protect();
@@ -97,13 +123,16 @@ export default clerkMiddleware(async (auth, request) => {
     if (session.userId) {
       if (isOnboardingRoute(request)) {
         const storeExists = await hasStore(session.userId);
-        if (storeExists) {
-          return NextResponse.redirect(new URL("/gerar", request.url));
+        // FASE 1.13: se "unknown" (Supabase falhou), NÃO redireciona — deixa a página tratar.
+        if (storeExists === true) {
+          return redirectTo("/gerar", request);
         }
       } else if (isAuthAppRoute(request)) {
         const storeExists = await hasStore(session.userId);
-        if (!storeExists) {
-          return NextResponse.redirect(new URL("/onboarding", request.url));
+        // FASE 1.13: só redireciona para onboarding se temos certeza que não tem loja.
+        // Em erro de DB, deixamos a página carregar e tratar — evita loop/flicker.
+        if (storeExists === false) {
+          return redirectTo("/onboarding", request);
         }
       }
     }

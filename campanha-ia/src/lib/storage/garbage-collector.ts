@@ -123,76 +123,62 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
 
         if (filesToDelete.length === 0) continue;
 
-        // Deletar arquivos do Storage
+        // FASE E.2: agrupar por bucket e fazer batch remove (reduz N+1 para ~2 calls por campanha)
+        const byBucket = new Map<string, string[]>();
         for (const { bucket, path } of filesToDelete) {
+          if (!byBucket.has(bucket)) byBucket.set(bucket, []);
+          byBucket.get(bucket)!.push(path);
+        }
+
+        for (const [bucket, paths] of byBucket) {
           if (totalDeleted >= MAX_DELETES_PER_RUN) break;
+          const paths_to_delete = paths.slice(0, Math.max(0, MAX_DELETES_PER_RUN - totalDeleted));
+
+          // Estimar tamanho: 300KB por arquivo (suficiente para reporting)
+          const estimatedSize = 300 * 1024 * paths_to_delete.length;
 
           try {
-            // Obter tamanho real do arquivo antes de deletar (se possível)
-            let fileSize = 300 * 1024; // fallback: 300KB
-            try {
-              const { data: fileList } = await supabase.storage
-                .from(bucket)
-                .list(path.substring(0, path.lastIndexOf("/")), {
-                  limit: 1,
-                  search: path.substring(path.lastIndexOf("/") + 1),
-                });
-              if (fileList?.[0]?.metadata?.size) {
-                fileSize = fileList[0].metadata.size;
-              }
-            } catch { /* usar fallback */ }
-
             if (!dryRun) {
               const { error: delError } = await supabase.storage
                 .from(bucket)
-                .remove([path]);
-
-              if (delError) {
-                // Ignorar "not found" — arquivo já foi deletado
-                if (!delError.message.includes("not found") && !delError.message.includes("Not Found")) {
-                  stats.errors.push(`Delete ${bucket}/${path}: ${delError.message}`);
-                }
+                .remove(paths_to_delete);
+              if (delError && !/not found/i.test(delError.message)) {
+                stats.errors.push(`Batch delete ${bucket}: ${delError.message}`);
               }
             }
 
-            stats.filesDeleted++;
-            totalDeleted++;
-            stats.bytesFreed += fileSize;
+            stats.filesDeleted += paths_to_delete.length;
+            totalDeleted += paths_to_delete.length;
+            stats.bytesFreed += estimatedSize;
 
-            console.log(
-              `[GC] ${dryRun ? "🔍 DRY" : "🗑️ DEL"} ${bucket}/${path.slice(0, 50)}...`
-            );
+            console.log(`[GC] ${dryRun ? "🔍 DRY" : "🗑️ DEL"} batch ${bucket}: ${paths_to_delete.length} arquivos`);
           } catch (e) {
-            stats.errors.push(`File ${bucket}/${path}: ${e instanceof Error ? e.message : String(e)}`);
+            stats.errors.push(`Batch ${bucket}: ${e instanceof Error ? e.message : String(e)}`);
           }
         }
 
         // Limpar referências no banco (NÃO deleta o registro, apenas limpa URLs)
         if (!dryRun && filesToDelete.length > 0) {
           try {
+            // FASE E.3: 1 UPDATE em vez de 2 (mescla purge de campaigns + output)
+            const output = campaign.output;
+            const patchedOutput = output?.image_urls
+              ? {
+                  ...output,
+                  image_urls: output.image_urls.map(() => "[purged]"),
+                  purged_at: new Date().toISOString(),
+                }
+              : output;
+
             await supabase
               .from("campaigns")
               .update({
                 product_photo_url: "[purged]",
                 product_photo_storage_path: "[purged]",
                 is_archived: true,
+                ...(patchedOutput !== output ? { output: patchedOutput } : {}),
               })
               .eq("id", campaign.id);
-
-            // Limpar URLs de output (se v3 com image_urls)
-            const output = campaign.output;
-            if (output?.image_urls) {
-              await supabase
-                .from("campaigns")
-                .update({
-                  output: {
-                    ...output,
-                    image_urls: output.image_urls.map(() => "[purged]"),
-                    purged_at: new Date().toISOString(),
-                  },
-                })
-                .eq("id", campaign.id);
-            }
 
             // Limpar campaign_outputs (URLs de imagens geradas pelo pipeline v2)
             await supabase
