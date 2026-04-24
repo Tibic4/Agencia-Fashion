@@ -3,5 +3,34 @@ node_modules
 .git
 .env
 .env.local
+.env.production
+.env.development
 *.md
 .vscode
+.idea
+
+# Poluição de testes/playground
+test-images
+test-batch-*.json
+test-result-*.json
+scratch/
+scripts/*.log
+*.tsbuildinfo
+coverage
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+
+# Imagens source no repositório — o build copia só public/
+*.jpg
+*.jpeg
+*.png
+!public/**/*.jpg
+!public/**/*.png
+!public/**/*.webp
+!public/**/*.svg
+
+# Ops/docs não precisam estar no container
+ops/
+docs/

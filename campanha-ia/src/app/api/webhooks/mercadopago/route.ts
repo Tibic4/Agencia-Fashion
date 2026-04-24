@@ -4,7 +4,7 @@ import { updateStorePlan, addCreditsToStore } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PLANS, type PlanId, ALL_CREDIT_PACKAGES } from "@/lib/plans";
 import { captureError, logger } from "@/lib/observability";
-import { createHmac, timingSafeEqual } from "crypto";
+import { validateMpSignature } from "@/lib/mp-signature";
 
 // Tolerância de 1 centavo para diferenças de arredondamento do MP
 const PRICE_TOLERANCE_BRL = 0.01;
@@ -30,50 +30,12 @@ function validateWebhookSignature(
     console.error("[Webhook:MercadoPago] ❌ MERCADOPAGO_WEBHOOK_SECRET não configurado — rejeitando webhook");
     return false;
   }
-
-  const xSignature = request.headers.get("x-signature") || "";
-  const xRequestId = request.headers.get("x-request-id") || "";
-
-  const parts = Object.fromEntries(
-    xSignature.split(",").map((part) => {
-      const [key, ...val] = part.trim().split("=");
-      return [key, val.join("=")];
-    })
-  );
-
-  const ts = parts["ts"];
-  const v1 = parts["v1"];
-
-  if (!ts || !v1) {
-    console.warn("[Webhook:MercadoPago] ⚠️ Header x-signature incompleto");
-    return false;
-  }
-
-  // Rejeitar ts fora de janela de 5 minutos (mitiga replay antigo)
-  const tsNum = parseInt(ts, 10);
-  if (Number.isFinite(tsNum)) {
-    const nowSec = Math.floor(Date.now() / 1000);
-    // MP envia ts em MILISSEGUNDOS às vezes — normalizar
-    const tsSec = tsNum > 1e12 ? Math.floor(tsNum / 1000) : tsNum;
-    const skew = Math.abs(nowSec - tsSec);
-    if (skew > 300) {
-      console.warn(`[Webhook:MercadoPago] ⚠️ Timestamp fora da janela (skew=${skew}s)`);
-      return false;
-    }
-  }
-
-  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
-  const hmac = createHmac("sha256", secret).update(manifest).digest("hex");
-
-  // Comparação timing-safe
-  try {
-    const a = Buffer.from(hmac, "hex");
-    const b = Buffer.from(v1, "hex");
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+  return validateMpSignature({
+    secret,
+    xSignatureHeader: request.headers.get("x-signature") || "",
+    xRequestId: request.headers.get("x-request-id") || "",
+    dataId,
+  });
 }
 
 /**

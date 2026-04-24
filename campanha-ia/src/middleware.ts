@@ -20,6 +20,7 @@ const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
   "/api/campaigns(.*)",
   "/api/store(.*)",
+  "/api/me(.*)",
 ]);
 
 const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
