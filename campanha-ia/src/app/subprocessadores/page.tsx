@@ -128,7 +128,7 @@ export default function SubprocessadoresPage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">Subprocessadores</h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>
               Lista pública e atualizada dos operadores que tratam dados pessoais em nome do CriaLook, nos termos do
-              art. 5º, VII, da LGPD. Última atualização: [PREENCHER: AAAA-MM-DD].
+              art. 5º, VII, da LGPD. Última atualização: 2026-04-24.
             </p>
           </div>
 

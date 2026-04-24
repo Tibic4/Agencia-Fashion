@@ -117,9 +117,9 @@ const sections: Section[] = [
   {
     title: "10. Controlador e DPO",
     list: [
-      "Controlador: [PREENCHER: razão social] — CNPJ [PREENCHER]",
-      "Endereço: [PREENCHER: endereço completo]",
-      "DPO: dpo@crialook.com.br",
+      "Controlador: Alton Jorge de Souza Vieira (pessoa física) — CPF 075.847.816-08",
+      "Endereço: Avenida dos Bálsamos, 418 — Bairro Morada Nova — Patrocínio/MG",
+      "DPO: Alton Jorge de Souza Vieira — dpo@crialook.com.br",
       "Canal dedicado: /dpo",
     ],
   },
@@ -155,7 +155,7 @@ export default function ConsentimentoBiometricoPage() {
               Consentimento Biométrico — Virtual Try-On
             </h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>
-              Versão 1.0 · Vigente desde [PREENCHER: AAAA-MM-DD] · Consentimento específico e destacado
+              Versão 1.0 · Vigente desde 2026-04-24 · Consentimento específico e destacado
             </p>
           </div>
 

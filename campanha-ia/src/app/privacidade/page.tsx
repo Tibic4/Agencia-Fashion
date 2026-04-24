@@ -25,12 +25,11 @@ const sections: Section[] = [
       "Para fins da Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — “LGPD”), o Controlador dos dados pessoais tratados por meio do CriaLook é:",
     ],
     list: [
-      "Razão Social: [PREENCHER: razão social completa da empresa]",
-      "CNPJ: [PREENCHER: CNPJ com formatação XX.XXX.XXX/XXXX-XX]",
-      "Endereço: [PREENCHER: endereço completo, incluindo CEP]",
+      "Operador / Responsável: Alton Jorge de Souza Vieira (pessoa física, empresário individual)",
+      "CPF: 075.847.816-08",
+      "Endereço: Avenida dos Bálsamos, 418 — Bairro Morada Nova — Patrocínio/MG",
       "E-mail geral: contato@crialook.com.br",
-      "WhatsApp/Telefone: [PREENCHER: número com DDD]",
-      "Encarregado pelo Tratamento de Dados Pessoais (DPO): dpo@crialook.com.br",
+      "Encarregado pelo Tratamento de Dados Pessoais (DPO): Alton Jorge de Souza Vieira — dpo@crialook.com.br",
     ],
   },
   {
@@ -170,7 +169,7 @@ const sections: Section[] = [
     list: [
       "Painel de conta: acesse /conta para editar, exportar ou excluir seus dados (endpoints /api/me e /api/me/export);",
       "E-mail: dpo@crialook.com.br — resposta em até 15 (quinze) dias, conforme art. 19, §3º, LGPD;",
-      "Por escrito: [PREENCHER: endereço postal para recebimento de requisições];",
+      "Por escrito: Avenida dos Bálsamos, 418 — Bairro Morada Nova — Patrocínio/MG (A/C: Alton Jorge de Souza Vieira);",
       "Reclamação à ANPD: https://www.gov.br/anpd — o titular tem direito de peticionar à Autoridade Nacional de Proteção de Dados.",
     ],
   },
@@ -220,7 +219,7 @@ const sections: Section[] = [
       "Em cumprimento ao art. 41 da LGPD, nomeamos um Encarregado pelo Tratamento de Dados Pessoais, que é o canal de comunicação entre o Controlador, os titulares e a ANPD:",
     ],
     list: [
-      "Nome: [PREENCHER: nome do DPO]",
+      "Nome: Alton Jorge de Souza Vieira",
       "E-mail: dpo@crialook.com.br",
       "Página dedicada: /dpo",
     ],
@@ -235,13 +234,13 @@ const sections: Section[] = [
   {
     title: "16. Legislação Aplicável e Foro",
     paragraphs: [
-      "Esta Política é regida pelas leis da República Federativa do Brasil. Fica eleito o foro da comarca de [PREENCHER: comarca da sede da empresa] para dirimir quaisquer controvérsias, ressalvado o direito do consumidor de optar pelo foro de seu domicílio (art. 101, I, CDC).",
+      "Esta Política é regida pelas leis da República Federativa do Brasil. Fica eleito o foro da comarca de Patrocínio/MG para dirimir quaisquer controvérsias, ressalvado o direito do consumidor de optar pelo foro de seu domicílio (art. 101, I, CDC).",
     ],
   },
   {
     title: "17. Histórico de Versões",
     list: [
-      "Versão 1.0 — [PREENCHER: data de vigência inicial, AAAA-MM-DD]",
+      "Versão 1.0 — vigente desde 2026-04-24",
     ],
   },
 ];
@@ -270,22 +269,8 @@ export default function Privacidade() {
             <div className="badge badge-brand mb-4 inline-flex text-[11px]">Legal</div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">Política de Privacidade</h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>
-              Versão 1.0 · Vigente desde [PREENCHER: AAAA-MM-DD] · Conforme LGPD (Lei 13.709/2018)
+              Versão 1.0 · Vigente desde 2026-04-24 · Conforme LGPD (Lei 13.709/2018)
             </p>
-          </div>
-
-          {/* Aviso de minuta */}
-          <div
-            className="rounded-xl p-4 sm:p-5 mb-8 text-xs"
-            style={{
-              background: "color-mix(in srgb, var(--brand-500) 8%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--brand-500) 30%, transparent)",
-              color: "var(--foreground)",
-            }}
-          >
-            <strong>Nota ao leitor:</strong> esta é uma minuta em revisão. Pontos marcados com
-            <code className="mx-1 px-1 rounded" style={{ background: "var(--surface)" }}>[PREENCHER: ...]</code>
-            dependem da conclusão do cadastro da empresa e serão atualizados antes da publicação definitiva.
           </div>
 
           {/* Content */}

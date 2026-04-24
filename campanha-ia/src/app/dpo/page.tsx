@@ -57,7 +57,7 @@ export default function DpoPage() {
                 <dt className="font-semibold w-40" style={{ color: "var(--foreground)" }}>
                   Nome do Encarregado
                 </dt>
-                <dd>[PREENCHER: nome completo do DPO]</dd>
+                <dd>Alton Jorge de Souza Vieira</dd>
               </div>
               <div className="flex flex-col sm:flex-row sm:gap-3">
                 <dt className="font-semibold w-40" style={{ color: "var(--foreground)" }}>
@@ -71,22 +71,16 @@ export default function DpoPage() {
               </div>
               <div className="flex flex-col sm:flex-row sm:gap-3">
                 <dt className="font-semibold w-40" style={{ color: "var(--foreground)" }}>
-                  Telefone
-                </dt>
-                <dd>[PREENCHER: telefone com DDD]</dd>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:gap-3">
-                <dt className="font-semibold w-40" style={{ color: "var(--foreground)" }}>
                   Endereço para correspondência
                 </dt>
-                <dd>[PREENCHER: endereço postal completo]</dd>
+                <dd>Avenida dos Bálsamos, 418 — Bairro Morada Nova — Patrocínio/MG (A/C: Alton Jorge de Souza Vieira)</dd>
               </div>
               <div className="flex flex-col sm:flex-row sm:gap-3">
                 <dt className="font-semibold w-40" style={{ color: "var(--foreground)" }}>
                   Controlador
                 </dt>
                 <dd>
-                  [PREENCHER: razão social] — CNPJ [PREENCHER]
+                  Alton Jorge de Souza Vieira (pessoa física) — CPF 075.847.816-08
                 </dd>
               </div>
             </dl>

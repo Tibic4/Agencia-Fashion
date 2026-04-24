@@ -24,12 +24,11 @@ const sections: Section[] = [
       "O serviço CriaLook é fornecido por:",
     ],
     list: [
-      "Razão Social: [PREENCHER: razão social completa]",
-      "CNPJ: [PREENCHER: CNPJ]",
-      "Endereço: [PREENCHER: endereço completo com CEP]",
+      "Operador / Responsável: Alton Jorge de Souza Vieira (pessoa física, empresário individual)",
+      "CPF: 075.847.816-08",
+      "Endereço: Avenida dos Bálsamos, 418 — Bairro Morada Nova — Patrocínio/MG",
       "E-mail: contato@crialook.com.br",
-      "WhatsApp/Telefone: [PREENCHER: número com DDD]",
-      "Encarregado (DPO): dpo@crialook.com.br",
+      "Encarregado (DPO): Alton Jorge de Souza Vieira — dpo@crialook.com.br",
     ],
   },
   {
@@ -217,7 +216,7 @@ const sections: Section[] = [
     title: "18. Legislação Aplicável e Foro",
     paragraphs: [
       "Estes Termos são regidos pelas leis da República Federativa do Brasil, em especial pelo Código de Defesa do Consumidor (Lei 8.078/1990), Código Civil, Marco Civil da Internet (Lei 12.965/2014), LGPD (Lei 13.709/2018) e Decreto 7.962/2013.",
-      "Fica eleito o foro da comarca de [PREENCHER: comarca da sede da empresa] para dirimir quaisquer controvérsias, ressalvado o direito do consumidor pessoa física de optar pelo foro de seu domicílio (art. 101, I, CDC).",
+      "Fica eleito o foro da comarca de Patrocínio/MG para dirimir quaisquer controvérsias, ressalvado o direito do consumidor pessoa física de optar pelo foro de seu domicílio (art. 101, I, CDC).",
     ],
   },
   {
@@ -255,22 +254,8 @@ export default function Termos() {
             <div className="badge badge-brand mb-4 inline-flex text-[11px]">Legal</div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">Termos de Uso</h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>
-              Versão 1.0 · Vigente desde [PREENCHER: AAAA-MM-DD]
+              Versão 1.0 · Vigente desde 2026-04-24
             </p>
-          </div>
-
-          {/* Aviso de minuta */}
-          <div
-            className="rounded-xl p-4 sm:p-5 mb-8 text-xs"
-            style={{
-              background: "color-mix(in srgb, var(--brand-500) 8%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--brand-500) 30%, transparent)",
-              color: "var(--foreground)",
-            }}
-          >
-            <strong>Nota ao leitor:</strong> esta é uma minuta em revisão. Pontos marcados com
-            <code className="mx-1 px-1 rounded" style={{ background: "var(--surface)" }}>[PREENCHER: ...]</code>
-            dependem da conclusão do cadastro da empresa e serão atualizados antes da publicação definitiva.
           </div>
 
           {/* Content */}
