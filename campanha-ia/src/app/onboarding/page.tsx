@@ -177,6 +177,39 @@ export default function Onboarding() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  /**
+   * Skip onboarding com defaults inteligentes — leva o usuário direto pro /gerar.
+   * Usado quando o lojista quer ver o produto antes de preencher tudo.
+   */
+  const skipAndStart = useCallback(async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/store/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName: storeName?.trim() || "Minha Loja",
+          segment: segment.length > 0 ? segment.join(",") : "moda_feminina",
+          city: city || undefined,
+          instagram: instagram || undefined,
+          brandColor: brandColor || undefined,
+          model: { skip: true },
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(friendlyError(data.error || `Erro ${res.status}`, "Erro ao iniciar."));
+      }
+      router.replace("/gerar?welcome=1");
+    } catch (err: unknown) {
+      setError(friendlyError(err, "Erro ao iniciar. Tente preencher os campos."));
+    } finally {
+      setSaving(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeName, segment, city, instagram, brandColor, router]);
+
   const saveOnboarding = useCallback(
     async (skippedModel: boolean) => {
       setSaving(true);
@@ -891,9 +924,29 @@ export default function Onboarding() {
                 <div style={{ textAlign: "center", marginBottom: "24px" }}>
                   <span className="onb-emoji-hero" style={{ animationDuration: "3s" }}>🏪</span>
                   <h1 className="onb-title">Sobre sua loja</h1>
-                  <p className="onb-subtitle" style={{ marginBottom: "16px" }}>
+                  <p className="onb-subtitle" style={{ marginBottom: "12px" }}>
                     Personalizaremos os textos de campanha com essas informações
                   </p>
+                  {/* Skip onboarding com defaults — UX shortcut pra quem quer ver o produto antes */}
+                  <button
+                    type="button"
+                    onClick={skipAndStart}
+                    disabled={saving}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--brand-600)",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      padding: "4px 8px",
+                      marginBottom: "8px",
+                    }}
+                    aria-label="Pular onboarding e ir direto pra criar campanha"
+                  >
+                    {saving ? "Carregando..." : "Pular e testar agora →"}
+                  </button>
                 </div>
 
                 <div className="onb-form-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
