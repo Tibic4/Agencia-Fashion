@@ -311,7 +311,8 @@ export async function canRegenerate(campaignId: string, _storeId: string): Promi
 /** Gera um token de prévia para uma campanha */
 export async function generatePreviewToken(campaignId: string): Promise<string> {
   const supabase = createAdminClient();
-  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  // FASE B: 32 chars hex = 128 bits de entropia (era 16=64 bits, adivinhável com $$).
+  const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "").slice(0, 32);
   
   await supabase
     .from("campaigns")

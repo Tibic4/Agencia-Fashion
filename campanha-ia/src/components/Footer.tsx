@@ -21,7 +21,7 @@ export default function Footer({ useLinks = false, currentPage }: FooterProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8">
           <div className="sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <Image src="/logo.png" alt="CriaLook" width={40} height={40} className="rounded-full" />
+              <Image src="/logo.webp" alt="CriaLook" width={40} height={40} className="rounded-full" />
               <span className="text-lg font-bold text-white">CriaLook</span>
             </div>
             <p className="text-sm leading-relaxed">

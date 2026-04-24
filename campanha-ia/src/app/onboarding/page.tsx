@@ -796,7 +796,7 @@ export default function Onboarding() {
         {/* Top bar */}
         <div className="onb-topbar">
           <div className="onb-logo">
-            <Image src="/logo.png" alt="CriaLook" width={36} height={36} style={{ borderRadius: '10px' }} />
+            <Image src="/logo.webp" alt="CriaLook" width={36} height={36} style={{ borderRadius: '10px' }} />
             <span className="onb-logo-text">
               Cria<span className="gradient-text">Look</span>
             </span>

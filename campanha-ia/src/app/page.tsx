@@ -1,16 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
+// Above-the-fold — eager (hero LCP)
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
-import HowItWorksAnimation from "@/components/HowItWorksAnimation";
-import FaqAccordion from "@/components/FaqAccordion";
-import LiveCampaignDemo from "@/components/LiveCampaignDemo";
-import HumiliatingMathTable from "@/components/HumiliatingMathTable";
-import PricingTabs from "@/components/PricingTabs";
-import StickyCTA from "@/components/StickyCTA";
-import TestimonialCards from "@/components/TestimonialCards";
-import ScrollTracker from "@/components/ScrollTracker";
+// Below-the-fold — dynamic import reduz bundle inicial da landing (-60KB)
+const HowItWorksAnimation = dynamic(() => import("@/components/HowItWorksAnimation"));
+const FaqAccordion = dynamic(() => import("@/components/FaqAccordion"));
+const LiveCampaignDemo = dynamic(() => import("@/components/LiveCampaignDemo"));
+const HumiliatingMathTable = dynamic(() => import("@/components/HumiliatingMathTable"));
+const PricingTabs = dynamic(() => import("@/components/PricingTabs"));
+const StickyCTA = dynamic(() => import("@/components/StickyCTA"));
+const TestimonialCards = dynamic(() => import("@/components/TestimonialCards"));
+const ScrollTracker = dynamic(() => import("@/components/ScrollTracker"));
 
 /* ═══════════════════════════════════════
    ISR — Regenera a landing page a cada 1h.
@@ -84,7 +87,7 @@ export default function Home() {
       <header className="glass fixed top-0 left-0 right-0 z-50" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-1.5">
-            <Image src="/logo.png" alt="CriaLook" width={52} height={52} className="rounded-full" />
+            <Image src="/logo.webp" alt="CriaLook" width={52} height={52} className="rounded-full" />
             <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
               Cria<span className="gradient-text">Look</span>
             </span>
@@ -138,8 +141,8 @@ export default function Home() {
               {/* ── VTO Proof — Before/After Slider (mobile) ── */}
               <div className="mb-6 mx-auto max-w-xs animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <BeforeAfterSlider 
-                  beforeImage="/demo-before.jpg" 
-                  afterImage="/demo-after.png" 
+                  beforeImage="/demo-before.webp" 
+                  afterImage="/demo-after.webp" 
                 />
                 {/* Smart caption preview */}
                 <div className="mt-3 rounded-xl px-4 py-3 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -261,8 +264,8 @@ export default function Home() {
               {/* Right — Interactive Before/After Slider */}
               <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                 <BeforeAfterSlider 
-                  beforeImage="/demo-before.jpg" 
-                  afterImage="/demo-after.png" 
+                  beforeImage="/demo-before.webp" 
+                  afterImage="/demo-after.webp" 
                 />
               </div>
             </div>
