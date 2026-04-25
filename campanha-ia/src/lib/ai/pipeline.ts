@@ -310,8 +310,8 @@ async function logSonnetCost(
     const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
     exchangeRate = await getExchangeRate();
     const pricing = await getModelPricing();
-    if (pricing["claude-sonnet-4-20250514"]) {
-      modelPrice = pricing["claude-sonnet-4-20250514"];
+    if (pricing["claude-sonnet-4-6"]) {
+      modelPrice = pricing["claude-sonnet-4-6"];
     }
   } catch {
     // fallback
@@ -336,7 +336,7 @@ async function logSonnetCost(
     store_id: storeId,
     campaign_id: campaignId || null,
     provider: "anthropic",
-    model_used: "claude-sonnet-4-20250514",
+    model_used: "claude-sonnet-4-6",
     action: "sonnet_copywriter",
     cost_usd: costUsd,
     cost_brl: costUsd * exchangeRate,

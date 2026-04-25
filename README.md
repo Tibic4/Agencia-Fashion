@@ -56,13 +56,13 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
     │ (paralelo)  │    │      │ checkout +      │
     │             │    │      │ subscriptions   │
     │ • Gemini    │    │      └─────────────────┘
-    │   Analyzer  │    │
-    │ • Gemini    │    │      ┌─────────────────┐
-    │   VTO ×3    │    └──────► Clerk (auth)    │
-    │ • Sonnet    │           └─────────────────┘
-    │   Copy      │
-    │ • Fashn.ai  │           ┌─────────────────┐
-    │ • Fal.ai    │           │ Inngest (jobs)  │
+    │   3.1 Pro   │    │
+    │   Analyzer  │    │      ┌─────────────────┐
+    │ • Gemini    │    └──────► Clerk (auth)    │
+    │   VTO ×3    │           └─────────────────┘
+    │ • Sonnet    │
+    │   4.6 Copy  │           ┌─────────────────┐
+    │             │           │ Inngest (jobs)  │
     └─────┬───────┘           │ • storage GC    │
           │                   │ • model preview │
           │                   └─────────────────┘
@@ -104,10 +104,9 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - **Inngest** (background jobs com retries)
 
 ### IA
-- **Anthropic Claude Sonnet 3.5** — copywriting persuasivo
-- **Google Gemini 2.5 Flash** — vision analyzer + virtual try-on
-- **Fashn.ai** — virtual try-on (alternativo)
-- **Fal.ai** — geração de imagens
+- **Anthropic Claude Sonnet 4.6** (`claude-sonnet-4-6`) — copywriting persuasivo PT-BR com análise visual da peça
+- **Google Gemini 3.1 Pro** — vision analyzer (atributos da peça + scene prompts)
+- **Google Gemini 3 Pro Image** — virtual try-on multi-image fusion (3 imagens em paralelo)
 
 ### Observabilidade
 - **Sentry** (errors + traces, com PII redaction)
@@ -166,7 +165,7 @@ npm ci
 
 # Configurar env (copia o template e preenche)
 cp .env.example .env.local
-# Edita com suas chaves: SUPABASE, CLERK, MERCADOPAGO, ANTHROPIC, GOOGLE_AI, FASHN, FAL
+# Edita com suas chaves: SUPABASE, CLERK, MERCADOPAGO, ANTHROPIC, GOOGLE_AI
 
 # Rodar em dev
 npm run dev   # http://localhost:3000

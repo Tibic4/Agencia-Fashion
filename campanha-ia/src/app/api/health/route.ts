@@ -77,8 +77,6 @@ export async function GET(req: NextRequest) {
     ? { status: "ok" }
     : { status: "warning", detail: "not_configured" };
 
-  checks.fal = process.env.FAL_KEY ? { status: "ok" } : { status: "warning", detail: "not_configured" };
-
   try {
     const supabase = createAdminClient();
     const { error } = await supabase.storage.from("product-photos").list("", { limit: 1 });

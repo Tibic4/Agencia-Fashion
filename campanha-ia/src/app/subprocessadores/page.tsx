@@ -52,22 +52,6 @@ const subprocessors: SubProcessor[] = [
     policy: "https://policies.google.com/privacy",
   },
   {
-    name: "Fashn.ai",
-    country: "Estados Unidos",
-    purpose: "Virtual Try-On — composição de imagem de vestuário em pessoa",
-    legalBasis: "Consentimento específico e destacado (art. 11, I, LGPD)",
-    dataTypes: "Imagens contendo características faciais (dado sensível)",
-    policy: "https://fashn.ai/privacy",
-  },
-  {
-    name: "Fal.ai",
-    country: "Estados Unidos",
-    purpose: "Processamento de IA generativa de imagens",
-    legalBasis: "Execução de contrato e, quando aplicável, consentimento",
-    dataTypes: "Imagens de produtos e metadados",
-    policy: "https://fal.ai/privacy-policy",
-  },
-  {
     name: "Mercado Pago (MercadoLibre)",
     country: "Brasil",
     purpose: "Processamento de pagamentos (PIX, cartão, boleto)",

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
 
 /* ─────────────────────────────────────────
-   Types — v4 payload (Sonnet + FASHN)
+   Types — pipeline payload (Sonnet + Gemini VTO)
 ───────────────────────────────────────── */
 interface GeneratedImage {
   imageBase64?: string;
