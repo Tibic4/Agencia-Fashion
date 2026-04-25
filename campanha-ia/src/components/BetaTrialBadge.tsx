@@ -47,7 +47,7 @@ export default function BetaTrialBadge({ variant = "hero" }: { variant?: "hero" 
     return (
       <span
         className="inline-flex items-center gap-1.5 text-[11px] font-semibold"
-        style={{ color: "var(--brand-600)" }}
+        style={{ color: "var(--brand-300)" }}
       >
         <span className="relative flex h-2 w-2">
           <span
@@ -66,7 +66,7 @@ export default function BetaTrialBadge({ variant = "hero" }: { variant?: "hero" 
       className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-semibold mb-3"
       style={{
         background: "color-mix(in srgb, var(--brand-500) 12%, transparent)",
-        color: "var(--brand-600)",
+        color: "var(--brand-300)",
         border: "1px solid color-mix(in srgb, var(--brand-500) 40%, transparent)",
       }}
       role="status"
