@@ -145,6 +145,36 @@ Degradação linear (avg 443ms → 1179ms = 2.7×) sob 100×carga = infra com ma
 - **Threshold + `abortOnFail`** no k6 é safety net — aborta antes de derrubar produção
 - **`User-Agent` e `X-Loadtest` headers** facilitam filtrar tráfego de teste no PostHog/logs depois
 
+## Outros cenários executados
+
+### Stress test (ramp 50→500 VUs em 12min)
+- **45104 requests, 0.06% failure rate** — só 28 falhas em 45k
+- p95 5586ms, max 20.2s — degradou mas não colapsou
+- PM2 mostrou **0% CPU, 71MB RAM** depois — app não sentiu
+- Veredito: gargalo está em proxy/network, não no Next.js
+
+### Spike test (0 → 200 VUs em 5s)
+- **7646 requests, 0.00% failure rate** durante 2min06s
+- p95 3181ms, p50 1325ms
+- Cenário "viralização Insta/TikTok" absorvido sem dor
+
+### Webhook bombardment (174 req/s POST com HMAC inválido)
+- 31390 requests em 3min
+- **100% das que chegaram no handler foram rejeitadas com 401** (724/724 corretas)
+- 76% retornaram **503 do Nginx** — backend saturado em ~50 req/s sustentados de POST
+- **Veredito**: fraud-gate seguro; Nginx devolve 503 como circuit breaker (comportamento correto)
+- Mercado Pago real envia <10 webhooks/s — 5× de margem confortável
+
+## Capacity findings
+
+| Cenário | Resultado | Margem real |
+|---|---|---|
+| Landing GET (com cache) | 693 req/s direto na VPS | OK até ~2k req/s |
+| Landing GET (via internet, 100 VUs) | 0% erro, p95 2s | OK |
+| Landing GET (via internet, 500 VUs) | 0.06% erro | Limite de proxy/network atingido |
+| Webhook POST | ~50 req/s sustentado antes de 503 | 5× acima do realista |
+| **Bottleneck identificado** | Nginx upstream connection pool / Cloudflare | — |
+
 ## Próximos passos
 
 - Distributed load testing com k6 cloud / múltiplas regiões
