@@ -1,0 +1,4 @@
+reports/
+*.json
+*.html
+.env.loadtest
