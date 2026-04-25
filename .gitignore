@@ -1,1 +1,81 @@
+# ─── Dependencies ─────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.*
+
+# ─── Build output ─────────────────────────────────────────────
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# ─── Environment / secrets ────────────────────────────────────
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+!.env.example
+
+# ─── Logs ─────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── IDE / editor ─────────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# ─── AI / LLM tooling (Claude Code, Cursor) ───────────────────
+.claude/
+.cursor/
+.aider*
+.continue/
+
+# ─── OS files ─────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── Test / coverage ──────────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output
+
+# ─── Vercel / deployment ──────────────────────────────────────
+.vercel
+.netlify
+
+# ─── Misc ─────────────────────────────────────────────────────
+*.pem
+.serverless/
+
+# ─── Project-specific scratch ─────────────────────────────────
+scratch/
+test-images/
+test-batch-*.json
+test-result-*.json
+test-result-foto*.json
+/1000*.jpg
+/1000*.png
+/lh-*.json
+/lh-*.txt
+/build_server.log
+/vps-*.log
+/vps_status_remote.txt
+
+# ─── MCP local config (contém PAT) ────────────────────────────
 .mcp.json
