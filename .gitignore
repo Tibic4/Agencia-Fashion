@@ -79,3 +79,6 @@ test-result-foto*.json
 
 # ─── MCP local config (contém PAT) ────────────────────────────
 .mcp.json
+
+# ─── Currículo / dados pessoais (não vão pro repo público) ────
+curriculo/
