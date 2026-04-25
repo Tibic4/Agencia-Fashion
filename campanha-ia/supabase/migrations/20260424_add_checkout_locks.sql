@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════
 -- Migration: checkout_locks
--- FASE 1.12: idempotência de /api/checkout para impedir
+-- Idempotência de /api/checkout para impedir
 -- que 2 cliques em 100ms criem 2 PreApprovals no Mercado Pago
 -- (cobrança dupla do cartão, subscription órfã).
 --
@@ -79,4 +79,4 @@ END;
 $$;
 
 COMMENT ON TABLE public.checkout_locks IS
-  'Locks transitórios para impedir double-checkout (FASE 1.12). TTL padrão 60s.';
+  'Locks transitórios para impedir double-checkout. TTL padrão 60s.';

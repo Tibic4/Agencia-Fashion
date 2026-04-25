@@ -6,7 +6,7 @@ import { captureError } from "@/lib/observability";
 export const dynamic = "force-dynamic";
 
 /**
- * FASE I — LGPD art. 18 V (direito à portabilidade).
+ * LGPD art. 18 V (direito à portabilidade).
  *
  * GET /api/me/export
  * Retorna JSON com TODOS os dados do usuário autenticado para download.

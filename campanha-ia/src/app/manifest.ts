@@ -17,7 +17,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
     ],
-    // FASE H.2: screenshots para install prompt no Chrome/Android
+    // screenshots para install prompt no Chrome/Android
     screenshots: [
       {
         src: "/demo-after.webp",
@@ -27,7 +27,7 @@ export default function manifest(): MetadataRoute.Manifest {
         label: "Exemplo de campanha gerada pela CriaLook",
       },
     ],
-    // FASE H.2: shortcuts para ações comuns
+    // shortcuts para ações comuns
     shortcuts: [
       {
         name: "Criar campanha",

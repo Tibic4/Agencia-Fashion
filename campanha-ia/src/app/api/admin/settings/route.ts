@@ -5,7 +5,7 @@ import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-// FASE B: allowlist de keys aceitas (evita envenenamento de settings arbitrários)
+// allowlist de keys aceitas (evita envenenamento de settings arbitrários)
 const ALLOWED_SETTING_KEYS = [
   "usd_brl_rate",
   "gc_last_run",

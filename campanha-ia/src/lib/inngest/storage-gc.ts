@@ -17,7 +17,7 @@ export const storageGarbageCollectorCron = inngest.createFunction(
   {
     id: "storage-garbage-collector",
     retries: 1,
-    // FASE 11.1: concurrency:1 garante que nunca roda 2x em paralelo
+    // concurrency:1 garante que nunca roda 2x em paralelo
     // (cron + acionamento manual poderia duplicar deleção).
     concurrency: { limit: 1, key: "storage-gc-global" },
     triggers: [
@@ -59,7 +59,7 @@ export const storageGarbageCollectorManual = inngest.createFunction(
   {
     id: "storage-gc-manual",
     retries: 0,
-    // FASE 11.1: mesmo key de concorrência que o cron — não roda em paralelo.
+    // mesmo key de concorrência que o cron — não roda em paralelo.
     concurrency: { limit: 1, key: "storage-gc-global" },
     triggers: [{ event: "storage/gc.requested" }],
   },

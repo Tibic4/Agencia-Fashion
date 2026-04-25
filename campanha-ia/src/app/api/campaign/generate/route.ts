@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const secondImage = formData.get("secondImage") as File | null;
     const price = formData.get("price") as string | null;
 
-    // FASE 1.11: whitelist de objetivos + sanitização de strings (anti-injection em prompt)
+    // whitelist de objetivos + sanitização de strings (anti-injection em prompt)
     const VALID_OBJECTIVES = new Set(["venda_imediata", "lancamento", "promocao", "engajamento", "trafego"]);
     const rawObjective = (formData.get("objective") as string) || "venda_imediata";
     const objective = VALID_OBJECTIVES.has(rawObjective) ? rawObjective : "venda_imediata";
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Envie a foto do produto", code: "MISSING_IMAGE" }, { status: 400 });
     }
     const priceStr = price || "";
-    // FASE 1.11: valida que price é numérico e dentro de range razoável (R$ 0,01 – R$ 99.999)
+    // valida que price é numérico e dentro de range razoável (R$ 0,01 – R$ 99.999)
     if (priceStr) {
       const priceNum = parseFloat(priceStr.replace(",", "."));
       if (!Number.isFinite(priceNum) || priceNum < 0 || priceNum > 99999) {
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
     } catch (sharpErr) {
       console.warn("[Generate] ⚠️ Sharp indisponível, usando imagem original:", sharpErr);
     }
-    // FASE 11.6: se Sharp falhou E buffer ainda é grande, rejeita em vez de mandar
+    // se Sharp falhou E buffer ainda é grande, rejeita em vez de mandar
     // 50MB pro Gemini (que retorna erro confuso ou estoura rate-limit).
     if (imageBuffer.length > 8 * 1024 * 1024) {
       return NextResponse.json(
@@ -479,7 +479,7 @@ export async function POST(request: NextRequest) {
               try {
                 const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
                 const sb = createAdmin();
-                // FASE 2.14: usa RPC atômica em vez de read-modify-write
+                // usa RPC atômica em vez de read-modify-write
                 await sb.rpc("add_credits_atomic", {
                   p_store_id: store.id,
                   p_column: "credit_campaigns",
@@ -498,7 +498,7 @@ export async function POST(request: NextRequest) {
                 const { getCurrentUsage: getUsage } = await import("@/lib/db");
                 const usage = await getUsage(store.id);
                 if (usage) {
-                  // FASE 2.14: RPC atômica (evita race condition em read-modify-write)
+                  // RPC atômica (evita race condition em read-modify-write)
                   await sb.rpc("decrement_campaigns_used", { p_usage_id: usage.id });
                   console.log(`[Generate] 📋 Slot de plano DEVOLVIDO (0 imagens geradas)`);
                 }

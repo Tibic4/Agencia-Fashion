@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest) {
     .eq("id", storeId);
 
   if (error) {
-    // FASE M.11: não vaza error.message (pode conter nome de coluna/constraint)
+    // não vaza error.message (pode conter nome de coluna/constraint)
     console.error("[Admin:Stores] Update error:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar loja", code: "UPDATE_FAILED" },
@@ -164,7 +164,7 @@ export async function DELETE(req: NextRequest) {
 
   console.log(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId}) via RPC cascade...`);
 
-  // FASE M.3: RPC atômica (SECURITY DEFINER, transacional) em vez do loop legado.
+  // RPC atômica (SECURITY DEFINER, transacional) em vez do loop legado.
   const { data: deleted, error: rpcError } = await supabase.rpc("delete_store_cascade", {
     p_store_id: storeId,
   });

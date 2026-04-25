@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# FASE L: bloqueia commit com lint/type errors.
+# Bloqueia commit com lint/type errors.
 cd campanha-ia || exit 1
 npx tsc --noEmit || {
   echo "✗ TypeScript errors — commit abortado"

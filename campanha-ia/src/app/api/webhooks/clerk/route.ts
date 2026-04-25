@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 export const dynamic = "force-dynamic";
 
 /**
- * FASE F.2 — Webhook Clerk para criar store placeholder em user.created.
+ * Webhook Clerk para criar store placeholder em user.created.
  *
  * Evita o gap: usuário completa sign-up → é redirecionado para /gerar →
  * middleware vê sem loja → redireciona /onboarding. Com esse webhook,

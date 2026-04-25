@@ -88,7 +88,7 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
   console.log(`[GC] 📅 Cutoff: ${cutoffISO} (${RETENTION_DAYS} dias atrás)`);
 
   try {
-    // ─── FASE 1: Campanhas expiradas não-favoritadas ───
+    // ─── Campanhas expiradas não-favoritadas ───
     let offset = 0;
     let hasMore = true;
     let totalDeleted = 0;
@@ -123,7 +123,7 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
 
         if (filesToDelete.length === 0) continue;
 
-        // FASE E.2: agrupar por bucket e fazer batch remove (reduz N+1 para ~2 calls por campanha)
+        // agrupar por bucket e fazer batch remove (reduz N+1 para ~2 calls por campanha)
         const byBucket = new Map<string, string[]>();
         for (const { bucket, path } of filesToDelete) {
           if (!byBucket.has(bucket)) byBucket.set(bucket, []);
@@ -160,7 +160,7 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
         // Limpar referências no banco (NÃO deleta o registro, apenas limpa URLs)
         if (!dryRun && filesToDelete.length > 0) {
           try {
-            // FASE E.3: 1 UPDATE em vez de 2 (mescla purge de campaigns + output)
+            // 1 UPDATE em vez de 2 (mescla purge de campaigns + output)
             const output = campaign.output;
             const patchedOutput = output?.image_urls
               ? {
@@ -202,7 +202,7 @@ export async function runStorageGC(dryRun = false): Promise<GCStats> {
       if (campaigns.length < BATCH_SIZE) hasMore = false;
     }
 
-    // ─── FASE 2: Model previews órfãs ───
+    // ─── Model previews órfãs ───
     await purgeOrphanedModelPreviews(supabase, stats, dryRun);
 
   } catch (e) {

@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════
--- FASE 2 — Blindagem das RPCs + UNIQUE constraints faltantes
+-- Blindagem das RPCs + UNIQUE constraints faltantes
 -- ═══════════════════════════════════════════════════════════
 
 -- ─── 2.6 add_credits_atomic: SECURITY DEFINER + search_path + GRANT restrito ───

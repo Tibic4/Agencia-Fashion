@@ -98,7 +98,7 @@ export default function FashionFactsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  // FASE M.8 — FASE 6.x: autoplay pausa se usuário preferir, OU respeita prefers-reduced-motion
+  // autoplay pausa se usuário preferir, OU respeita prefers-reduced-motion
   const [isPaused, setIsPaused] = useState(() => {
     if (typeof window !== "undefined" && window.matchMedia) {
       return window.matchMedia("(prefers-reduced-motion: reduce)").matches;

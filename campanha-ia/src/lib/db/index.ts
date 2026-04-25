@@ -262,7 +262,7 @@ export async function getStorePlanName(storeId: string): Promise<string> {
 
 /**
  * Incrementa o contador de regenerações de uma campanha (ATÔMICO via RPC).
- * FASE M.2: usa a nova assinatura com storeId (anti-IDOR).
+ * Usa a assinatura com storeId (anti-IDOR).
  * Se storeId for omitido, cai no fallback legado (compat).
  */
 export async function incrementRegenCount(campaignId: string, storeId?: string): Promise<number> {
@@ -327,7 +327,7 @@ export async function canRegenerate(campaignId: string, _storeId: string): Promi
 /** Gera um token de prévia para uma campanha */
 export async function generatePreviewToken(campaignId: string): Promise<string> {
   const supabase = createAdminClient();
-  // FASE B: 32 chars hex = 128 bits de entropia (era 16=64 bits, adivinhável com $$).
+  // 32 chars hex = 128 bits de entropia (era 16=64 bits, adivinhável com $$).
   const token = (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "").slice(0, 32);
   
   await supabase
@@ -464,7 +464,7 @@ export async function canGenerateCampaign(storeId: string): Promise<{ allowed: b
 export async function listCampaigns(storeId: string, limit = 20, historyDays = 0) {
   const supabase = createAdminClient();
   
-  // FASE 11.11 / M.4: trazemos só image_urls do output (thumb). Campos grandes
+  // trazemos só image_urls do output (thumb). Campos grandes
   // (analise, prompts, dicas_postagem) ficam para o endpoint de detalhe.
   let query = supabase
     .from("campaigns")
@@ -593,7 +593,7 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
   // Resetar ou criar store_usage do período
   const usage = await getCurrentUsage(storeId);
   if (usage) {
-    // FASE 2.17: NUNCA resetar campaigns_generated em upgrade mid-period.
+    // NUNCA resetar campaigns_generated em upgrade mid-period.
     // Antes: upgrade mid-month zerava contador → usuário ganhava N campanhas grátis.
     // Agora: preserva consumo, só atualiza limite. Renovação normal cai em "else"
     // porque getCurrentUsage retorna null quando período expirou.

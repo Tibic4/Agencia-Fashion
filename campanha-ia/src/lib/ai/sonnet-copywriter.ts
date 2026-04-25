@@ -114,7 +114,7 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
 
   contentParts.push({ type: "text", text: userPrompt });
 
-  // FASE D: callSonnetSafe — retry com backoff exponencial (2 tentativas)
+  // callSonnetSafe — retry com backoff exponencial (2 tentativas)
   const callSonnet = () => client.messages.create({
     model: MODEL,
     max_tokens: 1500,

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("logo") as File | null;
 
-    // FASE B: allowlist estrita de MIME (rejeita image/svg+xml que pode carregar JS)
+    // allowlist estrita de MIME (rejeita image/svg+xml que pode carregar JS)
     const ALLOWED_MIMES = new Set(["image/png", "image/jpeg", "image/webp"]);
     if (!file || !ALLOWED_MIMES.has(file.type)) {
       return NextResponse.json({ error: "Use PNG, JPEG ou WebP" }, { status: 400 });
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
-    // FASE B: extensão DERIVADA do MIME validado, não do nome do arquivo (anti path-traversal)
+    // extensão DERIVADA do MIME validado, não do nome do arquivo (anti path-traversal)
     const ext =
       file.type === "image/png" ? "png"
       : file.type === "image/webp" ? "webp"

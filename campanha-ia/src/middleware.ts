@@ -69,7 +69,7 @@ async function hasStore(clerkUserId: string): Promise<boolean | "unknown"> {
 }
 
 /**
- * Redireciona preservando a querystring original (FASE 1.15).
+ * Redireciona preservando a querystring original.
  * `new URL(path, request.url)` descarta ?params — esse helper recupera.
  */
 function redirectTo(path: string, request: Request): NextResponse {
@@ -95,7 +95,7 @@ export default clerkMiddleware(async (auth, request) => {
     const userId = session.userId;
 
     if (!userId) {
-      // FASE 1.14: redireciona para /sign-in (não /gerar, que pode loopar)
+      // redireciona para /sign-in (não /gerar, que pode loopar)
       return redirectTo("/sign-in", request);
     }
 
@@ -111,7 +111,7 @@ export default clerkMiddleware(async (auth, request) => {
     }
 
     if (!isAdmin) {
-      // FASE 1.14: usuário logado mas sem permissão → home, não /gerar
+      // usuário logado mas sem permissão → home, não /gerar
       return redirectTo("/", request);
     }
   } else if (isProtectedRoute(request)) {
@@ -123,13 +123,13 @@ export default clerkMiddleware(async (auth, request) => {
     if (session.userId) {
       if (isOnboardingRoute(request)) {
         const storeExists = await hasStore(session.userId);
-        // FASE 1.13: se "unknown" (Supabase falhou), NÃO redireciona — deixa a página tratar.
+        // se "unknown" (Supabase falhou), NÃO redireciona — deixa a página tratar.
         if (storeExists === true) {
           return redirectTo("/gerar", request);
         }
       } else if (isAuthAppRoute(request)) {
         const storeExists = await hasStore(session.userId);
-        // FASE 1.13: só redireciona para onboarding se temos certeza que não tem loja.
+        // só redireciona para onboarding se temos certeza que não tem loja.
         // Em erro de DB, deixamos a página carregar e tratar — evita loop/flicker.
         if (storeExists === false) {
           return redirectTo("/onboarding", request);

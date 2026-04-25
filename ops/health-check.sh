@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════
-# FASE K — Health check externo com alerta Discord/Slack.
+# Health check externo com alerta Discord/Slack.
 # Roda via cron em /etc/cron.d/crialook-health:
 #   */5 * * * * www-data /var/www/crialook/ops/health-check.sh
 # ═══════════════════════════════════════════════════════════

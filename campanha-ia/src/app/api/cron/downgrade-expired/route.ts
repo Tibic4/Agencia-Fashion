@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * FASE F.1 — Cron diário para detectar lojas que deveriam ter sido rebaixadas
+ * Cron diário para detectar lojas que deveriam ter sido rebaixadas
  * para "gratis" porque:
  *  - mercadopago_subscription_id é NULL (assinatura cancelada)
  *  - AND plan_id != plano 'gratis'

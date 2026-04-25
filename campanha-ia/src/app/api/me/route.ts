@@ -6,7 +6,7 @@ import { captureError, logger } from "@/lib/observability";
 export const dynamic = "force-dynamic";
 
 /**
- * FASE I — LGPD art. 18 VI (direito à eliminação).
+ * LGPD art. 18 VI (direito à eliminação).
  *
  * DELETE /api/me
  * Remove a loja do usuário autenticado e todos os dados associados.

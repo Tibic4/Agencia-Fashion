@@ -1,7 +1,7 @@
 "use client";
 import { Star } from "lucide-react";
 
-// FASE 8.3: removidos avatares i.pravatar.cc (eram reconhecivelmente falsos).
+// removidos avatares i.pravatar.cc (eram reconhecivelmente falsos).
 // Substituídos por iniciais coloridas até termos fotos reais dos clientes.
 // TODO: substituir por depoimentos reais com print do Instagram antes de publicar.
 

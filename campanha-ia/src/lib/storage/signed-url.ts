@@ -1,5 +1,5 @@
 /**
- * FASE M.10 — Helper para gerar URLs assinadas temporárias de buckets Supabase.
+ * Helper para gerar URLs assinadas temporárias de buckets Supabase.
  *
  * Uso gradual: substitua chamadas de `supabase.storage.from(b).getPublicUrl(path)`
  * por `getSignedStorageUrl(supabase, b, path)` em endpoints que retornam URLs
