@@ -138,12 +138,14 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - Lazy-load com `next/dynamic` em componentes below-the-fold
 - Preconnect/dns-prefetch para Supabase, Clerk, Mercado Pago
 - Pipeline de IA com **3 VTOs paralelos** + retries exponenciais com circuit breaker
+- **Brotli + Nginx `proxy_cache`** em rotas estáticas (com bypass automático para usuários logados) — landing serve em ~14ms internos, throughput 693 req/s
 
 ### Qualidade de código
 - **33 testes unitários** (Vitest) — HMAC validator, rate-limiter, editor sessions, validation
 - **TypeScript strict** com `noFallthroughCasesInSwitch` + `noImplicitOverride`
 - **CI verde** em cada PR (lint + typecheck + build + tests)
 - **Husky pre-commit** bloqueia commit com type errors
+- **Load testing** com k6 — ramp 1→100 VUs em produção, threshold abort para proteção, métricas baseline vs pós-otimização documentadas em [`loadtests/`](./loadtests/README.md)
 
 ### DevOps
 - **PM2 ecosystem** com `max_memory_restart: 1500M` e graceful shutdown 30s
@@ -201,6 +203,7 @@ npm run build
 ├── docs/
 │   ├── juridico/            # LGPD compliance + minutas
 │   └── legacy/              # Documentos de produto e roadmap
+├── loadtests/               # Scripts k6 + relatórios de performance
 ├── ops/                     # Scripts de produção (backup, healthcheck)
 ├── ecosystem.config.js      # PM2 ecosystem
 ├── nginx-crialook.conf      # Nginx canonical config
