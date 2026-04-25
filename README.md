@@ -115,7 +115,7 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - **Cron health-check** com auto-restart PM2
 
 ### Deploy
-- **VPS** (Ubuntu 24, Nginx, PM2 ecosystem)
+- **VPS KingHost** (Ubuntu 24.04, 2 vCPU, 4GB RAM, Nginx, PM2 ecosystem)
 - **GitHub Actions** (lint + typecheck + build + tests)
 - **Backup automático** Supabase (pg_dump + retenção 30d)
 
@@ -232,7 +232,7 @@ Veja `docs/juridico/LGPD-COMPLIANCE.md` para o checklist legal e `docs/legacy/` 
 ## 🚀 Em produção
 
 - **URL:** https://crialook.com.br
-- **Deploy:** VPS Ubuntu (Hostinger) com Nginx + PM2 + Cloudflare DNS
+- **Deploy:** VPS Ubuntu (KingHost) com Nginx + PM2 + Cloudflare DNS
 - **Database:** Supabase (region SA-East-1)
 - **Build:** GitHub Actions → SSH deploy
 - **Monitoring:** UptimeRobot + Sentry + cron health-check
