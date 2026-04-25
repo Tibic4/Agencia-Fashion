@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // FASE 7.13: não loga body inteiro (PII: payer.email, cpf, cnpj).
+    // não loga body inteiro (PII: payer.email, cpf, cnpj).
     // Apenas metadados seguros.
     logger.info("mp_webhook_received", {
       type: body?.type,
@@ -165,7 +165,7 @@ async function handlePaymentEvent(paymentId: string) {
 
           // Trial bonus: se o external_reference contém bonusModels, creditar modelos também
           // Format estendido: credit|storeId|type|quantity|bonusModels:N
-          // FASE 11.18: cap de bonusModels para evitar que bug futuro credite 9999
+          // cap de bonusModels para evitar que bug futuro credite 9999
           const MAX_BONUS_MODELS = 10;
           const parts = ref.split("|");
           const bonusPart = parts.find(p => p.startsWith("bonusModels:"));

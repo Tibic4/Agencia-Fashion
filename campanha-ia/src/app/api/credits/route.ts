@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // FASE M.6: rate-limit por user (anti-abuso de Preference creation)
+    // rate-limit por user (anti-abuso de Preference creation)
     const rl = checkLoginRateLimit({
       key: `credits:${session.userId}`,
       maxAttempts: 10,

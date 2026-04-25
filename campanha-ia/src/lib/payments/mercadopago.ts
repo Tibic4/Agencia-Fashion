@@ -4,7 +4,7 @@ import { PLANS, type PlanId } from "@/lib/plans";
 // Re-export for consumers that imported PlanId from here
 export { PLANS, type PlanId };
 
-// FASE 11.22: não aceita string vazia. Se MP_ACCESS_TOKEN faltar, cliente é null
+// não aceita string vazia. Se MP_ACCESS_TOKEN faltar, cliente é null
 // e quem tentar usar recebe erro claro em vez de falhar silenciosamente no MP.
 function createMpClient(): MercadoPagoConfig | null {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;

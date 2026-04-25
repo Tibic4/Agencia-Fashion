@@ -69,7 +69,7 @@ function PostHogInit() {
   useEffect(() => {
     if (!hasAnalyticsConsent()) return;
     if (user?.id) {
-      // FASE 7.x: identify apenas com userId; email/name ficam fora (LGPD minimização)
+      // identify apenas com userId; email/name ficam fora (LGPD minimização)
       posthog.identify(user.id);
     }
   }, [user]);
@@ -101,7 +101,6 @@ function safeCapture(event: string, props?: Record<string, unknown>) {
 
 /**
  * Eventos de negócio (funil + monetização).
- * FASE 3.9: ampliado para cobrir todos os eventos relevantes.
  */
 export const analytics = {
   // ── Funil de ativação ──

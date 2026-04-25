@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════
--- FASE M.3 — RPC para deletar loja em cascata (transacional).
+-- RPC para deletar loja em cascata (transacional).
 -- Substitui o loop N-queries em /api/admin/stores DELETE,
 -- garantindo atomicidade (ou tudo apaga ou nada).
 -- ═══════════════════════════════════════════════════════════

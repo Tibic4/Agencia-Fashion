@@ -25,14 +25,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  // FASE 5.13: themeColor com variantes light/dark
+  // themeColor com variantes light/dark
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a12" },
   ],
 };
 
-// FASE 5.4: metadataBase resolve URLs relativas de OG/Twitter corretamente
+// metadataBase resolve URLs relativas de OG/Twitter corretamente
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL || "https://crialook.com.br",
@@ -43,12 +43,12 @@ export const metadata: Metadata = {
   },
   description:
     "Só com uma foto, a IA gera textos, criativos com modelo virtual e estratégias de marketing prontas para postar. Feito para lojistas de moda brasileiros.",
-  // FASE 5.11: keywords removido (Google ignora desde 2009)
+  // keywords removido (Google ignora desde 2009)
   icons: {
     icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: "/icon-192.png",
   },
-  // FASE 5.5: canonical default para home
+  // canonical default para home
   alternates: {
     canonical: "/",
   },
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  // FASE 5.7: bloco twitter/X separado
+  // bloco twitter/X separado
   twitter: {
     card: "summary_large_image",
     title: "CriaLook — Marketing de moda com IA",
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
   authors: [{ name: "CriaLook" }],
 };
 
-// JSON-LD structured data (FASE 5.1, 5.2)
+// JSON-LD structured data
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -163,7 +163,7 @@ export default function RootLayout({
     >
       <html lang="pt-BR" className={`${inter.variable} ${outfit.variable} h-full antialiased`}>
         <head>
-          {/* FASE 4.6: preconnect/dns-prefetch para hosts críticos */}
+          {/* preconnect/dns-prefetch para hosts críticos */}
           <link rel="preconnect" href="https://emybirklqhonqodzyzet.supabase.co" crossOrigin="anonymous" />
           <link rel="dns-prefetch" href="https://emybirklqhonqodzyzet.supabase.co" />
           <link rel="dns-prefetch" href="https://clerk.crialook.com.br" />
@@ -179,7 +179,7 @@ export default function RootLayout({
           />
         </head>
         <body className="min-h-full flex flex-col">
-          {/* FASE 6.1: skip-link para acessibilidade (teclado/screenreader) */}
+          {/* skip-link para acessibilidade (teclado/screenreader) */}
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:outline focus:outline-2 focus:outline-blue-600"

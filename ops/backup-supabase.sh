@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════
-# FASE K — Backup diário do Supabase (schema + dados)
+# Backup diário do Supabase (schema + dados)
 #
 # Roda via cron em /etc/cron.d/crialook-backup:
 #   0 3 * * * www-data /var/www/crialook/ops/backup-supabase.sh

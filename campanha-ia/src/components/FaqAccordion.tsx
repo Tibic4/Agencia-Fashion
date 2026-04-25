@@ -63,7 +63,7 @@ const faqs: FAQ[] = [
   }
 ];
 
-// FASE 5.2: JSON-LD FAQPage schema.org (rich snippet no Google + citação em LLMs)
+// JSON-LD FAQPage schema.org (rich snippet no Google + citação em LLMs)
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -97,7 +97,7 @@ export default function FaqAccordion() {
               key={index}
               className={`border rounded-2xl overflow-hidden transition-colors duration-300 ${isOpen ? 'bg-surface border-brand-300 shadow-md' : 'bg-transparent border-border hover:border-gray-400'}`}
             >
-              {/* FASE 6.x: aria-expanded + aria-controls + id para acessibilidade */}
+              {/* aria-expanded + aria-controls + id para acessibilidade */}
               <button
                 id={buttonId}
                 onClick={() => toggle(index)}

@@ -14,7 +14,7 @@ interface Step {
 interface GenerationLoadingScreenProps {
   step: number;
   steps: Step[];
-  /** Callback opcional para cancelar a geração (FASE M.12). */
+  /** Callback opcional para cancelar a geração. */
   onCancel?: () => void;
 }
 
@@ -157,7 +157,7 @@ export default function GenerationLoadingScreen({ step, steps, onCancel }: Gener
 
   return (
     <div className="gen-loading animate-fade-in" role="status" aria-busy="true">
-      {/* FASE 6.5: live region para screenreaders. Atualiza a cada mudança de fase/status */}
+      {/* live region para screenreaders. Atualiza a cada mudança de fase/status */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         Gerando campanha. Etapa atual: {statusText}. Tempo decorrido: {elapsed} segundos.
       </span>
@@ -249,7 +249,7 @@ export default function GenerationLoadingScreen({ step, steps, onCancel }: Gener
         {/* ── Fashion Facts Carousel ── */}
         {!isComplete && <FashionFactsCarousel />}
 
-        {/* FASE M.12: botão cancelar aparece após 30s — útil em mobile quando travou */}
+        {/* botão cancelar aparece após 30s — útil em mobile quando travou */}
         {!isComplete && elapsed > 30 && onCancel && (
           <button
             type="button"
@@ -262,7 +262,7 @@ export default function GenerationLoadingScreen({ step, steps, onCancel }: Gener
           </button>
         )}
 
-        {/* FASE 4.10: hint "mantenha tela aberta" após 60s */}
+        {/* hint "mantenha tela aberta" após 60s */}
         {!isComplete && elapsed > 60 && (
           <p className="gen-hint" style={{ marginTop: 8, opacity: 0.7 }}>
             💡 Mantenha esta aba aberta enquanto gera — se fechar, você perde o progresso

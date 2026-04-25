@@ -48,7 +48,7 @@ ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# FASE K: non-root user (reduz blast radius de RCE)
+# Non-root user (reduz blast radius de RCE)
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001 -G nodejs
 
 # Copiar apenas o necessário da build

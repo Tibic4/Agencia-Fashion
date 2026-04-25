@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // FASE M.6: rate-limit por user (anti-abuso MP preferences)
+    // rate-limit por user (anti-abuso MP preferences)
     const rl = checkLoginRateLimit({
       key: `checkout:${session.userId}`,
       maxAttempts: 10,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // FASE 1.12: adquirir lock atômico (store_id, plan_id) com TTL de 60s.
+    // adquirir lock atômico (store_id, plan_id) com TTL de 60s.
     // Evita que duplo-clique crie 2 PreApprovals no MP e cobre o cartão 2x.
     const supabase = createAdminClient();
     const { data: lockAcquired, error: lockErr } = await supabase.rpc("acquire_checkout_lock", {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           }).eq("id", store.id);
           console.log(`[API:checkout] 🔄 Assinatura anterior cancelada: ${storeData.mercadopago_subscription_id}`);
         } catch (cancelErr) {
-          // FASE 2.16: se não consegue cancelar, ABORTA (não cria nova sobre a antiga).
+          // se não consegue cancelar, ABORTA (não cria nova sobre a antiga).
           console.error(`[API:checkout] ❌ Falha ao cancelar assinatura anterior — ABORTANDO:`, cancelErr);
           await supabase.rpc("release_checkout_lock", { p_store_id: store.id, p_plan_id: planId });
           return NextResponse.json(

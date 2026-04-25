@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════
 -- Migration: plan_payments_applied
--- FASE 1.3: idempotência do webhook MP para planos recorrentes.
+-- Idempotência do webhook MP para planos recorrentes.
 -- Garante que o mesmo payment_id do Mercado Pago não seja aplicado
 -- duas vezes (evita reset múltiplo de quota do plano).
 -- ═══════════════════════════════════════════════════════════
@@ -35,4 +35,4 @@ CREATE INDEX IF NOT EXISTS idx_plan_payments_store
 
 COMMENT ON TABLE public.plan_payments_applied IS
   'Idempotência: registra cada MP payment_id aplicado a um plano recorrente.
-   Evita que retries do webhook causem double-reset de quota. FASE 1.3 da auditoria.';
+   Evita que retries do webhook causem double-reset de quota.';

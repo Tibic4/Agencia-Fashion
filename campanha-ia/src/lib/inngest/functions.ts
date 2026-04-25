@@ -20,7 +20,7 @@ interface CampaignGenerateEvent {
  * Inngest v4: createFunction recebe 2 args (config, handler).
  */
 /**
- * FASE 11.3: DEPRECATED — nenhum caller em produção envia
+ * DEPRECATED — nenhum caller em produção envia
  * `campaign/generate.requested`. A geração real acontece síncrona
  * via SSE em `/api/campaign/generate` (route.ts), não via Inngest.
  *
@@ -224,7 +224,7 @@ export const generateModelPreviewJob = inngest.createFunction(
     retries: 2,
     triggers: [{ event: "model/preview.requested" }],
     onFailure: async ({ event }) => {
-      // FASE E: type-guard robusto — Inngest pode envelopar em estruturas diferentes
+      // type-guard robusto — Inngest pode envelopar em estruturas diferentes
       try {
         const { createAdminClient } = await import("@/lib/supabase/admin");
         const supabase = createAdminClient();

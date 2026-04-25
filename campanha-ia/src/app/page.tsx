@@ -231,7 +231,7 @@ export default function Home() {
                   <span>Modelo Virtual com IA</span>
                 </div>
 
-                {/* FASE M.15: desktop usa <p> com estilo h1 — só 1 h1 por página (o mobile).
+                {/* desktop usa <p> com estilo h1 — só 1 h1 por página (o mobile).
                     aria-hidden evita screenreader ler 2x. */}
                 <p
                   aria-hidden="true"
@@ -348,7 +348,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══ SHOWCASE — prova social real (FASE G.1) ═══ */}
+        {/* ═══ SHOWCASE — prova social real ═══ */}
         <ShowcaseSection />
 
         {/* ═══ BENEFÍCIOS — Bento Grid ═══ */}

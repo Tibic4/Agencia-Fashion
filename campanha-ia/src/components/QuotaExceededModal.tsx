@@ -40,7 +40,7 @@ export default function QuotaExceededModal({
   const [closing, setClosing] = useState(false);
   const [loadingPkg, setLoadingPkg] = useState<number | null>(null);
 
-  // FASE 6.2: focus trap + restore focus + ESC handler
+  // focus trap + restore focus + ESC handler
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
