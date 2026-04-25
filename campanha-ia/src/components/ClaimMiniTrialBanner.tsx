@@ -110,8 +110,11 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
     <div
       className="rounded-2xl p-4 sm:p-5 mb-4 relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, var(--brand-50), var(--accent-50))",
-        border: "2px solid var(--brand-300)",
+        // Tinta da cor de marca aplicada por cima da surface — funciona em
+        // light e dark sem virar branco-em-branco ou preto-em-preto.
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--brand-500) 12%, var(--surface)) 0%, color-mix(in srgb, var(--accent-500, var(--brand-400)) 10%, var(--surface)) 100%)",
+        border: "2px solid color-mix(in srgb, var(--brand-500) 50%, transparent)",
       }}
       role="region"
       aria-label="Vaga grátis disponível"
@@ -125,13 +128,22 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
           🎁
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--brand-600)" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wider mb-1"
+            style={{ color: "var(--brand-500)" }}
+          >
             Beta · {status.remaining} de {status.total_slots} vagas restantes
           </p>
-          <h3 className="text-base sm:text-lg font-bold mb-1">
+          <h3
+            className="text-base sm:text-lg font-bold mb-1"
+            style={{ color: "var(--foreground)" }}
+          >
             Sua 1ª campanha é por nossa conta 🎁
           </h3>
-          <p className="text-xs sm:text-sm mb-3" style={{ color: "var(--muted)" }}>
+          <p
+            className="text-xs sm:text-sm mb-3"
+            style={{ color: "var(--muted)" }}
+          >
             3 fotos com modelo virtual + legendas prontas. Sem cartão. Sem pegadinha.
           </p>
           <button
