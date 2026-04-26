@@ -92,7 +92,7 @@ const sections: Section[] = [
       "Peticionar à ANPD (www.gov.br/anpd).",
     ],
     tail: [
-      "A revogação pode ser feita pelo painel da conta, pelo e-mail dpo@crialook.com.br ou pelos demais canais indicados na página do DPO.",
+      "A revogação pode ser feita pelo painel da conta, pelo e-mail contato@crialook.com.br ou pelos demais canais indicados na página do DPO.",
     ],
   },
   {
@@ -119,7 +119,7 @@ const sections: Section[] = [
     list: [
       "Controlador: Alton Jorge de Souza Vieira (pessoa física) — CPF [REDACTED-CPF]",
       "Endereço: [REDACTED-ENDERECO] — [REDACTED] — Patrocínio/MG",
-      "DPO: Alton Jorge de Souza Vieira — dpo@crialook.com.br",
+      "DPO: Alton Jorge de Souza Vieira — contato@crialook.com.br",
       "Canal dedicado: /dpo",
     ],
   },
