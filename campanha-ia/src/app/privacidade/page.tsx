@@ -25,11 +25,11 @@ const sections: Section[] = [
       "Para fins da Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — “LGPD”), o Controlador dos dados pessoais tratados por meio do CriaLook é:",
     ],
     list: [
-      "Operador / Responsável: Alton Jorge de Souza Vieira (pessoa física, empresário individual)",
-      "CPF: [REDACTED-CPF]",
-      "Endereço: [REDACTED-ENDERECO] — [REDACTED] — Patrocínio/MG",
-      "E-mail geral: contato@crialook.com.br",
+      "Controlador: Alton Jorge de Souza Vieira (pessoa física, atuando como desenvolvedor independente)",
+      "Localização: Patrocínio/MG, Brasil",
+      "Contato geral: contato@crialook.com.br",
       "Encarregado pelo Tratamento de Dados Pessoais (DPO): Alton Jorge de Souza Vieira — dpo@crialook.com.br",
+      "Dados completos do controlador (CPF, endereço, telefone) podem ser solicitados via e-mail ao DPO em situação que exija formalização (ex.: requerimento da ANPD, processo judicial).",
     ],
   },
   {
@@ -169,7 +169,7 @@ const sections: Section[] = [
     list: [
       "Painel de conta: acesse /conta para editar, exportar ou excluir seus dados (endpoints /api/me e /api/me/export);",
       "E-mail: dpo@crialook.com.br — resposta em até 15 (quinze) dias, conforme art. 19, §3º, LGPD;",
-      "Por escrito: [REDACTED-ENDERECO] — [REDACTED] — Patrocínio/MG (A/C: Alton Jorge de Souza Vieira);",
+      "Por escrito: solicite o endereço de correspondência ao DPO via e-mail (dpo@crialook.com.br);",
       "Reclamação à ANPD: https://www.gov.br/anpd — o titular tem direito de peticionar à Autoridade Nacional de Proteção de Dados.",
     ],
   },

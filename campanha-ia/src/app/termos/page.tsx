@@ -24,11 +24,11 @@ const sections: Section[] = [
       "O serviço CriaLook é fornecido por:",
     ],
     list: [
-      "Operador / Responsável: Alton Jorge de Souza Vieira (pessoa física, empresário individual)",
-      "CPF: [REDACTED-CPF]",
-      "Endereço: [REDACTED-ENDERECO] — [REDACTED] — Patrocínio/MG",
+      "Fornecedor: Alton Jorge de Souza Vieira (pessoa física, atuando como desenvolvedor independente)",
+      "Localização: Patrocínio/MG, Brasil",
       "E-mail: contato@crialook.com.br",
       "Encarregado (DPO): Alton Jorge de Souza Vieira — dpo@crialook.com.br",
+      "Dados completos do fornecedor (CPF, endereço, telefone) podem ser solicitados via e-mail em situações que exijam formalização legal.",
     ],
   },
   {
