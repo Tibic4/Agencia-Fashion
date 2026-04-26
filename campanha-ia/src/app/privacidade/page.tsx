@@ -28,7 +28,7 @@ const sections: Section[] = [
       "Controlador: Alton Jorge de Souza Vieira (pessoa física, atuando como desenvolvedor independente)",
       "Localização: Patrocínio/MG, Brasil",
       "Contato geral: contato@crialook.com.br",
-      "Encarregado pelo Tratamento de Dados Pessoais (DPO): Alton Jorge de Souza Vieira — dpo@crialook.com.br",
+      "Encarregado pelo Tratamento de Dados Pessoais (DPO): Alton Jorge de Souza Vieira — contato@crialook.com.br",
       "Dados completos do controlador (CPF, endereço, telefone) podem ser solicitados via e-mail ao DPO em situação que exija formalização (ex.: requerimento da ANPD, processo judicial).",
     ],
   },
@@ -86,7 +86,7 @@ const sections: Section[] = [
       "A funcionalidade de Virtual Try-On (VTO) processa imagens que podem conter características faciais, sendo estas classificadas como dado pessoal sensível nos termos do art. 5º, II, da LGPD.",
       "O tratamento desses dados é realizado EXCLUSIVAMENTE com consentimento específico, livre, informado e destacado do titular, nos termos do art. 11, I, da LGPD, mediante aceite do Termo de Consentimento Biométrico disponível em /consentimento-biometrico.",
       "O titular é o único responsável por garantir que possui autorização da pessoa retratada nas imagens enviadas. Caso a pessoa retratada seja diferente do titular da conta (ex.: modelo contratada, funcionária, amiga), o titular declara expressamente possuir autorização por escrito dessa pessoa para uso da imagem com finalidade de geração de campanha publicitária por meio de IA.",
-      "O titular pode revogar o consentimento a qualquer momento por meio do painel de conta ou do e-mail dpo@crialook.com.br. A revogação não afeta tratamentos realizados anteriormente com base no consentimento legitimamente prestado.",
+      "O titular pode revogar o consentimento a qualquer momento por meio do painel de conta ou do e-mail contato@crialook.com.br. A revogação não afeta tratamentos realizados anteriormente com base no consentimento legitimamente prestado.",
     ],
   },
   {
@@ -168,8 +168,8 @@ const sections: Section[] = [
     ],
     list: [
       "Painel de conta: acesse /conta para editar, exportar ou excluir seus dados (endpoints /api/me e /api/me/export);",
-      "E-mail: dpo@crialook.com.br — resposta em até 15 (quinze) dias, conforme art. 19, §3º, LGPD;",
-      "Por escrito: solicite o endereço de correspondência ao DPO via e-mail (dpo@crialook.com.br);",
+      "E-mail: contato@crialook.com.br — resposta em até 15 (quinze) dias, conforme art. 19, §3º, LGPD;",
+      "Por escrito: solicite o endereço de correspondência ao DPO via e-mail (contato@crialook.com.br);",
       "Reclamação à ANPD: https://www.gov.br/anpd — o titular tem direito de peticionar à Autoridade Nacional de Proteção de Dados.",
     ],
   },
@@ -220,7 +220,7 @@ const sections: Section[] = [
     ],
     list: [
       "Nome: Alton Jorge de Souza Vieira",
-      "E-mail: dpo@crialook.com.br",
+      "E-mail: contato@crialook.com.br",
       "Página dedicada: /dpo",
     ],
   },

@@ -64,8 +64,8 @@ export default function DpoPage() {
                   E-mail
                 </dt>
                 <dd>
-                  <a href="mailto:dpo@crialook.com.br" className="underline hover:opacity-80">
-                    dpo@crialook.com.br
+                  <a href="mailto:contato@crialook.com.br" className="underline hover:opacity-80">
+                    contato@crialook.com.br
                   </a>
                 </dd>
               </div>
@@ -125,7 +125,7 @@ export default function DpoPage() {
                 {" "}e <code className="px-1 rounded" style={{ background: "var(--background)" }}>/api/me/export</code>);
               </li>
               <li>
-                Por e-mail a <a href="mailto:dpo@crialook.com.br" className="underline">dpo@crialook.com.br</a>;
+                Por e-mail a <a href="mailto:contato@crialook.com.br" className="underline">contato@crialook.com.br</a>;
               </li>
               <li>Por carta registrada ao endereço acima informado.</li>
             </ul>

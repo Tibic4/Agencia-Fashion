@@ -249,8 +249,8 @@ export default function SubprocessadoresPage() {
               Alterações na lista de subprocessadores são comunicadas com antecedência mínima de 15 (quinze) dias por
               e-mail e/ou aviso destacado na Plataforma, salvo se a alteração for necessária por razões legais ou de
               segurança com urgência. O histórico de versões fica disponível sob demanda pelo canal{" "}
-              <a href="mailto:dpo@crialook.com.br" className="underline">
-                dpo@crialook.com.br
+              <a href="mailto:contato@crialook.com.br" className="underline">
+                contato@crialook.com.br
               </a>
               .
             </p>
