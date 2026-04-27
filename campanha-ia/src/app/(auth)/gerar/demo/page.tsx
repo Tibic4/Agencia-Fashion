@@ -380,8 +380,11 @@ export default function ResultadoCampanha() {
     <div style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Header */}
       <div
-        className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3"
-        style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
+        className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3 backdrop-blur-xl"
+        style={{
+          background: "color-mix(in oklab, var(--background) 80%, transparent)",
+          borderBottom: "1px solid var(--border)",
+        }}
       >
         <button
           onClick={() => router.back()}
@@ -400,8 +403,18 @@ export default function ResultadoCampanha() {
       <div className="w-full max-w-5xl mx-auto px-0 sm:px-4 py-6 space-y-8" style={{ overflowX: "hidden" }}>
 
         {/* ── Título ── */}
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold mb-1">Suas fotos ficaram incríveis! 🎉</h1>
+        <div className="px-4 sm:px-0">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 leading-tight">
+            <span style={{
+              background: "linear-gradient(135deg, var(--foreground) 0%, var(--brand-600) 60%, #a855f7 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>
+              Suas fotos ficaram incríveis!
+            </span>{" "}
+            <span aria-hidden>🎉</span>
+          </h1>
           <p className="text-xs sm:text-sm" style={{ color: "var(--muted)", wordBreak: "break-word" }}>
             {analise?.produto?.nome_generico && `${analise.produto.nome_generico} · `}
             Escolha a sua favorita e baixe para postar{data?.durationMs ? ` · gerado em ${(data.durationMs / 1000).toFixed(0)}s` : ""}
@@ -539,10 +552,7 @@ export default function ResultadoCampanha() {
 
         {/* ── Foto selecionada + Formato + Download ── */}
         {selectedImage && (
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <div className="surface-card overflow-hidden">
             {/* Header */}
             <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border)" }}>
               <IconStar />
@@ -675,7 +685,7 @@ export default function ResultadoCampanha() {
 
             {/* ── Legendas por plataforma (tabs) ── */}
             {dicas.legendas && dicas.legendas.length >= 3 ? (
-              <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card overflow-hidden">
                 {/* Tab bar */}
                 <div className="flex" style={{ borderBottom: "1px solid var(--border)" }}>
                   {["📸 Feed", "💬 WhatsApp", "📱 Stories"].map((label, i) => (
@@ -751,7 +761,7 @@ export default function ResultadoCampanha() {
             ) : (
               /* Fallback: campanhas antigas sem legendas[] */
               dicas.caption_sugerida && (
-                <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="surface-card p-4 space-y-2 relative">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
@@ -785,7 +795,7 @@ export default function ResultadoCampanha() {
 
             {/* ── Hashtags (sempre visíveis, com copiar) ── */}
             {dicas.hashtags && dicas.hashtags.length > 0 && (
-              <div className="rounded-2xl p-4 space-y-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}># HASHTAGS</p>
                   <button
@@ -851,15 +861,15 @@ export default function ResultadoCampanha() {
 
             {/* ── Grid: Horário + Tom + CTA ── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-2xl p-3 sm:p-4 space-y-1 relative" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card p-3 sm:p-4 space-y-1 relative">
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
                 <p className="text-xs sm:text-sm font-semibold">{dicas.melhor_horario || "Entre 18h–21h"}</p>
               </div>
-              <div className="rounded-2xl p-3 sm:p-4 space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card p-3 sm:p-4 space-y-1">
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
                 <p className="text-xs sm:text-sm font-semibold">{dicas.tom_legenda || "Descontraído e acolhedor"}</p>
               </div>
-              <div className="rounded-2xl p-3 sm:p-4 space-y-1 col-span-2 sm:col-span-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card p-3 sm:p-4 space-y-1 col-span-2 sm:col-span-1">
                 <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
                 <p className="text-xs sm:text-sm font-semibold">{dicas.cta || "Chama no direct!"}</p>
               </div>

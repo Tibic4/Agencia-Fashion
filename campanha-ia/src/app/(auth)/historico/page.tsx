@@ -243,7 +243,7 @@ export default function Historico() {
 
       {/* Nota de filtro de histórico — só mostra quando há campanhas e o plano limita */}
       {planInfo && planInfo.historyDays > 0 && campaigns.length > 0 && (
-        <div className="mb-4 px-4 py-3 rounded-xl flex items-center gap-2 text-xs" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="surface-card mb-4 px-4 py-3 flex items-center gap-2 text-xs">
           <span style={{ color: "var(--muted)" }}>📅</span>
           <p style={{ color: "var(--muted)" }}>
             Mostrando últimos <strong style={{ color: "var(--foreground)" }}>{historyLabel}</strong>
@@ -312,11 +312,11 @@ export default function Historico() {
                     exit={{ opacity: 0, scale: 0.9, y: -10 }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     key={campaign.id}
-                    className="rounded-2xl p-3 sm:p-4 transition-all group overflow-hidden"
-                    style={{
-                      background: isFav ? "var(--brand-50, rgba(236,72,153,0.04))" : "var(--background)",
-                      border: isFav ? "1px solid var(--brand-200, rgba(236,72,153,0.2))" : "1px solid var(--border)",
-                    }}
+                    className={`surface-card surface-card-hover p-3 sm:p-4 transition-all group overflow-hidden ${isFav ? "ring-1 ring-inset" : ""}`}
+                    style={isFav ? {
+                      background: "linear-gradient(165deg, color-mix(in oklab, var(--brand-50) 70%, var(--surface)) 0%, var(--surface-2) 100%)",
+                      borderColor: "var(--brand-200, rgba(236,72,153,0.25))",
+                    } : undefined}
                   >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     {/* Star favorite button */}

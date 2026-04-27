@@ -1221,7 +1221,7 @@ export default function GerarCampanha() {
 
             {/* CTA comprar modelo avulsa — quando atingiu limite e plano não é free */}
             {maxModels > 0 && customModels.length >= maxModels && (
-              <div className="mt-3 p-2.5 rounded-xl text-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card mt-3 p-2.5 text-center">
                 <p className="text-xs" style={{ color: "var(--muted)" }}>
                   Limite atingido ({customModels.length}/{maxModels}) ·{" "}
                   <a href="/plano" className="font-semibold" style={{ color: "var(--brand-600)" }}>
@@ -1391,7 +1391,7 @@ export default function GerarCampanha() {
           </div>
 
           {/* Generate button (Flutuante no Mobile, Natural no Desktop) */}
-          <div className="sticky md:bottom-6 lg:static lg:bottom-auto px-4 py-3 lg:p-0 my-4 lg:my-0 z-20 w-full rounded-2xl lg:rounded-none shadow-[0_8px_30px_rgba(0,0,0,0.12)] lg:shadow-none border border-border lg:border-none bg-background/90 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none transition-all" style={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}>
+          <div className="sticky md:bottom-6 lg:static lg:bottom-auto px-4 py-3 lg:p-0 my-4 lg:my-0 z-20 w-full lg:rounded-none lg:shadow-none lg:border-none lg:bg-transparent lg:backdrop-blur-none transition-all surface-card lg:!bg-transparent lg:!shadow-none lg:!border-none backdrop-blur-xl" style={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}>
             {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
               <Link
                 href="/plano"
@@ -1488,10 +1488,7 @@ export default function GerarCampanha() {
                 {/* Tip cards — visual, easy to scan */}
                 <div className="space-y-2.5 mb-6">
                   {/* Tip 1 */}
-                  <div
-                    className="flex items-center gap-3 p-3.5 rounded-xl"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-                  >
+                  <div className="surface-card flex items-center gap-3 p-3.5">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={{ background: "var(--brand-50)", color: "var(--brand-500)" }}
@@ -1511,10 +1508,7 @@ export default function GerarCampanha() {
                   </div>
 
                   {/* Tip 2 */}
-                  <div
-                    className="flex items-center gap-3 p-3.5 rounded-xl"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-                  >
+                  <div className="surface-card flex items-center gap-3 p-3.5">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={{ background: "var(--accent-50, var(--brand-50))", color: "var(--accent-500, var(--brand-500))" }}
