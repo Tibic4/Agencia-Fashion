@@ -679,17 +679,46 @@ export default function ResultadoCampanha() {
               <div className="surface-card overflow-hidden">
                 {/* Tab bar */}
                 <div className="flex" style={{ borderBottom: "1px solid var(--border)" }}>
-                  {["📸 Feed", "💬 WhatsApp", "📱 Stories"].map((label, i) => (
+                  {/* SVG icons em vez de emoji — 📸 renderiza inconsistente em alguns Chrome/Windows */}
+                  {[
+                    {
+                      label: "Feed",
+                      icon: (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                          <circle cx="12" cy="13" r="3"/>
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "WhatsApp",
+                      icon: (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                        </svg>
+                      ),
+                    },
+                    {
+                      label: "Stories",
+                      icon: (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                          <path d="M12 18h.01"/>
+                        </svg>
+                      ),
+                    },
+                  ].map((tab, i) => (
                     <button
                       key={i}
                       onClick={() => { setCopyTab(i); haptics.light(); }}
-                      className="flex-1 py-3 text-xs font-bold transition-all relative min-h-[48px] active:scale-[0.97]"
+                      className="flex-1 py-3 text-xs font-bold transition-all relative min-h-[48px] active:scale-[0.97] inline-flex items-center justify-center gap-1.5"
                       style={{
                         color: copyTab === i ? "var(--brand-700)" : "var(--muted)",
                         background: copyTab === i ? "var(--brand-50)" : "transparent",
                       }}
                     >
-                      {label}
+                      {tab.icon}
+                      <span>{tab.label}</span>
                       {copyTab === i && (
                         <span className="absolute bottom-0 left-[15%] right-[15%] h-[2.5px] rounded-full transition-all" style={{ background: "var(--brand-500)" }} />
                       )}
