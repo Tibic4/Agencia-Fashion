@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import FashionFactsCarousel from "./FashionFactsCarousel";
 import "./GenerationLoadingScreen.css";
@@ -14,8 +14,6 @@ interface Step {
 interface GenerationLoadingScreenProps {
   step: number;
   steps: Step[];
-  /** Callback opcional para cancelar a geração. */
-  onCancel?: () => void;
 }
 
 /* ═══════════════════════════════════════
@@ -120,7 +118,7 @@ function formatTime(seconds: number): string {
 /* ═══════════════════════════════════════
    Component
    ═══════════════════════════════════════ */
-export default function GenerationLoadingScreen({ step, steps, onCancel }: GenerationLoadingScreenProps) {
+export default function GenerationLoadingScreen({ step, steps }: GenerationLoadingScreenProps) {
   const isComplete = step >= steps.length - 1;
 
   // ── Single elapsed timer (drives everything) ──
@@ -248,26 +246,6 @@ export default function GenerationLoadingScreen({ step, steps, onCancel }: Gener
 
         {/* ── Fashion Facts Carousel ── */}
         {!isComplete && <FashionFactsCarousel />}
-
-        {/* botão cancelar aparece após 30s — útil em mobile quando travou */}
-        {!isComplete && elapsed > 30 && onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="mt-4 text-xs underline opacity-60 hover:opacity-100 transition"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
-            aria-label="Cancelar geração da campanha"
-          >
-            Cancelar geração
-          </button>
-        )}
-
-        {/* hint "mantenha tela aberta" após 60s */}
-        {!isComplete && elapsed > 60 && (
-          <p className="gen-hint" style={{ marginTop: 8, opacity: 0.7 }}>
-            💡 Mantenha esta aba aberta enquanto gera — se fechar, você perde o progresso
-          </p>
-        )}
 
         {/* ── Completion area ── */}
         {isComplete && (
