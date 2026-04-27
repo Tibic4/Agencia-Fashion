@@ -418,13 +418,13 @@ export default function ResultadoCampanha() {
         {/* ── Foto Principal (mobile: hero + thumbs) ── */}
         <div>
           {/* Hero Image — mobile: full width, desktop: hidden (uses grid below) */}
-          <div className="block sm:hidden">
+          <div className="block sm:hidden px-2">
             {selectedImage ? (
               <div
                 className="relative rounded-2xl overflow-hidden w-full"
                 style={{
                   aspectRatio: "3/4",
-                  boxShadow: "0 0 0 1px var(--brand-500), 0 0 0 5px rgba(217,70,239,0.18), 0 24px 48px -16px rgba(217,70,239,0.28)",
+                  boxShadow: "0 0 0 1px var(--brand-500), 0 0 0 4px rgba(217,70,239,0.16), 0 20px 40px -16px rgba(217,70,239,0.24)",
                   background: "var(--surface)",
                 }}
               >
