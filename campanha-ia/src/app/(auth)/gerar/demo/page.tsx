@@ -379,13 +379,7 @@ export default function ResultadoCampanha() {
   return (
     <div style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Header */}
-      <div
-        className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3 backdrop-blur-xl"
-        style={{
-          background: "color-mix(in oklab, var(--background) 80%, transparent)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3 glass">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70 min-h-[44px]"
@@ -430,8 +424,7 @@ export default function ResultadoCampanha() {
                 className="relative rounded-2xl overflow-hidden w-full"
                 style={{
                   aspectRatio: "3/4",
-                  border: "3px solid var(--brand-500)",
-                  boxShadow: "0 0 0 4px var(--brand-100)",
+                  boxShadow: "0 0 0 1px var(--brand-500), 0 0 0 5px rgba(217,70,239,0.18), 0 24px 48px -16px rgba(217,70,239,0.28)",
                   background: "var(--surface)",
                 }}
               >
@@ -473,10 +466,9 @@ export default function ResultadoCampanha() {
                   style={{
                     width: "72px",
                     height: "96px",
-                    border: selectedIndex === idx
-                      ? "3px solid var(--brand-500)"
-                      : "2px solid var(--border)",
-                    boxShadow: selectedIndex === idx ? "0 0 0 3px var(--brand-100)" : "none",
+                    boxShadow: selectedIndex === idx
+                      ? "0 0 0 1px var(--brand-500), 0 0 0 4px rgba(217,70,239,0.16), 0 8px 20px -8px rgba(217,70,239,0.32)"
+                      : "0 0 0 1px var(--border)",
                     opacity: img ? 1 : 0.35,
                     cursor: img ? "pointer" : "not-allowed",
                   }}
@@ -509,11 +501,10 @@ export default function ResultadoCampanha() {
                   className="w-full relative rounded-2xl overflow-hidden transition-all"
                   style={{
                     aspectRatio: "3/4",
-                    border: selectedIndex === idx
-                      ? "3px solid var(--brand-500)"
-                      : "2px solid var(--border)",
                     background: "var(--surface)",
-                    boxShadow: selectedIndex === idx ? "0 0 0 4px var(--brand-100)" : "none",
+                    boxShadow: selectedIndex === idx
+                      ? "0 0 0 1px var(--brand-500), 0 0 0 5px rgba(217,70,239,0.18), 0 16px 36px -12px rgba(217,70,239,0.28)"
+                      : "0 0 0 1px var(--border)",
                     opacity: img ? 1 : 0.4,
                     cursor: img ? "pointer" : "not-allowed",
                   }}
