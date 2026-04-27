@@ -59,6 +59,12 @@ export interface PipelineInput {
   storeSegment?: string;
   productType?: string;
   material?: string;
+  /**
+   * Locale do app que disparou a geração — controla o idioma do copy
+   * gerado pelo Sonnet. Default `pt-BR` mantém compatibilidade com chamadas
+   * antigas (dashboard web, curl, jobs internos).
+   */
+  targetLocale?: "pt-BR" | "en";
   /** Controle e tracking */
   storeId?: string;
   campaignId?: string;
@@ -144,6 +150,7 @@ export async function runCampaignPipeline(
     productMediaType: input.mediaType,
     targetAudience: input.targetAudience,
     toneOverride: input.toneOverride,
+    targetLocale: input.targetLocale ?? "pt-BR",
   }).then((copyResult) => {
     // Log custo Sonnet (fire-and-forget)
     if (input.storeId) {
