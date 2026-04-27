@@ -23,22 +23,28 @@ function redactObject<T>(obj: T): T {
   return out as unknown as T;
 }
 
+const isProd = process.env.NODE_ENV === "production";
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  // Sentry off em dev — replay/traces atrasam HMR e poluem o console.
+  enabled: isProd,
 
   // Performance: captura 20% das transações
   tracesSampleRate: 0.2,
 
-  // Replay: captura sessões com erro, com PII mascarada
+  // Replay: captura sessões com erro, com PII mascarada (só em prod)
   replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 1.0,
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      maskAllInputs: true,
-      blockAllMedia: true,
-    }),
-  ],
+  replaysOnErrorSampleRate: isProd ? 1.0 : 0,
+  integrations: isProd
+    ? [
+        Sentry.replayIntegration({
+          maskAllText: true,
+          maskAllInputs: true,
+          blockAllMedia: true,
+        }),
+      ]
+    : [],
 
   environment: process.env.NODE_ENV || "development",
   // Desliga PII-by-default (email, IP) — redact explícito controla o resto.

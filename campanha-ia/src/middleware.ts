@@ -41,6 +41,13 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
+// Cookie cache p/ flag has_store — evita query Supabase a cada navegação.
+// Why: middleware.ts roda em TODA rota protegida. Sem cache eram 200-500ms/click.
+// Cookie é por-userId pra invalidar ao trocar de conta. TTL 1h é seguro: pior caso
+// é um redirect indevido p/ /onboarding após deletar loja — fluxo raro.
+const STORE_COOKIE_PREFIX = "cl_hs_";
+const STORE_COOKIE_TTL = 60 * 60; // 1h em segundos
+
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -121,20 +128,40 @@ export default clerkMiddleware(async (auth, request) => {
     // e /gerar,/historico etc → /onboarding se não tem loja
     const session = await auth();
     if (session.userId) {
+      const cookieName = STORE_COOKIE_PREFIX + session.userId;
+      const cached = request.cookies.get(cookieName)?.value;
+
+      let storeExists: boolean | "unknown";
+      if (cached === "1") storeExists = true;
+      else if (cached === "0") storeExists = false;
+      else storeExists = await hasStore(session.userId);
+
+      let response: NextResponse | undefined;
       if (isOnboardingRoute(request)) {
-        const storeExists = await hasStore(session.userId);
         // se "unknown" (Supabase falhou), NÃO redireciona — deixa a página tratar.
         if (storeExists === true) {
-          return redirectTo("/gerar", request);
+          response = redirectTo("/gerar", request);
         }
       } else if (isAuthAppRoute(request)) {
-        const storeExists = await hasStore(session.userId);
         // só redireciona para onboarding se temos certeza que não tem loja.
         // Em erro de DB, deixamos a página carregar e tratar — evita loop/flicker.
         if (storeExists === false) {
-          return redirectTo("/onboarding", request);
+          response = redirectTo("/onboarding", request);
         }
       }
+
+      // Persist cache só quando bateu no DB (não sobrescreve a cada hit do cookie).
+      if (cached === undefined && storeExists !== "unknown") {
+        const res = response ?? NextResponse.next();
+        res.cookies.set(cookieName, storeExists ? "1" : "0", {
+          maxAge: STORE_COOKIE_TTL,
+          path: "/",
+          sameSite: "lax",
+          httpOnly: true,
+        });
+        return res;
+      }
+      if (response) return response;
     }
   }
 });
