@@ -22,6 +22,18 @@ export const dynamic = "force-dynamic";
 const IS_DEMO_MODE = !process.env.GEMINI_API_KEY && !process.env.GOOGLE_AI_API_KEY;
 
 /**
+ * Lê o header X-App-Locale enviado pelo app (PT-BR/EN). Default PT-BR
+ * mantém compatibilidade com chamadas antigas (dashboard web, curl etc).
+ */
+function parseTargetLocale(req: NextRequest): "pt-BR" | "en" {
+  const raw = req.headers.get("x-app-locale") || req.headers.get("X-App-Locale");
+  if (!raw) return "pt-BR";
+  const norm = raw.trim().toLowerCase();
+  if (norm === "en" || norm.startsWith("en-")) return "en";
+  return "pt-BR";
+}
+
+/**
  * POST /api/campaign/generate
  *
  * Body (FormData):
@@ -39,6 +51,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     const clerkUserId = session.userId;
+    const targetLocale = parseTargetLocale(request);
 
     // ── Rate limit por IP (anti-abuso) ──
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -462,6 +475,7 @@ export async function POST(request: NextRequest) {
               // Sonnet copy: público-alvo e tom (só se escolhido pelo usuário)
               targetAudience: targetAudience && targetAudience !== "auto" ? targetAudience : undefined,
               toneOverride: toneOverride || undefined,
+              targetLocale,
             },
             async (step, label, progress) => {
               console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
