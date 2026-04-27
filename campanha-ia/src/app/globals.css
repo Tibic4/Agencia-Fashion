@@ -53,10 +53,13 @@
   /* Background & Foreground */
   --background: #ffffff;
   --foreground: #09090b;
-  --surface: #fafafa;
-  --surface-hover: #f4f4f5;
-  --border: #e4e4e7;
-  --border-hover: #d4d4d8;
+  --surface: #fbf7fc;
+  --surface-2: #f6eef9;
+  --surface-hover: #f4ecf7;
+  --surface-gradient: linear-gradient(165deg, #fdf9fe 0%, #f8f0fb 100%);
+  --border: #ecd9f1;
+  --border-hover: #d8b8e0;
+  --border-glow: rgba(217,70,239,0.18);
   --muted: #636369;
   --muted-foreground: #a1a1aa;
 
@@ -84,19 +87,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: #09090b;
+    --background: #0a070d;
     --foreground: #fafafa;
-    --surface: #18181b;
-    --surface-hover: #27272a;
-    --border: #27272a;
-    --border-hover: #3f3f46;
+    --surface: #1a1320;
+    --surface-2: #221829;
+    --surface-hover: #261b2e;
+    --surface-gradient: linear-gradient(165deg, #1c1422 0%, #150f1c 100%);
+    --border: #2e2238;
+    --border-hover: #3f2f4c;
+    --border-glow: rgba(217,70,239,0.32);
     --muted: #a1a1aa;
     --muted-foreground: #71717a;
     --brand-50: rgba(217, 70, 239, 0.06);
     --brand-100: rgba(217, 70, 239, 0.12);
     --brand-200: rgba(217, 70, 239, 0.18);
     --brand-700: #e879f9;
-    --gradient-hero: linear-gradient(180deg, #150818 0%, #09090b 40%, #09090b 100%);
+    --gradient-hero: linear-gradient(180deg, #150818 0%, #0a070d 40%, #0a070d 100%);
     --gradient-brand-soft: linear-gradient(135deg, #150818 0%, #0d0510 50%, #08030d 100%);
     --gradient-card: linear-gradient(135deg, rgba(217,70,239,0.08) 0%, rgba(168,85,247,0.08) 100%);
     --shadow-glow: 0 0 60px rgba(217,70,239,0.2);
@@ -106,12 +112,15 @@
 
 /* Explicit dark mode via toggle (overrides OS preference) */
 :root[data-theme="dark"] {
-  --background: #09090b;
+  --background: #0a070d;
   --foreground: #fafafa;
-  --surface: #18181b;
-  --surface-hover: #27272a;
-  --border: #27272a;
-  --border-hover: #3f3f46;
+  --surface: #1a1320;
+  --surface-2: #221829;
+  --surface-hover: #261b2e;
+  --surface-gradient: linear-gradient(165deg, #1c1422 0%, #150f1c 100%);
+  --border: #2e2238;
+  --border-hover: #3f2f4c;
+  --border-glow: rgba(217,70,239,0.32);
   --muted: #a1a1aa;
   --muted-foreground: #71717a;
   --brand-50: rgba(217, 70, 239, 0.06);
@@ -125,12 +134,60 @@
   --shadow-glow-accent: 0 0 60px rgba(100,116,139,0.2);
 }
 
+/* ═══════════════════════════════════════
+   Surface Card — Editorial Premium
+   The single source of truth for "card" containers.
+   Replaces ad-hoc background:var(--surface) + border boxes
+   with a tinted gradient + brand-tinged border + soft inset glow.
+   ═══════════════════════════════════════ */
+
+.surface-card {
+  background: var(--surface-gradient);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 1px 2px rgba(15,5,25,0.04),
+    0 8px 24px -12px rgba(217,70,239,0.08);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+:root[data-theme="dark"] .surface-card,
+:root:not([data-theme="light"]) .surface-card {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 0 0 1px rgba(217,70,239,0.04) inset,
+    0 12px 40px -16px rgba(0,0,0,0.6),
+    0 0 32px -8px rgba(217,70,239,0.08);
+}
+
+.surface-card-hover:hover {
+  border-color: var(--border-hover);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 0 0 1px var(--border-glow) inset,
+    0 16px 48px -16px rgba(217,70,239,0.18);
+}
+
+/* Variant: hero card (more glow, for "Suas fotos ficaram incríveis") */
+.surface-card-hero {
+  background: var(--surface-gradient);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 0 0 1px rgba(217,70,239,0.06) inset,
+    0 24px 60px -24px rgba(217,70,239,0.22);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
+  --color-border-hover: var(--border-hover);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-brand-50: var(--brand-50);
