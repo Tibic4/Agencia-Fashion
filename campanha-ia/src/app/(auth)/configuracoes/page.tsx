@@ -184,7 +184,7 @@ export default function Configuracoes() {
 
       <div className="space-y-8">
         {/* ── Logo + Cor da marca ── */}
-        <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+        <div className="surface-card p-6">
           <h2 className="text-lg font-semibold mb-1">Identidade da marca</h2>
           <p className="text-xs mb-5" style={{ color: "var(--muted)" }}>Logo e cor que aparecem nas suas campanhas</p>
           <div className="flex flex-col sm:flex-row gap-6">
@@ -272,7 +272,7 @@ export default function Configuracoes() {
         </div>
 
 
-        <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+        <div className="surface-card p-6">
           <h2 className="text-lg font-semibold mb-5">Dados da loja</h2>
           <div className="space-y-4">
             <div>
@@ -310,7 +310,7 @@ export default function Configuracoes() {
         </div>
 
         {/* ── Segment ── */}
-        <div className="rounded-2xl p-6" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
+        <div className="surface-card p-6">
           <h2 className="text-lg font-semibold mb-5">Segmento</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {segments.map((seg) => (

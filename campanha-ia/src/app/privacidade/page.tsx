@@ -350,29 +350,29 @@ export default function Privacidade() {
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               href="/subprocessadores"
-              className="rounded-xl p-4 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="surface-card surface-card-hover p-4 text-sm font-medium transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
               Lista de subprocessadores →
             </Link>
             <Link
               href="/consentimento-biometrico"
-              className="rounded-xl p-4 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="surface-card surface-card-hover p-4 text-sm font-medium transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
               Consentimento biométrico (VTO) →
             </Link>
             <Link
               href="/dpo"
-              className="rounded-xl p-4 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="surface-card surface-card-hover p-4 text-sm font-medium transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
               Canal do Encarregado (DPO) →
             </Link>
             <Link
               href="/termos"
-              className="rounded-xl p-4 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="surface-card surface-card-hover p-4 text-sm font-medium transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
               Termos de Uso →
             </Link>

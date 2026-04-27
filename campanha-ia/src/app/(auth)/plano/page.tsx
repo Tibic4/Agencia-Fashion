@@ -323,7 +323,7 @@ export default function Plano() {
 
       {/* Status message */}
       {statusMsg && (
-        <div className="mb-6 p-4 rounded-xl flex items-center gap-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="surface-card mb-6 p-4 flex items-center gap-3">
           <p className="text-sm">{statusMsg}</p>
           <button onClick={() => setStatusMsg(null)} className="ml-auto text-sm" style={{ color: "var(--muted)" }}>✕</button>
         </div>

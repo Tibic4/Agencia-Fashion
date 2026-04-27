@@ -205,7 +205,7 @@ export default function AdminVitrine() {
       </div>
 
       {statusMsg && (
-        <div className="mb-6 p-4 rounded-xl flex items-center justify-between" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="surface-card mb-6 p-4 flex items-center justify-between">
           <p className="text-sm">{statusMsg}</p>
           <button onClick={() => setStatusMsg(null)} className="text-sm ml-4" style={{ color: "var(--muted)" }}>✕</button>
         </div>
@@ -319,7 +319,7 @@ export default function AdminVitrine() {
       {loading ? (
         <p className="text-sm" style={{ color: "var(--muted)" }}>Carregando...</p>
       ) : items.length === 0 ? (
-        <div className="text-center py-12 rounded-2xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="surface-card text-center py-12">
           <p className="text-3xl mb-2">🖼️</p>
           <p className="text-sm" style={{ color: "var(--muted)" }}>Nenhum item na vitrine ainda</p>
           <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>Arraste as fotos acima para começar</p>

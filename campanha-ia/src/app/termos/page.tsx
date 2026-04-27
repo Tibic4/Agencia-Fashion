@@ -301,15 +301,15 @@ export default function Termos() {
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               href="/privacidade"
-              className="rounded-xl p-4 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="surface-card surface-card-hover p-4 text-sm font-medium transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
               Política de Privacidade →
             </Link>
             <Link
               href="/subprocessadores"
-              className="rounded-xl p-4 text-sm font-medium transition-colors hover:opacity-80"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+              className="surface-card surface-card-hover p-4 text-sm font-medium transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
               Subprocessadores →
             </Link>
