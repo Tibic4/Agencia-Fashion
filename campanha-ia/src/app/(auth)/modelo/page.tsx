@@ -335,22 +335,14 @@ export default function ModeloVirtual() {
       {loadingModels ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="rounded-2xl h-64 animate-pulse"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-            />
+            <div key={i} className="surface-card h-64 animate-pulse" />
           ))}
         </div>
       ) : models.length === 0 ? (
         /* Empty state */
-        <div 
-          className="flex flex-col items-center justify-center p-8 text-center rounded-2xl mx-auto max-w-lg mt-8 transition-all hover:scale-[1.02] active:scale-[0.98] group"
-          style={{ 
-            border: "2px dashed var(--border)", 
-            background: "var(--surface)", 
-            boxShadow: "0 8px 32px rgba(0,0,0,0.05)" 
-          }}
+        <div
+          className="surface-card flex flex-col items-center justify-center p-8 text-center mx-auto max-w-lg mt-8 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+          style={{ borderStyle: "dashed", borderWidth: "2px" }}
         >
           <div className="w-20 h-20 rounded-full mb-6 flex items-center justify-center bg-brand-50 mx-auto" style={{ border: "2px solid var(--border)" }}>
             <span className="text-4xl group-hover:scale-110 transition-transform">✨</span>
@@ -390,11 +382,10 @@ export default function ModeloVirtual() {
             return (
               <div
                 key={model.id}
-                className="relative rounded-2xl overflow-hidden transition-all group flex flex-col hover:scale-[1.02] active:scale-[0.98] cursor-default"
+                className="surface-card surface-card-hover relative overflow-hidden transition-all group flex flex-col hover:scale-[1.02] active:scale-[0.98] cursor-default"
                 style={{
-                  border: model.is_active ? "2px solid var(--brand-500)" : "1px solid var(--border)",
-                  background: "var(--surface)",
-                  boxShadow: model.is_active ? "0 4px 20px rgba(236,72,153,0.15)" : "0 2px 10px rgba(0,0,0,0.05)",
+                  border: model.is_active ? "2px solid var(--brand-500)" : undefined,
+                  boxShadow: model.is_active ? "0 0 0 4px rgba(236,72,153,0.12), 0 16px 48px -16px rgba(236,72,153,0.28)" : undefined,
                   aspectRatio: "3/4",
                 }}
               >
@@ -503,10 +494,10 @@ export default function ModeloVirtual() {
           {canCreate && (
             <button
               onClick={() => { haptics.medium(); setShowCreateForm(true); }}
-              className="rounded-2xl flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] group"
+              className="surface-card surface-card-hover flex flex-col items-center justify-center transition-all hover:scale-[1.02] active:scale-[0.98] group"
               style={{
-                border: "2px dashed var(--border)",
-                background: "var(--surface)",
+                borderStyle: "dashed",
+                borderWidth: "2px",
                 color: "var(--muted)",
                 aspectRatio: "3/4"
               }}

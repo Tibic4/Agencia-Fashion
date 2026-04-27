@@ -87,10 +87,7 @@ export default function DpoPage() {
           </section>
 
           {/* Competências */}
-          <section
-            className="rounded-xl p-5 md:p-6 mb-6"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <section className="surface-card p-5 md:p-6 mb-6">
             <h2 className="text-base md:text-lg font-bold mb-3" style={{ color: "var(--foreground)" }}>
               Competências do Encarregado (art. 41, §2º, LGPD)
             </h2>
@@ -103,10 +100,7 @@ export default function DpoPage() {
           </section>
 
           {/* Como exercer direitos */}
-          <section
-            className="rounded-xl p-5 md:p-6 mb-6"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <section className="surface-card p-5 md:p-6 mb-6">
             <h2 className="text-base md:text-lg font-bold mb-3" style={{ color: "var(--foreground)" }}>
               Como exercer seus direitos (art. 18 LGPD)
             </h2>
@@ -132,10 +126,7 @@ export default function DpoPage() {
           </section>
 
           {/* ANPD */}
-          <section
-            className="rounded-xl p-5 md:p-6 mb-6"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <section className="surface-card p-5 md:p-6 mb-6">
             <h2 className="text-base md:text-lg font-bold mb-3" style={{ color: "var(--foreground)" }}>
               Reclamação à ANPD
             </h2>

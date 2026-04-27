@@ -83,16 +83,16 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>Headlines</h2>
             <div className="space-y-3">
-              <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="surface-card p-4">
                 <p className="text-lg font-bold">{output.headline_principal}</p>
               </div>
               {output.headline_variacao_1 && (
-                <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="surface-card p-4">
                   <p className="font-medium">{output.headline_variacao_1}</p>
                 </div>
               )}
               {output.headline_variacao_2 && (
-                <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="surface-card p-4">
                   <p className="font-medium">{output.headline_variacao_2}</p>
                 </div>
               )}
@@ -104,7 +104,7 @@ export default async function PreviewPage({ params }: { params: Promise<{ token:
         {output?.instagram_feed && (
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "var(--muted)" }}>📸 Instagram Feed</h2>
-            <div className="rounded-xl p-4 sm:p-5 whitespace-pre-wrap break-words text-sm" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="surface-card p-4 sm:p-5 whitespace-pre-wrap break-words text-sm">
               {output.instagram_feed}
             </div>
           </div>

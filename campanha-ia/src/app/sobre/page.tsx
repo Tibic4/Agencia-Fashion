@@ -143,8 +143,7 @@ export default function Sobre() {
               {values.map((v) => (
                 <div
                   key={v.title}
-                  className="rounded-2xl p-5 md:p-6 group transition-all duration-300 hover:-translate-y-0.5"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  className="surface-card surface-card-hover p-5 md:p-6 group transition-all duration-300 hover:-translate-y-0.5"
                 >
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110" style={{
                     background: "var(--gradient-brand)",
@@ -175,8 +174,7 @@ export default function Sobre() {
               {steps.map((step, i) => (
                 <div
                   key={step.title}
-                  className="rounded-2xl p-5 text-center group transition-all duration-300 hover:-translate-y-0.5 relative"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  className="surface-card surface-card-hover p-5 text-center group transition-all duration-300 hover:-translate-y-0.5 relative"
                 >
                   {/* Connector (mobile) */}
                   {i < steps.length - 1 && (
@@ -208,8 +206,7 @@ export default function Sobre() {
             <div className="grid sm:grid-cols-2 gap-4">
               <a
                 href="https://wa.me/553498223001"
-                className="flex items-center gap-4 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg min-h-[72px] group"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                className="surface-card surface-card-hover flex items-center gap-4 p-5 transition-all duration-300 hover:-translate-y-0.5 min-h-[72px] group"
               >
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110" style={{ background: "#dcfce7", color: "#16a34a" }}>
                   <IconPhone />
@@ -224,8 +221,7 @@ export default function Sobre() {
               </a>
               <a
                 href="mailto:contato@crialook.com.br"
-                className="flex items-center gap-4 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg min-h-[72px] group"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                className="surface-card surface-card-hover flex items-center gap-4 p-5 transition-all duration-300 hover:-translate-y-0.5 min-h-[72px] group"
               >
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110" style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}>
                   <IconMail />

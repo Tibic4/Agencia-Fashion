@@ -133,11 +133,7 @@ export default function SubprocessadoresPage() {
           {/* Tabela em cards (mobile) e tabela (desktop) */}
           <div className="space-y-4 md:hidden">
             {subprocessors.map((p) => (
-              <article
-                key={p.name}
-                className="rounded-xl p-4"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-              >
+              <article key={p.name} className="surface-card p-4">
                 <h2 className="text-base font-bold mb-2" style={{ color: "var(--foreground)" }}>
                   {p.name}
                 </h2>
@@ -181,10 +177,7 @@ export default function SubprocessadoresPage() {
             ))}
           </div>
 
-          <div
-            className="hidden md:block rounded-xl overflow-hidden"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <div className="surface-card hidden md:block overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs" style={{ color: "var(--muted)" }}>
                 <thead>
@@ -238,10 +231,7 @@ export default function SubprocessadoresPage() {
           </div>
 
           {/* Notificação de mudanças */}
-          <section
-            className="rounded-xl p-5 md:p-6 mt-8"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-          >
+          <section className="surface-card p-5 md:p-6 mt-8">
             <h2 className="text-base md:text-lg font-bold mb-3" style={{ color: "var(--foreground)" }}>
               Alterações na lista
             </h2>

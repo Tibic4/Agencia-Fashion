@@ -51,14 +51,14 @@
   --info: #3b82f6;
 
   /* Background & Foreground */
-  --background: #ffffff;
-  --foreground: #09090b;
-  --surface: #fbf7fc;
-  --surface-2: #f6eef9;
-  --surface-hover: #f4ecf7;
-  --surface-gradient: linear-gradient(165deg, #fdf9fe 0%, #f8f0fb 100%);
-  --border: #ecd9f1;
-  --border-hover: #d8b8e0;
+  --background: #faf9fa;
+  --foreground: #1a1620;
+  --surface: #ffffff;
+  --surface-2: #f7f4f8;
+  --surface-hover: #f4eef6;
+  --surface-gradient: linear-gradient(165deg, #ffffff 0%, #faf6fb 100%);
+  --border: #ebe6ee;
+  --border-hover: #d4ccd8;
   --border-glow: rgba(217,70,239,0.18);
   --muted: #636369;
   --muted-foreground: #a1a1aa;
@@ -87,22 +87,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: #0a070d;
-    --foreground: #fafafa;
-    --surface: #1a1320;
-    --surface-2: #221829;
-    --surface-hover: #261b2e;
-    --surface-gradient: linear-gradient(165deg, #1c1422 0%, #150f1c 100%);
-    --border: #2e2238;
-    --border-hover: #3f2f4c;
-    --border-glow: rgba(217,70,239,0.32);
+    --background: #16131a;
+    --foreground: #f5f3f7;
+    --surface: #1f1a25;
+    --surface-2: #261f2d;
+    --surface-hover: #2b2333;
+    --surface-gradient: linear-gradient(165deg, #211b27 0%, #1a151f 100%);
+    --border: #322a3a;
+    --border-hover: #423650;
+    --border-glow: rgba(217,70,239,0.28);
     --muted: #a1a1aa;
     --muted-foreground: #71717a;
     --brand-50: rgba(217, 70, 239, 0.06);
     --brand-100: rgba(217, 70, 239, 0.12);
     --brand-200: rgba(217, 70, 239, 0.18);
     --brand-700: #e879f9;
-    --gradient-hero: linear-gradient(180deg, #150818 0%, #0a070d 40%, #0a070d 100%);
+    --gradient-hero: linear-gradient(180deg, #1c1023 0%, #16131a 40%, #16131a 100%);
     --gradient-brand-soft: linear-gradient(135deg, #150818 0%, #0d0510 50%, #08030d 100%);
     --gradient-card: linear-gradient(135deg, rgba(217,70,239,0.08) 0%, rgba(168,85,247,0.08) 100%);
     --shadow-glow: 0 0 60px rgba(217,70,239,0.2);
@@ -127,7 +127,7 @@
   --brand-100: rgba(217, 70, 239, 0.12);
   --brand-200: rgba(217, 70, 239, 0.18);
   --brand-700: #e879f9;
-  --gradient-hero: linear-gradient(180deg, #150818 0%, #09090b 40%, #09090b 100%);
+  --gradient-hero: linear-gradient(180deg, #1c1023 0%, #16131a 40%, #16131a 100%);
   --gradient-brand-soft: linear-gradient(135deg, #150818 0%, #0d0510 50%, #08030d 100%);
   --gradient-card: linear-gradient(135deg, rgba(217,70,239,0.08) 0%, rgba(168,85,247,0.08) 100%);
   --shadow-glow: 0 0 60px rgba(217,70,239,0.2);
