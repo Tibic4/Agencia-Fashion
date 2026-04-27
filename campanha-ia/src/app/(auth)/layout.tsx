@@ -138,9 +138,9 @@ export default function AuthLayout({
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [usage, setUsage] = useState<UsageData | null>(null);
-  const [storeChecked, setStoreChecked] = useState(false);
 
-  // Carregar usage da loja (middleware já garante que loja existe)
+  // Carregar usage da loja em background (middleware já garante que loja existe).
+  // Não bloqueia render — UI mostra skeleton inline na pílula de campanhas.
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -150,10 +150,9 @@ export default function AuthLayout({
           const data = await res.json();
           if (data?.data) setUsage(data.data);
         }
-        setStoreChecked(true);
       })
       .catch(() => {
-        setStoreChecked(true);
+        // silencioso — pílula segue em estado loading; nav continua usável
       });
   }, [isLoaded]);
 
@@ -165,18 +164,6 @@ export default function AuthLayout({
   const campaignsUsed = usage?.campaigns_generated ?? 0;
   const campaignsLimit = usage?.campaigns_limit ?? 0;
   const usagePercent = campaignsLimit > 0 ? Math.min((campaignsUsed / campaignsLimit) * 100, 100) : 0;
-
-  // Bloquear renderização enquanto verificação de loja está pendente
-  if (!storeChecked) {
-    return (
-      <div className="flex items-center justify-center min-h-[100dvh]" style={{ background: "var(--background)" }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "3px solid var(--border)", borderTopColor: "var(--brand-500)" }} />
-          <span className="text-sm" style={{ color: "var(--muted)" }}>Carregando...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-[100dvh]" style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>

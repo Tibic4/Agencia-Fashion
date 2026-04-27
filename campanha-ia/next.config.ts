@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(import.meta.dirname || __dirname),
   },
-  experimental: {
-    cpus: 1,
-  },
 
   // Redirects permanentes para rotas legadas
   async redirects() {
@@ -32,8 +29,8 @@ const nextConfig: NextConfig = {
   /* ═══════════════════════════════════════
      Performance — PageSpeed optimizations
      ═══════════════════════════════════════ */
-  // Habilita compressão gzip no Node.js (complementar ao Nginx)
-  compress: true,
+  // Compressão fica no Nginx (brotli/gzip) — Node não precisa duplicar e queimar CPU
+  compress: false,
 
   // Otimização de imagens: formatos modernos + qualidade boa
   images: {
