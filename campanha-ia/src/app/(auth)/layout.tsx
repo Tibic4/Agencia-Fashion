@@ -68,7 +68,7 @@ function MobileTabBar({ navItems, pathname }: { navItems: NavItem[]; pathname: s
       className="lg:hidden fixed left-3 right-3 z-30 flex px-1 py-1 rounded-2xl glass"
       style={{
         bottom: "calc(10px + env(safe-area-inset-bottom))",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04)",
+        boxShadow: "0 12px 40px -8px rgba(217,70,239,0.12), 0 4px 16px -4px rgba(0,0,0,0.08)",
       }}
     >
       {indicatorStyle.width > 0 && (
@@ -169,7 +169,7 @@ export default function AuthLayout({
   // Bloquear renderização enquanto verificação de loja está pendente
   if (!storeChecked) {
     return (
-      <div className="flex items-center justify-center min-h-[100dvh]" style={{ background: "var(--surface)" }}>
+      <div className="flex items-center justify-center min-h-[100dvh]" style={{ background: "var(--background)" }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "3px solid var(--border)", borderTopColor: "var(--brand-500)" }} />
           <span className="text-sm" style={{ color: "var(--muted)" }}>Carregando...</span>
@@ -179,13 +179,13 @@ export default function AuthLayout({
   }
 
   return (
-    <div className="flex min-h-[100dvh]" style={{ background: "var(--surface)", overflowX: "hidden", maxWidth: "100vw" }}>
+    <div className="flex min-h-[100dvh]" style={{ background: "var(--background)", overflowX: "hidden", maxWidth: "100vw" }}>
       {/* Sidebar — Desktop */}
       <aside
         aria-label="Navegação lateral"
         className="hidden lg:flex flex-col w-64 fixed inset-y-0 left-0 z-30"
         style={{
-          background: "var(--background)",
+          background: "var(--surface-gradient)",
           borderRight: "1px solid var(--border)",
         }}
       >
@@ -335,8 +335,8 @@ export default function AuthLayout({
 
       {/* Mobile Header */}
       <header
-        className="lg:hidden fixed top-0 left-0 right-0 z-30 glass h-14 flex items-center justify-between px-4 shadow-sm"
-        style={{ borderBottom: "1px solid var(--border)" }}
+        className="lg:hidden fixed top-0 left-0 right-0 z-30 glass h-14 flex items-center justify-between px-4"
+        style={{ boxShadow: "0 4px 16px -8px rgba(0,0,0,0.08)" }}
       >
         <Link href="/gerar" className="flex items-center gap-2 active:scale-95 transition-transform">
           <Image src="/logo.webp" alt="CriaLook" width={34} height={34} className="rounded-full" />
@@ -355,7 +355,7 @@ export default function AuthLayout({
               ⚡ Ativar plano
             </Link>
           ) : usage ? (
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}>
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "var(--surface-2)", color: "var(--foreground)" }}>
               {`${campaignsUsed}/${campaignsLimit}`}
             </span>
           ) : null}

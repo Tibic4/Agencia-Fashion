@@ -1391,7 +1391,7 @@ export default function GerarCampanha() {
           </div>
 
           {/* Generate button (Flutuante no Mobile, Natural no Desktop) */}
-          <div className="sticky md:bottom-6 lg:static lg:bottom-auto px-4 py-3 lg:p-0 my-4 lg:my-0 z-20 w-full lg:rounded-none lg:shadow-none lg:border-none lg:bg-transparent lg:backdrop-blur-none transition-all surface-card lg:!bg-transparent lg:!shadow-none lg:!border-none backdrop-blur-xl" style={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}>
+          <div className="sticky md:bottom-6 lg:static lg:bottom-auto z-20 w-full transition-all lg:!bg-transparent lg:!border-none lg:!shadow-none lg:!p-0 px-4 py-3 my-4 lg:my-0 rounded-2xl lg:rounded-none glass" style={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}>
             {campaignsLimit !== null && campaignsUsed >= campaignsLimit && userCredits <= 0 ? (
               <Link
                 href="/plano"
