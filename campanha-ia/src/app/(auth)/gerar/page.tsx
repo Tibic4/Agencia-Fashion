@@ -1241,32 +1241,47 @@ export default function GerarCampanha() {
             <label className="block text-sm font-semibold mb-3">Cenário da foto</label>
             {/* Mobile: horizontal scroll carousel · Desktop: grid */}
             <div className="flex overflow-x-auto gap-2 pb-2 hide-scrollbar snap-x snap-mandatory md:grid md:grid-cols-4 lg:grid-cols-5 md:overflow-visible md:pb-0 md:snap-none">
-                {backgrounds.map((bg) => (
-                  <button
-                    key={bg.value}
-                    onClick={() => { setBackground(bg.value); haptics.light(); }}
-                    className="group flex-shrink-0 w-20 md:w-auto rounded-xl overflow-hidden text-center transition-all duration-300 md:hover:scale-[1.02] md:hover:-translate-y-0.5 relative snap-start"
-                  >
-                    {/* Border Overlay */}
-                    <div className={`absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 z-20 ${
-                      background === bg.value 
-                        ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.2)]" 
-                        : "ring-1 ring-inset ring-[var(--border)] opacity-50 group-hover:ring-brand-500/50 group-hover:opacity-100"
-                    }`} />
-                    {bg.thumb ? (
-                      <img src={bg.thumb} alt={bg.label} className="w-full aspect-square object-cover object-top" loading="lazy" />
-                    ) : (
-                      <div className="w-full aspect-square flex items-center justify-center" style={{ background: "var(--surface)" }}>
-                        <span className="text-lg">✏️</span>
-                      </div>
-                    )}
-                    <div className="py-1 md:py-1.5 px-1" style={{ background: "var(--surface)" }}>
-                      <p className="text-[10px] sm:text-xs font-medium truncate">
+                {backgrounds.map((bg) => {
+                  const selected = background === bg.value;
+                  return (
+                    <button
+                      key={bg.value}
+                      onClick={() => { setBackground(bg.value); haptics.light(); }}
+                      aria-pressed={selected}
+                      className="group flex-shrink-0 w-[5.25rem] md:w-auto rounded-2xl overflow-hidden text-center transition-all duration-300 md:hover:-translate-y-0.5 relative snap-start aspect-square"
+                    >
+                      {bg.thumb ? (
+                        <img src={bg.thumb} alt={bg.label} className="absolute inset-0 w-full h-full object-cover object-top" loading="lazy" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[var(--surface)] to-[var(--surface-2,var(--surface))]">
+                          <span className="text-lg opacity-70">✏️</span>
+                        </div>
+                      )}
+
+                      {/* Bottom gradient for label legibility */}
+                      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 via-black/30 to-transparent pointer-events-none" />
+
+                      {/* Label overlay */}
+                      <span className="absolute inset-x-1.5 bottom-1.5 text-[11px] sm:text-xs font-semibold text-white tracking-tight leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                         {bg.label}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                      </span>
+
+                      {/* Selected check */}
+                      {selected && (
+                        <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px] font-bold shadow-md ring-2 ring-white/90">
+                          ✓
+                        </span>
+                      )}
+
+                      {/* Ring overlay (selected = brand glow, idle = subtle) */}
+                      <div className={`absolute inset-0 pointer-events-none rounded-2xl transition-all duration-300 ${
+                        selected
+                          ? "ring-2 ring-brand-500 shadow-[0_0_0_4px_rgba(236,72,153,0.18)]"
+                          : "ring-1 ring-white/15 group-hover:ring-brand-500/60"
+                      }`} />
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
