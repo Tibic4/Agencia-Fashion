@@ -56,8 +56,8 @@
   --surface: #ffffff;
   --surface-2: #f7f4f8;
   --surface-hover: #f4eef6;
-  --surface-gradient: linear-gradient(165deg, #ffffff 0%, #f9f6fa 100%);
-  --border: #ececef;
+  --surface-gradient: linear-gradient(165deg, #ffffff 0%, #fdfbfd 100%);
+  --border: #f0edf2;
   --border-hover: #d4d4d8;
   --border-glow: rgba(217,70,239,0.18);
   --muted: #636369;
@@ -92,7 +92,7 @@
     --surface: #1f1a25;
     --surface-2: #261f2d;
     --surface-hover: #2b2333;
-    --surface-gradient: linear-gradient(165deg, #211b27 0%, #1a151f 100%);
+    --surface-gradient: linear-gradient(165deg, #1f1a25 0%, #1c1722 100%);
     --border: #2c2730;
     --border-hover: #3a323f;
     --border-glow: rgba(217,70,239,0.24);
@@ -146,9 +146,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.04) inset,
-    0 1px 2px rgba(15,5,25,0.04),
-    0 8px 24px -12px rgba(217,70,239,0.08);
+    0 1px 2px rgba(15,5,25,0.025),
+    0 6px 18px -8px rgba(15,5,25,0.05);
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 
