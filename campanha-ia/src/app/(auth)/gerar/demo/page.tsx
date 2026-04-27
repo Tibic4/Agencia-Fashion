@@ -819,7 +819,7 @@ export default function ResultadoCampanha() {
 
             {/* ── Caption alternativa ── */}
             {dicas.caption_alternativa && (
-              <div className="rounded-2xl p-4 space-y-2 relative" style={{ background: "var(--surface)", border: "1px dashed var(--border)" }}>
+              <div className="surface-card p-4 space-y-2 relative">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
@@ -901,12 +901,12 @@ export default function ResultadoCampanha() {
 
         {/* ── Análise do produto (colapsável) ── */}
         {analise?.produto && (
-          <details className="rounded-2xl overflow-hidden group" style={{ border: "1px solid var(--border)" }}>
-            <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none" style={{ background: "var(--surface)" }}>
+          <details className="surface-card overflow-hidden group">
+            <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none">
               <span className="text-sm font-bold">🔍 Como a IA analisou sua peça</span>
               <span className="text-xs group-open:rotate-180 transition-transform" style={{ color: "var(--muted)" }}>▼</span>
             </summary>
-            <div className="px-5 pb-5 pt-3 space-y-3" style={{ background: "var(--surface)" }}>
+            <div className="px-5 pb-5 pt-3 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: "Produto", value: analise.produto.nome_generico },
