@@ -145,9 +145,7 @@
   background: var(--surface-gradient);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow:
-    0 1px 0 rgba(15,5,25,0.02),
-    0 8px 24px -16px rgba(15,5,25,0.08);
+  box-shadow: none;
   transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 
