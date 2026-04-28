@@ -49,6 +49,7 @@ import Animated, {
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useT } from '@/lib/i18n';
 import type { ModelItem } from '@/types';
 
 // ─── Public API ───────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const insets = useSafeAreaInsets();
+    const { t } = useT();
 
     const sheetRef = useRef<BottomSheetModal>(null);
     const [model, setModel] = React.useState<ModelItem | null>(null);
@@ -376,7 +378,7 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
                   end={{ x: 1, y: 1 }}
                   style={styles.cta}
                 >
-                  <Text style={styles.ctaText}>Selecionar modelo</Text>
+                  <Text style={styles.ctaText}>{t('model.selectCta')}</Text>
                 </LinearGradient>
               </Pressable>
             </View>

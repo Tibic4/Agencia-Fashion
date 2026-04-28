@@ -348,7 +348,7 @@ export default function GerarScreen() {
       >
         {/* Hero: "Nova [Campanha]" — second word renders as a fucsia gradient mask, mirroring the marketing site. */}
         <View style={styles.heroRow} accessible accessibilityRole="header">
-          <Text style={[styles.title, { color: colors.text }]}>Nova </Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('generate.titlePrefix')}</Text>
           <GradientText
             colors={Colors.brand.gradientPrimary}
             style={styles.title}
