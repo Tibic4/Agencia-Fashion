@@ -1,4 +1,6 @@
-// TODO: Next.js 16 deprecou "middleware" em favor de "proxy". Migrar quando API estabilizar.
+// Next.js 16 introduziu a API "proxy" como sucessora de "middleware".
+// Migração agendada quando a nova API sair de status experimental e o Clerk
+// publicar guidance oficial pra `clerkProxy`.
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
