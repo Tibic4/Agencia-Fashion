@@ -596,8 +596,9 @@ function ModelGridCard({
   colors,
   t,
   onSetActive,
-  // TODO: long-press não pode ser usado pra delete (conflita com peek preview).
-  // Mover delete pra um botão na BottomSheet ou menu de contexto.
+  // Delete é exposto via prop, mas não está cabeado a um gesto neste card —
+  // long-press fica reservado pro peek preview (paridade com /gerar).
+  // O delete vive na ModelBottomSheet (botão dedicado quando aplicável).
   onDelete: _onDelete,
   onZoom,
 }: {
@@ -630,11 +631,9 @@ function ModelGridCard({
       style={styles.portraitCard}
     >
       {/* ModelPressable: tap = ativa modelo, long-press = peek preview overlay
-          (mesma UX da tela /gerar). Substitui o AnimatedPressable que tinha
-          long-press deletando — agora delete vai pra um menu explícito (TODO).
-          Border permanente (transparente quando inactive) + shadow só via
-          glow ring overlay corrige o flicker "preta e some" no Android: sem
-          mudança de elevation, layout fica estável entre seleções. */}
+          (paridade com a tela /gerar). Border permanente (transparente quando
+          inactive) + sem mudança de elevation entre estados — deixa o layout
+          estável durante seleção, evitando flicker de re-render no Android. */}
       <ModelPressable
         model={model as never}
         disablePeek={!hasPhoto}
