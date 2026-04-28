@@ -6,8 +6,12 @@
 
 SaaS B2C de geração de campanhas de moda com IA — para lojistas brasileiros que vendem por Instagram, WhatsApp e Meta Ads.
 
+Monorepo: **web Next.js** ([`campanha-ia/`](./campanha-ia/)) + **app mobile Expo/React Native** ([`crialook-app/`](./crialook-app/)).
+
 [![Live](https://img.shields.io/badge/live-crialook.com.br-A855F7?style=flat-square)](https://crialook.com.br)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![Expo](https://img.shields.io/badge/Expo-54-000020?style=flat-square&logo=expo)
+![React%20Native](https://img.shields.io/badge/React%20Native-0.81-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase)
@@ -38,12 +42,15 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 ## 🏗️ Arquitetura
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                       CLIENTE (Next.js 16)                       │
-│  Landing · Onboarding · /gerar · /historico · /admin · /editor   │
-└────────────────────────────┬─────────────────────────────────────┘
-                             │ Server Actions / API Routes
-┌────────────────────────────▼─────────────────────────────────────┐
+┌─────────────────────────────────┐ ┌─────────────────────────────┐
+│  WEB · Next.js 16               │ │  MOBILE · Expo SDK 54       │
+│  crialook.com.br                │ │  React Native 0.81          │
+│  Landing · /gerar · /admin …    │ │  Android · iOS              │
+└─────────────────┬───────────────┘ └─────────────┬───────────────┘
+                  │                               │
+                  └───────────────┬───────────────┘
+                                  │ HTTPS / API Routes
+┌─────────────────────────────────▼────────────────────────────────┐
 │                      API LAYER (Next.js)                         │
 │   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────────┐   │
 │   │  /gerar  │  │ webhooks │  │ /credits │  │ /api/cron/...  │   │
@@ -88,13 +95,22 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 
 ## 🛠️ Stack tecnológica
 
-### Frontend
+### Frontend Web
 - **Next.js 16** (App Router, Server Components, Server Actions, ISR)
 - **React 19** (use Suspense, transitions, optimistic updates)
 - **TypeScript 5** (strict mode)
 - **Tailwind v4** + design system custom (CSS variables, dark mode)
 - **Framer Motion** (animações de UX)
 - **Konva** (canvas editor para Instagram Stories/Posts)
+
+### Mobile (Android + iOS)
+- **Expo SDK 54** (managed workflow, EAS Build/Submit)
+- **React Native 0.81** com new architecture (Fabric + TurboModules)
+- **Expo Router** (file-based navigation paritária com Next.js App Router)
+- **Clerk Expo** (auth nativo + deep links)
+- **Storybook on-device** (componentes isolados em catálogo nativo)
+- **Vitest** + **@testing-library/react-native** (testes unitários)
+- Paridade visual com o site — design system compartilhado, dark mode, haptics
 
 ### Backend
 - **Next.js API Routes** (Edge + Node runtimes)
@@ -158,6 +174,8 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 
 ## 🧪 Como rodar localmente
 
+### Web (`campanha-ia/`)
+
 ```bash
 git clone https://github.com/Tibic4/Agencia-Fashion.git
 cd Agencia-Fashion/campanha-ia
@@ -184,13 +202,36 @@ npm run lint
 npm run build
 ```
 
+### Mobile (`crialook-app/`)
+
+```bash
+cd Agencia-Fashion/crialook-app
+
+# Instalar dependências (Storybook tem peer-dep com vite — usar legacy)
+npm install --legacy-peer-deps
+
+# Configurar env
+cp .env.example .env
+# Edita: EXPO_PUBLIC_API_URL (aponta pra sua web local ou prod), CLERK, SENTRY
+
+# Rodar em dev (abre menu Expo: a=Android, i=iOS, w=web)
+npx expo start
+
+# Build com EAS (Android/iOS)
+eas build --profile production --platform android
+eas build --profile production --platform ios
+
+# Storybook on-device
+npm run storybook
+```
+
 ---
 
 ## 📂 Estrutura
 
 ```
 .
-├── campanha-ia/             # App Next.js principal
+├── campanha-ia/             # App Next.js principal (web + API + backend)
 │   ├── src/
 │   │   ├── app/             # App Router (rotas, API, layouts)
 │   │   ├── components/      # Componentes React reutilizáveis
@@ -200,14 +241,24 @@ npm run build
 │   ├── supabase/migrations/ # SQL migrations versionadas
 │   ├── scripts/             # Tooling (introspect, apply-migration, sb-query)
 │   └── public/              # Assets estáticos
+├── crialook-app/            # App mobile (Expo / React Native)
+│   ├── app/                 # Expo Router (file-based, paritário com Next)
+│   ├── components/          # Componentes RN reutilizáveis
+│   ├── lib/                 # i18n, logger, legal content, hooks de geração
+│   ├── hooks/               # Hooks custom (useModelSelector, etc)
+│   ├── assets/              # Ícones, splash, fontes
+│   ├── store-assets/        # Screenshots + listing Play Store
+│   ├── storybook/           # Catálogo on-device
+│   ├── app.json             # Config Expo (slug, scheme, icons)
+│   └── eas.json             # Profiles de build EAS
 ├── docs/
 │   ├── juridico/            # LGPD compliance + minutas
 │   └── legacy/              # Documentos de produto e roadmap
 ├── loadtests/               # Scripts k6 + relatórios de performance
 ├── ops/                     # Scripts de produção (backup, healthcheck)
-├── ecosystem.config.js      # PM2 ecosystem
+├── ecosystem.config.js      # PM2 ecosystem (apenas web)
 ├── nginx-crialook.conf      # Nginx canonical config
-└── deploy-crialook.sh       # Script de deploy
+└── deploy-crialook.sh       # Script de deploy (web)
 ```
 
 ---
@@ -234,11 +285,18 @@ Veja `docs/juridico/LGPD-COMPLIANCE.md` para o checklist legal e `docs/legacy/` 
 
 ## 🚀 Em produção
 
+**Web:**
 - **URL:** https://crialook.com.br
 - **Deploy:** VPS Ubuntu (KingHost) com Nginx + PM2 + Cloudflare DNS
 - **Database:** Supabase (region SA-East-1)
 - **Build:** GitHub Actions → SSH deploy
 - **Monitoring:** UptimeRobot + Sentry + cron health-check
+
+**Mobile:**
+- **Android:** Google Play (em fase de submissão)
+- **iOS:** App Store (em fase de submissão)
+- **Build/Submit:** EAS (Expo Application Services)
+- **OTA updates:** Expo Updates (canal `production`)
 
 ---
 
