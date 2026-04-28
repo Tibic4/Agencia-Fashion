@@ -594,7 +594,8 @@ export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
               </Text>
             </View>
             <Text style={styles.factText}>{factText}</Text>
-            {fact.source && <Text style={styles.factSource}>— {fact.source}</Text>}
+            {/* Slot sempre renderizado (mesmo vazio) pra altura ficar estável entre facts com e sem source. */}
+            <Text style={styles.factSource}>{fact.source ? `— ${fact.source}` : ' '}</Text>
             {/* Dots */}
             <View style={styles.factDots}>
               {Array.from({ length: 5 }).map((_, i) => {
@@ -734,6 +735,11 @@ const styles = StyleSheet.create({
   },
   hint: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center' },
   // ─── Fact card ─────────────────────────────────────────────
+  /* Why minHeight: o texto da curiosidade varia de 1 a 4 linhas. Sem isso o
+     card encolhe/expande a cada rotação (6s) e a tela inteira pula. Fixamos
+     altura suficiente pro pior caso (4 linhas + source) e deixamos o conteúdo
+     alinhado ao topo — espaço extra fica em branco em facts mais curtas, que
+     é o padrão usado em apps tipo Duolingo/Instagram em loaders rotativos. */
   factCard: {
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 16,
@@ -743,6 +749,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     gap: 6,
+    minHeight: 168,
+    justifyContent: 'flex-start',
   },
   factHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   factEmoji: { fontSize: 18, lineHeight: 22 },
@@ -756,8 +764,11 @@ const styles = StyleSheet.create({
     minHeight: 28,
     textAlign: 'center',
   },
-  factText: { color: 'rgba(255,255,255,0.92)', fontSize: 14, lineHeight: 20 },
-  factSource: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontStyle: 'italic' },
+  /* Slot fixo de 4 linhas (4 × 20 lineHeight) — evita pulo entre fact curta e longa.
+     Texto se ancora no topo; sobra preenche com whitespace. */
+  factText: { color: 'rgba(255,255,255,0.92)', fontSize: 14, lineHeight: 20, minHeight: 80 },
+  /* minHeight reserva slot mesmo quando fact não tem source (evita +/− 16px). */
+  factSource: { color: 'rgba(255,255,255,0.4)', fontSize: 11, fontStyle: 'italic', minHeight: 16 },
   factDots: {
     flexDirection: 'row',
     gap: 5,

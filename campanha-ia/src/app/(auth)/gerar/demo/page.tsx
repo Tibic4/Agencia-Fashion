@@ -96,7 +96,7 @@ const IconStar = () => (
 const FORMAT_PRESETS = [
   { id: "stories",   label: "Stories / Zap", icon: "📱", w: 1080, h: 1920, ratio: "9:16", desc: "Stories, Reels e WhatsApp Status" },
   { id: "feed45",    label: "Feed 4:5",      icon: "📸", w: 1080, h: 1350, ratio: "4:5",  desc: "Post no Feed do Instagram" },
-  { id: "feed11",    label: "Feed 1:1",      icon: "⬜", w: 1080, h: 1080, ratio: "1:1",  desc: "Quadrado para Feed e catálogo" },
+  { id: "feed11",    label: "Feed 1:1",      icon: "🖼️", w: 1080, h: 1080, ratio: "1:1",  desc: "Quadrado para Feed e catálogo" },
 ] as const;
 
 type FormatId = typeof FORMAT_PRESETS[number]["id"];
