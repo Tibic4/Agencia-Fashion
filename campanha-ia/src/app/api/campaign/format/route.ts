@@ -1,25 +1,23 @@
 /**
  * POST /api/campaign/format
  *
- * Recorta uma imagem de campanha pra um dos formatos do Instagram (Stories/
- * Feed 4:5/Feed 1:1) usando center-crop inteligente com prioridade para o
- * topo da imagem (onde fica o rosto).
+ * Converte a foto principal (Stories 9:16) para Feed 4:5 ou Feed 1:1.
+ * Mantém o corpo inteiro visível (fit: inside) e preenche as laterais
+ * com blur da própria imagem.
  *
- * ⚠️  ZERO alteração de cor — sem blur, sem vinheta, sem brightness/saturation.
- *     Apenas resize + crop + preservação de perfil ICC sRGB.
+ * ⚠️  ZERO alteração de cor na foto principal — o blur é aplicado SOMENTE
+ *     no fundo. A foto é composited por cima como camada 100% opaca.
  *
- * Por que server-side:
- *   - paridade de pixel entre web e mobile (1 source of truth)
- *   - mobile não precisa de canvas/skia/etc no bundle
- *   - sharp é ~30-80ms por imagem 1080×1920 numa VPS de 2 vCPU
+ * Stories NÃO precisa deste endpoint — o front baixa a imagem original
+ * direto, sem processamento (é a saída padrão do gerador de IA).
  *
  * Body (JSON):
- *   { imageUrl: string, format: 'stories' | 'feed45' | 'feed11' }
+ *   { imageUrl: string, format: 'feed45' | 'feed11' }
  *   ou
  *   { imageBase64: string, format: ... }
  *
  * Resposta:
- *   PNG binário (`image/png`) — pronto pra Sharing/save/download direto.
+ *   JPEG binário (`image/jpeg`, quality 92, ~300KB) — pronto pra download.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
@@ -35,39 +33,69 @@ const FORMATS: Record<string, { w: number; h: number }> = {
 };
 
 /**
- * Smart crop — redimensiona e recorta a imagem pro formato alvo SEM
- * alterar cores, brilho ou saturação.
+ * Adapta a foto Stories (9:16) pra Feed 4:5 ou 1:1.
  *
- * Estratégia:
- *   - `fit: "cover"` → preenche o canvas inteiro, cortando o excesso
- *   - `position: "north"` → prioriza o topo (rosto/busto em fotos de moda)
- *   - `.toColourspace("srgb")` → normaliza o color space (evita drift de
- *     imagens em Display P3 / Adobe RGB vindas de geradores de IA)
- *   - `.withIccProfile("srgb")` → embute o perfil ICC sRGB no PNG de saída
- *     para que browsers e apps de galeria renderizem com fidelidade
- *   - `.withMetadata()` → preserva DPI e metadados básicos
+ * 1. Fundo borrado: resize cover + blur(40). SEM brightness, SEM saturação.
+ * 2. Foto principal: resize inside (corpo inteiro) centralizada por cima.
+ *    Composited como camada 100% opaca → cores 100% preservadas.
  *
- * Antes usava blur+vignette+brightness que distorcia cores. Removido.
+ * Para Stories (9:16): apenas resize simples — sem blur, sem crop.
  */
-async function smartCrop(
+async function formatImage(
   input: Buffer,
   targetW: number,
   targetH: number,
 ): Promise<Buffer> {
-  return sharp(input)
+  const meta = await sharp(input).metadata();
+  const srcW = meta.width || targetW;
+  const srcH = meta.height || targetH;
+
+  const targetRatio = targetW / targetH;
+  const srcRatio = srcW / srcH;
+
+  // Se o ratio já bate (~2% tolerância), só redimensiona — sem blur
+  if (Math.abs(srcRatio - targetRatio) < 0.02) {
+    return sharp(input)
+      .toColourspace("srgb")
+      .resize(targetW, targetH, { fit: "cover", position: "north" })
+      .withIccProfile("srgb")
+      .jpeg({ quality: 92, mozjpeg: true })
+      .toBuffer();
+  }
+
+  // Fundo: blur da própria imagem, SEM brightness/saturação/vinheta
+  const bg = await sharp(input)
     .toColourspace("srgb")
-    .resize(targetW, targetH, {
-      fit: "cover",
-      position: "north",
-    })
+    .resize(targetW, targetH, { fit: "cover" })
+    .blur(40)
+    .jpeg({ quality: 50 }) // qualidade baixa pro fundo (é borrado mesmo)
+    .toBuffer();
+
+  // Foto principal: corpo inteiro (inside = contain), centralizada
+  const fg = await sharp(input)
+    .toColourspace("srgb")
+    .resize(targetW, targetH, { fit: "inside" })
     .withIccProfile("srgb")
-    .withMetadata()
-    .png({ compressionLevel: 6 })
+    .png()
+    .toBuffer();
+
+  const fgMeta = await sharp(fg).metadata();
+  const fgW = fgMeta.width || targetW;
+  const fgH = fgMeta.height || targetH;
+  const offsetX = Math.max(0, Math.round((targetW - fgW) / 2));
+  const offsetY = Math.max(0, Math.round((targetH - fgH) / 2));
+
+  // Compõe: fundo borrado → foto principal centralizada (100% opaca)
+  return sharp(bg)
+    .composite([
+      { input: fg, top: offsetY, left: offsetX, blend: "over" },
+    ])
+    .withIccProfile("srgb")
+    .jpeg({ quality: 92, mozjpeg: true })
     .toBuffer();
 }
 
 export async function POST(req: NextRequest) {
-  // Auth: este endpoint roda uma operação razoavelmente cara — só logados.
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -86,7 +114,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Unknown format: ${formatId}` }, { status: 400 });
   }
 
-  // Carrega a imagem fonte — URL HTTPS ou base64.
+  // Carrega a imagem fonte
   let inputBuffer: Buffer;
   if (body.imageUrl) {
     if (!/^https?:\/\//.test(body.imageUrl)) {
@@ -111,17 +139,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const out = await smartCrop(inputBuffer, fmt.w, fmt.h);
+    const out = await formatImage(inputBuffer, fmt.w, fmt.h);
     const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
-        "Content-Type": "image/png",
+        "Content-Type": "image/jpeg",
         "Cache-Control": "private, no-store",
       },
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: `smartCrop failed: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: `formatImage failed: ${msg}` }, { status: 500 });
   }
 }

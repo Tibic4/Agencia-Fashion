@@ -136,26 +136,42 @@ export default function ResultadoScreen() {
     img.imageUrl || `data:${img.mimeType};base64,${img.imageBase64}`;
 
   /**
-   * Pede o smart-crop pro endpoint server-side `/api/campaign/format` e
-   * salva o PNG retornado num arquivo local. Web e mobile chamam o mesmo
-   * endpoint — paridade pixel-a-pixel garantida.
+   * Materializa a imagem no formato selecionado como arquivo local.
    *
-   * O endpoint faz apenas resize + center-crop (position: north) + perfil
-   * ICC sRGB embutido. ZERO alteração de cor/brilho/saturação.
+   * - Stories (9:16): download DIRETO da imagem original — instantâneo,
+   *   sem round-trip pro endpoint. É a saída padrão do gerador de IA.
+   * - Feed 4:5 / 1:1: endpoint `/api/campaign/format` aplica contain
+   *   (corpo inteiro visível) + blur nas laterais. ZERO alteração de cor.
    *
-   * Fallback: se o endpoint falhar, devolve o uri original sem transformação,
-   * pra "Salvar/Compartilhar" continuar funcionando mesmo que o servidor
-   * esteja off.
+   * Fallback: se o endpoint falhar, devolve a imagem original sem
+   * transformação pra "Salvar/Compartilhar" continuar funcionando.
    */
   const cropToFormat = useCallback(async (img: GeneratedImage, formatId: string): Promise<string> => {
     console.log('[crop] start', { formatId, hasUrl: !!img.imageUrl, hasB64: !!img.imageBase64 });
+
+    // Stories é a saída padrão da IA — baixa direto sem endpoint (instantâneo)
+    if (formatId === 'stories') {
+      const localUri = `${LegacyFS.cacheDirectory}crialook_stories_${Date.now()}.png`;
+      if (img.imageUrl) {
+        console.log('[crop] stories direct download');
+        await LegacyFS.downloadAsync(img.imageUrl, localUri);
+      } else if (img.imageBase64) {
+        await LegacyFS.writeAsStringAsync(localUri, img.imageBase64, { encoding: LegacyFS.EncodingType.Base64 });
+      } else {
+        throw new Error('No image source available');
+      }
+      console.log('[crop] stories OK ->', localUri);
+      return localUri;
+    }
+
+    // Feed 4:5 / 1:1 — endpoint aplica contain + blur nas laterais
     try {
       const body: Record<string, string> = { format: formatId };
       if (img.imageUrl) body.imageUrl = img.imageUrl;
       else if (img.imageBase64) body.imageBase64 = img.imageBase64;
       else throw new Error('Image has neither URL nor base64');
 
-      console.log('[crop] calling /api/campaign/format');
+      console.log('[crop] calling /api/campaign/format for', formatId);
       const res = await apiFetchRaw('/campaign/format', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +180,7 @@ export default function ResultadoScreen() {
       console.log('[crop] response', res.status, res.ok);
       if (!res.ok) throw new Error(`format endpoint ${res.status}`);
 
-      // Salva o PNG retornado em cache local (Sharing/MediaLibrary precisam de file URI).
+      // Salva o JPEG retornado em cache local
       const blob = await res.blob();
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -175,7 +191,7 @@ export default function ResultadoScreen() {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-      const outUri = `${LegacyFS.cacheDirectory}crialook_formatted_${formatId}_${Date.now()}.png`;
+      const outUri = `${LegacyFS.cacheDirectory}crialook_${formatId}_${Date.now()}.jpg`;
       await LegacyFS.writeAsStringAsync(outUri, base64, { encoding: LegacyFS.EncodingType.Base64 });
       console.log('[crop] formatted OK ->', outUri);
       return outUri;
@@ -187,7 +203,7 @@ export default function ResultadoScreen() {
         level: 'warning',
         data: { error: e instanceof Error ? e.message : String(e) },
       });
-      // Fallback: salva original sem transformação. Save/Share não quebram.
+      // Fallback: salva original sem transformação
       const localUri = `${LegacyFS.cacheDirectory}crialook_raw_${Date.now()}.png`;
       try {
         if (img.imageUrl) {
@@ -214,7 +230,8 @@ export default function ResultadoScreen() {
       // cropToFormat já materializa o arquivo no cache local (com fallback
       // pra imagem original se o endpoint falhar). Sem downloadToLocal extra.
       const formatted = await cropToFormat(img, activeFormat);
-      await Sharing.shareAsync(formatted, { mimeType: 'image/png' });
+      const mime = activeFormat === 'stories' ? 'image/png' : 'image/jpeg';
+      await Sharing.shareAsync(formatted, { mimeType: mime });
     } catch (e) {
       console.warn('[share] failed', e);
     } finally {

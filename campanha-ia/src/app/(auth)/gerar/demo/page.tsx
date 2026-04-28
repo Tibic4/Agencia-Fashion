@@ -101,10 +101,11 @@ const FORMAT_PRESETS = [
 
 type FormatId = typeof FORMAT_PRESETS[number]["id"];
 
-/* Server-side smart crop via `/api/campaign/format` (sharp). Faz apenas
-   resize + center-crop (position: north) + perfil ICC sRGB embutido.
-   ZERO alteração de cor/brilho/saturação. Web e mobile chamam o mesmo
-   endpoint — paridade pixel-a-pixel garantida. */
+/* Formatos de imagem:
+   - Stories (9:16): saída padrão da IA, download direto sem processamento
+   - Feed 4:5 / 1:1: endpoint `/api/campaign/format` (sharp) aplica
+     contain (corpo inteiro) + blur nas laterais. ZERO alteração de cor.
+   Web e mobile compartilham o mesmo endpoint. */
 
 /* ─────────────────────────────────────────
    Main Page
@@ -209,12 +210,23 @@ export default function ResultadoCampanha() {
   };
 
   /**
-   * Pede o smart-fit pro endpoint server-side (`/api/campaign/format`) e
-   * devolve um data URL pronto pra usar em <img src> ou <a download>.
-   * Centraliza a lógica de crop+blur+vinheta — web e mobile chamam o mesmo
-   * endpoint, evitando drift entre as duas implementações.
+   * Busca a imagem formatada — Stories retorna direto (saída padrão da IA),
+   * Feed 4:5/1:1 chama o endpoint server-side que aplica contain + blur nas
+   * laterais sem alterar cores. Web e mobile compartilham o mesmo endpoint.
    */
   const fetchFormatted = useCallback(async (img: GeneratedImage, formatId: FormatId): Promise<string> => {
+    // Stories é a saída padrão da IA — baixa direto sem processamento
+    if (formatId === "stories") {
+      const src = getImageSrc(img);
+      if (img.imageUrl) {
+        const res = await fetch(img.imageUrl);
+        const blob = await res.blob();
+        return URL.createObjectURL(blob);
+      }
+      return src; // base64 data URL
+    }
+
+    // Feed 4:5 / 1:1 — endpoint aplica contain + blur nas laterais
     const body: Record<string, string> = { format: formatId };
     if (img.imageUrl) body.imageUrl = img.imageUrl;
     else if (img.imageBase64) body.imageBase64 = img.imageBase64;
@@ -230,21 +242,20 @@ export default function ResultadoCampanha() {
     return URL.createObjectURL(blob);
   }, []);
 
-  /** Download with format crop (server-side smartFit) */
+  /** Download with format — Stories: direto, Feed: endpoint server-side */
   const downloadFormatted = useCallback(async (img: GeneratedImage, idx: number, formatId: FormatId) => {
     setDownloadingHQ(true);
     try {
       const format = FORMAT_PRESETS.find(f => f.id === formatId) || FORMAT_PRESETS[0];
       const objectUrl = await fetchFormatted(img, formatId);
+      const ext = formatId === "stories" ? "png" : "jpg";
       const link = document.createElement("a");
-      link.download = `crialook_foto_${idx + 1}_${format.id}_${format.w}x${format.h}.png`;
+      link.download = `crialook_foto_${idx + 1}_${format.id}_${format.w}x${format.h}.${ext}`;
       link.href = objectUrl;
       link.click();
-      // Libera o objectURL após o navegador ter pegado o blob.
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
       console.error("Crop error:", err);
-      // Fallback: download original
       downloadImage(img, idx);
     } finally {
       setDownloadingHQ(false);
@@ -592,7 +603,7 @@ export default function ResultadoCampanha() {
                   {downloadingHQ ? (
                     <>
                       <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-                      Recortando...
+                      {activeFormat === "stories" ? "Baixando..." : "Adaptando..."}
                     </>
                   ) : (
                     <>
