@@ -2,10 +2,11 @@
  * POST /api/campaign/format
  *
  * Recorta uma imagem de campanha pra um dos formatos do Instagram (Stories/
- * Feed 4:5/Feed 1:1) usando "smart fit" — preenche as áreas sobrando com
- * versão borrada da própria imagem + vinheta. Espelha visualmente o que o
- * site fazia em HTML Canvas, agora server-side via `sharp` para que web e
- * mobile compartilhem a MESMA implementação.
+ * Feed 4:5/Feed 1:1) usando center-crop inteligente com prioridade para o
+ * topo da imagem (onde fica o rosto).
+ *
+ * ⚠️  ZERO alteração de cor — sem blur, sem vinheta, sem brightness/saturation.
+ *     Apenas resize + crop + preservação de perfil ICC sRGB.
  *
  * Por que server-side:
  *   - paridade de pixel entre web e mobile (1 source of truth)
@@ -33,63 +34,35 @@ const FORMATS: Record<string, { w: number; h: number }> = {
   feed11: { w: 1080, h: 1080 },
 };
 
-const RATIO_TOLERANCE = 0.02;
-
 /**
- * Vinheta sutil — overlay radial preto 0% (centro) → 35% (borda).
- * Reaproveita o mesmo gradient do site (`createRadialGradient` na linha 159
- * de gerar/demo/page.tsx). Implementado como SVG pra usar com `sharp.composite`.
+ * Smart crop — redimensiona e recorta a imagem pro formato alvo SEM
+ * alterar cores, brilho ou saturação.
+ *
+ * Estratégia:
+ *   - `fit: "cover"` → preenche o canvas inteiro, cortando o excesso
+ *   - `position: "north"` → prioriza o topo (rosto/busto em fotos de moda)
+ *   - `.toColourspace("srgb")` → normaliza o color space (evita drift de
+ *     imagens em Display P3 / Adobe RGB vindas de geradores de IA)
+ *   - `.withIccProfile("srgb")` → embute o perfil ICC sRGB no PNG de saída
+ *     para que browsers e apps de galeria renderizem com fidelidade
+ *   - `.withMetadata()` → preserva DPI e metadados básicos
+ *
+ * Antes usava blur+vignette+brightness que distorcia cores. Removido.
  */
-function vignetteSvg(width: number, height: number): Buffer {
-  return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-       <defs>
-         <radialGradient id="v" cx="50%" cy="50%" r="60%">
-           <stop offset="40%" stop-color="black" stop-opacity="0"/>
-           <stop offset="100%" stop-color="black" stop-opacity="0.35"/>
-         </radialGradient>
-       </defs>
-       <rect width="${width}" height="${height}" fill="url(#v)"/>
-     </svg>`,
-  );
-}
-
-async function smartFit(input: Buffer, targetW: number, targetH: number): Promise<Buffer> {
-  const meta = await sharp(input).metadata();
-  const srcW = meta.width || targetW;
-  const srcH = meta.height || targetH;
-
-  const targetRatio = targetW / targetH;
-  const srcRatio = srcW / srcH;
-
-  // Aspect bate (até 2% de tolerância) — só redimensiona, sem blur.
-  if (Math.abs(srcRatio - targetRatio) < RATIO_TOLERANCE) {
-    return sharp(input).resize(targetW, targetH, { fit: "cover" }).png({ quality: 95 }).toBuffer();
-  }
-
-  // 1. Fundo borrado — escala pra cobrir o canvas, blur 40, escurece (0.7), satura (1.3)
-  const bg = await sharp(input)
-    .resize(targetW, targetH, { fit: "cover" })
-    .blur(40)
-    .modulate({ brightness: 0.7, saturation: 1.3 })
-    .png()
-    .toBuffer();
-
-  // 2. Foto principal — fit inside (contain), preserva a foto inteira
-  const fg = await sharp(input).resize(targetW, targetH, { fit: "inside" }).png().toBuffer();
-  const fgMeta = await sharp(fg).metadata();
-  const fgW = fgMeta.width || targetW;
-  const fgH = fgMeta.height || targetH;
-  const offsetX = Math.max(0, Math.round((targetW - fgW) / 2));
-  const offsetY = Math.max(0, Math.round((targetH - fgH) / 2));
-
-  // 3. Compõe: fundo borrado → vinheta → foto principal centralizada
-  return sharp(bg)
-    .composite([
-      { input: vignetteSvg(targetW, targetH), top: 0, left: 0, blend: "over" },
-      { input: fg, top: offsetY, left: offsetX, blend: "over" },
-    ])
-    .png({ quality: 95 })
+async function smartCrop(
+  input: Buffer,
+  targetW: number,
+  targetH: number,
+): Promise<Buffer> {
+  return sharp(input)
+    .toColourspace("srgb")
+    .resize(targetW, targetH, {
+      fit: "cover",
+      position: "north",
+    })
+    .withIccProfile("srgb")
+    .withMetadata()
+    .png({ compressionLevel: 6 })
     .toBuffer();
 }
 
@@ -138,7 +111,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const out = await smartFit(inputBuffer, fmt.w, fmt.h);
+    const out = await smartCrop(inputBuffer, fmt.w, fmt.h);
     const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
     return new NextResponse(arrayBuffer, {
       status: 200,
@@ -149,6 +122,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: `smartFit failed: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: `smartCrop failed: ${msg}` }, { status: 500 });
   }
 }

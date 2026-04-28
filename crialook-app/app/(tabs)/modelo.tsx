@@ -34,6 +34,10 @@ import {
   type CreateModelFormState,
   type Gender,
 } from '@/components/CreateModelSheet';
+import { ModelPeekProvider, ModelPressable } from '@/components/ModelLongPressPreview';
+import { ModelBottomSheet, type ModelBottomSheetRef } from '@/components/ModelBottomSheet';
+import { LinearGradient } from 'expo-linear-gradient';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { api, apiDelete, apiGet, apiGetCached, apiPost, invalidateApiCache } from '@/lib/api';
@@ -114,6 +118,8 @@ export default function ModeloScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const sheetRef = useRef<CreateModelSheetRef>(null);
+  // BottomSheet de preview com pinch-zoom (acionado pelo botão 🔍 do card).
+  const peekSheetRef = useRef<ModelBottomSheetRef>(null);
 
   const loadModels = useCallback(async (opts?: { skipCache?: boolean }) => {
     if (opts?.skipCache) await invalidateApiCache('/model/list');
@@ -344,7 +350,12 @@ export default function ModeloScreen() {
   }
 
   // ── Models list ──
+  // ModelPeekProvider habilita o long-press peek (overlay com a foto ampliada)
+  // em todos os ModelPressable filhos. Precisa estar acima dos cards.
+  // peekSheetRef → o card também expõe um botão "🔍 ampliar" que abre o
+  // ModelBottomSheet com pinch-to-zoom (mesma UX da tela /gerar).
   return (
+    <ModelPeekProvider>
     <View style={[styles.container, { backgroundColor: colors.background }]}>
     <AppHeader />
     <ScrollView
@@ -353,6 +364,7 @@ export default function ModeloScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brand.primary} colors={[Colors.brand.primary]} />}
     >
       <ModelsListBody
+        peekSheetRef={peekSheetRef}
         models={models}
         modelLimit={modelLimit}
         canCreate={canCreate}
@@ -374,7 +386,10 @@ export default function ModeloScreen() {
       onSubmit={handleCreate}
       onDismissed={resetForm}
     />
+    {/* Pinch-to-zoom sheet — quando o user confirma na CTA, ativa esse modelo. */}
+    <ModelBottomSheet ref={peekSheetRef} onSelect={handleSetActive} />
     </View>
+    </ModelPeekProvider>
   );
 }
 
@@ -391,6 +406,7 @@ type TFunc = ReturnType<typeof useT>['t'];
 type ColorPalette = (typeof Colors)['light'];
 
 function ModelsListBody({
+  peekSheetRef,
   models,
   modelLimit,
   canCreate,
@@ -403,6 +419,7 @@ function ModelsListBody({
   onSetActive,
   onDelete,
 }: {
+  peekSheetRef: React.RefObject<ModelBottomSheetRef | null>;
   models: StoreModel[];
   modelLimit: number;
   canCreate: boolean;
@@ -484,6 +501,7 @@ function ModelsListBody({
                 t={t}
                 onSetActive={onSetActive}
                 onDelete={onDelete}
+                onZoom={() => peekSheetRef.current?.present(model as never)}
               />
             ))}
 
@@ -571,7 +589,10 @@ function ModelGridCard({
   colors,
   t,
   onSetActive,
-  onDelete,
+  // TODO: long-press não pode ser usado pra delete (conflita com peek preview).
+  // Mover delete pra um botão na BottomSheet ou menu de contexto.
+  onDelete: _onDelete,
+  onZoom,
 }: {
   model: StoreModel;
   index: number;
@@ -579,6 +600,7 @@ function ModelGridCard({
   t: TFunc;
   onSetActive: (id: string) => void;
   onDelete: (id: string) => void;
+  onZoom: () => void;
 }) {
   const matchFem = BODY_TYPES_FEM.find(b => b.value === model.body_type);
   const matchMasc = BODY_TYPES_MASC.find(b => b.value === model.body_type);
@@ -588,37 +610,33 @@ function ModelGridCard({
     ? t(matchMasc.labelKey)
     : model.body_type;
 
+  const hasPhoto = !!model.photo_url;
+
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 80).duration(400).springify()}
       style={styles.portraitCard}
     >
-      <AnimatedPressable
+      {/* ModelPressable: tap = ativa modelo, long-press = peek preview overlay
+          (mesma UX da tela /gerar). Substitui o AnimatedPressable que tinha
+          long-press deletando — agora delete vai pra um menu explícito (TODO).
+          Border permanente (transparente quando inactive) + shadow só via
+          glow ring overlay corrige o flicker "preta e some" no Android: sem
+          mudança de elevation, layout fica estável entre seleções. */}
+      <ModelPressable
+        model={model as never}
+        disablePeek={!hasPhoto}
         onPress={() => onSetActive(model.id)}
-        onLongPress={() => {
-          haptic.warning();
-          onDelete(model.id);
+        accessibilityLabel={`Ativar modelo ${model.name}`}
+        style={{
+          ...styles.portraitImageWrap,
+          borderWidth: 2,
+          borderColor: model.is_active ? Colors.brand.primary : 'transparent',
         }}
-        haptic="press"
-        scale={0.97}
-        style={[
-          styles.portraitImageWrap,
-          model.is_active
-            ? {
-                borderColor: Colors.brand.primary,
-                borderWidth: 1,
-                shadowColor: Colors.brand.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.32,
-                shadowRadius: 12,
-                elevation: 8,
-              }
-            : null,
-        ]}
       >
-        {model.photo_url ? (
+        {hasPhoto ? (
           <Image
-            source={{ uri: model.photo_url }}
+            source={{ uri: model.photo_url! }}
             style={styles.portraitImage}
             contentFit="cover"
             contentPosition="top"
@@ -644,7 +662,30 @@ function ModelGridCard({
           </View>
         )}
         {model.is_active && <PulsingBadge label={t('model.statusActive')} />}
-      </AnimatedPressable>
+
+        {/* Botão de ampliar — fucsia gradient, abre o ModelBottomSheet com
+            pinch-to-zoom. Mesma UX que /gerar. */}
+        {hasPhoto && (
+          <AnimatedPressable
+            onPress={onZoom}
+            haptic="tap"
+            scale={0.88}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={`Ampliar modelo ${model.name}`}
+            style={styles.zoomBadge}
+          >
+            <LinearGradient
+              colors={Colors.brand.gradientPrimary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.zoomBadgeInner}
+            >
+              <FontAwesome name="search-plus" size={11} color="#FFF" />
+            </LinearGradient>
+          </AnimatedPressable>
+        )}
+      </ModelPressable>
 
       <Text
         style={[styles.modelName, { color: colors.text }]}
@@ -745,6 +786,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   activeBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  zoomBadge: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  zoomBadgeInner: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
   modelName: { fontSize: 14, fontWeight: '600' },
   bodyBadge: {
     alignSelf: 'flex-start',
