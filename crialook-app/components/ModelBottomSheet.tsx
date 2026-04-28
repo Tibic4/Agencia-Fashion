@@ -32,7 +32,6 @@ import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import {
   BottomSheetModal,
   BottomSheetBackdrop,
@@ -331,7 +330,11 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
                   tint="dark"
                   style={styles.closeBtnInner}
                 >
-                  <FontAwesome name="close" size={15} color="#fff" />
+                  {/* Caractere "×" puro (U+00D7) em vez de FontAwesome "close":
+                      em algumas versões do Android o glyph renderizava como
+                      "X dentro de bolinha" (close-circle) por fallback de
+                      fonte. Text simples é determinístico em todo dispositivo. */}
+                  <Text style={styles.closeBtnText}>×</Text>
                 </BlurView>
               </Pressable>
             </View>
@@ -416,6 +419,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.35)',
     borderRadius: 18,
+  },
+  /* Tamanho/peso ajustados pra parecer ícone proporcional ao botão de 36px.
+     line-height ajustado pra visualmente centralizar (× tem baseline alta). */
+  closeBtnText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
+    lineHeight: 24,
+    marginTop: -2,
+    includeFontPadding: false,
   },
   photoInner: {
     width: '100%',
