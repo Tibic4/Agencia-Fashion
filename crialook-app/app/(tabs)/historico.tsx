@@ -111,7 +111,9 @@ export default function HistoricoScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<Campaign>) => {
-      const thumb = item.output?.image_urls?.find(Boolean);
+      const allThumbs = item.output?.image_urls?.filter(Boolean) ?? [];
+      const thumb = allThumbs[0];
+      const extraCount = Math.max(0, allThumbs.length - 1);
       const seqSuffix = item.sequence_number ? ` #${item.sequence_number}` : '';
       const headline = item.title
         ? `${item.title}${seqSuffix}`
@@ -120,101 +122,128 @@ export default function HistoricoScreen() {
         item.objective && isObjectiveKey(item.objective)
           ? objectiveColors[item.objective]
           : colors.textSecondary;
-      const animationDelay = Math.min(index, 8) * 60;
+      // Limita o stagger de animação aos primeiros itens — em listas longas
+      // o stagger acumulado fica cansativo.
+      const animationDelay = Math.min(index, 6) * 50;
+
+      const statusColor =
+        item.status === 'completed'
+          ? Colors.brand.success
+          : item.status === 'failed'
+          ? Colors.brand.error
+          : item.status === 'processing'
+          ? Colors.brand.warning
+          : null;
 
       return (
-        <Animated.View entering={FadeInDown.delay(animationDelay).duration(400).springify()}>
+        <Animated.View entering={FadeInDown.delay(animationDelay).duration(380).springify()}>
           <AnimatedPressable
             onPress={() => {
               router.push(`/(tabs)/gerar/resultado?id=${item.id}`);
             }}
             haptic="tap"
+            scale={0.98}
             accessibilityRole="button"
             accessibilityLabel={t('a11y.viewCampaign', { headline })}
           >
             <Card
               style={[
                 styles.card,
-                item.is_favorited && { borderColor: Colors.brand.secondary },
+                item.is_favorited && {
+                  borderColor: Colors.brand.secondary,
+                  shadowColor: Colors.brand.secondary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.18,
+                  shadowRadius: 10,
+                  elevation: 3,
+                },
               ]}
             >
               <View style={styles.row}>
-                <AnimatedPressable
-                  onPress={() => {
-                    toggleFavorite(item.id, item.is_favorited);
-                  }}
-                  haptic="press"
-                  scale={0.85}
-                  hitSlop={12}
-                  style={styles.starBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    item.is_favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')
-                  }
-                >
-                  <Text style={{ fontSize: 20 }}>{item.is_favorited ? '⭐' : '☆'}</Text>
-                </AnimatedPressable>
+                {/* Thumbnail editorial — 4:5 (proporção das fotos geradas), crop
+                    top-anchored pra preservar cabeça/busto do modelo. Estrela
+                    flutua no canto pra não roubar coluna do conteúdo, e badge
+                    "+N" indica fotos adicionais da mesma campanha. */}
+                <View style={styles.thumbWrap}>
+                  {thumb ? (
+                    <Image
+                      source={{ uri: thumb }}
+                      style={styles.thumb}
+                      contentFit="cover"
+                      contentPosition="top"
+                      transition={150}
+                      cachePolicy="memory-disk"
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.thumb,
+                        styles.thumbEmpty,
+                        { backgroundColor: colors.backgroundSecondary },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 24 }}>
+                        {item.status === 'failed' ? '⚠️' : '⏳'}
+                      </Text>
+                    </View>
+                  )}
 
-                {thumb ? (
-                  <Image
-                    source={{ uri: thumb }}
-                    style={styles.thumb}
-                    contentFit="cover"
-                    transition={120}
-                    cachePolicy="memory-disk"
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.thumb,
-                      {
-                        backgroundColor: colors.backgroundSecondary,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      },
-                    ]}
+                  {extraCount > 0 && (
+                    <View style={styles.thumbCount}>
+                      <Text style={styles.thumbCountText}>+{extraCount}</Text>
+                    </View>
+                  )}
+
+                  <AnimatedPressable
+                    onPress={() => {
+                      toggleFavorite(item.id, item.is_favorited);
+                    }}
+                    haptic="press"
+                    scale={0.85}
+                    hitSlop={10}
+                    style={styles.starBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      item.is_favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')
+                    }
                   >
-                    <Text>
-                      {item.status === 'completed'
-                        ? '✅'
-                        : item.status === 'failed'
-                        ? '❌'
-                        : '⏳'}
+                    <Text style={styles.starText}>
+                      {item.is_favorited ? '⭐' : '☆'}
                     </Text>
-                  </View>
-                )}
+                  </AnimatedPressable>
+                </View>
 
                 <View style={styles.info}>
                   <Text
                     style={[styles.headline, { color: colors.text }]}
-                    numberOfLines={1}
+                    numberOfLines={2}
                   >
                     {headline}
                   </Text>
-                  <View style={styles.metaRow}>
-                    {item.objective && (
-                      <Text style={[styles.badge, { color: objColor }]}>
+                  {item.objective && (
+                    <View style={styles.objectiveRow}>
+                      <View style={[styles.objectiveDot, { backgroundColor: objColor }]} />
+                      <Text style={[styles.objectiveLabel, { color: objColor }]}>
                         {isObjectiveKey(item.objective)
                           ? t(`objectives.${item.objective}` as const)
                           : item.objective}
                       </Text>
-                    )}
+                    </View>
+                  )}
+                  <View style={styles.metaRow}>
                     <Text style={[styles.date, { color: colors.textSecondary }]}>
                       {formatDate(item.created_at, t, locale)}
                     </Text>
-                    {item.status === 'completed' && (
-                      <View style={[styles.statusDot, { backgroundColor: Colors.brand.success }]} />
-                    )}
-                    {item.status === 'failed' && (
-                      <View style={[styles.statusDot, { backgroundColor: Colors.brand.error }]} />
-                    )}
-                    {item.status === 'processing' && (
-                      <View style={[styles.statusDot, { backgroundColor: Colors.brand.warning }]} />
+                    {statusColor && (
+                      <>
+                        <Text style={[styles.metaSep, { color: colors.textSecondary }]}>
+                          ·
+                        </Text>
+                        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                      </>
                     )}
                   </View>
                 </View>
-
-                <Text style={{ color: colors.textSecondary, fontSize: 18 }}>›</Text>
               </View>
             </Card>
           </AnimatedPressable>
@@ -392,23 +421,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   filterText: { fontSize: 13, fontWeight: '600' },
-  list: { padding: 20, gap: 10 },
-  card: { padding: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  starBtn: {
-    width: 48,
-    height: 48,
+  list: { padding: 16, gap: 10 },
+  /* Card mais "editorial" — padding maior, alinhamento top pro thumb 4:5
+     respirar. Antes a foto era 48×48 esmagada cortando o meio do modelo. */
+  card: { padding: 14 },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  /* Thumb wrap precisa overflow:visible pra estrela flutuante poder sair
+     levemente do retângulo. Background interno cuida do clip da foto. */
+  thumbWrap: { width: 72, height: 96, position: 'relative' },
+  thumb: {
+    width: 72,
+    height: 96,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#0d0a14',
+  },
+  thumbEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  thumb: { width: 48, height: 48, borderRadius: 10, overflow: 'hidden' },
-  info: { flex: 1, gap: 4 },
-  headline: { fontSize: 14, fontWeight: '600' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  badge: { fontSize: 12, fontWeight: '600' },
-  date: { fontSize: 12 },
+  /* "+N" pill embaixo do thumb mostra que a campanha tem múltiplas fotos
+     (cada campanha gera 3, mas só 1 vai pro thumb principal). */
+  thumbCount: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  thumbCountText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  starBtn: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 16,
+  },
+  starText: { fontSize: 14, includeFontPadding: false },
+  info: { flex: 1, gap: 6, minHeight: 96, justifyContent: 'center' },
+  headline: { fontSize: 15, fontWeight: '700', lineHeight: 20 },
+  objectiveRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  objectiveDot: { width: 8, height: 8, borderRadius: 4 },
+  objectiveLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaSep: { fontSize: 12 },
+  date: { fontSize: 12, fontWeight: '500' },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyTitle: { fontSize: 18, fontWeight: '600' },
   emptyDesc: { fontSize: 14 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  statusDot: { width: 7, height: 7, borderRadius: 3.5 },
 });
