@@ -201,11 +201,12 @@ export default function Configuracoes() {
                   </div>
                 )}
                 {logoUrl ? (
-                  /* object-cover (era contain + p-2): logo ocupa o card inteiro
-                     sem padding interno. Logos retangulares são levemente
-                     cortadas nas pontas — preço aceitável pela presença
-                     visual mais forte. */
-                  <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                  /* object-contain sem padding interno (antes era contain+p-2).
+                     Logo ganha o tamanho máximo dentro do quadrado SEM cortar:
+                     - circulares/quadradas (caso CriaLook) ficam perfeitas
+                     - retangulares (wordmarks) cabem inteiras com ar nas
+                       laterais ou em cima/embaixo, em vez de serem cortadas. */
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <div className="text-center">
                     <span className="text-2xl sm:text-3xl">📷</span>
