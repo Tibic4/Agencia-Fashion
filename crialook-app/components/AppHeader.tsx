@@ -13,7 +13,7 @@
  *   - exports `useHeaderHeight()` so screens can compute that padding
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -86,20 +86,16 @@ function useCredits(): CreditState {
 }
 
 // ---------- pieces ----------------------------------------------------------
+/* Logo real (icon.png — mesma rodinha purple/hanger usada no app icon e
+   no sign-in). Antes era um anel gradient + Text "C" — ruído visual já
+   que o logo verdadeiro já é redondo + brand-colored. */
 function LogoMark() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme];
   return (
-    <LinearGradient
-      colors={Colors.brand.gradientPrimary}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.logoBorder}
-    >
-      <View style={[styles.logoInner, { backgroundColor: colors.background }]}>
-        <Text style={[styles.logoChar, { color: colors.text }]}>C</Text>
-      </View>
-    </LinearGradient>
+    <Image
+      source={require('@/assets/images/icon.png')}
+      style={styles.logoMark}
+      resizeMode="contain"
+    />
   );
 }
 
@@ -301,25 +297,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  logoBorder: {
+  /* Logo real — mesmo asset do app icon, redondo, fundo brand já incluído. */
+  logoMark: {
     width: 32,
     height: 32,
-    borderRadius: 10,
-    padding: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoInner: {
-    flex: 1,
-    width: '100%',
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoChar: {
-    fontSize: 16,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -0.5,
+    borderRadius: 16,
   },
   wordmarkRow: {
     flexDirection: 'row',
