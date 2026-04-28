@@ -3,7 +3,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_7
 import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -41,24 +41,52 @@ function isValidCampaignId(value: unknown): value is string {
   return typeof value === 'string' && UUID_REGEX.test(value);
 }
 
-function AuthGate() {
+/* `routeReady` semaphore — `true` quando a rota mostrada já é a "certa"
+   pra esse estado de auth. Render do `<Slot />` é gateado por isso pra
+   evitar pintar a tela errada antes do `router.replace` rodar (anti-padrão
+   "render then redirect" → vira "resolve then render"). */
+function AuthGate({ onReady }: { onReady?: () => void }) {
   const { isSignedIn, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const pushTokenSyncedRef = useRef(false);
+  const [routeReady, setRouteReady] = useState(false);
 
   useEffect(() => {
     if (loading) return;
 
     const inTabs = segments[0] === '(tabs)';
     const inOnboarding = segments[0] === 'onboarding';
+    const inAuth = segments[0] === 'sign-in' || segments[0] === 'sign-up' || segments[0] === 'sso-callback';
 
+    // Caso 1: deslogado num lugar protegido → mandar pra sign-in
     if (!isSignedIn && (inTabs || inOnboarding)) {
+      setRouteReady(false);
       router.replace('/sign-in');
-    } else if (isSignedIn && !inTabs && !inOnboarding) {
-      checkOnboardingThenRedirect();
+      return;
     }
+
+    // Caso 2: deslogado em rota pública (sign-in/up/sso-callback ou root)
+    if (!isSignedIn) {
+      setRouteReady(true);
+      return;
+    }
+
+    // Caso 3: logado em rota não-app (sign-in, root) → checar onboarding
+    if (isSignedIn && !inTabs && !inOnboarding && !inAuth) {
+      setRouteReady(false);
+      checkOnboardingThenRedirect();
+      return;
+    }
+
+    // Caso 4: logado em (tabs)/onboarding/auth — destino correto
+    setRouteReady(true);
   }, [isSignedIn, loading, segments]);
+
+  // Callback pra parent (RootLayout) saber quando esconder a splash.
+  useEffect(() => {
+    if (routeReady && !loading) onReady?.();
+  }, [routeReady, loading, onReady]);
 
   const checkOnboardingThenRedirect = async () => {
     try {
@@ -68,6 +96,8 @@ function AuthGate() {
     } catch {
       router.replace('/(tabs)/gerar');
     }
+    // setRouteReady fica em false até o router.replace acionar nova
+    // execução do useEffect acima e cair em "Caso 4".
   };
 
   useEffect(() => {
@@ -122,7 +152,11 @@ function AuthGate() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={edges}>
-      <Slot />
+      {/* Só renderiza Slot quando a rota mostrada bate com o estado de auth.
+          Antes disso, `null` mantém a SplashScreen visível (ela só esconde
+          via onReady → RootLayout). Sem isso, a tela errada pintava por
+          ~50-500ms enquanto o router.replace acontecia. */}
+      {routeReady ? <Slot /> : null}
     </SafeAreaView>
   );
 }
@@ -154,14 +188,19 @@ function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  /* `appReady` = fontes carregadas + auth resolveu pra rota correta.
+     Antes só dependia de fontes, então a splash sumia enquanto o Clerk
+     ainda estava hidratando e a tela errada aparecia atrás. */
+  const [authReady, setAuthReady] = useState(false);
+  const appReady = loaded && authReady;
 
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
-  }, [loaded]);
+    if (appReady) SplashScreen.hideAsync();
+  }, [appReady]);
 
   if (!loaded) return null;
 
@@ -175,7 +214,7 @@ function RootLayout() {
                 <NavigationTheme value={navTheme}>
                   <StatusBar style="auto" />
                   <OfflineBanner />
-                  <AuthGate />
+                  <AuthGate onReady={() => setAuthReady(true)} />
                   <BiometricConsentMount />
                 </NavigationTheme>
               </BottomSheetModalProvider>

@@ -119,7 +119,13 @@ export default function ResultadoScreen() {
   const [processing, setProcessing] = useState<null | 'share' | 'save'>(null);
 
   useEffect(() => {
-    if (!id) { setLoading(false); return; }
+    /* `useLocalSearchParams` pode hidratar `id` no segundo render. Sem
+       distinguir undefined (ainda hidratando) de "" (param ausente), o
+       primeiro render setava loading=false → tela vazia → segundo render
+       fetcha → flash do resultado vazio. Agora mantemos loading=true até
+       termos certeza do estado. */
+    if (id === undefined) return; // ainda hidratando — não toca em loading
+    if (!id) { setLoading(false); return; } // param de fato ausente
     apiGet<{ data: CampaignResult }>(`/campaigns/${id}`)
       .then(res => {
         if (res?.data) {

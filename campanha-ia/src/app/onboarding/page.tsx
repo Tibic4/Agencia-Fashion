@@ -121,33 +121,29 @@ export default function Onboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFreeTier, setIsFreeTier] = useState<boolean>(true);
-  const [checking, setChecking] = useState(true);
 
   // Confetti state for step 3
   const [confettiPieces, setConfettiPieces] = useState<{ left: string; delay: string; color: string; size: number }[]>([]);
 
   const totalSteps = 4; // 0-3
 
+  /* Plan check em background — middleware já garante que se chegamos aqui é
+     porque NÃO há loja (caso contrário ele teria redirecionado pra /gerar via
+     cookie cache `cl_hs_`). Antes essa página fazia outro fetch + spinner
+     gigante bloqueando o render — work duplicado que causava ~300-800ms de
+     "tela vazia branca" depois do middleware. Agora: form aparece na hora,
+     plan info popula em background. */
   useEffect(() => {
     fetch("/api/store")
-      .then((res) => {
-        if (res.status === 404) return null;
-        return res.json();
-      })
+      .then((res) => res.ok ? res.json() : null)
       .then((data) => {
-        if (!data) { setChecking(false); return; }
-        if (data.success && data.data?.id) {
-          router.replace("/gerar");
-          return;
-        }
-        if (data.success && data.data) {
+        if (data?.success && data.data) {
           const plan = data.data.plan_name;
           setIsFreeTier(!plan || plan === "gratis" || plan === "free");
         }
-        setChecking(false);
       })
-      .catch(() => { setIsFreeTier(true); setChecking(false); });
-  }, [router]);
+      .catch(() => { /* default já é isFreeTier=true */ });
+  }, []);
 
   useEffect(() => {
     if (step === 3) {
@@ -247,16 +243,6 @@ export default function Onboarding() {
 
   // Animation class for step transition
   const slideClass = direction === "forward" ? "onb-slide-in-right" : "onb-slide-in-left";
-
-  if (checking) {
-    return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--gradient-hero)" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-          <div style={{ width: "40px", height: "40px", borderRadius: "50%", border: "3px solid var(--border)", borderTopColor: "var(--brand-500)", animation: "spin 0.8s linear infinite" }} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>

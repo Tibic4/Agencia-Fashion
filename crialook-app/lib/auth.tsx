@@ -43,6 +43,7 @@ function AuthInner({ children }: PropsWithChildren) {
     await apiPost('/store/push-token', { token: null }).catch(() => {});
     await invalidateAll();
     setSentryUser(null);
+    clearAuthTokenCache();
     await clerkSignOut();
   };
 
@@ -80,11 +81,36 @@ export function useAuth() {
   return ctx;
 }
 
+/* In-memory cache do JWT do Clerk com TTL curto.
+   Why: cada `apiGet`/`apiPost` chamava `clerk.session.getToken()`, que faz
+   uma dança async (potencialmente network refresh). Em telas com vários
+   fetches concorrentes (ex: /plano fazendo 4 paralelos), isso adiciona
+   100-400ms acumulados. Tokens Clerk duram ~60s e a SDK refaz refresh
+   automático — cacheamos por 30s pra ganhar latência sem risco de uso de
+   token expirado.
+   Nome `jwtCache` (não `tokenCache`) pra não colidir com o `tokenCache` do
+   Clerk Expo definido no topo do arquivo (storage de tokens em SecureStore). */
+let jwtCache: { value: string; expiresAt: number } | null = null;
+const TOKEN_TTL_MS = 30_000;
+
 export async function getAuthToken(): Promise<string | null> {
+  const now = Date.now();
+  if (jwtCache && jwtCache.expiresAt > now) {
+    return jwtCache.value;
+  }
   try {
     const clerk = getClerkInstance();
-    return (await clerk.session?.getToken()) ?? null;
+    const fresh = (await clerk.session?.getToken()) ?? null;
+    if (fresh) {
+      jwtCache = { value: fresh, expiresAt: now + TOKEN_TTL_MS };
+    }
+    return fresh;
   } catch {
     return null;
   }
+}
+
+/** Invalida o cache — chamar no signOut pra evitar reuso de token antigo. */
+export function clearAuthTokenCache() {
+  jwtCache = null;
 }

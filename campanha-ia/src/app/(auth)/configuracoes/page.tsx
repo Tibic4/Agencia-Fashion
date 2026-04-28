@@ -135,10 +135,35 @@ export default function Configuracoes() {
     }
   };
 
+  /* Skeleton em vez de spinner gigante centralizado: usuário vê o shape final
+     da página enquanto os dados carregam — percepção de "instantâneo" mesmo
+     que o tempo real seja igual. Mesma técnica do /historico que já estava
+     bem feita. */
   if (loading) {
     return (
-      <div className="animate-fade-in-up max-w-2xl mx-auto flex items-center justify-center py-20">
-        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--brand-200)", borderTopColor: "var(--brand-500)" }} />
+      <div className="animate-fade-in-up max-w-2xl mx-auto">
+        <div className="mb-8">
+          <div className="h-8 w-48 rounded-md mb-2" style={{ background: "var(--surface-2)" }} />
+          <div className="h-4 w-80 rounded" style={{ background: "var(--surface-2)" }} />
+        </div>
+        <div className="surface-card p-6 mb-4">
+          <div className="h-5 w-40 rounded mb-3" style={{ background: "var(--surface-2)" }} />
+          <div className="flex gap-4">
+            <div className="w-24 h-24 rounded-2xl" style={{ background: "var(--surface-2)" }} />
+            <div className="flex-1 space-y-3">
+              <div className="h-12 rounded-lg" style={{ background: "var(--surface-2)" }} />
+              <div className="h-12 rounded-lg w-3/4" style={{ background: "var(--surface-2)" }} />
+            </div>
+          </div>
+        </div>
+        <div className="surface-card p-6 mb-4">
+          <div className="h-5 w-32 rounded mb-3" style={{ background: "var(--surface-2)" }} />
+          <div className="space-y-3">
+            <div className="h-12 rounded-lg" style={{ background: "var(--surface-2)" }} />
+            <div className="h-12 rounded-lg" style={{ background: "var(--surface-2)" }} />
+            <div className="h-12 rounded-lg w-2/3" style={{ background: "var(--surface-2)" }} />
+          </div>
+        </div>
       </div>
     );
   }
