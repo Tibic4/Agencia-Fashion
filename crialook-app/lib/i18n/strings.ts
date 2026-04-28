@@ -75,6 +75,7 @@ export const ptBR = {
     upgradePromptTitle: 'Experimente o Pro!',
     upgradePromptDesc: 'Campanhas ilimitadas, modelos exclusivos e muito mais',
     currentPlan: 'Seu plano atual',
+    lowerPlan: 'Plano inferior',
     recommended: 'Recomendado',
     campaignsBar: 'Campanhas',
     modelsBar: 'Modelos',
@@ -458,6 +459,7 @@ export const ptBR = {
     deleteTitle: 'Excluir modelo',
     deleteMessage: 'Tem certeza?',
     statusActive: 'ATIVA',
+    statusActiveMasc: 'ATIVO',
     statusGenerating: 'Gerando...',
   },
   result: {
@@ -607,6 +609,7 @@ export const en: StringTree = {
     upgradePromptTitle: 'Try Pro!',
     upgradePromptDesc: 'Unlimited campaigns, exclusive models and more',
     currentPlan: 'Your current plan',
+    lowerPlan: 'Lower tier',
     recommended: 'Recommended',
     campaignsBar: 'Campaigns',
     modelsBar: 'Models',
@@ -987,6 +990,7 @@ export const en: StringTree = {
     deleteTitle: 'Delete model',
     deleteMessage: 'Are you sure?',
     statusActive: 'ACTIVE',
+    statusActiveMasc: 'ACTIVE',
     statusGenerating: 'Generating…',
   },
   result: {
