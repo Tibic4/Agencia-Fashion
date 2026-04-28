@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable, Card, GradientText, Skeleton } from '@/components/ui';
@@ -149,31 +150,45 @@ export default function HistoricoScreen() {
             <Card
               style={[
                 styles.card,
-                item.is_favorited && {
-                  borderColor: Colors.brand.secondary,
-                  shadowColor: Colors.brand.secondary,
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.18,
-                  shadowRadius: 10,
-                  elevation: 3,
-                },
+                item.is_favorited && styles.cardFavorited,
               ]}
             >
+              {/* Accent stripe na esquerda (favoritados) — visual editorial
+                  estilo Slack starred / Linear focused. 4px brand-gradient
+                  vertical, marca instantaneamente o item sem peso visual. */}
+              {item.is_favorited && (
+                <LinearGradient
+                  colors={Colors.brand.gradientPrimary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={styles.favoriteAccent}
+                  pointerEvents="none"
+                />
+              )}
+
               <View style={styles.row}>
-                {/* Thumbnail editorial — 4:5 (proporção das fotos geradas), crop
-                    top-anchored pra preservar cabeça/busto do modelo. Estrela
-                    flutua no canto pra não roubar coluna do conteúdo, e badge
-                    "+N" indica fotos adicionais da mesma campanha. */}
+                {/* Thumbnail editorial — 4:5 com `contain` em vez de cover.
+                    Antes mesmo com top-anchor o crop ainda cortava parte
+                    relevante das fotos verticais. `contain` preserva a foto
+                    inteira; o fundo gradient sutil disfarça letterbox. */}
                 <View style={styles.thumbWrap}>
                   {thumb ? (
-                    <Image
-                      source={{ uri: thumb }}
-                      style={styles.thumb}
-                      contentFit="cover"
-                      contentPosition="top"
-                      transition={150}
-                      cachePolicy="memory-disk"
-                    />
+                    <View style={styles.thumb}>
+                      <LinearGradient
+                        colors={['rgba(217,70,239,0.10)', 'rgba(168,85,247,0.06)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <Image
+                        source={{ uri: thumb }}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="contain"
+                        contentPosition="top"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
+                    </View>
                   ) : (
                     <View
                       style={[
@@ -194,6 +209,9 @@ export default function HistoricoScreen() {
                     </View>
                   )}
 
+                  {/* Estrela: gradient brand-pink quando favoritada (presença
+                      forte), bg escuro semi-transparente quando não. Tamanho
+                      maior (34×34) com sombra dá peso de botão de ação real. */}
                   <AnimatedPressable
                     onPress={() => {
                       toggleFavorite(item.id, item.is_favorited);
@@ -207,9 +225,20 @@ export default function HistoricoScreen() {
                       item.is_favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')
                     }
                   >
-                    <Text style={styles.starText}>
-                      {item.is_favorited ? '⭐' : '☆'}
-                    </Text>
+                    {item.is_favorited ? (
+                      <LinearGradient
+                        colors={Colors.brand.gradientPrimary}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.starInner}
+                      >
+                        <Text style={styles.starTextActive}>★</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={[styles.starInner, styles.starInnerInactive]}>
+                        <Text style={styles.starTextInactive}>☆</Text>
+                      </View>
+                    )}
                   </AnimatedPressable>
                 </View>
 
@@ -421,27 +450,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   filterText: { fontSize: 13, fontWeight: '600' },
-  list: { padding: 16, gap: 10 },
-  /* Card mais "editorial" — padding maior, alinhamento top pro thumb 4:5
-     respirar. Antes a foto era 48×48 esmagada cortando o meio do modelo. */
-  card: { padding: 14 },
+  list: { padding: 16 },
+  /* marginBottom em cada card — FlashList não aplica `gap` em
+     contentContainerStyle. 14px alinha com o "respiro" de listas dos grandes
+     (Apple Photos, Linear). Padding-left maior pra deixar espaço pro accent
+     stripe da esquerda quando favoritado. */
+  card: {
+    padding: 14,
+    paddingLeft: 18,
+    marginBottom: 14,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  cardFavorited: {
+    borderColor: Colors.brand.secondary,
+    shadowColor: Colors.brand.secondary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 5,
+  },
+  /* Accent vertical stripe — left edge do card. 4px brand gradient.
+     Pointer-events none pra não roubar o tap do card. */
+  favoriteAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+  },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
-  /* Thumb wrap precisa overflow:visible pra estrela flutuante poder sair
-     levemente do retângulo. Background interno cuida do clip da foto. */
+  /* Thumb wrap permite estrela flutuar fora do thumb. */
   thumbWrap: { width: 72, height: 96, position: 'relative' },
+  /* Border sutil + bg gradient-soft pra letterbox de fotos com fundo branco
+     não ficar gritante (o gradient pinkish dá feel editorial). */
   thumb: {
     width: 72,
     height: 96,
     borderRadius: 12,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(217,70,239,0.14)',
     backgroundColor: '#0d0a14',
   },
   thumbEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  /* "+N" pill embaixo do thumb mostra que a campanha tem múltiplas fotos
-     (cada campanha gera 3, mas só 1 vai pro thumb principal). */
   thumbCount: {
     position: 'absolute',
     bottom: 6,
@@ -452,18 +509,37 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   thumbCountText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  /* Estrela: 34×34, posicionada saindo levemente do canto. Sombra dá lift
+     visual; gradient quando ativa, glass-bg quando inativa. */
   starBtn: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 32,
-    height: 32,
+    top: -6,
+    right: -6,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  starInner: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+    borderRadius: 17,
   },
-  starText: { fontSize: 14, includeFontPadding: false },
+  starInnerInactive: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  starTextActive: { color: '#fff', fontSize: 16, lineHeight: 18, includeFontPadding: false },
+  starTextInactive: { color: '#fff', fontSize: 16, lineHeight: 18, includeFontPadding: false },
   info: { flex: 1, gap: 6, minHeight: 96, justifyContent: 'center' },
   headline: { fontSize: 15, fontWeight: '700', lineHeight: 20 },
   objectiveRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
