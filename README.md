@@ -207,8 +207,11 @@ npm run build
 ```bash
 cd Agencia-Fashion/crialook-app
 
-# Instalar dependências (Storybook tem peer-dep com vite — usar legacy)
-npm install --legacy-peer-deps
+# Instalar dependências
+# IMPORTANTE: o EAS roda npm 10. Se você usa npm 11+ localmente,
+# rode `npm run lock:fix` em vez de `npm install` para gerar um
+# package-lock.json compatível com o builder remoto.
+npm install
 
 # Configurar env
 cp .env.example .env
