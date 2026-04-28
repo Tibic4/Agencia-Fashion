@@ -75,6 +75,14 @@
         }
       ],
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Permitir que o CriaLook salve as campanhas geradas na sua galeria.",
+          "savePhotosPermission": "Permitir que o CriaLook salve as campanhas geradas na sua galeria.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",

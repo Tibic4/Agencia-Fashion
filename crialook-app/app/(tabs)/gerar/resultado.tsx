@@ -140,17 +140,20 @@ export default function ResultadoScreen() {
    * formatação esteja off (o user só não terá o blur/vinheta).
    */
   const cropToFormat = useCallback(async (img: GeneratedImage, formatId: string): Promise<string> => {
+    console.log('[crop] start', { formatId, hasUrl: !!img.imageUrl, hasB64: !!img.imageBase64 });
     try {
       const body: Record<string, string> = { format: formatId };
       if (img.imageUrl) body.imageUrl = img.imageUrl;
       else if (img.imageBase64) body.imageBase64 = img.imageBase64;
       else throw new Error('Image has neither URL nor base64');
 
+      console.log('[crop] calling /api/campaign/format');
       const res = await apiFetchRaw('/campaign/format', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      console.log('[crop] response', res.status, res.ok);
       if (!res.ok) throw new Error(`format endpoint ${res.status}`);
 
       // Salva o PNG retornado em cache local (Sharing/MediaLibrary precisam de file URI).
@@ -166,8 +169,10 @@ export default function ResultadoScreen() {
       });
       const outUri = `${LegacyFS.cacheDirectory}crialook_formatted_${formatId}_${Date.now()}.png`;
       await LegacyFS.writeAsStringAsync(outUri, base64, { encoding: LegacyFS.EncodingType.Base64 });
+      console.log('[crop] formatted OK ->', outUri);
       return outUri;
     } catch (e) {
+      console.warn('[crop] fallback to raw', e instanceof Error ? e.message : String(e));
       Sentry.addBreadcrumb({
         category: 'photo',
         message: 'cropToFormat fallback to raw',
@@ -176,14 +181,20 @@ export default function ResultadoScreen() {
       });
       // Fallback: salva original sem transformação. Save/Share não quebram.
       const localUri = `${LegacyFS.cacheDirectory}crialook_raw_${Date.now()}.png`;
-      if (img.imageUrl) {
-        await LegacyFS.downloadAsync(img.imageUrl, localUri);
-      } else if (img.imageBase64) {
-        await LegacyFS.writeAsStringAsync(localUri, img.imageBase64, { encoding: LegacyFS.EncodingType.Base64 });
-      } else {
-        throw new Error('No image source available');
+      try {
+        if (img.imageUrl) {
+          await LegacyFS.downloadAsync(img.imageUrl, localUri);
+        } else if (img.imageBase64) {
+          await LegacyFS.writeAsStringAsync(localUri, img.imageBase64, { encoding: LegacyFS.EncodingType.Base64 });
+        } else {
+          throw new Error('No image source available');
+        }
+        console.log('[crop] fallback OK ->', localUri);
+        return localUri;
+      } catch (fallbackErr) {
+        console.error('[crop] fallback FAILED', fallbackErr);
+        throw fallbackErr;
       }
-      return localUri;
     }
   }, []);
 
@@ -199,7 +210,12 @@ export default function ResultadoScreen() {
 
   const saveToGallery = useCallback(async (img: GeneratedImage, idx: number) => {
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
+      console.log('[save] requesting permission');
+      // writeOnly=false (precisamos ler pra criar álbum), granular=['photo'] —
+      // sem isso o expo-media-library pede também AUDIO, que não está no
+      // manifest do Expo Go e quebra o request inteiro.
+      const { status } = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+      console.log('[save] permission status:', status);
       if (status !== 'granted') {
         haptic.warning();
         Alert.alert(t('result.permissionDeniedTitle'), t('result.permissionDeniedBody'));
@@ -207,10 +223,13 @@ export default function ResultadoScreen() {
       }
       // Aplica o formato selecionado (Stories/Feed/Feed 1:1) com smartFit do server.
       const formatted = await cropToFormat(img, activeFormat);
+      console.log('[save] cropToFormat returned:', formatted);
       // Save the asset, then file it under the dedicated "CriaLook" album so
       // users can find their generations easily (matches the iOS Photos UX
       // for app-generated content like Instagram, VSCO, etc.).
+      console.log('[save] creating asset...');
       const asset = await MediaLibrary.createAssetAsync(formatted);
+      console.log('[save] asset created:', asset.id);
       try {
         const album = await MediaLibrary.getAlbumAsync('CriaLook');
         if (album) {
@@ -218,9 +237,10 @@ export default function ResultadoScreen() {
         } else {
           await MediaLibrary.createAlbumAsync('CriaLook', asset, false);
         }
-      } catch {
+      } catch (albumErr) {
         // Album operation can fail on some Android variants — the asset is
         // already saved to the camera roll, so this is non-fatal.
+        console.warn('[save] album op failed (non-fatal):', albumErr);
       }
       Sentry.addBreadcrumb({
         category: 'photo',
@@ -231,6 +251,7 @@ export default function ResultadoScreen() {
       haptic.success();
       Alert.alert(t('result.saveSuccessTitle'), t('result.saveSuccessMessage'));
     } catch (e) {
+      console.error('[save] FAILED', e);
       Sentry.captureException(e, { tags: { feature: 'save_photo' } });
       haptic.error();
       Alert.alert(t('common.error'), t('result.saveErrorMessage'));
