@@ -3,20 +3,23 @@
 import { useState, useEffect } from "react";
 import { friendlyError } from "@/lib/friendly-error";
 import { PLANS, CREDIT_PACKAGES_CAMPAIGNS, CREDIT_PACKAGES_MODELS } from "@/lib/plans";
+import { useStoreUsage } from "@/lib/hooks/useStoreUsage";
 
 const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 );
 
-interface StoreUsage {
-  plan_name: string;
-  campaigns_generated: number;
-  campaigns_limit: number;
-  models_used: number;
-  models_limit: number;
-  period_start: string | null;
-  period_end: string | null;
-}
+// StoreUsage type movido pra hook compartilhado — mantém campos extras opcionais
+// pra esta página continuar lendo plan_name, models_used etc.
+type LocalStoreUsage = {
+  plan_name?: string;
+  campaigns_generated?: number;
+  campaigns_limit?: number;
+  models_used?: number;
+  models_limit?: number;
+  period_start?: string | null;
+  period_end?: string | null;
+};
 
 interface StoreCredits {
   campaigns: number;
@@ -63,7 +66,12 @@ export default function Plano() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [store, setStore] = useState<StoreData | null>(null);
-  const [usage, setUsage] = useState<StoreUsage | null>(null);
+  /* usage agora vem do StoreUsageProvider compartilhado com o layout autenticado.
+     `refresh()` é chamado pelos pollings de pagamento pra atualizar todos os
+     consumidores de uma vez. Antes esta página fazia 2-3 fetches duplicados
+     pra mesma rota. */
+  const { usage: usageRaw, refresh: refreshUsage } = useStoreUsage();
+  const usage = usageRaw as LocalStoreUsage | null;
   const [credits, setCredits] = useState<StoreCredits | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [trialUsed, setTrialUsed] = useState(false);
@@ -78,13 +86,8 @@ export default function Plano() {
     if (status === "approved" || source === "subscription") {
       setStatusMsg("✅ Pagamento aprovado! Seu plano será atualizado em instantes.");
       // Polling para atualizar usage após webhook processar
-      const pollUsage = setInterval(async () => {
-        try {
-          const res = await fetch("/api/store/usage");
-          if (!res.ok) return;
-          const data = await res.json();
-          if (data?.data) setUsage(data.data);
-        } catch { /* ignore */ }
+      const pollUsage = setInterval(() => {
+        refreshUsage().catch(() => {});
       }, 2000);
       setTimeout(() => clearInterval(pollUsage), 30000);
     } else if (status === "rejected") {
@@ -97,15 +100,10 @@ export default function Plano() {
       setStatusMsg("✅ Créditos adicionados com sucesso!");
       // Polling para atualizar usage e credits após webhook processar
       const pollCredits = setInterval(async () => {
+        // Usage refresh via hook compartilhado, credits ainda local.
+        refreshUsage().catch(() => {});
         try {
-          const [usageRes, creditsRes] = await Promise.all([
-            fetch("/api/store/usage"),
-            fetch("/api/store/credits"),
-          ]);
-          if (usageRes.ok) {
-            const d = await usageRes.json();
-            if (d?.data) setUsage(d.data);
-          }
+          const creditsRes = await fetch("/api/store/credits");
           if (creditsRes.ok) {
             const d = await creditsRes.json();
             if (d?.data) setCredits(d.data);
@@ -147,24 +145,19 @@ export default function Plano() {
     }
   }, []);
 
-  // Fix #3: Fetch real store + usage data from API
+  /* Initial load — só store + credits agora. Usage vem pronto do
+     StoreUsageProvider, eliminando o fetch duplicado. */
   useEffect(() => {
     async function loadStoreData() {
       try {
-        const [storeRes, usageRes, creditsRes] = await Promise.all([
+        const [storeRes, creditsRes] = await Promise.all([
           fetch("/api/store"),
-          fetch("/api/store/usage"),
           fetch("/api/store/credits"),
         ]);
 
         if (storeRes.ok) {
           const storeData = await storeRes.json();
           setStore(storeData.data);
-        }
-
-        if (usageRes.ok) {
-          const usageData = await usageRes.json();
-          setUsage(usageData.data);
         }
 
         if (creditsRes.ok) {

@@ -7,6 +7,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
+import { StoreUsageProvider, useStoreUsage } from "@/lib/hooks/useStoreUsage";
 
 const ThemeToggle = dynamic(() => import("@/components/ThemeToggle"), { ssr: false });
 
@@ -39,11 +40,6 @@ const navItems = [
   { href: "/configuracoes", label: "Configurações", shortLabel: "Config", icon: <IconSettings /> },
   { href: "/plano", label: "Meu Plano", shortLabel: "Plano", icon: <IconCreditCard /> },
 ];
-
-interface UsageData {
-  campaigns_generated: number;
-  campaigns_limit: number;
-}
 
 type NavItem = { href: string; label: string; shortLabel: string; icon: React.ReactNode };
 
@@ -134,27 +130,20 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <StoreUsageProvider>
+      <AuthLayoutInner>{children}</AuthLayoutInner>
+    </StoreUsageProvider>
+  );
+}
+
+function AuthLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const { signOut } = useClerk();
-  const [usage, setUsage] = useState<UsageData | null>(null);
-
-  // Carregar usage da loja em background (middleware já garante que loja existe).
-  // Não bloqueia render — UI mostra skeleton inline na pílula de campanhas.
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    fetch("/api/store/usage")
-      .then(async (res) => {
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.data) setUsage(data.data);
-        }
-      })
-      .catch(() => {
-        // silencioso — pílula segue em estado loading; nav continua usável
-      });
-  }, [isLoaded]);
+  /* usage agora vem do StoreUsageProvider (1 fetch compartilhado entre layout
+     + páginas /gerar /plano que antes faziam o mesmo fetch independente). */
+  const { usage } = useStoreUsage();
 
   const userName = user?.firstName || user?.fullName || "Minha Loja";
   const userEmail = user?.primaryEmailAddress?.emailAddress || "";

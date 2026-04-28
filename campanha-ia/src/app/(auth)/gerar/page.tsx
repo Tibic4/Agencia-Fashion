@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { haptics } from "@/lib/utils/haptics";
 import { friendlyError } from "@/lib/friendly-error";
 import { useWakeLock } from "@/lib/hooks/useWakeLock";
+import { useStoreUsage } from "@/lib/hooks/useStoreUsage";
 import ModelPlaceholder from "@/components/ModelPlaceholder";
 import PhotoTipsCard from "@/components/PhotoTipsCard";
 import ClaimMiniTrialBanner from "@/components/ClaimMiniTrialBanner";
@@ -153,10 +154,14 @@ export default function GerarCampanha() {
   // Model limit from API (source of truth — not hardcoded)
   const [maxModels, setMaxModels] = useState(0);
 
-  // Carregar banco de modelos (stock) + modelos personalizadas da loja + usage
+  /* Usage vem do StoreUsageProvider compartilhado (definido no layout autenticado).
+     Antes era um fetch separado aqui — agora aproveita o mesmo cache. */
+  const { usage } = useStoreUsage();
+  const campaignsLimit = (usage?.campaigns_limit as number | undefined) ?? null;
+  const campaignsUsed = (usage?.campaigns_generated as number | undefined) ?? 0;
+
+  // Carregar banco de modelos (stock) + modelos personalizadas da loja
   const [userCredits, setUserCredits] = useState(0);
-  const [campaignsLimit, setCampaignsLimit] = useState<number | null>(null); // null = loading
-  const [campaignsUsed, setCampaignsUsed] = useState(0);
 
   useEffect(() => {
     fetch("/api/models/bank")
@@ -169,19 +174,6 @@ export default function GerarCampanha() {
         setCustomModels(data.models || []);
         setUserPlan(data.plan || "free");
         if (typeof data.limit === "number") setMaxModels(data.limit);
-      })
-      .catch(() => {});
-
-    // Verificar se tem créditos/quota proativamente
-    fetch("/api/store/usage")
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.data) {
-          const limit = data.data.campaigns_limit ?? 0;
-          const used = data.data.campaigns_generated ?? 0;
-          setCampaignsLimit(limit);
-          setCampaignsUsed(used);
-        }
       })
       .catch(() => {});
     // Verificar créditos avulsos
