@@ -8,6 +8,7 @@ import {
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable, Card, GradientText, Skeleton } from '@/components/ui';
@@ -31,6 +32,14 @@ const objectiveColors: Record<ObjectiveKey, string> = {
   engajamento: '#a855f7',
 };
 
+/* Emoji prefixo do pill — paritário com objectives no site. */
+const OBJECTIVE_EMOJI: Record<ObjectiveKey, string> = {
+  venda_imediata: '🛍',
+  lancamento: '🚀',
+  promocao: '🔥',
+  engajamento: '💬',
+};
+
 function isObjectiveKey(v: string | null | undefined): v is ObjectiveKey {
   return v === 'venda_imediata' || v === 'lancamento' || v === 'promocao' || v === 'engajamento';
 }
@@ -46,6 +55,7 @@ function formatDate(d: string, t: TFn, locale: string) {
   if (diffDays < 7) return t('date.daysAgo', { n: diffDays });
   return date.toLocaleDateString(locale);
 }
+
 
 export default function HistoricoScreen() {
   const colorScheme = useColorScheme();
@@ -140,7 +150,9 @@ export default function HistoricoScreen() {
         <Animated.View entering={FadeInDown.delay(animationDelay).duration(380).springify()}>
           <AnimatedPressable
             onPress={() => {
-              router.push(`/(tabs)/gerar/resultado?id=${item.id}`);
+              // `from=historico` ensina o resultado a voltar pra cá em vez de
+              // cair no /gerar (default seria popar a stack do tab `gerar`).
+              router.push(`/(tabs)/gerar/resultado?id=${item.id}&from=historico`);
             }}
             haptic="tap"
             scale={0.98}
@@ -153,42 +165,56 @@ export default function HistoricoScreen() {
                 item.is_favorited && styles.cardFavorited,
               ]}
             >
-              {/* Accent stripe na esquerda (favoritados) — visual editorial
-                  estilo Slack starred / Linear focused. 4px brand-gradient
-                  vertical, marca instantaneamente o item sem peso visual. */}
-              {item.is_favorited && (
-                <LinearGradient
-                  colors={Colors.brand.gradientPrimary}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={styles.favoriteAccent}
-                  pointerEvents="none"
-                />
-              )}
+              {/* (Accent stripe removido: favorito já é sinalizado pela
+                  estrela preenchida, sombra brand-tinted e border brand.
+                  Com thumb bleed-edge, stripe ficaria coberto.) */}
 
               <View style={styles.row}>
-                {/* Thumbnail editorial — 4:5 com `contain` em vez de cover.
-                    Antes mesmo com top-anchor o crop ainda cortava parte
-                    relevante das fotos verticais. `contain` preserva a foto
-                    inteira; o fundo gradient sutil disfarça letterbox. */}
+                {/* Estrela à parte (igual site mobile): 32×32 redonda, glass
+                    quando inactive, gradient brand quando ativa. */}
+                <AnimatedPressable
+                  onPress={() => {
+                    toggleFavorite(item.id, item.is_favorited);
+                  }}
+                  haptic="press"
+                  scale={0.85}
+                  hitSlop={10}
+                  style={styles.starBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    item.is_favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')
+                  }
+                >
+                  {item.is_favorited ? (
+                    <LinearGradient
+                      colors={Colors.brand.gradientPrimary}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.starInner}
+                    >
+                      <FontAwesome name="star" size={14} color="#fff" />
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.starInner, styles.starInnerInactive]}>
+                      <FontAwesome name="star-o" size={15} color={colors.textSecondary} />
+                    </View>
+                  )}
+                </AnimatedPressable>
+
+                {/* Thumbnail circular — paritário com /historico do site mobile.
+                    contentPosition "0% 18%" foca no rosto do modelo (que em
+                    fotos full-body fica nos primeiros 15-25% do frame), e o
+                    círculo cropa o resto. */}
                 <View style={styles.thumbWrap}>
                   {thumb ? (
-                    <View style={styles.thumb}>
-                      <LinearGradient
-                        colors={['rgba(217,70,239,0.10)', 'rgba(168,85,247,0.06)']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={StyleSheet.absoluteFill}
-                      />
-                      <Image
-                        source={{ uri: thumb }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="contain"
-                        contentPosition="top"
-                        transition={150}
-                        cachePolicy="memory-disk"
-                      />
-                    </View>
+                    <Image
+                      source={{ uri: thumb }}
+                      style={styles.thumb}
+                      contentFit="cover"
+                      contentPosition={{ top: '15%', left: '50%' }}
+                      transition={150}
+                      cachePolicy="memory-disk"
+                    />
                   ) : (
                     <View
                       style={[
@@ -197,82 +223,60 @@ export default function HistoricoScreen() {
                         { backgroundColor: colors.backgroundSecondary },
                       ]}
                     >
-                      <Text style={{ fontSize: 24 }}>
+                      <Text style={{ fontSize: 18 }}>
                         {item.status === 'failed' ? '⚠️' : '⏳'}
                       </Text>
                     </View>
                   )}
-
                   {extraCount > 0 && (
                     <View style={styles.thumbCount}>
                       <Text style={styles.thumbCountText}>+{extraCount}</Text>
                     </View>
                   )}
-
-                  {/* Estrela: gradient brand-pink quando favoritada (presença
-                      forte), bg escuro semi-transparente quando não. Tamanho
-                      maior (34×34) com sombra dá peso de botão de ação real. */}
-                  <AnimatedPressable
-                    onPress={() => {
-                      toggleFavorite(item.id, item.is_favorited);
-                    }}
-                    haptic="press"
-                    scale={0.85}
-                    hitSlop={10}
-                    style={styles.starBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      item.is_favorited ? t('a11y.removeFavorite') : t('a11y.addFavorite')
-                    }
-                  >
-                    {item.is_favorited ? (
-                      <LinearGradient
-                        colors={Colors.brand.gradientPrimary}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.starInner}
-                      >
-                        <Text style={styles.starTextActive}>★</Text>
-                      </LinearGradient>
-                    ) : (
-                      <View style={[styles.starInner, styles.starInnerInactive]}>
-                        <Text style={styles.starTextInactive}>☆</Text>
-                      </View>
-                    )}
-                  </AnimatedPressable>
                 </View>
 
                 <View style={styles.info}>
+                  {/* Title — única linha bold, paritária com site /historico mobile. */}
                   <Text
                     style={[styles.headline, { color: colors.text }]}
-                    numberOfLines={2}
+                    numberOfLines={1}
                   >
                     {headline}
                   </Text>
-                  {item.objective && (
-                    <View style={styles.objectiveRow}>
-                      <View style={[styles.objectiveDot, { backgroundColor: objColor }]} />
-                      <Text style={[styles.objectiveLabel, { color: objColor }]}>
-                        {isObjectiveKey(item.objective)
-                          ? t(`objectives.${item.objective}` as const)
-                          : item.objective}
-                      </Text>
-                    </View>
-                  )}
+
+                  {/* Linha única: pill (objective) + data, igual site. */}
                   <View style={styles.metaRow}>
-                    <Text style={[styles.date, { color: colors.textSecondary }]}>
+                    {item.objective && (
+                      <View
+                        style={[
+                          styles.objectivePill,
+                          { backgroundColor: objColor + '1f', borderColor: objColor + '33' },
+                        ]}
+                      >
+                        <Text style={styles.objectiveEmoji}>
+                          {isObjectiveKey(item.objective) ? OBJECTIVE_EMOJI[item.objective] : '🎯'}
+                        </Text>
+                        <Text style={[styles.objectiveLabel, { color: objColor }]}>
+                          {isObjectiveKey(item.objective)
+                            ? t(`objectives.${item.objective}` as const)
+                            : item.objective}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={[styles.metaText, { color: colors.textSecondary }]}>
                       {formatDate(item.created_at, t, locale)}
                     </Text>
                     {statusColor && (
-                      <>
-                        <Text style={[styles.metaSep, { color: colors.textSecondary }]}>
-                          ·
-                        </Text>
-                        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                      </>
+                      <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                     )}
                   </View>
                 </View>
+
+                <FontAwesome
+                  name="angle-right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </View>
             </Card>
           </AnimatedPressable>
@@ -299,8 +303,8 @@ export default function HistoricoScreen() {
             mais larga simula o accent stripe dos favoritos pra ninguém estranhar
             quando o real renderizar. */}
         <View style={styles.list}>
-          {[0, 1, 2, 3].map(i => (
-            <Skeleton key={i} height={124} borderRadius={14} style={{ marginBottom: 14 }} />
+          {[0, 1, 2, 3, 4].map(i => (
+            <Skeleton key={i} height={78} borderRadius={14} style={{ marginBottom: 10 }} />
           ))}
         </View>
       </View>
@@ -459,16 +463,21 @@ const styles = StyleSheet.create({
   },
   filterText: { fontSize: 13, fontWeight: '600' },
   list: { padding: 16 },
-  /* marginBottom em cada card — FlashList não aplica `gap` em
-     contentContainerStyle. 14px alinha com o "respiro" de listas dos grandes
-     (Apple Photos, Linear). Padding-left maior pra deixar espaço pro accent
-     stripe da esquerda quando favoritado. */
+  /* Card paritário com /historico do site mobile: padding compacto, border
+     sutil pra contraste no light mode (cards dissolviam no fundo antes), e
+     sombra leve. Sem bleed do thumb. */
   card: {
-    padding: 14,
-    paddingLeft: 18,
-    marginBottom: 14,
+    padding: 12,
+    marginBottom: 10,
     position: 'relative',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(217,70,239,0.18)',
+    shadowColor: '#0c0410',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   cardFavorited: {
     borderColor: Colors.brand.secondary,
@@ -478,84 +487,71 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 5,
   },
-  /* Accent vertical stripe — left edge do card. 4px brand gradient.
-     Pointer-events none pra não roubar o tap do card. */
-  favoriteAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-  },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
-  /* Thumb wrap permite estrela flutuar fora do thumb. */
-  thumbWrap: { width: 72, height: 96, position: 'relative' },
-  /* Border sutil + bg gradient-soft pra letterbox de fotos com fundo branco
-     não ficar gritante (o gradient pinkish dá feel editorial). */
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  /* Thumb circular 60×60 — proporção do site mobile. contentPosition
+     'top 15%' foca no rosto do modelo (em fotos full-body o rosto fica nos
+     primeiros 15-25% do frame). */
+  thumbWrap: { width: 60, height: 60, position: 'relative' },
   thumb: {
-    width: 72,
-    height: 96,
-    borderRadius: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(217,70,239,0.14)',
     backgroundColor: '#0d0a14',
   },
   thumbEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /* Badge "+N" colado no canto inferior-direito do círculo, brand-pink. */
   thumbCount: {
     position: 'absolute',
-    bottom: 6,
-    left: 6,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    bottom: -2,
+    right: -2,
+    backgroundColor: Colors.brand.primary,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
-  thumbCountText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  /* Estrela: 34×34, posicionada saindo levemente do canto. Sombra dá lift
-     visual; gradient quando ativa, glass-bg quando inativa. */
+  thumbCountText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  /* Estrela 36×36 redonda — paridade com site mobile. */
   starBtn: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
   },
   starInner: {
     width: '100%',
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 17,
+    borderRadius: 18,
   },
   starInnerInactive: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(120,120,120,0.25)',
+    backgroundColor: 'rgba(120,120,120,0.08)',
   },
-  starTextActive: { color: '#fff', fontSize: 16, lineHeight: 18, includeFontPadding: false },
-  starTextInactive: { color: '#fff', fontSize: 16, lineHeight: 18, includeFontPadding: false },
-  info: { flex: 1, gap: 6, minHeight: 96, justifyContent: 'center' },
+  /* Info compacta — title + linha de meta (paridade site mobile). */
+  info: { flex: 1, gap: 6, justifyContent: 'center' },
   headline: { fontSize: 15, fontWeight: '700', lineHeight: 20 },
-  objectiveRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  objectiveDot: { width: 8, height: 8, borderRadius: 4 },
-  objectiveLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaSep: { fontSize: 12 },
-  date: { fontSize: 12, fontWeight: '500' },
+  /* Pill com emoji prefix + label colored, paritário com o site /historico. */
+  objectivePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  objectiveEmoji: { fontSize: 11 },
+  objectiveLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  metaText: { fontSize: 12, fontWeight: '500' },
   empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyTitle: { fontSize: 18, fontWeight: '600' },
   emptyDesc: { fontSize: 14 },
