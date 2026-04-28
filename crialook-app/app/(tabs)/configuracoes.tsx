@@ -150,24 +150,64 @@ export default function ConfiguracoesScreen() {
     }
   };
 
+  /* Loading state — espelha a estrutura real (4 cards: Identidade, Dados,
+     Segmento, Idioma + botão Salvar). Antes mostrava só 2 cards rasos com
+     poucos itens, e a "transição" do skeleton pro real era jarring (a tela
+     parecia ficar muito mais cheia de uma hora pra outra). */
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <AppHeader />
         <View style={[styles.content, { paddingTop: headerH + 16, paddingBottom: padBottom }]}>
-          <Skeleton width="60%" height={28} />
-          <Skeleton width="80%" height={14} />
+          {/* Hero: title + subtitle */}
+          <Skeleton width={180} height={32} borderRadius={8} />
+          <Skeleton width="75%" height={14} borderRadius={6} style={{ marginTop: 4 }} />
+
+          {/* Card 1 — Identidade da marca: section title + logo + brand color + button */}
           <Card style={styles.section}>
-            <Skeleton width="50%" height={18} />
+            <Skeleton width="50%" height={18} borderRadius={6} />
             <View style={styles.logoRow}>
               <Skeleton width={80} height={80} borderRadius={16} />
-              <Skeleton width={100} height={40} borderRadius={12} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Skeleton width="40%" height={12} borderRadius={4} />
+                <Skeleton width="80%" height={36} borderRadius={10} />
+              </View>
             </View>
           </Card>
+
+          {/* Card 2 — Dados da loja: section title + 4 input rows */}
           <Card style={styles.section}>
-            <Skeleton width="40%" height={18} />
-            <Skeleton height={44} borderRadius={12} />
-            <Skeleton height={44} borderRadius={12} />
+            <Skeleton width="40%" height={18} borderRadius={6} />
+            <View style={{ gap: 10 }}>
+              <Skeleton height={48} borderRadius={12} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Skeleton height={48} borderRadius={12} style={{ flex: 2 }} />
+                <Skeleton height={48} borderRadius={12} style={{ flex: 1 }} />
+              </View>
+              <Skeleton height={48} borderRadius={12} />
+            </View>
+          </Card>
+
+          {/* Card 3 — Segmento: section title + grid 2x2 de cards */}
+          <Card style={styles.section}>
+            <Skeleton width="35%" height={18} borderRadius={6} />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} height={56} borderRadius={12} style={{ width: '31%' }} />
+              ))}
+            </View>
+          </Card>
+
+          {/* Save button */}
+          <Skeleton height={48} borderRadius={14} />
+
+          {/* Card 4 — Idioma */}
+          <Card style={styles.section}>
+            <Skeleton width="30%" height={18} borderRadius={6} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Skeleton height={44} borderRadius={12} style={{ flex: 1 }} />
+              <Skeleton height={44} borderRadius={12} style={{ flex: 1 }} />
+            </View>
           </Card>
         </View>
       </View>

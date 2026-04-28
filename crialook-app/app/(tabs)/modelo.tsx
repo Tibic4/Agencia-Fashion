@@ -326,21 +326,28 @@ export default function ModeloScreen() {
     setBody('media');
   };
 
+  /* Loading state — espelha 1:1 a estrutura real:
+     - hero (title + counter)
+     - botão "Nova modelo"
+     - grid 3 colunas com card portrait + nome + subtitle ("Mulher Padrão") */
   if (loadingModels) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <AppHeader />
         <View style={[styles.content, { paddingTop: headerH + 16, paddingBottom: padBottom }]}>
           <View style={styles.header}>
-            <Skeleton width="60%" height={28} />
-            <Skeleton width={80} height={40} borderRadius={12} />
+            <View style={{ gap: 6 }}>
+              <Skeleton width={210} height={32} borderRadius={8} />
+              <Skeleton width={140} height={14} borderRadius={6} />
+            </View>
+            <Skeleton width={120} height={40} borderRadius={20} />
           </View>
           <View style={styles.grid}>
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4, 5, 6].map(i => (
               <View key={i} style={styles.portraitCard}>
                 <Skeleton width="100%" style={{ aspectRatio: 3 / 4 }} borderRadius={16} />
-                <Skeleton width="60%" height={14} style={{ marginTop: 8 }} />
-                <Skeleton width={50} height={20} borderRadius={10} style={{ marginTop: 4 }} />
+                <Skeleton width="70%" height={14} borderRadius={4} style={{ marginTop: 8 }} />
+                <Skeleton width="55%" height={12} borderRadius={4} style={{ marginTop: 4 }} />
               </View>
             ))}
           </View>
