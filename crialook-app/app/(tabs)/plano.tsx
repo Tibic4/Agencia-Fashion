@@ -301,9 +301,16 @@ export default function PlanoScreen() {
           {isFreePlan ? t('plan.upgradeSection') : t('plan.plansSection')}
         </Text>
 
-        {(Object.entries(PLANS) as [keyof typeof PLANS, typeof PLANS[keyof typeof PLANS]][]).map(
-          ([id, plan], index) => {
+        {(() => {
+          // Rank do plano atual — usa pra dimmar planos abaixo (downgrade não
+          // faz sentido pro usuário). Mesma lógica do site /plano.
+          const planEntries = Object.entries(PLANS) as [keyof typeof PLANS, typeof PLANS[keyof typeof PLANS]][];
+          const currentRank = planEntries.findIndex(([id]) => id === currentPlanKey);
+          return planEntries.map(([id, plan], index) => {
             const isCurrentPlan = id === currentPlanKey;
+            // Plano de rank menor que o atual = "downgrade" → dim 0.5 e disable.
+            // Pro user em "Avulso" (rank -1), nada é lower (todos são upgrade).
+            const isLowerPlan = currentRank >= 0 && index < currentRank && !isCurrentPlan;
             const sku = skuByPlan[id];
             const offering = offerings[sku];
             const priceLabel =
@@ -317,7 +324,8 @@ export default function PlanoScreen() {
                   selected={isCurrentPlan}
                   style={[
                     styles.planCard,
-                    id === 'pro' && !isCurrentPlan && { borderColor: Colors.brand.primary },
+                    id === 'pro' && !isCurrentPlan && !isLowerPlan && { borderColor: Colors.brand.primary },
+                    isLowerPlan && styles.planCardDim,
                   ]}
                 >
                   {isCurrentPlan && (
@@ -325,7 +333,7 @@ export default function PlanoScreen() {
                       <Text style={styles.currentBadgeText}>{t('plan.currentPlan')}</Text>
                     </View>
                   )}
-                  {id === 'pro' && !isCurrentPlan && (
+                  {id === 'pro' && !isCurrentPlan && !isLowerPlan && (
                     <View style={[styles.currentBadge, { backgroundColor: Colors.brand.secondary }]}>
                       <Text style={styles.currentBadgeText}>{t('plan.recommended')}</Text>
                     </View>
@@ -349,12 +357,14 @@ export default function PlanoScreen() {
                     title={
                       isCurrentPlan
                         ? t('plan.currentPlan')
+                        : isLowerPlan
+                        ? t('plan.lowerPlan')
                         : isPurchasing
                         ? t('plan.processing')
                         : t('plan.subscribeButton', { plan: plan.name })
                     }
                     onPress={() => handleSubscribe(id)}
-                    disabled={isCurrentPlan || isPurchasing}
+                    disabled={isCurrentPlan || isLowerPlan || isPurchasing}
                     loading={isPurchasing}
                     variant={isCurrentPlan ? 'secondary' : 'primary'}
                     style={{ marginTop: 12 }}
@@ -362,8 +372,8 @@ export default function PlanoScreen() {
                 </Card>
               </Animated.View>
             );
-          },
-        )}
+          });
+        })()}
 
         <AnimatedPressable
           onPress={handleRestore}
@@ -436,6 +446,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 8 },
   planCard: { gap: 8 },
+  /* Planos abaixo do atual ficam dim 50% — paridade com /plano do site.
+     Não faz sentido oferecer downgrade pelo botão, então também desabilitamos
+     o tap (logic acima) e mudamos o título do botão. */
+  planCardDim: { opacity: 0.5 },
   currentBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   currentBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   planCardName: { fontSize: 20, fontWeight: '700' },
