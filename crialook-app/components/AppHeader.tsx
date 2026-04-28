@@ -103,17 +103,23 @@ function LogoMark() {
   );
 }
 
-function nextThemeMode(mode: ThemeMode): ThemeMode {
-  if (mode === 'light') return 'dark';
-  if (mode === 'dark') return 'system';
-  return 'light';
+/**
+ * Toggle simples light ↔ dark. O modo 'system' continua sendo o default
+ * inicial (lib/theme.tsx) — quando o usuário abre o app pela primeira vez
+ * ele acompanha o device. Mas uma vez que ele toca o botão, escolhe
+ * explicitamente. Antes existia um terceiro estado "🖥️ system" no ciclo
+ * que confundia: o ícone do PC não tornava óbvio que era "automático".
+ */
+function nextThemeMode(mode: ThemeMode, effectiveScheme: 'light' | 'dark'): ThemeMode {
+  const current = mode === 'system' ? effectiveScheme : mode;
+  return current === 'light' ? 'dark' : 'light';
 }
 
-function themeModeIcon(mode: ThemeMode): string {
-  // Leading icons; using emoji per the matching site to stay light-weight.
-  if (mode === 'light') return '☀️';
-  if (mode === 'dark') return '🌙';
-  return '🖥️';
+function themeModeIcon(mode: ThemeMode, effectiveScheme: 'light' | 'dark'): string {
+  // Em modo 'system' mostra o ícone DO MODO ATUAL DO DEVICE (não o monitor).
+  // Assim o ícone sempre representa visualmente o tema que o user vê.
+  const visual = mode === 'system' ? effectiveScheme : mode;
+  return visual === 'light' ? '☀️' : '🌙';
 }
 
 function pillColorFor(used: number, limit: number, fallback: string): { bg: string; fg: string } {
@@ -140,8 +146,8 @@ export function AppHeader() {
 
   const onToggleTheme = useCallback(() => {
     Haptics.selectionAsync();
-    setTheme(nextThemeMode(mode));
-  }, [mode, setTheme]);
+    setTheme(nextThemeMode(mode, scheme));
+  }, [mode, scheme, setTheme]);
 
   const onPressCredits = useCallback(() => {
     Haptics.selectionAsync();
@@ -207,7 +213,7 @@ export function AppHeader() {
               pressed && { opacity: 0.7 },
             ]}
           >
-            <Text style={styles.iconChar}>{themeModeIcon(mode)}</Text>
+            <Text style={styles.iconChar}>{themeModeIcon(mode, scheme)}</Text>
           </Pressable>
 
           {showCredits && (
