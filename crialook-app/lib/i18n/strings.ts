@@ -361,6 +361,8 @@ export const ptBR = {
     invalidEmail: 'Email inválido.',
     fillPassword: 'Preencha a senha.',
     genericError: 'Erro ao entrar',
+    googleButton: 'Continuar com Google',
+    orDivider: 'ou',
   },
   signUp: {
     title: 'CriaLook',
@@ -887,6 +889,8 @@ export const en: StringTree = {
     invalidEmail: 'Invalid email.',
     fillPassword: 'Enter your password.',
     genericError: 'Sign-in failed',
+    googleButton: 'Continue with Google',
+    orDivider: 'or',
   },
   signUp: {
     title: 'CriaLook',

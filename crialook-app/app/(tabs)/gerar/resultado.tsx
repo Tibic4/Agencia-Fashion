@@ -83,10 +83,14 @@ interface CampaignResult {
   };
 }
 
+// w/h em px reais — usados pra calcular aspectRatio dinamicamente no preview.
+// Espelha FORMAT_PRESETS do site (gerar/demo/page.tsx) pra paridade exata.
+// 🖼️ substitui ⬜ do site (que renderiza vazio em Android) — fica visualmente
+// consistente com 📱/📸 (todos pictogramas coloridos).
 const FORMAT_PRESETS = [
-  { id: 'stories', labelKey: 'result.formatStories' as TKey, icon: '📱', ratio: '9:16', descKey: 'result.formatStoriesDesc' as TKey },
-  { id: 'feed45', labelKey: 'result.formatFeed45' as TKey, icon: '📸', ratio: '4:5', descKey: 'result.formatFeed45Desc' as TKey },
-  { id: 'feed11', labelKey: 'result.formatFeed11' as TKey, icon: '⬜', ratio: '1:1', descKey: 'result.formatFeed11Desc' as TKey },
+  { id: 'stories', labelKey: 'result.formatStories' as TKey, emoji: '📱', ratio: '9:16', w: 1080, h: 1920, descKey: 'result.formatStoriesDesc' as TKey },
+  { id: 'feed45',  labelKey: 'result.formatFeed45'  as TKey, emoji: '📸', ratio: '4:5',  w: 1080, h: 1350, descKey: 'result.formatFeed45Desc'  as TKey },
+  { id: 'feed11',  labelKey: 'result.formatFeed11'  as TKey, emoji: '🖼️', ratio: '1:1',  w: 1080, h: 1080, descKey: 'result.formatFeed11Desc'  as TKey },
 ] as const;
 
 const PLATFORM_TAB_KEYS = ['result.tabFeed', 'result.tabWhatsapp', 'result.tabStories'] as const satisfies readonly TKey[];
@@ -271,12 +275,22 @@ export default function ResultadoScreen() {
       {/* Hero Image — outer wrapper carries the brand glow (no overflow:hidden),
           inner wrapper clips the image to the rounded shape and hosts the
           ZoomablePhoto (pinch + double-tap zoom). */}
-      {selectedImage && (
-        <Animated.View entering={FadeIn} style={styles.heroWrap}>
+      {selectedImage && (() => {
+        // aspectRatio reage à seleção de formato — Stories vira 9:16, Feed 4:5,
+        // Feed 1:1 quadrado. Idêntico ao preview do site.
+        const fmt = FORMAT_PRESETS.find(f => f.id === activeFormat) ?? FORMAT_PRESETS[0];
+        const dynamicAspect = fmt.w / fmt.h;
+        return (
+        <Animated.View entering={FadeIn} style={[styles.heroWrap, { aspectRatio: dynamicAspect }]}>
           <View style={styles.heroInner}>
+            {/* contentFit="cover" + contentPosition="top" replica o `object-cover
+                object-top` da versão web: a foto preenche o card 3:4, e quando
+                a proporção da imagem é mais alta, o corte acontece pelos pés —
+                a cabeça do modelo nunca é cortada. */}
             <ZoomablePhoto
               source={{ uri: getImageSrc(selectedImage) }}
               contentFit="cover"
+              contentPosition="top"
               transition={150}
               imageStyle={styles.heroImage}
               containerStyle={styles.heroImage}
@@ -288,7 +302,8 @@ export default function ResultadoScreen() {
             </View>
           </View>
         </Animated.View>
-      )}
+        );
+      })()}
 
       {/* Thumbnails */}
       <View style={styles.thumbRow}>
@@ -316,7 +331,7 @@ export default function ResultadoScreen() {
                   },
             ]}
           >
-            <Image source={{ uri: getImageSrc(img) }} style={styles.thumbImage} contentFit="cover" transition={120} />
+            <Image source={{ uri: getImageSrc(img) }} style={styles.thumbImage} contentFit="cover" contentPosition="top" transition={120} />
             <View style={styles.thumbNumber}>
               <Text style={styles.thumbNumberText}>{idx + 1}</Text>
             </View>
@@ -349,7 +364,7 @@ export default function ResultadoScreen() {
                   activeFormat === fmt.id && styles.formatBtnActive,
                 ]}
               >
-                <Text style={styles.formatIcon}>{fmt.icon}</Text>
+                <Text style={styles.formatIcon}>{fmt.emoji}</Text>
                 <Text style={[styles.formatLabel, activeFormat === fmt.id && styles.formatLabelActive]}>
                   {t(fmt.labelKey)}
                 </Text>
@@ -669,12 +684,17 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
+  /* Why backgroundColor: usamos contentFit="contain" pra garantir que a foto
+     inteira apareça (sem cortar cabeça do modelo). Quando a proporção da imagem
+     não bate com 3:4 do container, sobra espaço — esse fundo evita branco
+     gritante. Tom escuro neutro funciona em light e dark. */
   heroInner: {
     flex: 1,
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.brand.primary,
+    backgroundColor: '#0d0a14',
   },
   heroImage: { width: '100%', height: '100%' },
   heroBadge: {
@@ -689,7 +709,7 @@ const styles = StyleSheet.create({
   heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
 
   thumbRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
-  thumb: { width: 72, height: 96, borderRadius: 12, overflow: 'hidden' },
+  thumb: { width: 72, height: 96, borderRadius: 12, overflow: 'hidden', backgroundColor: '#0d0a14' },
   thumbImage: { width: '100%', height: '100%' },
   thumbNumber: {
     position: 'absolute',

@@ -22,9 +22,14 @@ import { BiometricConsentMount } from '@/components/BiometricConsentModal';
 import { initBilling, shutdownBilling } from '@/lib/billing';
 import { initSentry, Sentry } from '@/lib/sentry';
 import { initLocale } from '@/lib/i18n';
+import * as WebBrowser from 'expo-web-browser';
 
 initSentry();
 initLocale();
+
+// Fecha auth session pendente quando o app é reaberto após o OAuth redirect.
+// Sem isso o flow useSSO pode travar esperando um resultado que nunca chega.
+WebBrowser.maybeCompleteAuthSession();
 
 export { ErrorBoundary } from 'expo-router';
 

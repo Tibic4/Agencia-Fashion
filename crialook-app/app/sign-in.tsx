@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import { haptic } from '@/lib/haptics';
 import { useSignIn } from '@clerk/clerk-expo';
 import { Button, Input } from '@/components/ui';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
@@ -75,6 +76,14 @@ export default function SignInScreen() {
 
         {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
+        <GoogleSignInButton />
+
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>{t('signIn.orDivider')}</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
         <Input
           label={t('signIn.email')}
           value={email}
@@ -119,4 +128,7 @@ const styles = StyleSheet.create({
   error: { color: Colors.brand.error, textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium' },
   link: { textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium', marginTop: 8 },
   forgotLink: { textAlign: 'center', fontSize: 13, marginTop: -4, fontFamily: 'Inter_400Regular' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
+  dividerLabel: { fontSize: 12, fontFamily: 'Inter_500Medium' },
 });
