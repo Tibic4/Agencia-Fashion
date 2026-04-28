@@ -910,7 +910,10 @@ const styles = StyleSheet.create({
   tipText: { fontSize: 14, lineHeight: 21 },
   tipValue: { fontSize: 14, fontWeight: '600' },
   tipHint: { fontSize: 12, fontStyle: 'italic' },
-  hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  /* marginTop extra: o botão "Copiar" do header alinha à direita e o
+     primeiro pill de hashtag ficava praticamente colado embaixo dele.
+     Sem isso, visualmente parecia que o pill era um continuation do botão. */
+  hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   hashtagPill: {
     backgroundColor: 'rgba(124,58,237,0.08)',
     paddingHorizontal: 12,
