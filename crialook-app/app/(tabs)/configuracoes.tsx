@@ -202,10 +202,10 @@ export default function ConfiguracoesScreen() {
               {uploadingLogo ? (
                 <ActivityIndicator color={Colors.brand.primary} />
               ) : logoUrl ? (
-                /* contentFit="cover" (era contain): logo ocupa o card todo,
-                   paritário com o site /configuracoes. Logos retangulares
-                   sofrem leve crop nas pontas. */
-                <Image source={{ uri: logoUrl }} style={styles.logoImg} contentFit="cover" />
+                /* contentFit="contain" — paritário com o site /configuracoes.
+                   Logos circulares/quadradas (caso CriaLook) ocupam quase o
+                   quadrado inteiro; retangulares cabem sem crop. */
+                <Image source={{ uri: logoUrl }} style={styles.logoImg} contentFit="contain" />
               ) : (
                 <Text style={{ fontSize: 32 }}>📷</Text>
               )}

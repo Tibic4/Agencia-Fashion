@@ -1,8 +1,12 @@
 #!/usr/bin/env sh
 # Bloqueia commit com lint/type errors.
+#
+# Why no lint-staged: a versão 16 tem um bug com Node v24 onde a tentativa de
+# checkpoint via `git` interno falha com ENOENT mesmo com git no PATH.
+# Trade-off: o tsc varre o projeto inteiro (não só staged) — fica ~3s mais
+# lento, mas zero risco de commit com erro de tipo.
 cd campanha-ia || exit 1
 npx tsc --noEmit || {
   echo "✗ TypeScript errors — commit abortado"
   exit 1
 }
-npx lint-staged --cwd campanha-ia || exit 1
