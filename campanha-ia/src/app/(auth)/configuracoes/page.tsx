@@ -201,7 +201,11 @@ export default function Configuracoes() {
                   </div>
                 )}
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                  /* object-cover (era contain + p-2): logo ocupa o card inteiro
+                     sem padding interno. Logos retangulares são levemente
+                     cortadas nas pontas — preço aceitável pela presença
+                     visual mais forte. */
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center">
                     <span className="text-2xl sm:text-3xl">📷</span>

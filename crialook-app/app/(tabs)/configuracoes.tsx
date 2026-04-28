@@ -202,7 +202,10 @@ export default function ConfiguracoesScreen() {
               {uploadingLogo ? (
                 <ActivityIndicator color={Colors.brand.primary} />
               ) : logoUrl ? (
-                <Image source={{ uri: logoUrl }} style={styles.logoImg} contentFit="contain" />
+                /* contentFit="cover" (era contain): logo ocupa o card todo,
+                   paritário com o site /configuracoes. Logos retangulares
+                   sofrem leve crop nas pontas. */
+                <Image source={{ uri: logoUrl }} style={styles.logoImg} contentFit="cover" />
               ) : (
                 <Text style={{ fontSize: 32 }}>📷</Text>
               )}
