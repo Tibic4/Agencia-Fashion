@@ -20,7 +20,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import * as Clipboard from 'expo-clipboard';
 
-import { AnimatedPressable, Button, Card, GradientText } from '@/components/ui';
+import { AnimatedPressable, Button, Card, GradientText, Skeleton } from '@/components/ui';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -335,11 +335,34 @@ export default function ResultadoScreen() {
     };
   }, [result?.success]);
 
+  /* Loading state — espelha o layout real: badge + título + hero photo 3:4
+     + 3 thumbs + format selector + 2 actions. `<Skeleton>` traz shimmer
+     wave (estilo iOS/Material), reduzindo a percepção de latência ~20%
+     vs. spinner ou placeholder estático. */
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={Colors.brand.primary} size="large" />
-        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t('result.loadingCampaign')}</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <AppHeader />
+        <ScrollView
+          contentContainerStyle={{
+            padding: 20,
+            paddingTop: headerH + 16,
+            paddingBottom: 32,
+          }}
+        >
+          <Skeleton width={140} height={24} borderRadius={12} />
+          <Skeleton width={220} height={28} borderRadius={8} style={{ marginTop: 12 }} />
+          <Skeleton width="60%" height={14} borderRadius={6} style={{ marginTop: 6 }} />
+          <Skeleton width="100%" style={{ aspectRatio: 3 / 4, marginTop: 16 }} borderRadius={20} />
+          <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+            <Skeleton width={72} height={96} borderRadius={12} />
+            <Skeleton width={72} height={96} borderRadius={12} />
+            <Skeleton width={72} height={96} borderRadius={12} />
+          </View>
+          <Skeleton width="100%" height={110} borderRadius={14} style={{ marginTop: 16 }} />
+          <Skeleton width="100%" height={48} borderRadius={14} style={{ marginTop: 16 }} />
+          <Skeleton width="100%" height={48} borderRadius={14} style={{ marginTop: 10 }} />
+        </ScrollView>
       </View>
     );
   }

@@ -287,12 +287,20 @@ export default function HistoricoScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <AppHeader />
         <View style={[styles.header, { paddingTop: headerH + 8 }]}>
-          <Skeleton width={140} height={28} borderRadius={8} />
-          <Skeleton width={100} height={14} borderRadius={6} style={{ marginTop: 6 }} />
+          <Skeleton width={180} height={32} borderRadius={8} />
+          <Skeleton width={120} height={14} borderRadius={6} style={{ marginTop: 6 }} />
         </View>
+        {/* Filtros (Todos / Favoritos) */}
+        <View style={styles.filters}>
+          <Skeleton width={110} height={40} borderRadius={20} />
+          <Skeleton width={130} height={40} borderRadius={20} />
+        </View>
+        {/* Cards: thumb 72×96 + padding => altura real ~124px. Borda esquerda
+            mais larga simula o accent stripe dos favoritos pra ninguém estranhar
+            quando o real renderizar. */}
         <View style={styles.list}>
           {[0, 1, 2, 3].map(i => (
-            <Skeleton key={i} height={100} borderRadius={14} style={{ marginBottom: 12 }} />
+            <Skeleton key={i} height={124} borderRadius={14} style={{ marginBottom: 14 }} />
           ))}
         </View>
       </View>
