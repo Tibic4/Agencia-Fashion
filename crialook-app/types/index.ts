@@ -6,6 +6,10 @@ export interface Campaign {
   status: string;
   created_at: string;
   is_favorited: boolean;
+  /* Tempo total do pipeline (analyze + VTO ×3 + copy). Usado pra exibir no
+     history como "23s" / "1m 12s" — varia bastante por geração, então
+     mostrar o tempo real é mais honesto que um placeholder fixo. */
+  pipeline_duration_ms?: number | null;
   output: {
     image_urls?: (string | null)[];
   } | null;
