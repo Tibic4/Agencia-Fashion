@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '@/lib/haptics';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
-import { Button } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { apiPost } from '@/lib/api';
@@ -30,6 +38,7 @@ const SEGMENTS = [
 export default function OnboardingScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useT();
   const [step, setStep] = useState(0);
@@ -66,10 +75,6 @@ export default function OnboardingScreen() {
         segment: storeData.segment,
         city: storeData.city.trim() || undefined,
         instagram: storeData.instagram.trim().replace('@', '') || undefined,
-        // Mobile não pede state/brandColor/model no onboarding — backend trata
-        // ausência criando só a store. Deixar undefined (não null) é
-        // intencional: o JSON.stringify omite undefined, e o backend faz
-        // `body.state || undefined` por padrão.
       });
     } catch {
       // Falha silenciosa: usuário ainda navega para o app, o `/store/onboarding`
@@ -105,14 +110,16 @@ export default function OnboardingScreen() {
       <Text style={[styles.description, { color: colors.textSecondary }]}>
         {t('onboarding.storeNameDesc')}
       </Text>
-      <TextInput
-        placeholder={t('onboarding.storeNamePlaceholder')}
-        value={storeData.name}
-        onChangeText={v => setStoreData(d => ({ ...d, name: v }))}
-        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-        placeholderTextColor={colors.textSecondary}
-        autoFocus
-      />
+      <View style={styles.formArea}>
+        <Input
+          placeholder={t('onboarding.storeNamePlaceholder')}
+          value={storeData.name}
+          onChangeText={v => setStoreData(d => ({ ...d, name: v }))}
+          autoFocus
+          autoCapitalize="words"
+          returnKeyType="done"
+        />
+      </View>
     </Animated.View>,
 
     <Animated.View key={2} entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContent}>
@@ -121,9 +128,11 @@ export default function OnboardingScreen() {
       <Text style={[styles.description, { color: colors.textSecondary }]}>
         {t('onboarding.segmentDesc')}
       </Text>
+      {/* Grid 2 colunas — cada slot fica 48% pra os botões terem largura uniforme.
+          Sem `width` os botões dimensionavam pelo texto e ficavam tortos. */}
       <View style={styles.segmentGrid}>
         {SEGMENTS.map(s => (
-          <Animated.View key={s.value} entering={FadeInRight.delay(SEGMENTS.indexOf(s) * 50)}>
+          <View key={s.value} style={styles.segmentSlot}>
             <Button
               title={t(s.labelKey)}
               variant={storeData.segment === s.value ? 'primary' : 'secondary'}
@@ -131,9 +140,8 @@ export default function OnboardingScreen() {
                 haptic.selection();
                 setStoreData(d => ({ ...d, segment: s.value }));
               }}
-              style={styles.segmentBtn}
             />
-          </Animated.View>
+          </View>
         ))}
       </View>
     </Animated.View>,
@@ -144,21 +152,23 @@ export default function OnboardingScreen() {
       <Text style={[styles.description, { color: colors.textSecondary }]}>
         {t('onboarding.finalDesc')}
       </Text>
-      <TextInput
-        placeholder={t('onboarding.cityPlaceholder')}
-        value={storeData.city}
-        onChangeText={v => setStoreData(d => ({ ...d, city: v }))}
-        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-        placeholderTextColor={colors.textSecondary}
-      />
-      <TextInput
-        placeholder={t('onboarding.instagramPlaceholder')}
-        value={storeData.instagram}
-        onChangeText={v => setStoreData(d => ({ ...d, instagram: v }))}
-        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
-        placeholderTextColor={colors.textSecondary}
-        autoCapitalize="none"
-      />
+      <View style={styles.formArea}>
+        <Input
+          placeholder={t('onboarding.cityPlaceholder')}
+          value={storeData.city}
+          onChangeText={v => setStoreData(d => ({ ...d, city: v }))}
+          autoCapitalize="words"
+          returnKeyType="next"
+        />
+        <Input
+          placeholder={t('onboarding.instagramPlaceholder')}
+          value={storeData.instagram}
+          onChangeText={v => setStoreData(d => ({ ...d, instagram: v }))}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="done"
+        />
+      </View>
     </Animated.View>,
   ];
 
@@ -171,9 +181,17 @@ export default function OnboardingScreen() {
       ? t('onboarding.ctaSaving')
       : t('onboarding.ctaFinish');
 
+  /* Why KeyboardAvoidingView: nos passos com input (1 e 3), o teclado iOS
+     subia por cima do footer. iOS usa "padding" (push do footer pra cima);
+     Android usa "height" (resize do container). Padding no iOS é mais
+     suave; height no Android evita problemas com WindowSoftInputMode. */
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.dotsRow}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      {/* Top: progress dots respeitando safe area (notch / status bar) */}
+      <View style={[styles.dotsRow, { paddingTop: insets.top + 16 }]}>
         {[0, 1, 2, 3].map(i => (
           <View
             key={i}
@@ -186,55 +204,84 @@ export default function OnboardingScreen() {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {steps[step]}
       </ScrollView>
 
-      <View style={styles.footer}>
+      {/* Footer respeita home-indicator (iOS) / nav-bar (Android) via insets.bottom.
+          Antes era paddingBottom: 40 fixo, que cortava em telas com gestos. */}
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom: Math.max(insets.bottom, 16) + 8,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
         {step > 0 && (
-          <Button
-            title={t('onboarding.ctaBack')}
-            variant="ghost"
-            onPress={() => {
-              haptic.tap();
-              setStep(step - 1);
-            }}
-            style={{ flex: 1 }}
-          />
+          <View style={styles.footerBack}>
+            <Button
+              title={t('onboarding.ctaBack')}
+              variant="ghost"
+              onPress={() => {
+                haptic.tap();
+                setStep(step - 1);
+              }}
+            />
+          </View>
         )}
-        <Button
-          title={ctaTitle}
-          onPress={handleNext}
-          disabled={!canProceed() || saving}
-          style={{ flex: step > 0 ? 2 : 1 }}
-        />
+        <View style={[styles.footerNext, step === 0 && styles.footerNextSolo]}>
+          <Button
+            title={ctaTitle}
+            onPress={handleNext}
+            disabled={!canProceed() || saving}
+            loading={saving}
+          />
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 20 },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingBottom: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotActive: { width: 24 },
-  scrollContent: { flexGrow: 1, justifyContent: 'center' },
-  stepContent: { padding: 24, gap: 12, alignItems: 'center' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 24 },
+  stepContent: { paddingHorizontal: 24, gap: 14, alignItems: 'center' },
   emoji: { fontSize: 48 },
   title: { fontSize: 28, fontWeight: '800', textAlign: 'center' },
-  description: { fontSize: 16, textAlign: 'center', lineHeight: 24 },
+  description: { fontSize: 16, textAlign: 'center', lineHeight: 24, paddingHorizontal: 8 },
   features: { gap: 8, marginTop: 8, alignSelf: 'stretch' },
-  featureItem: { fontSize: 15, paddingVertical: 6, paddingHorizontal: 16 },
-  input: {
+  featureItem: { fontSize: 15, paddingVertical: 6, paddingHorizontal: 16, lineHeight: 22 },
+  formArea: { width: '100%', gap: 12, marginTop: 8 },
+  /* Grid 2 colunas: row + wrap + slot 48% (gap 8 ÷ 2 = 4 de cada lado).
+     Garante botões de mesma largura — antes a grid centralizava itens
+     com larguras intrínsecas e ficava "tortinho". */
+  segmentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
     width: '100%',
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    marginTop: 4,
+    marginTop: 8,
   },
-  segmentGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 4 },
-  segmentBtn: { paddingHorizontal: 16 },
-  footer: { flexDirection: 'row', gap: 10, padding: 24, paddingBottom: 40 },
+  segmentSlot: { width: '48%' },
+  /* Footer com border-top sutil pra separar visualmente do content quando
+     o usuário rola e o conteúdo "passa" por baixo. */
+  footer: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  footerBack: { flex: 1 },
+  footerNext: { flex: 2 },
+  footerNextSolo: { flex: 1 }, // step 0 sem voltar — botão "Começar" full-width
 });
