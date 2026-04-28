@@ -12,7 +12,7 @@
     "lock:fix": "node -e \"require('fs').rmSync('package-lock.json',{force:true})\" && npx --yes npm@10 install",
     "test": "vitest run",
     "test:watch": "vitest",
-    "storybook": "storybook dev -p 6006",
+    "storybook:dev": "storybook dev -p 6006",
     "storybook:build": "storybook build -o storybook-static"
   },
   "dependencies": {
@@ -27,36 +27,36 @@
     "@react-navigation/native": "^7.1.8",
     "@sentry/react-native": "~7.2.0",
     "@shopify/flash-list": "2.0.2",
-    "expo": "~54.0.33",
+    "expo": "~54.0.34",
     "expo-application": "~7.0.8",
-    "expo-auth-session": "~7.0.10",
+    "expo-auth-session": "~7.0.11",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
     "expo-camera": "~17.0.10",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
-    "expo-crypto": "~15.0.8",
+    "expo-crypto": "~15.0.9",
     "expo-device": "~8.0.10",
     "expo-file-system": "~19.0.21",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
     "expo-image-manipulator": "~14.0.8",
-    "expo-image-picker": "~17.0.10",
+    "expo-image-picker": "~17.0.11",
     "expo-keep-awake": "~15.0.8",
     "expo-linear-gradient": "~15.0.8",
-    "expo-linking": "~8.0.11",
+    "expo-linking": "~8.0.12",
     "expo-localization": "~17.0.8",
     "expo-mail-composer": "~15.0.8",
     "expo-media-library": "~18.2.1",
-    "expo-notifications": "~0.32.16",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "expo-store-review": "~9.0.9",
-    "expo-updates": "~29.0.16",
+    "expo-updates": "~29.0.17",
     "expo-web-browser": "~15.0.11",
     "i18n-js": "^4.5.3",
     "react": "19.1.4",
@@ -85,6 +85,14 @@
     "typescript": "~5.9.2",
     "vite": "^6.4.2",
     "vitest": "^4.1.5"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react",
+        "react-dom"
+      ]
+    }
   },
   "private": true
 }
