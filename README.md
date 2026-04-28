@@ -225,7 +225,7 @@ eas build --profile production --platform android
 eas build --profile production --platform ios
 
 # Storybook on-device
-npm run storybook
+npm run storybook:dev
 ```
 
 ---
