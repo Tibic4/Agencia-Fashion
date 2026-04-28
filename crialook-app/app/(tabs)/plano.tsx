@@ -27,7 +27,7 @@ import {
   type SubscriptionSku,
 } from '@/lib/billing';
 import type { StoreUsage, StoreCredits } from '@/types';
-import type { SubscriptionAndroid } from 'react-native-iap';
+import type { ProductSubscriptionAndroid } from 'react-native-iap';
 
 const PLAN_BADGES: Record<string, string> = { essencial: '💡', pro: '🚀', business: '🏢' };
 
@@ -56,7 +56,7 @@ export default function PlanoScreen() {
 
   const [usage, setUsage] = useState<StoreUsage | null>(null);
   const [credits, setCredits] = useState<StoreCredits | null>(null);
-  const [offerings, setOfferings] = useState<Record<string, SubscriptionAndroid>>({});
+  const [offerings, setOfferings] = useState<Record<string, ProductSubscriptionAndroid>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [purchasing, setPurchasing] = useState<string | null>(null);
@@ -77,11 +77,11 @@ export default function PlanoScreen() {
     ]);
     if (usageRes?.data) setUsage(usageRes.data);
     if (creditsRes?.data) setCredits(creditsRes.data);
-    const androidOfferings = (offeringsRes as SubscriptionAndroid[]).filter(
-      o => 'subscriptionOfferDetails' in o,
+    const androidOfferings = (offeringsRes as ProductSubscriptionAndroid[]).filter(
+      o => 'subscriptionOfferDetailsAndroid' in o && o.platform === 'android',
     );
     setOfferings(
-      Object.fromEntries(androidOfferings.map(o => [o.productId, o])),
+      Object.fromEntries(androidOfferings.map(o => [o.id, o])),
     );
   };
 
@@ -314,7 +314,7 @@ export default function PlanoScreen() {
             const sku = skuByPlan[id];
             const offering = offerings[sku];
             const priceLabel =
-              offering?.subscriptionOfferDetails?.[0]?.pricingPhases?.pricingPhaseList?.[0]?.formattedPrice ??
+              offering?.subscriptionOfferDetailsAndroid?.[0]?.pricingPhases?.pricingPhaseList?.[0]?.formattedPrice ??
               `R$ ${plan.price.toFixed(2)}`;
             const isPurchasing = purchasing === id;
 

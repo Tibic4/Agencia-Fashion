@@ -2,14 +2,15 @@ import { Platform } from 'react-native';
 import {
   initConnection,
   endConnection,
-  getSubscriptions,
-  requestSubscription,
+  fetchProducts,
+  requestPurchase,
   finishTransaction,
   getAvailablePurchases,
   purchaseErrorListener,
   purchaseUpdatedListener,
-  type Subscription,
-  type SubscriptionPurchase,
+  type ProductSubscription,
+  type ProductSubscriptionAndroid,
+  type Purchase,
 } from 'react-native-iap';
 import { apiPost } from './api';
 import { withSpan } from './sentry';
@@ -33,7 +34,7 @@ export async function initBilling() {
   await initConnection();
   connected = true;
 
-  purchaseUpdatedSub = purchaseUpdatedListener(async (purchase: SubscriptionPurchase) => {
+  purchaseUpdatedSub = purchaseUpdatedListener(async (purchase: Purchase) => {
     try {
       if (!purchase.purchaseToken || !purchase.productId) return;
       await apiPost('/billing/verify', {
@@ -47,7 +48,7 @@ export async function initBilling() {
   });
 
   purchaseErrorSub = purchaseErrorListener(() => {
-    /* swallow — user cancellations and Play errors are surfaced by requestSubscription */
+    /* swallow — user cancellations and Play errors are surfaced by requestPurchase */
   });
 }
 
@@ -63,9 +64,10 @@ export async function shutdownBilling() {
   }
 }
 
-export async function loadSubscriptionOfferings(): Promise<Subscription[]> {
+export async function loadSubscriptionOfferings(): Promise<ProductSubscription[]> {
   await initBilling();
-  return await getSubscriptions({ skus: [...SUBSCRIPTION_SKUS] });
+  const result = await fetchProducts({ skus: [...SUBSCRIPTION_SKUS], type: 'subs' });
+  return (result ?? []) as ProductSubscription[];
 }
 
 export interface VerifiedSubscription {
@@ -76,8 +78,28 @@ export interface VerifiedSubscription {
 export async function purchaseSubscription(sku: SubscriptionSku): Promise<VerifiedSubscription> {
   return withSpan(`billing.purchase:${sku}`, 'billing.purchase', async () => {
     await initBilling();
-    const purchase = await requestSubscription({ sku });
-    const target = Array.isArray(purchase) ? purchase[0] : purchase;
+
+    const offeringsRaw = await fetchProducts({ skus: [sku], type: 'subs' });
+    const offerings = (offeringsRaw ?? []) as ProductSubscription[];
+    const offer = offerings.find(o => o.id === sku) as
+      | ProductSubscriptionAndroid
+      | undefined;
+    const offerToken = offer?.subscriptionOfferDetailsAndroid?.[0]?.offerToken;
+    if (!offerToken) {
+      throw new ApiError('Subscription offer not available', 0, 'UNKNOWN');
+    }
+
+    const result = await requestPurchase({
+      type: 'subs',
+      request: {
+        google: {
+          skus: [sku],
+          subscriptionOffers: [{ sku, offerToken }],
+        },
+      },
+    });
+
+    const target = Array.isArray(result) ? result[0] : result;
     if (!target?.purchaseToken) {
       throw new ApiError('Purchase token missing', 0, 'UNKNOWN');
     }
@@ -87,7 +109,7 @@ export async function purchaseSubscription(sku: SubscriptionSku): Promise<Verifi
       purchaseToken: target.purchaseToken,
     });
 
-    await finishTransaction({ purchase: target as SubscriptionPurchase, isConsumable: false });
+    await finishTransaction({ purchase: target, isConsumable: false });
     return verified;
   });
 }
