@@ -652,10 +652,22 @@ export default function GerarCampanha() {
                     <h3 className="font-bold text-lg truncate">{previewModel.name}</h3>
                     <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
                       {previewModel.isCustom ? "⭐ Sua modelo · " : ""}
-                      {previewModel.bodyType === "media" || previewModel.bodyType === "normal" ? "Mulher Padrão" :
-                       previewModel.bodyType === "plus_size" || previewModel.bodyType === "plus" ? "Mulher Plus" :
-                       previewModel.bodyType === "medio" || previewModel.bodyType === "masculino" ? "Homem Padrão" :
-                       previewModel.bodyType === "robusto" ? "Homem Plus" : previewModel.bodyType}
+                      {/* Lookup canônico — espelha bodyTypesFem/Masc do /modelo.
+                          Antes ficava direto na expressão e faltavam `magra` e
+                          `atletico`, caindo no fallback bruto (mostrava o value
+                          em lowercase tipo "magra" pro usuário). */}
+                      {(() => {
+                        const masc = new Set(["atletico", "medio", "masculino", "robusto"]);
+                        const labels: Record<string, string> = {
+                          magra: "Slim", media: "Padrão", normal: "Padrão",
+                          plus_size: "Curvilínea", plus: "Curvilínea",
+                          atletico: "Atlético", medio: "Padrão",
+                          masculino: "Padrão", robusto: "Robusto",
+                        };
+                        const bt = previewModel.bodyType;
+                        const gender = masc.has(bt) ? "Homem" : "Mulher";
+                        return `${gender} ${labels[bt] ?? bt}`;
+                      })()}
                     </p>
                   </div>
                   {selectedModelId === previewModel.id && (

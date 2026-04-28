@@ -73,20 +73,24 @@ const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 const DOUBLE_TAP_SCALE = 2.5;
 
-const SKIN_LABEL: Record<string, string> = {
-  clara: 'Pele clara',
-  morena_clara: 'Morena clara',
-  morena: 'Morena',
-  morena_escura: 'Morena escura',
-  negra: 'Negra',
+/* Lookup canônico de body_type (espelha bodyTypesFem/Masc do site em
+   campanha-ia/src/app/(auth)/modelo/page.tsx). Inclui keys legadas
+   (`normal`, `plus`, `masculino`) pra compat com models antigos. */
+const BODY_LABEL: Record<string, string> = {
+  // Femininos
+  magra: 'Slim',
+  media: 'Padrão',
+  normal: 'Padrão',
+  plus_size: 'Curvilínea',
+  plus: 'Curvilínea',
+  // Masculinos
+  atletico: 'Atlético',
+  medio: 'Padrão',
+  masculino: 'Padrão',
+  robusto: 'Robusto',
 };
 
-const BODY_LABEL: Record<string, string> = {
-  padrao: 'Padrão',
-  curvilinea: 'Curvilínea',
-  homem: 'Masculino',
-  homem_plus: 'Masculino plus',
-};
+const MASC_BODIES = new Set(['atletico', 'medio', 'masculino', 'robusto']);
 
 function readField(model: ModelItem, key: string): string | undefined {
   // `ModelItem` is a typed surface but the API can decorate it with extra
@@ -245,18 +249,17 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
     }, []);
 
     // ─── Derived display fields ───────────────────────────────────────
-    const skin = model ? readField(model, 'skin_tone') : undefined;
-    const hair = model ? readField(model, 'hair_style') ?? readField(model, 'hair_color') : undefined;
     const bodyKey = model?.body_type ?? '';
+    const genderField = model ? readField(model, 'gender') : undefined;
     const bodyLabel = BODY_LABEL[bodyKey] ?? bodyKey;
-    const skinLabel = skin ? SKIN_LABEL[skin] ?? skin : undefined;
     const isCustom = !!model?.is_custom;
 
-    // Subtitle copy mirrors the marketing site:
-    //   "⭐ Sua modelo · Mulher Padrão"  (custom)
-    //   "Mulher Padrão"                  (stock library)
-    // Falls back to bodyLabel alone when we lack richer metadata.
-    const genderPrefix = bodyKey.startsWith('homem') ? 'Homem' : 'Mulher';
+    /* Detecta gênero: prefere o campo `gender` (canônico) e cai no body_type
+       quando ausente (models antigos não têm gender). Bug anterior fazia
+       startsWith('homem') no bodyKey — nenhum dos values reais começa com
+       "homem", então sempre retornava "Mulher" (Rafael aparecia como Mulher). */
+    const isMale = genderField === 'masculino' || MASC_BODIES.has(bodyKey);
+    const genderPrefix = isMale ? 'Homem' : 'Mulher';
     const richSubtitle = bodyLabel ? `${genderPrefix} ${bodyLabel}` : '';
     const metaText = isCustom && richSubtitle
       ? `⭐ Sua modelo · ${richSubtitle}`
@@ -349,18 +352,10 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
                 </Text>
               ) : null}
 
-              {/* Stats chips ──────────────────────────────────────── */}
-              <View style={styles.chipRow}>
-                {skinLabel ? (
-                  <Chip color={colors.text} bg={colors.backgroundSecondary} label={skinLabel} />
-                ) : null}
-                {hair ? (
-                  <Chip color={colors.text} bg={colors.backgroundSecondary} label={hair} />
-                ) : null}
-                {bodyLabel ? (
-                  <Chip color={colors.text} bg={colors.backgroundSecondary} label={bodyLabel} />
-                ) : null}
-              </View>
+              {/* Chips removidos — paridade com o site (gerar/page.tsx),
+                  que mostra apenas nome + subtitle simplificado + CTA.
+                  Detalhes de pele/cabelo/corpo poluíam visualmente e já
+                  estavam ambíguos (skin_tone vs hair_color etc). */}
 
               {/* CTA ──────────────────────────────────────────────── */}
               <Pressable
@@ -385,17 +380,6 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
     );
   },
 );
-
-// ─── Chip ─────────────────────────────────────────────────────────────────
-function Chip({ label, color, bg }: { label: string; color: string; bg: string }) {
-  return (
-    <View style={[styles.chip, { backgroundColor: bg }]}>
-      <Text style={[styles.chipText, { color }]} numberOfLines={1}>
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 // ─── Styles ───────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({

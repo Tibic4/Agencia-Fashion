@@ -609,6 +609,11 @@ function ModelGridCard({
     : matchMasc
     ? t(matchMasc.labelKey)
     : model.body_type;
+  // Subtitle paritário com o site: "Mulher Padrão" / "Homem Atlético" etc.
+  // Inline em vez de i18n porque os keys existentes (genderMale/Female) trazem
+  // símbolo ♂♀ que poluiria a frase. O site também usa literais aqui.
+  const genderPrefix = matchMasc ? 'Homem' : 'Mulher';
+  const subtitle = `${genderPrefix} ${labelBody}`;
 
   const hasPhoto = !!model.photo_url;
 
@@ -693,9 +698,14 @@ function ModelGridCard({
       >
         {model.name}
       </Text>
-      <View style={styles.bodyBadge}>
-        <Text style={styles.bodyBadgeText}>{labelBody}</Text>
-      </View>
+      {/* Subtitle simples — espelha o card do site (gerar/page.tsx). Substitui
+          o "bodyBadge" que mostrava só "Médio" sem contexto de gênero. */}
+      <Text
+        style={[styles.modelSubtitle, { color: colors.textSecondary }]}
+        numberOfLines={1}
+      >
+        {subtitle}
+      </Text>
     </Animated.View>
   );
 }
@@ -809,14 +819,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.6)',
   },
   modelName: { fontSize: 14, fontWeight: '600' },
-  bodyBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  bodyBadgeText: { fontSize: 11, fontWeight: '500', color: '#6B7280' },
+  modelSubtitle: { fontSize: 12, fontWeight: '500', marginTop: -2 },
   empty: { alignItems: 'center', paddingTop: 60, gap: 16 },
   emptyIconWrap: {
     width: 88,

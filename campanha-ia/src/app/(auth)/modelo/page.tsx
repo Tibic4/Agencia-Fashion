@@ -373,11 +373,14 @@ export default function ModeloVirtual() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {models.map((model) => {
             // Helpers to dynamically resolve strings based on what exists in the arrays
-            const labelSkin = skinTones.find((s) => s.value === model.skin_tone)?.label || model.skin_tone;
-            const labelHair = hairTextures.find((h) => h.value === (model.hair_texture || model.hair_style))?.label || model.hair_style;
             const labelBodyFem = bodyTypesFem.find((b) => b.value === model.body_type)?.label;
             const labelBodyMasc = bodyTypesMasc.find((b) => b.value === model.body_type)?.label;
             const labelBody = labelBodyFem || labelBodyMasc || model.body_type;
+            // Subtitle simplificado — espelha o bottom sheet do gerar e o
+            // grid do app: "Mulher Padrão" / "Homem Atlético". Skin/hair/body
+            // separados por bullets ficavam ruidosos no card editorial.
+            const genderLabel = labelBodyMasc ? "Homem" : "Mulher";
+            const subtitle = `${genderLabel} ${labelBody}`;
 
             return (
               <div
@@ -431,8 +434,8 @@ export default function ModeloVirtual() {
                   <h3 className="font-bold text-white truncate text-sm leading-tight mb-0.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
                     {model.name}
                   </h3>
-                  <p className="text-xs text-white/85 line-clamp-2 mb-2.5 font-medium tracking-wide">
-                    {labelSkin} • {labelHair} • {labelBody}
+                  <p className="text-xs text-white/85 line-clamp-1 mb-2.5 font-medium tracking-wide">
+                    {subtitle}
                   </p>
 
                   {/* Actions row */}
