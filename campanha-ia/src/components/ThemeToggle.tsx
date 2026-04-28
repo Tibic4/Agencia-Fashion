@@ -22,7 +22,7 @@ export default function ThemeToggle() {
       root.setAttribute("data-theme", "dark");
       localStorage.setItem("crialook-theme", "dark");
     } else {
-      root.removeAttribute("data-theme");
+      root.setAttribute("data-theme", "light");
       localStorage.setItem("crialook-theme", "light");
     }
   }, [dark]);
