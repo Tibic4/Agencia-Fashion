@@ -23,8 +23,8 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Prevent native 'canvas' module from breaking the build on Linux VPS
-  serverExternalPackages: ["canvas"],
+  // Prevent native 'canvas' / 'sharp' modules from breaking the build on Linux VPS
+  serverExternalPackages: ["canvas", "sharp"],
 
   /* ═══════════════════════════════════════
      Performance — PageSpeed optimizations

@@ -24,7 +24,7 @@ import { AnimatedPressable, Button, Card, GradientText } from '@/components/ui';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiFetchRaw } from '@/lib/api';
 import { useT, type TKey } from '@/lib/i18n';
 
 interface GeneratedImage {
@@ -130,22 +130,72 @@ export default function ResultadoScreen() {
   const getImageSrc = (img: GeneratedImage) =>
     img.imageUrl || `data:${img.mimeType};base64,${img.imageBase64}`;
 
-  const downloadToLocal = useCallback(async (img: GeneratedImage, idx: number) => {
-    const src = img.imageUrl;
-    if (!src) return null;
-    const localUri = `${LegacyFS.cacheDirectory}crialook_foto_${idx + 1}.png`;
-    await LegacyFS.downloadAsync(src, localUri);
-    return localUri;
+  /**
+   * Pede o smart-fit pro endpoint server-side `/api/campaign/format` e
+   * salva o PNG retornado num arquivo local. Web e mobile chamam o mesmo
+   * endpoint — paridade pixel-a-pixel garantida (blur, vinheta, fit).
+   *
+   * Fallback: se o endpoint falhar, devolve o uri original sem transformação,
+   * pra "Salvar/Compartilhar" continuar funcionando mesmo que o servidor de
+   * formatação esteja off (o user só não terá o blur/vinheta).
+   */
+  const cropToFormat = useCallback(async (img: GeneratedImage, formatId: string): Promise<string> => {
+    try {
+      const body: Record<string, string> = { format: formatId };
+      if (img.imageUrl) body.imageUrl = img.imageUrl;
+      else if (img.imageBase64) body.imageBase64 = img.imageBase64;
+      else throw new Error('Image has neither URL nor base64');
+
+      const res = await apiFetchRaw('/campaign/format', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`format endpoint ${res.status}`);
+
+      // Salva o PNG retornado em cache local (Sharing/MediaLibrary precisam de file URI).
+      const blob = await res.blob();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const r = reader.result as string;
+          resolve(r.split(',')[1] ?? r);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const outUri = `${LegacyFS.cacheDirectory}crialook_formatted_${formatId}_${Date.now()}.png`;
+      await LegacyFS.writeAsStringAsync(outUri, base64, { encoding: LegacyFS.EncodingType.Base64 });
+      return outUri;
+    } catch (e) {
+      Sentry.addBreadcrumb({
+        category: 'photo',
+        message: 'cropToFormat fallback to raw',
+        level: 'warning',
+        data: { error: e instanceof Error ? e.message : String(e) },
+      });
+      // Fallback: salva original sem transformação. Save/Share não quebram.
+      const localUri = `${LegacyFS.cacheDirectory}crialook_raw_${Date.now()}.png`;
+      if (img.imageUrl) {
+        await LegacyFS.downloadAsync(img.imageUrl, localUri);
+      } else if (img.imageBase64) {
+        await LegacyFS.writeAsStringAsync(localUri, img.imageBase64, { encoding: LegacyFS.EncodingType.Base64 });
+      } else {
+        throw new Error('No image source available');
+      }
+      return localUri;
+    }
   }, []);
 
-  const shareImage = useCallback(async (img: GeneratedImage, idx: number) => {
+  const shareImage = useCallback(async (img: GeneratedImage, _idx: number) => {
     try {
       haptic.tap();
-      const localUri = await downloadToLocal(img, idx);
-      if (!localUri) return;
-      await Sharing.shareAsync(localUri, { mimeType: 'image/png' });
+      // cropToFormat já materializa o arquivo no cache local (com fallback
+      // pra imagem original se o endpoint falhar). Sem downloadToLocal extra.
+      const formatted = await cropToFormat(img, activeFormat);
+      await Sharing.shareAsync(formatted, { mimeType: 'image/png' });
     } catch { /* ignore */ }
-  }, [downloadToLocal]);
+  }, [cropToFormat, activeFormat]);
 
   const saveToGallery = useCallback(async (img: GeneratedImage, idx: number) => {
     try {
@@ -155,12 +205,12 @@ export default function ResultadoScreen() {
         Alert.alert(t('result.permissionDeniedTitle'), t('result.permissionDeniedBody'));
         return;
       }
-      const localUri = await downloadToLocal(img, idx);
-      if (!localUri) return;
+      // Aplica o formato selecionado (Stories/Feed/Feed 1:1) com smartFit do server.
+      const formatted = await cropToFormat(img, activeFormat);
       // Save the asset, then file it under the dedicated "CriaLook" album so
       // users can find their generations easily (matches the iOS Photos UX
       // for app-generated content like Instagram, VSCO, etc.).
-      const asset = await MediaLibrary.createAssetAsync(localUri);
+      const asset = await MediaLibrary.createAssetAsync(formatted);
       try {
         const album = await MediaLibrary.getAlbumAsync('CriaLook');
         if (album) {
@@ -185,7 +235,7 @@ export default function ResultadoScreen() {
       haptic.error();
       Alert.alert(t('common.error'), t('result.saveErrorMessage'));
     }
-  }, [downloadToLocal, t]);
+  }, [cropToFormat, activeFormat, t]);
 
   const copyText = useCallback(async (text: string, field: string) => {
     await Clipboard.setStringAsync(text);
@@ -275,13 +325,8 @@ export default function ResultadoScreen() {
       {/* Hero Image — outer wrapper carries the brand glow (no overflow:hidden),
           inner wrapper clips the image to the rounded shape and hosts the
           ZoomablePhoto (pinch + double-tap zoom). */}
-      {selectedImage && (() => {
-        // aspectRatio reage à seleção de formato — Stories vira 9:16, Feed 4:5,
-        // Feed 1:1 quadrado. Idêntico ao preview do site.
-        const fmt = FORMAT_PRESETS.find(f => f.id === activeFormat) ?? FORMAT_PRESETS[0];
-        const dynamicAspect = fmt.w / fmt.h;
-        return (
-        <Animated.View entering={FadeIn} style={[styles.heroWrap, { aspectRatio: dynamicAspect }]}>
+      {selectedImage && (
+        <Animated.View entering={FadeIn} style={styles.heroWrap}>
           <View style={styles.heroInner}>
             {/* contentFit="cover" + contentPosition="top" replica o `object-cover
                 object-top` da versão web: a foto preenche o card 3:4, e quando
@@ -302,8 +347,7 @@ export default function ResultadoScreen() {
             </View>
           </View>
         </Animated.View>
-        );
-      })()}
+      )}
 
       {/* Thumbnails */}
       <View style={styles.thumbRow}>

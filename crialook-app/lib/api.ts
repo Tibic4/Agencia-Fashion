@@ -205,4 +205,18 @@ export const apiPatch = <T = unknown>(path: string, body?: unknown, options?: Ap
 export const apiDelete = <T = unknown>(path: string, options?: ApiOptions) =>
   api<T>(path, { ...options, method: 'DELETE' });
 
+/**
+ * Fetch cru com headers de auth e BASE_URL aplicados — pra endpoints que
+ * retornam binário (PNG, blob, etc) onde `api()` não serve por sempre fazer
+ * `JSON.parse`. Caller é responsável por consumir a Response (blob/stream/etc).
+ */
+export async function apiFetchRaw(path: string, init: RequestInit = {}): Promise<Response> {
+  const authHeaders = await getAuthHeaders();
+  const headers: Record<string, string> = {
+    ...authHeaders,
+    ...((init.headers as Record<string, string>) || {}),
+  };
+  return fetch(`${BASE_URL}${path}`, { ...init, headers });
+}
+
 export { ApiError } from '@/types';

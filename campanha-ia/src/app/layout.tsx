@@ -163,6 +163,12 @@ export default function RootLayout({
     >
       <html lang="pt-BR" className={`${inter.variable} ${outfit.variable} h-full antialiased`}>
         <head>
+          {/* Blocking theme init — prevents FOUC and ensures data-theme is always present */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem('crialook-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.setAttribute('data-theme','dark')}else{document.documentElement.setAttribute('data-theme','light')}}catch(e){document.documentElement.setAttribute('data-theme','light')}})()`,
+            }}
+          />
           {/* preconnect/dns-prefetch para hosts críticos */}
           <link rel="preconnect" href="https://emybirklqhonqodzyzet.supabase.co" crossOrigin="anonymous" />
           <link rel="dns-prefetch" href="https://emybirklqhonqodzyzet.supabase.co" />

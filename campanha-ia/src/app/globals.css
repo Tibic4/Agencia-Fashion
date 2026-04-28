@@ -162,7 +162,14 @@
     0 0 32px -8px rgba(217,70,239,0.08);
 }
 
+/* Light: apenas borda sutil, sem glow quadrado */
 .surface-card-hover:hover {
+  border-color: var(--border-hover);
+}
+
+/* Dark: glow suave que combina com o fundo escuro */
+:root[data-theme="dark"] .surface-card-hover:hover,
+:root:not([data-theme="light"]) .surface-card-hover:hover {
   border-color: var(--border-hover);
   box-shadow:
     0 1px 0 rgba(255,255,255,0.06) inset,
@@ -626,6 +633,9 @@ a:focus-visible {
 }
 .card:hover {
   border-color: var(--border-hover);
+}
+:root[data-theme="dark"] .card:hover,
+:root:not([data-theme="light"]) .card:hover {
   box-shadow: var(--shadow-lg);
 }
 
@@ -638,6 +648,9 @@ a:focus-visible {
 }
 .card-brand:hover {
   border-color: rgba(217,70,239,0.3);
+}
+:root[data-theme="dark"] .card-brand:hover,
+:root:not([data-theme="light"]) .card-brand:hover {
   box-shadow: var(--shadow-glow);
 }
 

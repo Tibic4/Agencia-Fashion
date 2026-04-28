@@ -101,98 +101,9 @@ const FORMAT_PRESETS = [
 
 type FormatId = typeof FORMAT_PRESETS[number]["id"];
 
-/**
- * Smart fit image into target aspect ratio using blurred background.
- * If source already matches target ratio → simple resize (no blur needed).
- * Otherwise → fit the full image centered, fill empty space with blurred version.
- * Zero API cost, runs entirely on Canvas.
- */
-async function cropToFormat(
-  imageSrc: string,
-  targetW: number,
-  targetH: number,
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const srcW = img.naturalWidth;
-      const srcH = img.naturalHeight;
-      const targetRatio = targetW / targetH;
-      const srcRatio = srcW / srcH;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = targetW;
-      canvas.height = targetH;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) { reject(new Error("Canvas not supported")); return; }
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-
-      // Check if ratios match (within 2% tolerance) — simple resize
-      if (Math.abs(srcRatio - targetRatio) < 0.02) {
-        ctx.drawImage(img, 0, 0, targetW, targetH);
-        resolve(canvas.toDataURL("image/png", 1.0));
-        return;
-      }
-
-      // ── Step 1: Draw blurred background (fill entire canvas) ──
-      // Scale image to cover the canvas
-      let bgW: number, bgH: number, bgX: number, bgY: number;
-      if (srcRatio > targetRatio) {
-        bgH = targetH;
-        bgW = Math.round(targetH * srcRatio);
-      } else {
-        bgW = targetW;
-        bgH = Math.round(targetW / srcRatio);
-      }
-      bgX = Math.round((targetW - bgW) / 2);
-      bgY = Math.round((targetH - bgH) / 2);
-
-      // Draw scaled background
-      ctx.filter = "blur(40px) brightness(0.7) saturate(1.3)";
-      ctx.drawImage(img, bgX - 20, bgY - 20, bgW + 40, bgH + 40);
-      ctx.filter = "none";
-
-      // ── Step 2: Subtle vignette overlay ──
-      const vignette = ctx.createRadialGradient(
-        targetW / 2, targetH / 2, Math.min(targetW, targetH) * 0.3,
-        targetW / 2, targetH / 2, Math.max(targetW, targetH) * 0.7
-      );
-      vignette.addColorStop(0, "rgba(0,0,0,0)");
-      vignette.addColorStop(1, "rgba(0,0,0,0.35)");
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, targetW, targetH);
-
-      // ── Step 3: Draw sharp image centered (fit inside) ──
-      let fitW: number, fitH: number;
-      if (srcRatio > targetRatio) {
-        // Source is wider than target → fit by width
-        fitW = targetW;
-        fitH = Math.round(targetW / srcRatio);
-      } else {
-        // Source is taller than target → fit by height
-        fitH = targetH;
-        fitW = Math.round(targetH * srcRatio);
-      }
-      const fitX = Math.round((targetW - fitW) / 2);
-      const fitY = Math.round((targetH - fitH) / 2);
-
-      // Subtle shadow behind the main image
-      ctx.shadowColor = "rgba(0,0,0,0.3)";
-      ctx.shadowBlur = 30;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 4;
-      ctx.drawImage(img, fitX, fitY, fitW, fitH);
-      ctx.shadowColor = "transparent";
-
-      resolve(canvas.toDataURL("image/png", 1.0));
-    };
-    img.onerror = () => reject(new Error("Failed to load image"));
-    img.src = imageSrc;
-  });
-}
+/* Lógica de smartFit migrou pra POST /api/campaign/format (server-side via
+   sharp). Web e mobile passam a chamar o mesmo endpoint, garantindo paridade
+   visual exata entre os dois clientes. */
 
 /* ─────────────────────────────────────────
    Main Page
@@ -296,18 +207,40 @@ export default function ResultadoCampanha() {
     }
   };
 
-  /** Download with format crop (Canvas) */
+  /**
+   * Pede o smart-fit pro endpoint server-side (`/api/campaign/format`) e
+   * devolve um data URL pronto pra usar em <img src> ou <a download>.
+   * Centraliza a lógica de crop+blur+vinheta — web e mobile chamam o mesmo
+   * endpoint, evitando drift entre as duas implementações.
+   */
+  const fetchFormatted = useCallback(async (img: GeneratedImage, formatId: FormatId): Promise<string> => {
+    const body: Record<string, string> = { format: formatId };
+    if (img.imageUrl) body.imageUrl = img.imageUrl;
+    else if (img.imageBase64) body.imageBase64 = img.imageBase64;
+    else throw new Error("Image has neither URL nor base64");
+
+    const res = await fetch("/api/campaign/format", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`format endpoint failed: ${res.status}`);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }, []);
+
+  /** Download with format crop (server-side smartFit) */
   const downloadFormatted = useCallback(async (img: GeneratedImage, idx: number, formatId: FormatId) => {
     setDownloadingHQ(true);
     try {
       const format = FORMAT_PRESETS.find(f => f.id === formatId) || FORMAT_PRESETS[0];
-      const src = getImageSrc(img);
-      const croppedDataUrl = await cropToFormat(src, format.w, format.h);
-
+      const objectUrl = await fetchFormatted(img, formatId);
       const link = document.createElement("a");
       link.download = `crialook_foto_${idx + 1}_${format.id}_${format.w}x${format.h}.png`;
-      link.href = croppedDataUrl;
+      link.href = objectUrl;
       link.click();
+      // Libera o objectURL após o navegador ter pegado o blob.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
       console.error("Crop error:", err);
       // Fallback: download original
@@ -315,7 +248,7 @@ export default function ResultadoCampanha() {
     } finally {
       setDownloadingHQ(false);
     }
-  }, []);
+  }, [fetchFormatted]);
 
   /** Update preview when format or selected image changes */
   useEffect(() => {
@@ -323,16 +256,22 @@ export default function ResultadoCampanha() {
     const img = result?.data?.images?.[selectedIndex];
     if (!img) { setPreviewDataUrl(null); return; }
 
-    const format = FORMAT_PRESETS.find(f => f.id === activeFormat) || FORMAT_PRESETS[0];
-    const src = getImageSrc(img);
     let cancelled = false;
+    let createdUrl: string | null = null;
 
-    cropToFormat(src, format.w, format.h)
-      .then(dataUrl => { if (!cancelled) setPreviewDataUrl(dataUrl); })
+    fetchFormatted(img, activeFormat)
+      .then(objectUrl => {
+        if (cancelled) { URL.revokeObjectURL(objectUrl); return; }
+        createdUrl = objectUrl;
+        setPreviewDataUrl(objectUrl);
+      })
       .catch(() => { if (!cancelled) setPreviewDataUrl(null); });
 
-    return () => { cancelled = true; };
-  }, [selectedIndex, activeFormat, result]);
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [selectedIndex, activeFormat, result, fetchFormatted]);
 
   /* Smart Tips removed — all copy now comes from the enriched analyzer dicas_postagem */
 
@@ -895,7 +834,7 @@ export default function ResultadoCampanha() {
               </div>
             </div>
 
-            {/* ── Story idea (com copiar) ── */}
+            {/* ── Story idea ── */}
             {dicas.story_idea && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "linear-gradient(135deg, var(--brand-50), var(--surface))", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">📱</span>
@@ -903,18 +842,6 @@ export default function ResultadoCampanha() {
                   <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--brand-700)" }}>IDEIA PARA STORY</p>
                   <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{dicas.story_idea}</p>
                 </div>
-                <button
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(dicas.story_idea!);
-                    haptics.success();
-                    setCopiedTip("story");
-                    setTimeout(() => setCopiedTip(null), 2000);
-                  }}
-                  className="text-[9px] font-bold px-2 py-1.5 rounded-md transition-all min-h-[44px] min-w-[44px] flex-shrink-0 active:scale-[0.95] flex items-center justify-center"
-                  style={{ background: copiedTip === "story" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "story" ? "white" : "var(--brand-700)" }}
-                >
-                  {copiedTip === "story" ? "✓" : "📋"}
-                </button>
               </div>
             )}
 
