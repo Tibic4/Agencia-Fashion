@@ -103,7 +103,20 @@ export default function ResultadoScreen() {
   const router = useRouter();
   const { t } = useT();
   const headerH = useHeaderHeight();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+
+  /* Back inteligente — se o user veio do /historico, volta pra lá (e não
+     pro /gerar, que seria o pop default da stack do tab gerar). Cobre
+     os 3 botões explícitos de back; o gesture iOS swipe-back ainda pop
+     da stack normalmente, mas em pratique pousa em /historico via
+     navigation theme do tab. */
+  const goBack = useCallback(() => {
+    if (from === 'historico') {
+      router.replace('/(tabs)/historico');
+    } else {
+      router.back();
+    }
+  }, [from, router]);
 
   const [result, setResult] = useState<CampaignResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -350,7 +363,7 @@ export default function ResultadoScreen() {
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={{ fontSize: 40 }}>📷</Text>
         <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('result.notFoundTitle')}</Text>
-        <Button title={t('result.createMore')} onPress={() => router.back()} />
+        <Button title={t('result.createMore')} onPress={goBack} />
       </View>
     );
   }
@@ -370,7 +383,7 @@ export default function ResultadoScreen() {
       {/* Header */}
       <View style={styles.header}>
         <AnimatedPressable
-          onPress={() => router.back()}
+          onPress={goBack}
           haptic="tap"
           style={styles.backBtn}
           accessibilityRole="button"
@@ -761,7 +774,7 @@ export default function ResultadoScreen() {
       <Button
         title={t('result.createMore')}
         variant="secondary"
-        onPress={() => router.back()}
+        onPress={goBack}
         style={{ marginTop: 16 }}
       />
     </ScrollView>
