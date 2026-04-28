@@ -101,9 +101,10 @@ const FORMAT_PRESETS = [
 
 type FormatId = typeof FORMAT_PRESETS[number]["id"];
 
-/* Lógica de smartFit migrou pra POST /api/campaign/format (server-side via
-   sharp). Web e mobile passam a chamar o mesmo endpoint, garantindo paridade
-   visual exata entre os dois clientes. */
+/* Server-side smart crop via `/api/campaign/format` (sharp). Faz apenas
+   resize + center-crop (position: north) + perfil ICC sRGB embutido.
+   ZERO alteração de cor/brilho/saturação. Web e mobile chamam o mesmo
+   endpoint — paridade pixel-a-pixel garantida. */
 
 /* ─────────────────────────────────────────
    Main Page

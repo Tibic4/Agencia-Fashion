@@ -112,6 +112,11 @@ export default function ResultadoScreen() {
   const [copyTab, setCopyTab] = useState(0);
   const [activeFormat, setActiveFormat] = useState<string>('stories');
   const [showAnalysis, setShowAnalysis] = useState(false);
+  /* `processing` indica qual ação está rodando ('share' | 'save' | null).
+     Usado pra mostrar spinner no botão correspondente e desabilitar o outro
+     enquanto o crop+download/save acontece — a galera dos grandes (Insta,
+     VSCO, Lightroom Mobile) sempre dá feedback visual instantâneo. */
+  const [processing, setProcessing] = useState<null | 'share' | 'save'>(null);
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -131,13 +136,16 @@ export default function ResultadoScreen() {
     img.imageUrl || `data:${img.mimeType};base64,${img.imageBase64}`;
 
   /**
-   * Pede o smart-fit pro endpoint server-side `/api/campaign/format` e
+   * Pede o smart-crop pro endpoint server-side `/api/campaign/format` e
    * salva o PNG retornado num arquivo local. Web e mobile chamam o mesmo
-   * endpoint — paridade pixel-a-pixel garantida (blur, vinheta, fit).
+   * endpoint — paridade pixel-a-pixel garantida.
+   *
+   * O endpoint faz apenas resize + center-crop (position: north) + perfil
+   * ICC sRGB embutido. ZERO alteração de cor/brilho/saturação.
    *
    * Fallback: se o endpoint falhar, devolve o uri original sem transformação,
-   * pra "Salvar/Compartilhar" continuar funcionando mesmo que o servidor de
-   * formatação esteja off (o user só não terá o blur/vinheta).
+   * pra "Salvar/Compartilhar" continuar funcionando mesmo que o servidor
+   * esteja off.
    */
   const cropToFormat = useCallback(async (img: GeneratedImage, formatId: string): Promise<string> => {
     console.log('[crop] start', { formatId, hasUrl: !!img.imageUrl, hasB64: !!img.imageBase64 });
@@ -199,54 +207,78 @@ export default function ResultadoScreen() {
   }, []);
 
   const shareImage = useCallback(async (img: GeneratedImage, _idx: number) => {
+    if (processing) return; // evita doubles taps enquanto processa
+    setProcessing('share');
     try {
       haptic.tap();
       // cropToFormat já materializa o arquivo no cache local (com fallback
       // pra imagem original se o endpoint falhar). Sem downloadToLocal extra.
       const formatted = await cropToFormat(img, activeFormat);
       await Sharing.shareAsync(formatted, { mimeType: 'image/png' });
-    } catch { /* ignore */ }
-  }, [cropToFormat, activeFormat]);
+    } catch (e) {
+      console.warn('[share] failed', e);
+    } finally {
+      setProcessing(null);
+    }
+  }, [cropToFormat, activeFormat, processing]);
 
+  /**
+   * Tenta o caminho "full permission" (read+write) em Dev Build/produção:
+   * permite criar álbum "CriaLook" e organizar as gerações ali.
+   * Se falhar (Expo Go SDK 53+ não suporta full permission no Android),
+   * cai pro caminho write-only via saveToLibraryAsync — funciona em todo
+   * lugar, mas sem álbum dedicado. Promove a transição Expo Go → Dev Build →
+   * produção sem precisar tocar no código.
+   */
   const saveToGallery = useCallback(async (img: GeneratedImage, idx: number) => {
+    if (processing) return;
+    setProcessing('save');
     try {
-      console.log('[save] requesting permission');
-      // writeOnly=false (precisamos ler pra criar álbum), granular=['photo'] —
-      // sem isso o expo-media-library pede também AUDIO, que não está no
-      // manifest do Expo Go e quebra o request inteiro.
-      const { status } = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
-      console.log('[save] permission status:', status);
-      if (status !== 'granted') {
-        haptic.warning();
-        Alert.alert(t('result.permissionDeniedTitle'), t('result.permissionDeniedBody'));
-        return;
-      }
-      // Aplica o formato selecionado (Stories/Feed/Feed 1:1) com smartFit do server.
       const formatted = await cropToFormat(img, activeFormat);
       console.log('[save] cropToFormat returned:', formatted);
-      // Save the asset, then file it under the dedicated "CriaLook" album so
-      // users can find their generations easily (matches the iOS Photos UX
-      // for app-generated content like Instagram, VSCO, etc.).
-      console.log('[save] creating asset...');
-      const asset = await MediaLibrary.createAssetAsync(formatted);
-      console.log('[save] asset created:', asset.id);
+
+      // Tenta full permission. `granularPermissions: ['photo']` evita pedir
+      // AUDIO (que quebra o request inteiro em alguns ambientes).
+      let hasFullPermission = false;
       try {
-        const album = await MediaLibrary.getAlbumAsync('CriaLook');
-        if (album) {
-          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-        } else {
-          await MediaLibrary.createAlbumAsync('CriaLook', asset, false);
-        }
-      } catch (albumErr) {
-        // Album operation can fail on some Android variants — the asset is
-        // already saved to the camera roll, so this is non-fatal.
-        console.warn('[save] album op failed (non-fatal):', albumErr);
+        const perm = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
+        hasFullPermission = perm.status === 'granted';
+        console.log('[save] full permission:', perm.status);
+      } catch (permErr) {
+        // Expo Go SDK 53+ no Android joga aqui — tudo certo, vamos pro fallback.
+        console.log('[save] full permission unavailable, using write-only fallback', permErr instanceof Error ? permErr.message : '');
       }
+
+      if (hasFullPermission) {
+        // Caminho premium — Dev Build / produção. Cria álbum "CriaLook" pro
+        // user achar fácil as gerações depois (padrão Instagram/VSCO).
+        console.log('[save] creating asset (full path)...');
+        const asset = await MediaLibrary.createAssetAsync(formatted);
+        try {
+          const album = await MediaLibrary.getAlbumAsync('CriaLook');
+          if (album) {
+            await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+          } else {
+            await MediaLibrary.createAlbumAsync('CriaLook', asset, false);
+          }
+          console.log('[save] saved with album OK');
+        } catch (albumErr) {
+          // Asset já está na camera roll — falha de álbum não é fatal.
+          console.warn('[save] album op failed (non-fatal):', albumErr);
+        }
+      } else {
+        // Caminho compatível — Expo Go ou usuário recusou full permission.
+        // saveToLibraryAsync usa permissão write-only mais permissiva.
+        console.log('[save] saveToLibraryAsync (write-only path)...');
+        await MediaLibrary.saveToLibraryAsync(formatted);
+        console.log('[save] saved write-only OK');
+      }
+
       Sentry.addBreadcrumb({
         category: 'photo',
         message: 'photo_saved',
         level: 'info',
-        data: { idx },
+        data: { idx, fullPermission: hasFullPermission },
       });
       haptic.success();
       Alert.alert(t('result.saveSuccessTitle'), t('result.saveSuccessMessage'));
@@ -255,8 +287,10 @@ export default function ResultadoScreen() {
       Sentry.captureException(e, { tags: { feature: 'save_photo' } });
       haptic.error();
       Alert.alert(t('common.error'), t('result.saveErrorMessage'));
+    } finally {
+      setProcessing(null);
     }
-  }, [cropToFormat, activeFormat, t]);
+  }, [cropToFormat, activeFormat, processing, t]);
 
   const copyText = useCallback(async (text: string, field: string) => {
     await Clipboard.setStringAsync(text);
@@ -449,13 +483,17 @@ export default function ResultadoScreen() {
       {selectedImage && (
         <View style={styles.actions}>
           <Button
-            title={t('result.actionShare')}
+            title={processing === 'share' ? t('result.actionSharing') : t('result.actionShare')}
             onPress={() => shareImage(selectedImage, selectedIndex)}
+            loading={processing === 'share'}
+            disabled={processing !== null && processing !== 'share'}
           />
           <Button
-            title={t('result.actionSave')}
+            title={processing === 'save' ? t('result.actionSaving') : t('result.actionSave')}
             variant="secondary"
             onPress={() => saveToGallery(selectedImage, selectedIndex)}
+            loading={processing === 'save'}
+            disabled={processing !== null && processing !== 'save'}
           />
         </View>
       )}
@@ -514,6 +552,7 @@ export default function ResultadoScreen() {
                           copyText(textToCopy, `tab${copyTab}`);
                         }}
                         haptic={false}
+                        hitSlop={10}
                         style={[styles.copyButton, copiedField === `tab${copyTab}` && styles.copyButtonCopied]}
                       >
                         <Text style={[styles.copyButtonText, copiedField === `tab${copyTab}` && styles.copyButtonTextCopied]}>
@@ -546,6 +585,7 @@ export default function ResultadoScreen() {
                     <AnimatedPressable
                       onPress={() => copyText(dicas.caption_sugerida!, 'caption')}
                       haptic={false}
+                      hitSlop={10}
                       style={[styles.copyButton, copiedField === 'caption' && styles.copyButtonCopied]}
                     >
                       <Text style={[styles.copyButtonText, copiedField === 'caption' && styles.copyButtonTextCopied]}>
@@ -567,6 +607,7 @@ export default function ResultadoScreen() {
                 <AnimatedPressable
                   onPress={() => copyText(dicas.hashtags!.slice(0, 8).map(h => h.startsWith('#') ? h : `#${h}`).join(' '), 'hash')}
                   haptic={false}
+                  hitSlop={10}
                   style={[styles.copyButton, copiedField === 'hash' && styles.copyButtonCopied]}
                 >
                   <Text style={[styles.copyButtonText, copiedField === 'hash' && styles.copyButtonTextCopied]}>
@@ -584,9 +625,10 @@ export default function ResultadoScreen() {
             </Card>
           )}
 
-          {/* Caption alternativa */}
+          {/* Caption alternativa — fundo levemente diferente em vez de borda dashed
+              (que ficava ruim em Android) pra sinalizar "opção B" sem polui visual. */}
           {dicas.caption_alternativa && (
-            <Card style={[styles.tipCard, { borderStyle: 'dashed' }]}>
+            <Card style={[styles.tipCard, styles.tipCardAlt]}>
               <View style={styles.tipHeader}>
                 <View style={styles.tipHeaderLeft}>
                   <Text style={[styles.tipLabel, { color: colors.textSecondary }]}>{t('result.sectionCaptionAlt')}</Text>
@@ -599,6 +641,7 @@ export default function ResultadoScreen() {
                 <AnimatedPressable
                   onPress={() => copyText(dicas.caption_alternativa!, 'alt')}
                   haptic={false}
+                  hitSlop={10}
                   style={[styles.copyButton, copiedField === 'alt' && styles.copyButtonCopied]}
                 >
                   <Text style={[styles.copyButtonText, copiedField === 'alt' && styles.copyButtonTextCopied]}>
@@ -632,7 +675,7 @@ export default function ResultadoScreen() {
             )}
           </View>
 
-          {/* Story idea with copy */}
+          {/* Story idea — sem botão copiar (cópia direta da legenda já cobre o use case) */}
           {dicas.story_idea && (
             <View style={styles.storyCard}>
               <Text style={styles.storyIcon}>📱</Text>
@@ -640,15 +683,6 @@ export default function ResultadoScreen() {
                 <Text style={styles.storyLabel}>{t('result.sectionStory')}</Text>
                 <Text style={styles.storyText}>{dicas.story_idea}</Text>
               </View>
-              <AnimatedPressable
-                onPress={() => copyText(dicas.story_idea!, 'story')}
-                haptic={false}
-                style={[styles.copyButton, copiedField === 'story' && styles.copyButtonCopied]}
-              >
-                <Text style={[styles.copyButtonText, copiedField === 'story' && styles.copyButtonTextCopied]}>
-                  {copiedField === 'story' ? '✓' : t('result.copy')}
-                </Text>
-              </AnimatedPressable>
             </View>
           )}
 
@@ -844,66 +878,67 @@ const styles = StyleSheet.create({
   },
   tabContent: { padding: 16, gap: 8 },
 
-  // Tips
-  tipCard: { gap: 6, marginTop: 8 },
-  tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tipLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  tipText: { fontSize: 14, lineHeight: 20 },
+  // Tips — gap 10 entre header/conteúdo e marginTop 12 entre cards (respiro tipo Linear/Stripe).
+  tipCard: { gap: 10, marginTop: 12 },
+  tipCardAlt: { backgroundColor: 'rgba(124,58,237,0.04)' },
+  tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tipLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
+  tipText: { fontSize: 14, lineHeight: 21 },
   tipValue: { fontSize: 14, fontWeight: '600' },
   tipHint: { fontSize: 12, fontStyle: 'italic' },
   hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   hashtagPill: {
     backgroundColor: 'rgba(124,58,237,0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(124,58,237,0.15)',
   },
-  hashtagText: { color: Colors.brand.primary, fontSize: 12, fontWeight: '600' },
+  hashtagText: { color: Colors.brand.primary, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
 
   // Char badge
-  charBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  charBadgeText: { fontSize: 9, fontWeight: '800' },
+  charBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  charBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.2 },
 
-  // Copy button
+  /* Copy button — visualmente compacto (não rouba peso visual da label do card),
+     mas mantemos área tocável >=44px via hitSlop no Pressable, atendendo
+     guideline de acessibilidade (WCAG 2.5.5 / Material/HIG 44dp mínimo). */
   copyButton: {
     backgroundColor: 'rgba(124,58,237,0.12)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    minHeight: 48,
-    minWidth: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   copyButtonCopied: { backgroundColor: Colors.brand.primary },
-  copyButtonText: { color: Colors.brand.primary, fontSize: 10, fontWeight: '800' },
+  copyButtonText: { color: Colors.brand.primary, fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
   copyButtonTextCopied: { color: '#fff' },
 
   // Info grid
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  infoCard: { flex: 1, minWidth: '45%', gap: 4 },
-  infoCardFull: { width: '100%', gap: 4 },
-  infoValue: { fontSize: 13, fontWeight: '700' },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  infoCard: { flex: 1, minWidth: '45%', gap: 6 },
+  infoCardFull: { width: '100%', gap: 6 },
+  infoValue: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
 
-  // Story card
+  // Story card — agora 2 colunas (sem o copiar). Padding e gap maior pra parecer card ativo.
   storyCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
-    padding: 12,
-    borderRadius: 12,
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
     backgroundColor: 'rgba(124,58,237,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(124,58,237,0.15)',
-    marginTop: 8,
+    marginTop: 12,
   },
-  storyIcon: { fontSize: 14, marginTop: 2 },
-  storyContent: { flex: 1 },
-  storyLabel: { fontSize: 10, fontWeight: '800', color: Colors.brand.primary, marginBottom: 2 },
-  storyText: { fontSize: 12, fontWeight: '500', color: Colors.brand.primary, lineHeight: 17 },
+  storyIcon: { fontSize: 16, marginTop: 1 },
+  storyContent: { flex: 1, gap: 4 },
+  storyLabel: { fontSize: 10, fontWeight: '800', color: Colors.brand.primary, letterSpacing: 0.6, textTransform: 'uppercase' },
+  storyText: { fontSize: 13, fontWeight: '500', color: Colors.brand.primary, lineHeight: 19 },
 
   // Dica extra
   dicaExtraCard: {
