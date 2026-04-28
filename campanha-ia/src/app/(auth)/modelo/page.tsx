@@ -421,7 +421,7 @@ export default function ModeloVirtual() {
                       style={{ background: "rgba(236,72,153,0.85)", color: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      ATIVA
+                      {labelBodyMasc ? "ATIVO" : "ATIVA"}
                     </div>
                   </div>
                 )}
@@ -770,9 +770,9 @@ export default function ModeloVirtual() {
             <div className="aspect-[3/4] flex items-center justify-center" style={{ background: "var(--gradient-brand-soft)" }}>
               <div className="text-center p-8">
                 <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: skinTones.find(s => s.value === skin)?.color || '#D4A574', border: '3px solid var(--brand-300)' }}>
-                  <span className="text-4xl">👩</span>
+                  <span className="text-4xl">{gender === "masculino" ? "👨" : "👩"}</span>
                 </div>
-                <p className="font-semibold text-lg">{name || "Sua modelo"}</p>
+                <p className="font-semibold text-lg">{name || (gender === "masculino" ? "Seu modelo" : "Sua modelo")}</p>
                 <div className="flex flex-wrap justify-center gap-2 mt-4">
                   <span className="badge badge-brand text-xs">{skinTones.find(s => s.value === skin)?.label}</span>
                   <span className="badge badge-brand text-xs">{hairTextures.find(h => h.value === hairTexture)?.label}</span>
