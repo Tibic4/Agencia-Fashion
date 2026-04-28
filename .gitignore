@@ -82,3 +82,6 @@ test-result-foto*.json
 
 # ─── Currículo / dados pessoais (não vão pro repo público) ────
 curriculo/
+
+# ─── Notas locais de tarefas (não vai pro repo público) ───────
+TASKS.md

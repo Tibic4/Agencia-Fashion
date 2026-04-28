@@ -1,0 +1,6 @@
+# Normaliza identidade do autor sem reescrever o histórico.
+# Ferramentas (`git log`, `git shortlog`, GitHub) passam a mostrar a forma canônica.
+
+Alton Vieira <bicagold@gmail.com> <bicag@Thor-PC>
+Alton Vieira <bicagold@gmail.com> <bicagold@gmail.com>
+Alton Vieira <bicagold@gmail.com> <103004140+Tibic4@users.noreply.github.com>

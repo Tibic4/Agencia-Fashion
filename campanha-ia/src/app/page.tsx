@@ -9,10 +9,9 @@ import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 const HowItWorksAnimation = dynamic(() => import("@/components/HowItWorksAnimation"));
 const FaqAccordion = dynamic(() => import("@/components/FaqAccordion"));
 const LiveCampaignDemo = dynamic(() => import("@/components/LiveCampaignDemo"));
-const HumiliatingMathTable = dynamic(() => import("@/components/HumiliatingMathTable"));
+const CostComparisonTable = dynamic(() => import("@/components/CostComparisonTable"));
 const PricingTabs = dynamic(() => import("@/components/PricingTabs"));
 const StickyCTA = dynamic(() => import("@/components/StickyCTA"));
-const TestimonialCards = dynamic(() => import("@/components/TestimonialCards"));
 const ScrollTracker = dynamic(() => import("@/components/ScrollTracker"));
 const ShowcaseSection = dynamic(() => import("@/components/ShowcaseSectionLoader"));
 // Hero badge dinâmico — mostra "X/50 vagas grátis" se beta ativo
@@ -453,7 +452,7 @@ export default function Home() {
               </p>
             </div>
             
-            <HumiliatingMathTable />
+            <CostComparisonTable />
 
             <div className="mt-20 text-center mb-8">
               <div className="badge badge-brand mb-4 inline-flex">Planos & Packs</div>
@@ -469,22 +468,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ═══ DEPOIMENTOS / SOCIAL PROOF FINAL ═══ */}
-        <section id="depoimentos" className="section scroll-mt-20 border-t" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-          <div className="container">
-            <div className="text-center mb-12 md:mb-16">
-              <div className="badge badge-brand mb-4 inline-flex">Eles também duvidaram</div>
-              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight mb-4">
-                O impacto de quem <span className="gradient-text">já adotou a IA</span>
-              </h2>
-              <p className="text-base md:text-lg max-w-xl mx-auto" style={{ color: 'var(--muted)' }}>
-                Resultados reais de marcas reais que decidiram parar de perder dinheiro com método antigo.
-              </p>
-            </div>
-            
-            <TestimonialCards />
-          </div>
-        </section>
+        {/* ═══ DEPOIMENTOS — escondido até termos depoimentos reais com prints
+             do Instagram. Componente preservado para reativação. ═══ */}
 
         {/* ═══ FAQ SECTION ═══ */}
         <section id="faq" className="section scroll-mt-20 border-t" style={{ borderColor: 'var(--border)', background: 'var(--background)' }}>
