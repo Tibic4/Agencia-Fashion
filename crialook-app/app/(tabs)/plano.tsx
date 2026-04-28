@@ -18,7 +18,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { apiGetCached } from '@/lib/api';
 import { PLANS } from '@/lib/plans';
-import { useT } from '@/lib/i18n';
+import { useT, type TKey } from '@/lib/i18n';
 import {
   isUserCancelledError,
   loadSubscriptionOfferings,
@@ -221,9 +221,9 @@ export default function PlanoScreen() {
                     style={[styles.creditsText, { color: colors.textSecondary }]}
                     numberOfLines={1}
                   >
-                    {credits.campaigns > 0 ? `+${credits.campaigns} campanhas avulsas` : ''}
+                    {credits.campaigns > 0 ? t('plan.extraCampaigns', { n: credits.campaigns }) : ''}
                     {credits.campaigns > 0 && credits.models > 0 ? ' · ' : ''}
-                    {credits.models > 0 ? `+${credits.models} modelos avulsos` : ''}
+                    {credits.models > 0 ? t('plan.extraModels', { n: credits.models }) : ''}
                   </Text>
                 )}
               </View>
@@ -349,7 +349,9 @@ export default function PlanoScreen() {
                   {plan.features.map((f, i) => (
                     <View key={i} style={styles.featureRow}>
                       <FontAwesome name="check" size={14} color={Colors.brand.success} />
-                      <Text style={[styles.featureText, { color: colors.text }]}>{f}</Text>
+                      <Text style={[styles.featureText, { color: colors.text }]}>
+                        {t(`features.${f.key}` as TKey, f.vars)}
+                      </Text>
                     </View>
                   ))}
 
