@@ -672,7 +672,11 @@ function ModelGridCard({
             )}
           </View>
         )}
-        {model.is_active && <PulsingBadge label={t('model.statusActive')} />}
+        {model.is_active && (
+          <PulsingBadge
+            label={t(matchMasc ? 'model.statusActiveMasc' : 'model.statusActive')}
+          />
+        )}
 
         {/* Botão de ampliar — fucsia gradient, abre o ModelBottomSheet com
             pinch-to-zoom. Mesma UX que /gerar. */}

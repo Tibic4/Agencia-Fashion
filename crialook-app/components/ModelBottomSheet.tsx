@@ -260,8 +260,11 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
     const isMale = genderField === 'masculino' || MASC_BODIES.has(bodyKey);
     const genderPrefix = isMale ? 'Homem' : 'Mulher';
     const richSubtitle = bodyLabel ? `${genderPrefix} ${bodyLabel}` : '';
+    /* Concordância gramatical PT-BR: "Sua modelo" (fem) / "Seu modelo" (masc).
+       Inglês não tem essa distinção — manter "Your model" se i18n vier. */
+    const possessive = isMale ? 'Seu' : 'Sua';
     const metaText = isCustom && richSubtitle
-      ? `⭐ Sua modelo · ${richSubtitle}`
+      ? `⭐ ${possessive} modelo · ${richSubtitle}`
       : richSubtitle;
 
     const photoUri = model?.image_url || model?.photo_url || '';

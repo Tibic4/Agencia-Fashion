@@ -56,6 +56,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { apiGetCached } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { isMaleModel } from '@/lib/modelGender';
 import {
   useImagePickerSlot,
   useModelSelector,
@@ -560,7 +561,9 @@ export default function GerarScreen() {
                   )}
                   {item.is_custom && (
                     <View style={styles.customBadge}>
-                      <Text style={styles.customBadgeText}>⭐ Sua</Text>
+                      <Text style={styles.customBadgeText}>
+                        {isMaleModel(item) ? '⭐ Seu' : '⭐ Sua'}
+                      </Text>
                     </View>
                   )}
                   <Text

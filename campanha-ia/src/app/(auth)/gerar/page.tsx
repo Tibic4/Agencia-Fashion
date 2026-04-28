@@ -643,11 +643,12 @@ export default function GerarCampanha() {
                   <div className="min-w-0">
                     <h3 className="font-bold text-lg truncate">{previewModel.name}</h3>
                     <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                      {previewModel.isCustom ? "⭐ Sua modelo · " : ""}
                       {/* Lookup canônico — espelha bodyTypesFem/Masc do /modelo.
                           Antes ficava direto na expressão e faltavam `magra` e
                           `atletico`, caindo no fallback bruto (mostrava o value
-                          em lowercase tipo "magra" pro usuário). */}
+                          em lowercase tipo "magra" pro usuário).
+                          Também: prefixo "Sua/Seu modelo" agora concorda com
+                          gênero gramatical (PT-BR). */}
                       {(() => {
                         const masc = new Set(["atletico", "medio", "masculino", "robusto"]);
                         const labels: Record<string, string> = {
@@ -657,8 +658,11 @@ export default function GerarCampanha() {
                           masculino: "Padrão", robusto: "Robusto",
                         };
                         const bt = previewModel.bodyType;
-                        const gender = masc.has(bt) ? "Homem" : "Mulher";
-                        return `${gender} ${labels[bt] ?? bt}`;
+                        const isMale = masc.has(bt);
+                        const gender = isMale ? "Homem" : "Mulher";
+                        const possessive = isMale ? "Seu" : "Sua";
+                        const subtitle = `${gender} ${labels[bt] ?? bt}`;
+                        return previewModel.isCustom ? `⭐ ${possessive} modelo · ${subtitle}` : subtitle;
                       })()}
                     </p>
                   </div>
