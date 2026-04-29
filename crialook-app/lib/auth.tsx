@@ -114,3 +114,15 @@ export async function getAuthToken(): Promise<string | null> {
 export function clearAuthTokenCache() {
   jwtCache = null;
 }
+
+/** Retorna o Clerk user.id atual (sync, sem network). Pode ser usado fora
+ *  do React tree (ex: lib/billing.ts) pra anexar identidade a chamadas de
+ *  billing nativo (`obfuscatedAccountIdAndroid`). */
+export function getCurrentUserId(): string | null {
+  try {
+    const clerk = getClerkInstance();
+    return clerk.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}

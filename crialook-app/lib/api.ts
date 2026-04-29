@@ -1,6 +1,6 @@
-import { getAuthToken } from './auth';
+import { clearAuthTokenCache, getAuthToken } from './auth';
 import { ApiError, type ApiErrorCode } from '@/types';
-import { readCache, writeCache, invalidateCache } from './cache';
+import { readCache, writeCache, invalidateCache, invalidateCachePrefix, pruneExpiredCache } from './cache';
 import { logger } from './logger';
 import { getLocale } from './i18n';
 
@@ -117,7 +117,7 @@ export async function api<T = unknown>(
       );
 
       if (!res.ok) {
-        const text = await res.text();
+        const text = await res.text().catch(() => '');
         let payloadCode: string | undefined;
         try {
           const parsed = JSON.parse(text);
@@ -127,6 +127,16 @@ export async function api<T = unknown>(
         }
         const code = classifyStatus(res.status, payloadCode);
         const err = new ApiError(`API ${res.status}`, res.status, code, sanitizeBody(text));
+
+        // 401 → JWT cacheado pode estar stale. Limpa o cache e tenta de novo
+        // uma vez (em qualquer método). Sem isso, o usuário fica em loop de
+        // erro até o TTL de 30s do JWT expirar e o Clerk gerar um novo.
+        if (res.status === 401 && attempt === 0) {
+          clearAuthTokenCache();
+          const refreshed = await getAuthHeaders();
+          headers.Authorization = refreshed.Authorization || headers.Authorization;
+          continue;
+        }
 
         if (attempt < maxRetries && shouldRetry(method, res.status)) {
           await new Promise(r => setTimeout(r, RETRY_BASE_DELAY_MS * Math.pow(2, attempt)));
@@ -180,6 +190,17 @@ async function revalidateInBackground<T>(
 
 export async function invalidateApiCache(path: string) {
   await invalidateCache(path);
+}
+
+/** Invalida tudo que começa com `prefix` (ex: invalidateApiCachePrefix('/campaigns')
+ *  para limpar lista + cada campaign individual). */
+export async function invalidateApiCachePrefix(prefix: string) {
+  await invalidateCachePrefix(prefix);
+}
+
+/** Sweep de TTLs vencidos. Chamar no boot pra evitar leak no AsyncStorage. */
+export async function pruneApiCache() {
+  await pruneExpiredCache();
 }
 
 export const apiGet = <T = unknown>(path: string, options?: ApiOptions) =>

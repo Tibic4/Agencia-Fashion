@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import * as Crypto from 'expo-crypto';
 import {
   initConnection,
   endConnection,
@@ -13,6 +14,7 @@ import {
   type Purchase,
 } from 'react-native-iap';
 import { apiPost } from './api';
+import { getCurrentUserId } from './auth';
 import { withSpan } from './sentry';
 import { ApiError } from '@/types';
 
@@ -75,6 +77,18 @@ export interface VerifiedSubscription {
   expiresAt: string;
 }
 
+/** Hash determinístico do Clerk user.id pra Google Play (constraint: max 64
+ *  chars, charset alfanumérico). Sem isso o backend não consegue verificar
+ *  no `/billing/verify` se o `purchaseToken` pertence à sessão do usuário. */
+async function hashUserIdForBilling(userId: string): Promise<string> {
+  const digest = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    userId,
+    { encoding: Crypto.CryptoEncoding.HEX },
+  );
+  return digest.slice(0, 64);
+}
+
 export async function purchaseSubscription(sku: SubscriptionSku): Promise<VerifiedSubscription> {
   return withSpan(`billing.purchase:${sku}`, 'billing.purchase', async () => {
     await initBilling();
@@ -89,12 +103,20 @@ export async function purchaseSubscription(sku: SubscriptionSku): Promise<Verifi
       throw new ApiError('Subscription offer not available', 0, 'UNKNOWN');
     }
 
+    // Vincula a compra ao userId Clerk via obfuscatedAccountIdAndroid. Sem
+    // isso, um purchaseToken capturado pode ser reenviado por outro usuário
+    // pra ativar plano gratuitamente. Backend deve checar que o
+    // obfuscatedAccountId do purchase Google === hash(currentUserId).
+    const userId = getCurrentUserId();
+    const obfuscatedAccountIdAndroid = userId ? await hashUserIdForBilling(userId) : undefined;
+
     const result = await requestPurchase({
       type: 'subs',
       request: {
         google: {
           skus: [sku],
           subscriptionOffers: [{ sku, offerToken }],
+          ...(obfuscatedAccountIdAndroid ? { obfuscatedAccountIdAndroid } : {}),
         },
       },
     });

@@ -15,15 +15,36 @@
 import { useSyncExternalStore } from 'react';
 
 let locked = false;
+let safetyTimer: ReturnType<typeof setTimeout> | null = null;
 const listeners = new Set<() => void>();
+
+// Safety timeout — se o lock não for liberado em 5min (geração mais longa
+// possível + buffer), libera sozinho. Sem isso, um crash mid-generation
+// deixa a tab bar travada até o usuário reiniciar o app.
+const SAFETY_TIMEOUT_MS = 5 * 60 * 1000;
 
 function notify() {
   for (const cb of listeners) cb();
 }
 
+function clearSafetyTimer() {
+  if (safetyTimer) {
+    clearTimeout(safetyTimer);
+    safetyTimer = null;
+  }
+}
+
 export function setNavigationLocked(value: boolean) {
   if (locked === value) return;
   locked = value;
+  clearSafetyTimer();
+  if (value) {
+    safetyTimer = setTimeout(() => {
+      locked = false;
+      safetyTimer = null;
+      notify();
+    }, SAFETY_TIMEOUT_MS);
+  }
   notify();
 }
 

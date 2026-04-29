@@ -14,8 +14,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { ThemeProvider } from '@/lib/theme';
 import Colors from '@/constants/Colors';
 import { AuthProvider, useAuth } from '@/lib/auth';
-import { registerForPushNotifications, addNotificationResponseListener } from '@/lib/notifications';
-import { apiPost, apiGet } from '@/lib/api';
+import { registerForPushNotifications, addNotificationResponseListener, getLastNotificationResponseAsync } from '@/lib/notifications';
+import { apiPost, apiGet, pruneApiCache } from '@/lib/api';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { AppErrorBoundary } from '@/components/ErrorBoundary';
 import { BiometricConsentMount } from '@/components/BiometricConsentModal';
@@ -26,6 +26,9 @@ import * as WebBrowser from 'expo-web-browser';
 
 initSentry();
 initLocale();
+// Sweep cache stale no boot — sem isso entradas com TTL longo nunca lidas
+// vazam no AsyncStorage até bater no soft-cap de 6MB do Android.
+pruneApiCache().catch(() => {});
 
 // Fecha auth session pendente quando o app é reaberto após o OAuth redirect.
 // Sem isso o flow useSSO pode travar esperando um resultado que nunca chega.
@@ -33,7 +36,9 @@ WebBrowser.maybeCompleteAuthSession();
 
 export { ErrorBoundary } from 'expo-router';
 
-SplashScreen.preventAutoHideAsync();
+// .catch evita unhandled rejection se a splash já foi escondida por race
+// (acontece com fast-refresh e cold start em Hermes).
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -128,12 +133,20 @@ function AuthGate({ onReady }: { onReady?: () => void }) {
     };
     const sub = AppState.addEventListener('change', onAppStateChange);
 
-    const notifSub = addNotificationResponseListener(response => {
-      const data = response.notification.request.content.data;
+    const handleNotifResponse = (response: any) => {
+      const data = response?.notification?.request?.content?.data;
       const id = data?.campaignId;
       if (isValidCampaignId(id)) {
         router.push({ pathname: '/(tabs)/gerar/resultado', params: { id } });
       }
+    };
+    const notifSub = addNotificationResponseListener(handleNotifResponse);
+
+    // App aberto por toque em push (cold start): listener acima registra DEPOIS
+    // do sistema entregar o evento. Esse fetch puxa o último response para que
+    // o deep link de campanha não seja silenciosamente perdido.
+    getLastNotificationResponseAsync().then(last => {
+      if (last) handleNotifResponse(last);
     });
 
     return () => {
@@ -199,7 +212,7 @@ function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (appReady) SplashScreen.hideAsync();
+    if (appReady) SplashScreen.hideAsync().catch(() => {});
   }, [appReady]);
 
   if (!loaded) return null;

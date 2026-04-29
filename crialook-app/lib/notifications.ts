@@ -58,6 +58,20 @@ export function addNotificationResponseListener(
 }
 
 /**
+ * Quando o app é cold-started por toque numa notificação, o
+ * `addNotificationResponseListener` registrado no useEffect chega TARDE — o
+ * sistema já entregou o evento. Esse helper recupera essa última resposta
+ * pra processar manualmente no boot. Idempotente: chame uma vez ao montar.
+ */
+export async function getLastNotificationResponseAsync() {
+  try {
+    return await Notifications.getLastNotificationResponseAsync();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Schedule a local "campaign ready" notification as a fallback. The backend
  * also fires a push when the job completes; the local one is a safety net
  * for cases where the user backgrounded the app and the push was delayed.
