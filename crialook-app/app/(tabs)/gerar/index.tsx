@@ -55,6 +55,7 @@ import {
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { apiGetCached } from '@/lib/api';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useT } from '@/lib/i18n';
 import { isMaleModel } from '@/lib/modelGender';
 import {
@@ -254,15 +255,33 @@ export default function GerarScreen() {
   const [background, setBackground] = useState('branco');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // ─── Plan name (used by QuotaExceededModal) ─────────────────────────────
+  // ─── Plan name + quota (used by QuotaExceededModal + pre-flight) ────────
   const [currentPlan, setCurrentPlan] = useState('free');
+  const [campaignsUsed, setCampaignsUsed] = useState(0);
+  const [campaignsLimit, setCampaignsLimit] = useState(0);
+  const [extraCredits, setExtraCredits] = useState(0);
+  const isOnline = useNetworkStatus();
   useEffect(() => {
-    apiGetCached<{ data: { plan_name: string } }>('/store/usage', 60_000)
+    apiGetCached<{ data: { plan_name: string; campaigns_generated?: number; campaigns_limit?: number } }>(
+      '/store/usage',
+      60_000,
+    )
       .then(usage => {
         if (usage?.data?.plan_name) setCurrentPlan(usage.data.plan_name);
+        setCampaignsUsed(usage?.data?.campaigns_generated ?? 0);
+        setCampaignsLimit(usage?.data?.campaigns_limit ?? 0);
       })
       .catch(() => {});
+    apiGetCached<{ data: { campaigns?: number } }>('/store/credits', 60_000)
+      .then(res => setExtraCredits(res?.data?.campaigns ?? 0))
+      .catch(() => {});
   }, []);
+
+  // Cota total disponível: limite mensal − consumido + créditos avulsos.
+  // Usada pra (a) bloquear o submit antes do upload em vez de carregar 3 fotos
+  // pra ver QUOTA_EXCEEDED, e (b) renderizar banner contextual no header.
+  const remainingQuota = Math.max(0, campaignsLimit - campaignsUsed) + extraCredits;
+  const isFreePlan = currentPlan === 'free' || currentPlan === 'gratis' || currentPlan === 'avulso';
 
   // ─── Submission + polling (handled by the hook) ────────────────────────
   const generator = useCampaignGenerator({
@@ -272,6 +291,26 @@ export default function GerarScreen() {
 
   const confirmAndSubmit = useCallback(() => {
     if (!main.value) return;
+
+    // Pré-flight: bloqueia upload se sem cota OU sem rede. Antes o usuário
+    // subia ~3 fotos compactadas só pra ver erro QUOTA_EXCEEDED ou NETWORK
+    // depois — pior caso de UX.
+    if (!isOnline) {
+      Alert.alert(t('common.error'), t('errors.network'));
+      return;
+    }
+    if (remainingQuota <= 0) {
+      // Mostra o paywall direto, com a forma "free" do modal (sem barra 100%
+      // vermelha quando limit:0). Equivalente a receber QUOTA_EXCEEDED do
+      // servidor — mas sem cobrar o upload do usuário.
+      generator.simulateQuotaExceeded({
+        used: campaignsUsed,
+        limit: campaignsLimit,
+        credits: extraCredits,
+      });
+      return;
+    }
+
     const submit = () =>
       generator.submit({
         mainPhoto: main.value!,
@@ -321,6 +360,12 @@ export default function GerarScreen() {
     modelSel.selectedModelId,
     modelSel.models,
     generator,
+    isOnline,
+    remainingQuota,
+    campaignsUsed,
+    campaignsLimit,
+    extraCredits,
+    t,
   ]);
 
   if (generator.isGenerating) {
@@ -755,11 +800,58 @@ export default function GerarScreen() {
         pointerEvents="box-none"
         style={[styles.floatingBtnContainer, { bottom: ctaBottom }]}
       >
+        {/* Banner de cota: faz o usuário ver o estado ANTES de subir foto. */}
+        {(!isOnline || remainingQuota <= 0 || (remainingQuota <= 3 && !isFreePlan)) && (
+          <AnimatedPressable
+            onPress={() => router.push('/(tabs)/plano')}
+            haptic={remainingQuota <= 0 ? 'tap' : false}
+            scale={0.98}
+            accessibilityRole="button"
+            accessibilityLabel={
+              !isOnline
+                ? t('offline.banner')
+                : isFreePlan
+                ? t('generate.quotaBannerFree')
+                : remainingQuota <= 0
+                ? t('generate.quotaBannerEmpty')
+                : t('generate.quotaBannerLow', { n: remainingQuota })
+            }
+            style={[
+              styles.quotaBanner,
+              !isOnline
+                ? { backgroundColor: Colors.brand.error }
+                : remainingQuota <= 0
+                ? { backgroundColor: Colors.brand.primary }
+                : { backgroundColor: Colors.brand.warning },
+            ]}
+          >
+            <Text style={styles.quotaBannerText} numberOfLines={1}>
+              {!isOnline
+                ? t('offline.banner')
+                : isFreePlan
+                ? t('generate.quotaBannerFree')
+                : remainingQuota <= 0
+                ? t('generate.quotaBannerEmpty')
+                : t('generate.quotaBannerLow', { n: remainingQuota })}
+            </Text>
+          </AnimatedPressable>
+        )}
         <Button
-          title={main.value ? t('generate.submitReady') : t('generate.submitDisabled')}
+          title={
+            !isOnline
+              ? t('generate.submitOffline')
+              : remainingQuota <= 0
+              ? t('generate.submitNoQuota')
+              : main.value
+              ? t('generate.submitReady')
+              : t('generate.submitDisabled')
+          }
           onPress={confirmAndSubmit}
-          disabled={!main.value}
-          shimmerOnEnable={!!main.value}
+          /* Desabilita só em offline ou sem foto. Quando sem cota, deixa
+             clicável: o tap aciona o paywall pré-flight (UX honesta vs
+             "botão morto"). */
+          disabled={!isOnline || !main.value}
+          shimmerOnEnable={!!main.value && isOnline && remainingQuota > 0}
           haptic="confirm"
           style={styles.floatingBtn}
         />
@@ -954,6 +1046,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  quotaBanner: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 8,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quotaBannerText: { color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   filterRow: { gap: 6, paddingVertical: 4, marginBottom: 4 },
   filterTab: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, minHeight: 40 },
   filterTabText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },

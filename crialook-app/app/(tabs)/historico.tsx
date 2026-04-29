@@ -9,7 +9,7 @@ import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable, Card, GradientText, Skeleton } from '@/components/ui';
 import { haptic } from '@/lib/haptics';
@@ -88,6 +88,14 @@ export default function HistoricoScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Refetch ao focar tab — usuário pode ter gerado nova campanha em outra
+  // sessão ou favoritado em outra tab. Cache de 30s evita custo excessivo.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -424,6 +432,25 @@ export default function HistoricoScreen() {
                     ? t('history.emptyFavoritesDesc')
                     : t('history.emptyDesc')}
                 </Text>
+                {filter !== 'favorites' && (
+                  <AnimatedPressable
+                    onPress={() => router.push('/(tabs)/gerar')}
+                    haptic="tap"
+                    scale={0.97}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('history.emptyCta')}
+                    style={styles.emptyCtaButton}
+                  >
+                    <LinearGradient
+                      colors={Colors.brand.gradientPrimary}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.emptyCtaInner}
+                    >
+                      <Text style={styles.emptyCtaText}>{t('history.emptyCta')}</Text>
+                    </LinearGradient>
+                  </AnimatedPressable>
+                )}
               </>
             )}
           </View>
@@ -552,8 +579,21 @@ const styles = StyleSheet.create({
   objectiveLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   metaText: { fontSize: 12, fontWeight: '500' },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: '600' },
-  emptyDesc: { fontSize: 14 },
+  empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 24, gap: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
+  emptyDesc: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyCtaButton: {
+    marginTop: 18,
+    borderRadius: 999,
+    overflow: 'hidden',
+    minHeight: 48,
+  },
+  emptyCtaInner: {
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCtaText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   statusDot: { width: 7, height: 7, borderRadius: 3.5 },
 });

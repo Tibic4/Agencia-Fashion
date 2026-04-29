@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -171,6 +171,14 @@ export default function ModeloScreen() {
   useEffect(() => {
     loadModels().catch(() => {}).finally(() => setLoadingModels(false));
   }, []);
+
+  // Refetch ao focar a aba — usuário pode ter mudado plano em /plano e voltado
+  // sem reiniciar o app. modelLimit precisa ser fresh pra `canCreate` casar.
+  useFocusEffect(
+    useCallback(() => {
+      loadModels({ skipCache: true }).catch(() => {});
+    }, [loadModels]),
+  );
 
   // Poll for preview generation — stable ref prevents re-triggering on every model state change
   const pendingIdsRef = useRef<string[]>([]);
@@ -439,6 +447,7 @@ function ModelsListBody({
   onSetActive: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const router = useRouter();
   // Threshold matches the marketing site: show 6, then "Ver todas (X mais)".
   const COLLAPSE_THRESHOLD = 6;
   const totalShown = models.length;
@@ -491,7 +500,14 @@ function ModelsListBody({
             {modelLimit === 0 ? t('model.emptyNeedsPlan') : t('model.emptyHasSlots')}
           </Text>
           {modelLimit === 0 ? (
-            <Button title={t('model.activatePlan')} onPress={onActivatePlan} />
+            <View style={styles.emptyCtaStack}>
+              <Button title={t('model.activatePlan')} onPress={onActivatePlan} />
+              <Button
+                title={t('model.emptyUseStockCta')}
+                variant="ghost"
+                onPress={() => router.push('/(tabs)/gerar')}
+              />
+            </View>
           ) : (
             <Button title={t('model.createFirst')} onPress={onCreate} />
           )}
@@ -842,4 +858,5 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
   emptyDesc: { fontSize: 14, textAlign: 'center', paddingHorizontal: 24, lineHeight: 20 },
+  emptyCtaStack: { gap: 8, alignSelf: 'stretch', paddingHorizontal: 32, marginTop: 12 },
 });

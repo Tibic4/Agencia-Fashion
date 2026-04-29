@@ -13,6 +13,7 @@
  *  intervals or AppState listeners.
  */
 import { useCallback, useState } from 'react';
+import * as Crypto from 'expo-crypto';
 import { getAuthToken } from '@/lib/auth';
 import { invalidateApiCache } from '@/lib/api';
 import { buildFormDataFile, type CompressedAsset } from '@/lib/images';
@@ -61,6 +62,10 @@ interface UseCampaignGeneratorResult {
   quotaExceeded: QuotaData | null;
   campaignId: string | null;
   submit: (inputs: CampaignInputs) => Promise<void>;
+  /** Aciona o mesmo modal de quota sem fazer request — usado em pré-flight
+   *  quando o cliente já sabe (via /store/usage) que não tem cota. Evita
+   *  cobrar o usuário com upload de fotos só pra receber 402/QUOTA_EXCEEDED. */
+  simulateQuotaExceeded: (data: QuotaData) => void;
   viewResults: () => void;
   dismissError: () => void;
   dismissQuota: () => void;
@@ -146,7 +151,15 @@ export function useCampaignGenerator({
           // Why: this fetch bypasses the `api()` wrapper (FormData + custom
           // response handling), so we mirror the wrapper's locale header
           // here to keep Sonnet copy in sync with the UI language.
-          const headers: Record<string, string> = { 'X-App-Locale': getLocale() };
+          // Idempotency-Key: UUID gerado client-side. Se a rede cair no meio
+          // do POST e o cliente reenviar, o backend pode deduplicar via essa
+          // chave. Backend ainda precisa implementar; enviar o header já
+          // permite que ele assuma a feature sem mudar o contrato.
+          const idempotencyKey = Crypto.randomUUID();
+          const headers: Record<string, string> = {
+            'X-App-Locale': getLocale(),
+            'Idempotency-Key': idempotencyKey,
+          };
           if (token) headers.Authorization = `Bearer ${token}`;
 
           const res = await fetch(`${BASE_URL}/campaign/generate`, {
@@ -212,6 +225,10 @@ export function useCampaignGenerator({
     onComplete(campaignId);
   }, [campaignId, onComplete]);
 
+  const simulateQuotaExceeded = useCallback((data: QuotaData) => {
+    setQuotaExceeded(data);
+  }, []);
+
   return {
     isGenerating,
     generationComplete,
@@ -219,6 +236,7 @@ export function useCampaignGenerator({
     quotaExceeded,
     campaignId,
     submit,
+    simulateQuotaExceeded,
     viewResults,
     dismissError: () => setError(null),
     dismissQuota: () => setQuotaExceeded(null),

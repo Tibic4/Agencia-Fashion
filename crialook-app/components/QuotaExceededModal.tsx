@@ -30,14 +30,24 @@ const PLANS = [
   { id: 'business' as const, price: 749, campaigns: 100 },
 ];
 
+function normalizePlanKey(raw?: string): string | null {
+  if (!raw) return null;
+  const key = raw.toLowerCase();
+  if (key === 'free' || key === 'gratis' || key === 'avulso') return null;
+  return key;
+}
+
 export function QuotaExceededModal({ visible, used, limit, credits, currentPlan, onClose }: Props) {
-  const [tab, setTab] = useState<'credits' | 'upgrade'>('credits');
+  const normalizedPlan = normalizePlanKey(currentPlan);
+  const isFreeTier = normalizedPlan === null;
+  // Free tier (limit:0) means "no plan", not "100% used" — different visual + copy
+  const [tab, setTab] = useState<'credits' | 'upgrade'>(isFreeTier ? 'upgrade' : 'credits');
   const router = useRouter();
   const { t } = useT();
   const scheme = useColorScheme();
   const themeColors = Colors[scheme];
 
-  const usagePercent = limit > 0 ? Math.min(100, (used / limit) * 100) : 100;
+  const usagePercent = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
 
   const handleUpgrade = () => {
     onClose();
@@ -49,7 +59,7 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
     router.push('/(tabs)/plano');
   };
 
-  const currentIndex = PLANS.findIndex(p => p.id === currentPlan?.toLowerCase());
+  const currentIndex = normalizedPlan ? PLANS.findIndex(p => p.id === normalizedPlan) : -1;
   const availableUpgrades = PLANS.filter((_, i) => i > currentIndex);
 
   return (
@@ -67,49 +77,61 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
                   <Text style={{ fontSize: 20 }}>🚀</Text>
                 </View>
                 <View>
-                  <Text style={styles.headerTitle}>{t('quota.headerTitle')}</Text>
-                  <Text style={styles.headerSub}>{t('quota.headerSub')}</Text>
-                </View>
-              </View>
-
-              {/* Usage bar */}
-              <View style={styles.usageBox}>
-                <View style={styles.usageRow}>
-                  <Text style={styles.usageText}>{t('quota.usageText', { used, limit })}</Text>
-                  <View style={styles.fullBadge}>
-                    <Text style={styles.fullBadgeText}>100%</Text>
-                  </View>
-                </View>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${usagePercent}%` }]} />
-                </View>
-                {credits > 0 && (
-                  <Text style={styles.creditsAvailable}>
-                    {t(credits === 1 ? 'quota.creditsOne' : 'quota.creditsOther', { n: credits })}
+                  <Text style={styles.headerTitle}>
+                    {isFreeTier ? t('quota.headerTitleFree') : t('quota.headerTitle')}
                   </Text>
-                )}
+                  <Text style={styles.headerSub}>
+                    {isFreeTier ? t('quota.headerSubFree') : t('quota.headerSub')}
+                  </Text>
+                </View>
               </View>
+
+              {/* Usage bar — only for paid tiers (free has no quota to show) */}
+              {!isFreeTier ? (
+                <View style={styles.usageBox}>
+                  <View style={styles.usageRow}>
+                    <Text style={styles.usageText}>{t('quota.usageText', { used, limit })}</Text>
+                    <View style={styles.fullBadge}>
+                      <Text style={styles.fullBadgeText}>100%</Text>
+                    </View>
+                  </View>
+                  <View style={styles.barTrack}>
+                    <View style={[styles.barFill, { width: `${usagePercent}%` }]} />
+                  </View>
+                  {credits > 0 && (
+                    <Text style={styles.creditsAvailable}>
+                      {t(credits === 1 ? 'quota.creditsOne' : 'quota.creditsOther', { n: credits })}
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.usageBoxFree}>
+                  <Text style={styles.usageTextFree}>{t('quota.usageTextFree')}</Text>
+                </View>
+              )}
             </View>
 
-            {/* Tabs */}
-            <View style={styles.tabs}>
-              <Pressable
-                onPress={() => setTab('credits')}
-                style={[styles.tab, tab === 'credits' && styles.tabActive]}
-              >
-                <Text style={[styles.tabText, tab === 'credits' && styles.tabTextActive]}>
-                  {t('quota.tabCredits')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setTab('upgrade')}
-                style={[styles.tab, tab === 'upgrade' && styles.tabActiveUpgrade]}
-              >
-                <Text style={[styles.tabText, tab === 'upgrade' && styles.tabTextActiveUpgrade]}>
-                  {t('quota.tabUpgrade')}
-                </Text>
-              </Pressable>
-            </View>
+            {/* Tabs — only paid tiers see "Buy credits"; for free, jump to upgrade */}
+            {!isFreeTier && (
+              <View style={styles.tabs}>
+                <Pressable
+                  onPress={() => setTab('credits')}
+                  style={[styles.tab, tab === 'credits' && styles.tabActive]}
+                >
+                  <Text style={[styles.tabText, tab === 'credits' && styles.tabTextActive]}>
+                    {t('quota.tabCredits')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setTab('upgrade')}
+                  style={[styles.tab, tab === 'upgrade' && styles.tabActiveUpgrade]}
+                >
+                  <Text style={[styles.tabText, tab === 'upgrade' && styles.tabTextActiveUpgrade]}>
+                    {t('quota.tabUpgrade')}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
 
             {/* Content */}
             <ScrollView style={styles.body} contentContainerStyle={{ gap: 10 }}>
@@ -186,6 +208,8 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 14 },
   usageBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  usageBoxFree: { backgroundColor: 'rgba(217,70,239,0.08)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(217,70,239,0.18)' },
+  usageTextFree: { color: '#fff', fontSize: 13, fontWeight: '500', textAlign: 'center' },
   usageRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   usageText: { color: '#fff', fontSize: 13, fontWeight: '500' },
   fullBadge: { backgroundColor: 'rgba(239,68,68,0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },

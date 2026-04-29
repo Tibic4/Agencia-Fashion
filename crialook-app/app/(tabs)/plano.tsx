@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   RefreshControl,
@@ -16,7 +16,8 @@ import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { apiGetCached } from '@/lib/api';
+import { apiGetCached, invalidateApiCache } from '@/lib/api';
+import { useFocusEffect } from 'expo-router';
 import { PLANS } from '@/lib/plans';
 import { useT, type TKey } from '@/lib/i18n';
 import {
@@ -89,26 +90,48 @@ export default function PlanoScreen() {
     loadData().finally(() => setLoading(false));
   }, []);
 
+  // Refetch ao focar — usuário pode ter comprado em outro device, ou cancelado
+  // a assinatura via Play Store fora do app.
+  useFocusEffect(
+    useCallback(() => {
+      // Skip se compra ativa, pra não derrubar offerings durante o flow.
+      if (purchasing) return;
+      loadData();
+    }, [purchasing]),
+  );
+
   const onRefresh = async () => {
+    // Não permite refresh durante compra ativa — `loadData` substitui offerings
+    // no meio do fluxo de purchase, o que confunde o estado de purchasing.
+    if (purchasing) return;
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
   };
 
   const handleSubscribe = async (planId: keyof typeof PLANS) => {
+    // Guard: previne double-tap em qualquer botão Assinar enquanto outro está
+    // processando (Google Play já fileira, mas evita 2 dialogs nativos abrindo).
+    if (purchasing) return;
     haptic.confirm();
     const sku = skuByPlan[planId];
     setPurchasing(planId);
     try {
       await purchaseSubscription(sku);
+      // Bust o cache de /store/usage e /store/credits — ambos têm TTL 60s e o
+      // backend já gravou o novo plano. Sem isso, loadData() lê stale.
+      await Promise.all([
+        invalidateApiCache('/store/usage').catch(() => {}),
+        invalidateApiCache('/store/credits').catch(() => {}),
+      ]);
       await loadData();
       // Cascading haptics for celebration: success ping + light follow-up
       // creates a "double-tap" sensation that feels like a tiny milestone.
       haptic.success();
       setTimeout(() => haptic.tap(), 180);
       Alert.alert(
-        '🎉 Bem-vindo ao plano!',
-        'Sua assinatura está ativa. Aproveite todas as funções.',
+        t('plan.welcomeAfterPurchaseTitle'),
+        t('plan.welcomeAfterPurchaseMessage'),
       );
     } catch (e) {
       if (isUserCancelledError(e)) return;
@@ -214,8 +237,13 @@ export default function PlanoScreen() {
                   style={[styles.planName, { color: colors.text }]}
                   numberOfLines={1}
                 >
-                  {`${t('plan.title').split(' ')[0]} ${currentPlan}`}
+                  {currentPlan}
                 </Text>
+                {isFreePlan && (
+                  <Text style={[styles.creditsText, { color: colors.textSecondary }]} numberOfLines={1}>
+                    {t('plan.freePlanCampaignsLabel')}
+                  </Text>
+                )}
                 {credits && (credits.campaigns > 0 || credits.models > 0) && (
                   <Text
                     style={[styles.creditsText, { color: colors.textSecondary }]}
@@ -343,7 +371,7 @@ export default function PlanoScreen() {
                   <Text style={[styles.planCardName, { color: colors.text }]}>{plan.name}</Text>
                   <Text style={[styles.planCardPrice, { color: Colors.brand.primary }]}>
                     {priceLabel}
-                    <Text style={styles.planCardPeriod}>/mês</Text>
+                    <Text style={styles.planCardPeriod}>{t('plan.monthlySuffix')}</Text>
                   </Text>
 
                   {plan.features.map((f, i) => (
@@ -366,7 +394,9 @@ export default function PlanoScreen() {
                         : t('plan.subscribeButton', { plan: plan.name })
                     }
                     onPress={() => handleSubscribe(id)}
-                    disabled={isCurrentPlan || isLowerPlan || isPurchasing}
+                    /* Trava todos os botões enquanto purchasing!=null pra evitar
+                       dois dialogs do Play Billing abrindo em sequência. */
+                    disabled={isCurrentPlan || isLowerPlan || purchasing !== null}
                     loading={isPurchasing}
                     variant={isCurrentPlan ? 'secondary' : 'primary'}
                     style={{ marginTop: 12 }}
