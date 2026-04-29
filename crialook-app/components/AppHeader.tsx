@@ -20,7 +20,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring, withSequence } from 'react-native-reanimated';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -140,10 +140,28 @@ export function AppHeader() {
   const router = useRouter();
   const credits = useCredits();
 
+  const rotation = useSharedValue(0);
+  const scale = useSharedValue(1);
+
   const onToggleTheme = useCallback(() => {
     Haptics.selectionAsync();
+    
+    // Design Spell: Magical theme morph icon spin + bounce
+    rotation.value = withSpring(rotation.value + 180, { mass: 0.5, damping: 12 });
+    scale.value = withSequence(
+      withSpring(0.7, { mass: 0.2, damping: 10 }),
+      withSpring(1, { mass: 0.5, damping: 12 })
+    );
+
     setTheme(nextThemeMode(mode, scheme));
   }, [mode, scheme, setTheme]);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotate: `${rotation.value}deg` },
+      { scale: scale.value }
+    ]
+  }));
 
   const onPressCredits = useCallback(() => {
     Haptics.selectionAsync();
@@ -202,14 +220,16 @@ export function AppHeader() {
                   ? t('header.toggleThemeDark')
                   : t('header.toggleThemeSystem')
             }
-            hitSlop={8}
+            hitSlop={12}
             style={({ pressed }) => [
               styles.iconBtn,
               { backgroundColor: colors.surface2 },
               pressed && { opacity: 0.7 },
             ]}
           >
-            <Text style={styles.iconChar}>{themeModeIcon(mode, scheme)}</Text>
+            <Animated.Text style={[styles.iconChar, animatedIconStyle]}>
+              {themeModeIcon(mode, scheme)}
+            </Animated.Text>
           </Pressable>
 
           {showCredits && (
@@ -217,7 +237,7 @@ export function AppHeader() {
               onPress={onPressCredits}
               accessibilityRole="button"
               accessibilityLabel={t('header.creditsAccessibility', { used: credits.used, limit: credits.limit })}
-              hitSlop={6}
+              hitSlop={12}
               style={({ pressed }) => [
                 styles.creditsChip,
                 { backgroundColor: pill.bg },
