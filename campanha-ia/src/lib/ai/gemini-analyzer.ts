@@ -18,8 +18,20 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import type { ModelInfo } from "./pipeline";
 import { callGeminiSafe } from "./gemini-error-handler";
+import {
+  type ModelInfo,
+  AGE_MAP,
+  BODY_MAP,
+  HAIR_COLOR_MAP,
+  HAIR_LENGTH_MAP,
+  HAIR_TEXTURE_MAP,
+  POSE_BANK,
+  POSE_BANK_STABLE_INDICES,
+  POSE_BANK_TOTAL,
+  SKIN_TONE_MAP,
+  isMaleGender,
+} from "./identity-translations";
 
 // ═══════════════════════════════════════
 // Exported helpers (used by pipeline for backdrop injection)
@@ -110,7 +122,9 @@ export interface GeminiAnalise {
 }
 
 export interface GeminiVTOHint {
-  /** 3 scene+styling prompts para o Gemini VTO (em inglês) */
+  /** 3 indices DISTINTOS do POSE_BANK (0..POSE_BANK_TOTAL-1). ≥2 do tier estável (0-7). */
+  pose_indices: [number, number, number];
+  /** 3 scene+styling prompts para o Gemini VTO (em inglês). NÃO descrevem cabelo/pele/olhos/idade. */
   scene_prompts: [string, string, string];
   /** Aspect ratio sugerido */
   aspect_ratio: "9:16" | "3:4" | "4:5" | "2:3";
@@ -168,6 +182,12 @@ export interface AnalyzerInput {
   storeName?: string;
 
   modelInfo?: ModelInfo;
+
+  /**
+   * Indices do POSE_BANK que NÃO podem ser escolhidos nesta campanha
+   * (recently used pelo store). Pipeline lê de stores.recent_pose_indices.
+   */
+  excludedPoseIndices?: number[];
 }
 
 // ═══════════════════════════════════════
@@ -216,12 +236,20 @@ const RESPONSE_SCHEMA = {
       type: "object",
       description: "Hints para o gerador de imagem VTO (Virtual Try-On)",
       properties: {
+        pose_indices: {
+          type: "array",
+          items: { type: "integer", minimum: 0, maximum: POSE_BANK_TOTAL - 1 },
+          minItems: 3,
+          maxItems: 3,
+          description: `3 indices DISTINTOS do POSE_BANK (0-${POSE_BANK_TOTAL - 1}). PELO MENOS 2 dos 3 indices DEVEM vir do tier estável (0-${POSE_BANK_STABLE_INDICES[POSE_BANK_STABLE_INDICES.length - 1]}). NUNCA repita índice.`,
+        },
         scene_prompts: {
           type: "array",
           items: { type: "string" },
           minItems: 3,
           maxItems: 3,
-          description: "3 scene prompts narrativos detalhados EM INGLÊS para o Gemini VTO. Cada um com 4-7 frases descrevendo cenário, iluminação, pose, styling, câmera e mood.",
+          description:
+            "3 scene prompts narrativos EM INGLÊS para o Gemini VTO. PROIBIDO descrever cabelo/pele/olhos/idade — esses traços vêm fixos do IDENTITY LOCK. Foque em CENÁRIO, ILUMINAÇÃO, ÂNGULO DE CÂMERA, STYLING DO VESTIR e MOOD. A pose vem do pose_indices acima — não duplique a pose no texto.",
         },
         aspect_ratio: {
           type: "string",
@@ -234,7 +262,7 @@ const RESPONSE_SCHEMA = {
           description: "Categoria da peça",
         },
       },
-      required: ["scene_prompts", "aspect_ratio", "category"],
+      required: ["pose_indices", "scene_prompts", "aspect_ratio", "category"],
     },
     // ⚠️ dicas_postagem removido — agora gerado pelo Sonnet Copywriter
   },
@@ -292,6 +320,12 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
         thinkingConfig: {
           thinkingBudget: 2048,
         },
+        // Task estruturada (classificar peça + escolher poses + extrair cores).
+        // Default ~1.0 produz variação demais pra schema enforcement; 0.3
+        // estabiliza escolhas mantendo alguma variação saudável. topP 0.85
+        // corta cauda longa de tokens improváveis = reduz alucinação rara.
+        temperature: 0.3,
+        topP: 0.85,
       },
     }),
     { label: "Gemini Analyzer", maxRetries: 1, backoffMs: 3000 }
@@ -322,6 +356,9 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
   if (!result.vto_hints?.scene_prompts || result.vto_hints.scene_prompts.length < 3) {
     throw new Error("Gemini não gerou os 3 scene prompts para VTO");
   }
+  if (!result.vto_hints?.pose_indices || result.vto_hints.pose_indices.length < 3) {
+    throw new Error("Gemini não retornou pose_indices");
+  }
 
   // Garantir que temos exatamente 3 prompts (tupla)
   result.vto_hints.scene_prompts = [
@@ -329,6 +366,12 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
     result.vto_hints.scene_prompts[1],
     result.vto_hints.scene_prompts[2],
   ] as [string, string, string];
+
+  result.vto_hints.pose_indices = [
+    result.vto_hints.pose_indices[0],
+    result.vto_hints.pose_indices[1],
+    result.vto_hints.pose_indices[2],
+  ] as [number, number, number];
 
   // Tokens de uso — Gemini retorna no candidato
   const usage = response.usageMetadata;
@@ -353,155 +396,105 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
 function buildSystemPrompt(input: AnalyzerInput): string {
   const mi = input.modelInfo;
 
-  // Traduzir dados da modelo para inglês (para os scene_prompts)
-  const skinToneMap: Record<string, string> = {
-    branca: "fair/light skin",
-    morena_clara: "light-medium warm skin tone",
-    morena: "medium-to-dark warm brown skin",
-    negra: "deep rich dark skin",
-  };
-  const bodyMap: Record<string, string> = {
-    normal: "standard/slim body frame",
-    media: "standard average build",
-    medio: "standard average male build",
-    magra: "slim/petite body frame",
-    plus_size: "plus-size curvy body with full figure",
-    plus: "plus-size curvy body with full figure",
-    robusto: "robust/heavy-set male build with broad shoulders and stocky frame",
-    atletico: "athletic muscular build",
-  };
-  const hairColorMap: Record<string, string> = {
-    preto: "jet black hair",
-    castanho_escuro: "dark brown hair",
-    castanho: "medium brown hair",
-    ruivo: "auburn/red hair",
-    loiro_escuro: "dark blonde hair",
-    loiro: "blonde hair",
-    platinado: "platinum blonde hair",
-  };
-  const hairTextureMap: Record<string, string> = {
-    liso: "straight",
-    ondulado: "wavy",
-    cacheado: "curly",
-    crespo: "coily/afro-textured",
-  };
-  const hairLengthMap: Record<string, string> = {
-    joaozinho: "pixie-cut short",
-    chanel: "bob-cut chin-length",
-    ombro: "shoulder-length",
-    medio: "medium-length past shoulders",
-    longo: "long flowing",
-  };
-  const ageMap: Record<string, string> = {
-    jovem_18_25: "young person (18-25)",
-    adulta_26_35: "adult woman (26-35)",
-    adulto_26_35: "adult man (26-35)",
-    madura_36_50: "mature woman (36-50)",
-    maduro_36_50: "mature man (36-50)",
-  };
-
-  // Construir descrição da modelo
+  // Construir descrição da modelo APENAS pra contexto do Analyzer.
+  // ⚠️ Por regra (PARTE 2 abaixo), Analyzer NÃO descreve cabelo/pele/olhos
+  // nos scene_prompts — esses traços vêm fixos via IDENTITY LOCK no VTO.
   const modelParts: string[] = [];
-  if (mi?.ageRange && ageMap[mi.ageRange]) modelParts.push(ageMap[mi.ageRange]);
-  if (mi?.skinTone && skinToneMap[mi.skinTone]) modelParts.push(`with ${skinToneMap[mi.skinTone]}`);
-  if (mi?.bodyType && bodyMap[mi.bodyType]) modelParts.push(bodyMap[mi.bodyType]);
+  if (mi?.ageRange && AGE_MAP[mi.ageRange]) modelParts.push(AGE_MAP[mi.ageRange]);
+  if (mi?.skinTone && SKIN_TONE_MAP[mi.skinTone]) modelParts.push(`with ${SKIN_TONE_MAP[mi.skinTone]}`);
+  if (mi?.bodyType && BODY_MAP[mi.bodyType]) modelParts.push(BODY_MAP[mi.bodyType]);
 
   const hairParts: string[] = [];
-  if (mi?.hairLength && hairLengthMap[mi.hairLength]) hairParts.push(hairLengthMap[mi.hairLength]);
-  if (mi?.hairTexture && hairTextureMap[mi.hairTexture]) hairParts.push(hairTextureMap[mi.hairTexture]);
-  if (mi?.hairColor && hairColorMap[mi.hairColor]) hairParts.push(hairColorMap[mi.hairColor]);
+  if (mi?.hairLength && HAIR_LENGTH_MAP[mi.hairLength]) hairParts.push(HAIR_LENGTH_MAP[mi.hairLength]);
+  if (mi?.hairTexture && HAIR_TEXTURE_MAP[mi.hairTexture]) hairParts.push(HAIR_TEXTURE_MAP[mi.hairTexture]);
+  if (mi?.hairColor && HAIR_COLOR_MAP[mi.hairColor]) hairParts.push(HAIR_COLOR_MAP[mi.hairColor].label);
   if (hairParts.length > 0) modelParts.push(hairParts.join(" "));
 
-  // Determinar gênero
-  const isMale = mi?.gender === 'masculino' || mi?.gender === 'male' || mi?.gender === 'm';
-  const genderLabel = isMale ? 'male model' : 'female model';
+  const isMale = isMaleGender(mi?.gender);
+  const genderLabel = isMale ? "male model" : "female model";
 
-  const modelDescription = modelParts.length > 0
-    ? `\n\n🧍 MODELO SELECIONAD${isMale ? 'O' : 'A'} PELA LOJISTA:\n${isMale ? 'O modelo' : 'A modelo'} na foto de referência é: ${genderLabel}, ${modelParts.join(", ")}.\nUse esses detalhes nos scene_prompts para que o Gemini VTO (que vai executar esses prompts) entenda exatamente QUE PESSOA reproduzir — isso melhora a fidelidade da identidade. Incorpore a cor de pele, cabelo e tipo de corpo NATURALMENTE na descrição da cena (ex: ${isMale ? '"warm golden-hour light complementing his deep skin tone", "his short textured dark hair styled naturally"' : '"warm golden-hour light complementing her deep skin tone", "her long wavy auburn hair flowing naturally"'}).`
+  const modelContext = modelParts.length > 0
+    ? `\n\n🧍 MODELO SELECIONAD${isMale ? "O" : "A"} PELA LOJISTA (apenas para seu contexto — NÃO descreva esses traços nos scene_prompts):
+${isMale ? "O modelo" : "A modelo"} na foto de referência é: ${genderLabel}, ${modelParts.join(", ")}.
+
+⚠️ Esses traços de identidade (cabelo, pele, olhos, idade) são travados pelo IDENTITY LOCK do gerador VTO. Você NÃO precisa repeti-los — de fato, MENCIONAR cabelo/pele/olhos no scene_prompt CRIA CONFLITO entre o IDENTITY LOCK e a descrição da cena, gerando alucinação. Foque o scene_prompt em CENÁRIO, ILUMINAÇÃO, ÂNGULO DE CÂMERA, STYLING DO VESTIR e MOOD.`
+    : "";
+
+  // Pose bank renderizado a partir do helper compartilhado — fonte única.
+  const poseBankText = POSE_BANK.map((p, i) => {
+    const isStable = (POSE_BANK_STABLE_INDICES as readonly number[]).includes(i);
+    const tier = isStable ? "🟢 ESTÁVEL" : "🟡 MÉDIA";
+    return `   [${i}] ${tier}: ${p}`;
+  }).join("\n");
+
+  // Exclusion rule (anti-repetição entre campanhas)
+  const exclusionRule = (input.excludedPoseIndices && input.excludedPoseIndices.length > 0)
+    ? `\n\n🚫 ÍNDICES BLOQUEADOS PARA ESTA LOJA (já usados em campanhas recentes):
+[${input.excludedPoseIndices.join(", ")}]
+NÃO escolha esses índices. Se um pose bloqueado seria sua escolha natural, escolha o índice mais próximo NÃO bloqueado, mantendo a regra ≥2 do tier estável (0-${POSE_BANK_STABLE_INDICES[POSE_BANK_STABLE_INDICES.length - 1]}).`
     : "";
 
   return `Você é o Fashion Editorial Director mais experiente do Brasil — especializado em fotografia de e-commerce, campanhas para Instagram e virtual try-on com IA.
 
-Sua MISSÃO é analisar fotos de peças de roupa e criar 3 cenários de fotos profissionais DISTINTOS que serão executados por IA de Virtual Try-On (outro modelo Gemini) — essa IA recebe a foto do produto + foto de uma modelo e gera uma imagem fotorrealista da modelo VESTINDO aquela peça.
+Sua MISSÃO é analisar a foto de uma peça de roupa e definir 3 cenários DISTINTOS de fotos profissionais que serão executados por IA de Virtual Try-On (outro modelo Gemini Pro Image). Essa IA recebe foto da peça + foto da modelo e gera a imagem fotorrealista da modelo VESTINDO a peça.
 
-O modelo VTO que vai executar seus prompts é um Gemini Pro com imagem nativa — ele entende prompts NARRATIVOS ricos. Quanto MAIS detalhado e visual o prompt, MELHOR o resultado. Ele compreende:
-- Linguagem de fotografia profissional (lentes, iluminação, composição)
-- Física de tecidos e caimento real
-- Cenários e ambientes detalhados
-- Expressões faciais e poses específicas
-- Interação de luz com diferentes tons de pele
+O VTO entende prompts NARRATIVOS ricos. Quanto MAIS detalhado e visual o prompt, MELHOR o resultado.${modelContext}
 
-Você PRECISA gerar prompts que pareçam direções de um fotógrafo de moda sênior para sua equipe.${modelDescription}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 1 — POSES (campo pose_indices)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Você DEVE escolher 3 índices DISTINTOS do POSE_BANK abaixo. NUNCA repita índice. PELO MENOS 2 dos 3 índices DEVEM vir do tier ESTÁVEL (0-${POSE_BANK_STABLE_INDICES[POSE_BANK_STABLE_INDICES.length - 1]}).
 
-REGRAS ABSOLUTAS PARA OS SCENE PROMPTS:
+POSE_BANK:
+${poseBankText}${exclusionRule}
 
-1. Cada prompt DEVE ser em INGLÊS e ter 4-7 frases detalhadas
-2. Cada prompt DEVE incluir TODOS estes 6 elementos:
-   a) CENÁRIO/AMBIENTE — onde a foto acontece (estúdio, rua, café, jardim, boutique...)
-   b) ILUMINAÇÃO — tipo de luz, temperatura de cor, direção (softbox, golden hour, natural window light, ring light...)
-   c) POSE E EXPRESSÃO — como a modelo está posicionada, expressão facial, linguagem corporal
-   d) STYLING DO VESTIR — como a peça está vestida (tucked in, off-shoulder, sleeves rolled, jacket open...)
-   e) CÂMERA — ângulo, enquadramento, profundidade de campo, estilo fotográfico
-   f) MOOD/ATMOSFERA — sensação visual geral (editorial, aspiracional, fresh, warm, sophisticated...)
+Combinações válidas:
+• Recomendado: 2 estáveis + 1 média (ex: [0, 1, 9])
+• Aceitável: 3 estáveis (ex: [3, 4, 7]) — mais conservador, menos variação
+• PROIBIDO: 3 médias (risco de alucinação somado)
+• PROIBIDO: índice repetido (ex: [0, 0, 1])
+• PROIBIDO: índice em ÍNDICES BLOQUEADOS
 
-3. Os 3 prompts DEVEM usar o MESMO CENÁRIO/FUNDO — a campanha é uma SESSÃO DE FOTOS coesa:
-   - O ambiente, fundo e iluminação DEVEM ser IDÊNTICOS nos 3 prompts
-   - O que MUDA entre os 3 prompts: POSE, ÂNGULO DE CÂMERA e EXPRESSÃO FACIAL
-   - Pense como uma sessão real: mesmo estúdio/locação, 3 poses diferentes
-   - ❌ NUNCA mude o fundo entre os prompts (ex: P1 estúdio, P2 jardim = PROIBIDO)
+Adapte a escolha à peça (mas dentro das regras): vestido longo → poses que mostrem caimento (3, 7, 12 indisponível — use 4 ou 5); jaqueta → poses que mostrem estrutura (4, 6, 10 se disponível).
 
-4. 🚨 CADA PROMPT DEVE TER UMA POSE COMPLETAMENTE DIFERENTE — NUNCA repita a mesma pose!
-   Use este banco de referência (escolha 3 poses DISTINTAS):
-   - "standing with a relaxed three-quarter turn, one hand resting on her hip, chin slightly tilted up"
-   - "walking mid-stride with natural arm swing, captured in motion with confidence"
-   - "sitting on a tall stool with legs crossed elegantly, leaning slightly forward"
-   - "standing straight front-facing with arms at sides, calm neutral editorial expression"
-   - "leaning against a wall with one shoulder, arms loosely crossed, playful half-smile"
-   - "turning to look over her shoulder (back view showing garment construction), face in profile"
-   - "crouching slightly with one knee forward, dynamic fashion-forward angle"
-   - "hands in jacket/pants pockets, weight shifted to one leg, relaxed street-style stance"
-   - "one arm raised adjusting hair, showcasing the garment's sleeve and silhouette"
-   - "seated on the ground with knees up, casual lifestyle feel"
-   - "stepping off a curb or stair, mid-movement with fabric catching air"
-   - "arms behind back with clasped hands, chest open — elegant confident posture"
-   Adapte a pose à peça: vestido longo → pose que mostre caimento; jaqueta → pose que mostre estrutura.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PARTE 2 — SCENE PROMPTS (campo scene_prompts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Cada scene_prompt é um texto narrativo em INGLÊS de 4-7 frases. A POSE já vem dos pose_indices — NÃO repita a pose textualmente, foque nos OUTROS elementos:
 
-5. Se a peça é um CONJUNTO (blusa+saia, top+calça), CADA prompt deve mencionar TODAS as peças
+a) CENÁRIO/AMBIENTE — onde a foto acontece (estúdio, rua, café, jardim, boutique...)
+b) ILUMINAÇÃO — tipo de luz, temperatura, direção (softbox, golden hour, natural window light...)
+c) STYLING DO VESTIR — como a peça é vestida (tucked in, off-shoulder, sleeves rolled, jacket open...)
+d) CÂMERA — ângulo, enquadramento, profundidade de campo, lente
+e) MOOD/ATMOSFERA — sensação visual (editorial, aspiracional, fresh, sophisticated...)
 
-6. 📏 ENQUADRAMENTO OBRIGATÓRIO: CORPO INTEIRO (FULL BODY)
-   - TODOS os 3 prompts DEVEM especificar "full-body shot from head to feet/shoes"
-   - A modelo deve aparecer DOS PÉS À CABEÇA — NUNCA corte na cintura ou joelho
-   - Inclua sapatos/sandálias/pés no enquadramento
-   - Aspect ratio 9:16 (formato Instagram Stories), orientação retrato
-   - ❌ PROIBIDO: meio corpo, busto, close-up, corte na cintura
+🚫 PROIBIDO no scene_prompt mencionar:
+- Cor de cabelo, textura de cabelo, comprimento de cabelo
+- Tom de pele, cor dos olhos, idade aparente
+Esses estão no IDENTITY LOCK do VTO. Mencionar aqui causa CONFLITO (ex: IDENTITY LOCK diz "dark brown hair", scene diz "her long blonde hair flowing" → IA aluciona).
 
-7. 👠 SAPATOS E CALÇADOS — OBRIGATÓRIO EM CADA PROMPT:
-   - Cada scene_prompt DEVE mencionar sapato/sandália/tênis
-   - Harmonize COR do calçado com a paleta do look
-   - ❌ PROIBIDO: pés descalços (exceto moda praia)
+✅ PERMITIDO no scene_prompt: como a luz interage com a pessoa SEM identificar traço de cabelo/pele/olhos (ex: "warm golden-hour light wraps softly around her silhouette", "soft window light catches the fabric", "edge light defines her profile against the dark backdrop").
 
-8. NUNCA escreva prompts curtos — CADA prompt deve ser narrativo e detalhado
+REGRAS DE COESÃO DA SESSÃO (válidas pra todos os 3 scene_prompts):
+1. Mesmo CENÁRIO/FUNDO nos 3 — campanha é uma sessão coesa, não 3 sessões diferentes
+2. Mesma ILUMINAÇÃO base nos 3 — só ângulo de câmera/expressão muda
+3. Cada prompt deve mencionar SAPATO/CALÇADO (não pés descalços, exceto moda praia)
+4. Cada prompt deve especificar "full-body shot from head to feet/shoes"
+5. Aspect ratio 9:16 (Instagram Stories), orientação retrato
+6. Se a peça é CONJUNTO (blusa+saia, top+calça), TODOS os prompts mencionam TODAS as peças
+7. 💠 DENIM/JEANS: especifique o WASH EXATO ("dark raw indigo denim", "medium stonewash", "light acid-wash", "jet black denim") — jeans é o tecido que mais sofre color shift
+8. PRESERVAR logos/bordados/estampas que são PARTE DO DESIGN — não inventar nem remover
 
-9. ⛔ PROIBIÇÕES ABSOLUTAS nos scene_prompts (adicione como negative constraints):
-   - Mudança de cor de cabelo (manter EXATAMENTE como referência)
-   - Dedos extras, dedos fundidos, dedos faltando
-   - Distorções anatômicas (membros extras, proporções erradas)
-   - Mudança de cor do tecido (manter EXATAMENTE como na foto do produto)
-   - 💠 DENIM/JEANS: se a peça for jeans/denim, CADA scene_prompt DEVE especificar o WASH EXATO (ex: "dark raw indigo denim", "medium stonewash blue jeans", "light acid-wash denim", "jet black denim"). Jeans é o tecido que mais sofre color shift na IA — ser ultra-específico previne o erro.
-   - Texto ou logo INVENTADO pela IA que NÃO existe na peça original (se o produto tem logo da marca bordado/estampado, PRESERVE fielmente)
-   - ✅ PRESERVAR: logos, monogramas, bordados, estampas de marca que são PARTE DO DESIGN da peça — esses são elementos intencionais do produto
-   - Roupas flutuando sem conexão com o corpo
-   - Comprimento de manga/barra diferente do original
+EXEMPLO DE SCENE_PROMPT EXCELENTE ✅ (com pose já definida em pose_indices=2):
+"Full-body fashion photograph in a bright, airy loft studio with floor-to-ceiling windows casting soft diffused natural light from the left at a 30-degree angle. The garment is neatly tailored, blouse tucked into the high-waisted trousers with a thin belt cinched at the natural waist, sleeves left flowing. She wears nude pointed-toe heels visible in the frame. Shot with an 85mm portrait lens at f/2.8, full-body framing with 10% headroom above and feet visible at the bottom edge. Mood: polished, modern editorial — Vogue Brazil meets everyday elegance."
 
-EXEMPLO DE PROMPT EXCELENTE ✅:
-"Full-body fashion photograph from head to feet in a bright, airy loft studio with floor-to-ceiling windows casting soft natural light from the left. The model walks mid-stride with natural arm swing, captured in fluid motion with confidence, her long wavy hair bouncing softly. The blouse is neatly tucked into the high-waisted trousers, belt cinched at the smallest point of the waist. She wears nude pointed-toe heels visible in the frame. Shot with an 85mm portrait lens at f/2.8, full-body framing with 10% headroom and feet visible at the bottom edge. The overall mood is polished, modern editorial — think Vogue Brazil meets everyday elegance. ABSOLUTE PROHIBITIONS: no hair color changes, no extra fingers, no fabric color shifts from original product."
+EXEMPLO RUIM ❌ (descreve cabelo, viola PARTE 2):
+"Studio with light. The model with long blonde hair stands confidently wearing the garment."
 
-EXEMPLO DE PROMPT RUIM ❌:
-"Studio setting with good lighting. Model stands confidently wearing the garment."
+EXEMPLO RUIM ❌ (descreve pose — pose vem do pose_indices):
+"Walking mid-stride with arm swing in a sunlit studio."
 
-IMPORTANTE: NÃO gere dicas de postagem, legendas ou copy.
-O copy é gerado por um módulo separado (Claude Sonnet 4.6).
-Foque APENAS na análise visual e nos scene prompts para VTO.`;
+IMPORTANTE: NÃO gere dicas de postagem, legendas ou copy. O copy é gerado por outro módulo. Foque APENAS na análise visual + pose_indices + scene_prompts.`;
 }
 
 // ═══════════════════════════════════════

@@ -17,6 +17,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { callGeminiSafe } from "./gemini-error-handler";
+import { type ModelInfo, buildIdentityLock } from "./identity-translations";
 
 // ═══════════════════════════════════════
 // Tipos
@@ -38,6 +39,13 @@ export interface GeminiVTOInput {
   bodyType?: "normal" | "plus";
   /** Gênero do modelo */
   gender?: string;
+  /**
+   * ModelInfo completo da loja → usado pra construir o IDENTITY LOCK
+   * (cabelo color/textura/comprimento, pele, idade) que sobrescreve a
+   * descrição da cena. Se ausente, cai no fallback genérico ("preserve
+   * from IMAGE 1") — funciona mas alucina mais.
+   */
+  modelInfo?: ModelInfo;
   /** Aspect ratio sugerido */
   aspectRatio?: string;
   /** Store ID para tracking de custos */
@@ -95,8 +103,20 @@ function getAI(): GoogleGenAI {
 // Prompt de VTO (narrativo — força do Gemini)
 // ═══════════════════════════════════════
 
-function buildVTOPrompt(stylingPrompt: string, bodyType: string, gender?: string, hasBackdrop?: boolean): string {
+function buildVTOPrompt(
+  stylingPrompt: string,
+  bodyType: string,
+  gender?: string,
+  hasBackdrop?: boolean,
+  modelInfo?: ModelInfo,
+): string {
   const isMale = gender === 'masculino' || gender === 'male' || gender === 'm';
+
+  // IDENTITY LOCK — bloco prioritário no topo do prompt. Linguagem positiva
+  // (afirmações concretas em vez de "do not change") + hex de cor de cabelo
+  // ancora muito mais forte que natural language livre. Se modelInfo não
+  // tem dados, retorna null e cai pro fallback genérico de preservação.
+  const identityLock = buildIdentityLock(modelInfo);
 
   const fitContext = bodyType === "plus"
     ? (isMale
@@ -156,9 +176,13 @@ FIT DIRECTIVES:
 • IMAGE 1 (first image): THE MODEL — a person whose identity you must preserve EXACTLY in the output.
 • IMAGE 2 (second image): THE GARMENT — a product photo showing the clothing piece(s) that must appear on the model.`;
 
+  const identityLockBlock = identityLock
+    ? `${identityLock}\n\n`
+    : "";
+
   return `You are an elite commercial fashion photographer with 20 years of experience shooting campaigns for Vogue, ELLE, and luxury e-commerce brands.
 
-${imageLabels}
+${identityLockBlock}${imageLabels}
 
 YOUR MISSION: Produce a SINGLE stunning photorealistic fashion photograph of the person from IMAGE 1 wearing the COMPLETE outfit from IMAGE 2. This image must be indistinguishable from a real professional photoshoot.
 
@@ -385,7 +409,8 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
           index,
           input.gender,
           input.backdropImageBase64,
-          input.backdropMediaType
+          input.backdropMediaType,
+          input.modelInfo
         );
         await input.onImageComplete?.(index, true);
         return result;
@@ -448,7 +473,8 @@ async function generateSingleImage(
   index: number,
   gender?: string,
   backdropBase64?: string,
-  backdropMime?: string
+  backdropMime?: string,
+  modelInfo?: ModelInfo,
 ): Promise<GeneratedImage> {
   const start = Date.now();
   const conceptName = `Look ${index + 1}`;
@@ -456,7 +482,7 @@ async function generateSingleImage(
 
   const ai = getAI();
   const hasBackdrop = !!backdropBase64;
-  const vtoPrompt = buildVTOPrompt(stylingPrompt, bodyType, gender, hasBackdrop);
+  const vtoPrompt = buildVTOPrompt(stylingPrompt, bodyType, gender, hasBackdrop, modelInfo);
 
   // Map aspect ratio to Gemini format
   const geminiAspect = mapAspectRatio(aspectRatio);

@@ -18,22 +18,21 @@ import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 import type { SonnetDicasPostagem } from "./sonnet-copywriter";
 import { generateCopyWithSonnet } from "./sonnet-copywriter";
+import {
+  POSE_HISTORY_CAP,
+  updatePoseHistory,
+  validatePoseIndices,
+} from "./identity-translations";
 
 // ═══════════════════════════════════════
 // Tipos públicos
 // ═══════════════════════════════════════
 
-export interface ModelInfo {
-  skinTone?: string;
-  bodyType?: string;
-  pose?: string;
-  hairColor?: string;
-  hairTexture?: string;
-  hairLength?: string;
-  ageRange?: string;
-  style?: string;
-  gender?: string;
-}
+// ModelInfo agora vive em identity-translations.ts (fonte única, usada por
+// analyzer + VTO). Re-exportado aqui pra preservar compatibilidade com
+// qualquer caller externo que ainda importe `ModelInfo` deste módulo.
+export type { ModelInfo } from "./identity-translations";
+import type { ModelInfo } from "./identity-translations";
 
 export interface PipelineInput {
   /** Foto principal do produto (base64, sem prefixo data:) */
@@ -101,6 +100,26 @@ export async function runCampaignPipeline(
   // NOTA: step name "sonnet" mantido para compatibilidade com o frontend
   await onProgress?.("sonnet", "Analisando fotos do produto...", 8);
 
+  // — Histórico de poses recentes da loja (anti-monotonia entre campanhas) —
+  // Lê stores.recent_pose_indices: cap em POSE_HISTORY_CAP (6) = últimas 2
+  // campanhas. Esses indices ficam BLOQUEADOS pra esta geração; o Analyzer
+  // recebe a lista e evita-os ao escolher pose_indices.
+  let excludedPoseIndices: number[] = [];
+  if (input.storeId) {
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      const { data: store } = await supabase
+        .from("stores")
+        .select("recent_pose_indices")
+        .eq("id", input.storeId)
+        .single();
+      excludedPoseIndices = (store?.recent_pose_indices as number[] | null) ?? [];
+    } catch (e) {
+      console.warn("[Pipeline] failed to fetch pose history (continuing without):", e);
+    }
+  }
+
   const analyzerStart = Date.now();
   const analyzerResult = await analyzeWithGemini({
     productImageBase64: input.imageBase64,
@@ -112,8 +131,27 @@ export async function runCampaignPipeline(
     backgroundType: input.backgroundType,
 
     modelInfo: input.modelInfo,
+    excludedPoseIndices,
   });
   const analyzerDurationMs = Date.now() - analyzerStart;
+
+  // Valida pose_indices retornados (≥2 estáveis, distintos, sem violar
+  // exclusão). Não derruba a campanha se inválido — Gemini já gerou,
+  // adiantar pro VTO. Mas loga pra acompanhar taxa de violação no admin.
+  const poseValidationErrors = validatePoseIndices(
+    analyzerResult.vto_hints.pose_indices,
+    excludedPoseIndices,
+  );
+  if (poseValidationErrors.length > 0) {
+    console.warn(
+      "[Pipeline] ⚠️ pose_indices violou regras:",
+      poseValidationErrors,
+      "indices=",
+      analyzerResult.vto_hints.pose_indices,
+      "excluded=",
+      excludedPoseIndices,
+    );
+  }
 
   // Log de custo do Gemini Analyzer (fire-and-forget)
   if (input.storeId) {
@@ -200,6 +238,10 @@ export async function runCampaignPipeline(
     bodyType: input.bodyType === "plus" ? "plus" : "normal",
     aspectRatio: analyzerResult.vto_hints.aspect_ratio,
     gender: input.modelInfo?.gender,
+    // modelInfo completo → buildIdentityLock() no VTO gera o bloco de
+    // hair color (com hex), texture, length, skin, age. Sem isso, cai no
+    // fallback genérico ("preserve from IMAGE 1") que aluciona mais.
+    modelInfo: input.modelInfo,
     storeId: input.storeId,
     campaignId: input.campaignId,
     onImageComplete: async (index, success) => {
@@ -213,6 +255,28 @@ export async function runCampaignPipeline(
 
   // Esperar ambos terminarem
   const [copyResult, imageResult] = await Promise.all([copyPromise, imagePromise]);
+
+  // Atualiza histórico de poses se VTO produziu pelo menos 1 imagem com
+  // sucesso (campanha não totalmente perdida). Fire-and-forget — falhar
+  // aqui não derruba a campanha (cap de 6 garante self-healing em ~2 gens).
+  if (input.storeId && imageResult.successCount > 0) {
+    void (async () => {
+      try {
+        const { createAdminClient } = await import("@/lib/supabase/admin");
+        const supabase = createAdminClient();
+        const updated = updatePoseHistory(
+          excludedPoseIndices,
+          analyzerResult.vto_hints.pose_indices as number[],
+        );
+        await supabase
+          .from("stores")
+          .update({ recent_pose_indices: updated })
+          .eq("id", input.storeId);
+      } catch (e) {
+        console.warn("[Pipeline] failed to update pose history:", e);
+      }
+    })();
+  }
 
   await onProgress?.("saving", "Salvando resultados...", 92);
   await onProgress?.("done", "Pronto!", 100);
