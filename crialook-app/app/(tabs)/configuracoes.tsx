@@ -25,6 +25,8 @@ import { api, apiDelete, apiGetCached, apiPatch, invalidateApiCache } from '@/li
 import { compressForUpload, buildFormDataFile } from '@/lib/images';
 import { useT, type Locale } from '@/lib/i18n';
 
+// Mantenha em sync com `app/onboarding.tsx` SEGMENTS — values têm que bater
+// senão o segment salvo no onboarding nunca casa com a opção exibida aqui.
 const segments = [
   { value: 'feminina', labelKey: 'segments.feminina' as const, emoji: '👗' },
   { value: 'masculina', labelKey: 'segments.masculina' as const, emoji: '👔' },
@@ -34,6 +36,7 @@ const segments = [
   { value: 'intima', labelKey: 'segments.intima' as const, emoji: '🩱' },
   { value: 'praia', labelKey: 'segments.praia' as const, emoji: '👙' },
   { value: 'acessorios', labelKey: 'segments.acessorios' as const, emoji: '👜' },
+  { value: 'multimarca', labelKey: 'segments.multimarca' as const, emoji: '🛍️' },
 ];
 
 const DELETE_CONFIRMATION_WORD = 'EXCLUIR';
@@ -71,7 +74,12 @@ export default function ConfiguracoesScreen() {
           setCity(s.city || '');
           setStateUF(s.state || '');
           setInstagram(s.instagram_handle || '');
-          setSegment(s.segment_primary || '');
+          // Backfill: usuários do onboarding antigo gravaram `feminino`/`masculino`
+          // (forma neutra/masculina). UI atual usa `feminina`/`masculina`.
+          // Normaliza on-read pra mostrar a opção correta.
+          const rawSegment: string = s.segment_primary || '';
+          const segMap: Record<string, string> = { feminino: 'feminina', masculino: 'masculina' };
+          setSegment(segMap[rawSegment] ?? rawSegment);
           setLogoUrl(s.logo_url || null);
         }
       })
@@ -453,12 +461,29 @@ export default function ConfiguracoesScreen() {
           <Button
             title={t('config.contactSupport')}
             variant="ghost"
-            onPress={() => {
-              MailComposer.composeAsync({
-                recipients: ['suporte@crialook.com.br'],
-                subject: `Suporte CriaLook v${Application.nativeApplicationVersion || '1.0.0'}`,
-                body: `\n\n---\nApp: ${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})\nOS: Android`,
-              });
+            onPress={async () => {
+              const body = `\n\n---\nApp: ${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})\nOS: ${Platform.OS} ${Platform.Version}`;
+              const subject = `Suporte CriaLook v${Application.nativeApplicationVersion || '1.0.0'}`;
+              try {
+                const available = await MailComposer.isAvailableAsync();
+                if (!available) {
+                  Alert.alert(
+                    t('common.error'),
+                    `suporte@crialook.com.br\n\n${body.trim()}`,
+                  );
+                  return;
+                }
+                await MailComposer.composeAsync({
+                  recipients: ['suporte@crialook.com.br'],
+                  subject,
+                  body,
+                });
+              } catch {
+                Alert.alert(
+                  t('common.error'),
+                  `suporte@crialook.com.br\n\n${body.trim()}`,
+                );
+              }
             }}
           />
           <Text style={[styles.versionText, { color: colors.textSecondary }]}>

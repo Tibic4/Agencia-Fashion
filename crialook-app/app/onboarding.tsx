@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,9 +25,11 @@ interface StoreData {
   instagram: string;
 }
 
+// Values precisam bater com `configuracoes.tsx` segments, senão o segment
+// salvo no onboarding nunca casa com a opção exibida em Configurações.
 const SEGMENTS = [
-  { value: 'feminino', labelKey: 'segments.feminino' as const },
-  { value: 'masculino', labelKey: 'segments.masculino' as const },
+  { value: 'feminina', labelKey: 'segments.feminino' as const },
+  { value: 'masculina', labelKey: 'segments.masculino' as const },
   { value: 'infantil', labelKey: 'segments.infantil' as const },
   { value: 'fitness', labelKey: 'segments.fitness' as const },
   { value: 'praia', labelKey: 'segments.praia' as const },
@@ -50,6 +53,21 @@ export default function OnboardingScreen() {
     instagram: '',
   });
 
+  // Hardware back button no Android: navega entre steps em vez de sair do app.
+  // No step 0 deixa o sistema lidar (sair do app), pra não prender o usuário.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (step > 0) {
+        haptic.tap();
+        setStep(s => s - 1);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [step]);
+
   const canProceed = () => {
     if (step === 0) return true;
     if (step === 1) return storeData.name.trim().length > 0;
@@ -70,11 +88,16 @@ export default function OnboardingScreen() {
       // um modelo virtual inicial. Field names diferem dos do form local —
       // mapeamos aqui em vez de renomear o state pra preservar o vocabulário
       // que o usuário lê na UI ("nome da loja" → state.name).
+      // Instagram: aceita "@user", "user", "https://instagram.com/user/", etc.
+      // e devolve só o handle limpo. Sem isso, o backend gravava URL crua.
+      const igInput = storeData.instagram.trim();
+      const igMatch = igInput.match(/(?:instagram\.com\/)?@?([a-zA-Z0-9._]+)/);
+      const igHandle = igMatch?.[1] || '';
       await apiPost('/store/onboarding', {
         storeName: storeData.name.trim(),
         segment: storeData.segment,
         city: storeData.city.trim() || undefined,
-        instagram: storeData.instagram.trim().replace('@', '') || undefined,
+        instagram: igHandle || undefined,
       });
     } catch {
       // Falha silenciosa: usuário ainda navega para o app, o `/store/onboarding`
