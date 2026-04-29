@@ -42,6 +42,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
+import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -363,6 +364,9 @@ export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
   // the CTA or any tab.
   useEffect(() => {
     setNavigationLocked(!isComplete);
+    if (isComplete) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
     return () => setNavigationLocked(false);
   }, [isComplete]);
 
@@ -754,7 +758,7 @@ const styles = StyleSheet.create({
   },
   factHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   factEmoji: { fontSize: 18, lineHeight: 22 },
-  factCategory: { fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
+  factCategory: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   pauseBtn: {
     color: 'rgba(255,255,255,0.5)',
     fontSize: 13,
@@ -798,6 +802,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 26,
     fontWeight: '800',
+    letterSpacing: -0.8,
     textAlign: 'center',
     marginBottom: 4,
   },
