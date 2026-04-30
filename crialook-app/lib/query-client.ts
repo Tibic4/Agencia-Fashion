@@ -21,6 +21,7 @@
 import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query';
 import { MMKV } from 'react-native-mmkv';
 import { AppState } from 'react-native';
+import Constants from 'expo-constants';
 
 // Lazy-instanciado pra SSR / test runners Node (sem MMKV native) não
 // quebrarem no import. Singleton de módulo dentro da função.
@@ -106,13 +107,15 @@ export function setupQueryPersistence() {
           removeItem: (k: string) => storage.delete(k),
         },
       });
+      // Buster atrelado à versão do app: toda nova versão invalida cache
+      // persistido automaticamente. Evita "dado antigo com schema novo"
+      // após update da app na loja. Fallback 'v1' pra dev sem versão.
+      const appVersion = Constants.expoConfig?.version ?? 'v1';
       persistQueryClient({
         queryClient: getQueryClient(),
         persister,
         maxAge: 24 * 60 * 60 * 1000,
-        // Bump dessa string busta o cache persistido quando o shape da API
-        // muda de um jeito que entradas antigas não sobrevivem.
-        buster: 'v1',
+        buster: appVersion,
       });
     },
   );
