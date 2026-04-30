@@ -1,6 +1,31 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/**
+ * API response cache backed by MMKV (synchronous, memory-mapped).
+ *
+ * Why we migrated off AsyncStorage:
+ *   - AsyncStorage is async + JSON-bridged; every read does
+ *     setImmediate → bridge → JSON.parse. In hot screens that fire
+ *     `apiGetCached` dozens of times per session this adds real latency
+ *     to the JS thread.
+ *   - AsyncStorage on Android has a soft-cap of ~6MB (the SQLite-backed
+ *     implementation). This cache had no eviction beyond TTL, so
+ *     long-tail keys (a campaign opened once, never re-read) leaked until
+ *     they hit that cap and started failing silently.
+ *   - MMKV is sync, memory-mapped, ~10–100x faster, and naturally
+ *     survives a corrupted entry without taking the whole storage down.
+ *
+ * The public API is intentionally identical to the previous
+ * AsyncStorage-backed module so callers (lib/api.ts, lib/auth.tsx) don't
+ * need to change. The internal in-memory `Map` cache is kept too: even
+ * MMKV adds a JSON.parse cost per read, and serving from the JS-side Map
+ * is free.
+ */
+import { MMKV } from 'react-native-mmkv';
 
 const PREFIX = '@crialook/cache:';
+
+// Single namespaced instance. Multiple MMKV instances are cheap but a
+// single namespaced one keeps `getAllKeys` predictable for prefix sweeps.
+const storage = new MMKV({ id: 'crialook-api-cache' });
 
 interface Entry<T> {
   value: T;
@@ -13,16 +38,23 @@ function now() {
   return Date.now();
 }
 
+function k(key: string): string {
+  return PREFIX + key;
+}
+
 export async function readCache<T>(key: string): Promise<T | null> {
   const mem = memory.get(key) as Entry<T> | undefined;
   if (mem && mem.expires > now()) return mem.value;
 
   try {
-    const raw = await AsyncStorage.getItem(PREFIX + key);
+    const raw = storage.getString(k(key));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Entry<T>;
     if (parsed.expires <= now()) {
-      AsyncStorage.removeItem(PREFIX + key).catch(() => {});
+      // Async-shaped delete to avoid touching MMKV inline if reader
+      // is in a tight loop; MMKV.delete is sync and cheap, but we keep
+      // the same shape as before so callers still don't await it.
+      storage.delete(k(key));
       return null;
     }
     memory.set(key, parsed);
@@ -36,16 +68,16 @@ export async function writeCache<T>(key: string, value: T, ttlMs: number) {
   const entry: Entry<T> = { value, expires: now() + ttlMs };
   memory.set(key, entry);
   try {
-    await AsyncStorage.setItem(PREFIX + key, JSON.stringify(entry));
+    storage.set(k(key), JSON.stringify(entry));
   } catch {
-    /* ignore */
+    /* MMKV throws only on encryption mismatch; safe to swallow */
   }
 }
 
 export async function invalidateCache(key: string) {
   memory.delete(key);
   try {
-    await AsyncStorage.removeItem(PREFIX + key);
+    storage.delete(k(key));
   } catch {
     /* ignore */
   }
@@ -57,47 +89,47 @@ export async function invalidateCache(key: string) {
  * criar/deletar uma campanha.
  */
 export async function invalidateCachePrefix(prefix: string) {
-  for (const k of [...memory.keys()]) {
-    if (k.startsWith(prefix)) memory.delete(k);
+  for (const mk of [...memory.keys()]) {
+    if (mk.startsWith(prefix)) memory.delete(mk);
   }
   try {
-    const keys = await AsyncStorage.getAllKeys();
     const fullPrefix = PREFIX + prefix;
-    const matches = keys.filter(k => k.startsWith(fullPrefix));
-    if (matches.length) await AsyncStorage.multiRemove(matches);
+    const keys = storage.getAllKeys();
+    for (const sk of keys) {
+      if (sk.startsWith(fullPrefix)) storage.delete(sk);
+    }
   } catch {
     /* ignore */
   }
 }
 
 /**
- * Sweeps stale entries (TTL expirado) tanto da memória quanto do AsyncStorage.
- * Sem isso, chaves nunca relidas (ex: cache de campanha visualizada uma vez)
- * vazam para sempre — Android tem soft-cap de 6MB no AsyncStorage.
- *
- * Idempotente, seguro chamar no boot.
+ * Sweeps stale entries (TTL expirado) tanto da memória quanto do MMKV.
+ * Idempotente, seguro chamar no boot. Ainda relevante mesmo com MMKV
+ * porque chaves nunca relidas continuam ocupando espaço (ex: cache de
+ * campanha visualizada uma vez). MMKV não tem cap rígido como
+ * AsyncStorage, mas mantemos o sweep pra não inflar o file mapping
+ * indefinidamente.
  */
 export async function pruneExpiredCache() {
   const t = now();
-  for (const [k, v] of memory) {
-    if (v.expires <= t) memory.delete(k);
+  for (const [mk, v] of memory) {
+    if (v.expires <= t) memory.delete(mk);
   }
   try {
-    const keys = await AsyncStorage.getAllKeys();
-    const ours = keys.filter(k => k.startsWith(PREFIX));
-    if (!ours.length) return;
-    const pairs = await AsyncStorage.multiGet(ours);
-    const stale: string[] = [];
-    for (const [k, raw] of pairs) {
+    const keys = storage.getAllKeys();
+    for (const sk of keys) {
+      if (!sk.startsWith(PREFIX)) continue;
+      const raw = storage.getString(sk);
       if (!raw) continue;
       try {
         const parsed = JSON.parse(raw) as Entry<unknown>;
-        if (parsed.expires <= t) stale.push(k);
+        if (parsed.expires <= t) storage.delete(sk);
       } catch {
-        stale.push(k);
+        // Corrupted entry — drop it.
+        storage.delete(sk);
       }
     }
-    if (stale.length) await AsyncStorage.multiRemove(stale);
   } catch {
     /* ignore */
   }
@@ -106,9 +138,10 @@ export async function pruneExpiredCache() {
 export async function invalidateAll() {
   memory.clear();
   try {
-    const keys = await AsyncStorage.getAllKeys();
-    const ours = keys.filter(k => k.startsWith(PREFIX));
-    if (ours.length) await AsyncStorage.multiRemove(ours);
+    const keys = storage.getAllKeys();
+    for (const sk of keys) {
+      if (sk.startsWith(PREFIX)) storage.delete(sk);
+    }
   } catch {
     /* ignore */
   }

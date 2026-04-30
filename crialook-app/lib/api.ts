@@ -3,6 +3,8 @@ import { ApiError, type ApiErrorCode } from '@/types';
 import { readCache, writeCache, invalidateCache, invalidateCachePrefix, pruneExpiredCache } from './cache';
 import { logger } from './logger';
 import { getLocale } from './i18n';
+import type { ZodType } from 'zod';
+import { parseOrApiError } from './schemas';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
 
@@ -55,6 +57,11 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return getCommonHeaders();
 }
 
+/**
+ * If the caller passed a `signal` (e.g. TanStack Query's `queryFn` injects
+ * one for cancelation on unmount/invalidation), we still apply the timeout
+ * via a child controller so caller-cancel and timeout-abort cohabit.
+ */
 async function fetchWithTimeout(
   url: string,
   init: RequestInit,
@@ -62,24 +69,52 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const callerSignal = init.signal;
+  const onCallerAbort = () => controller.abort();
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort();
+    else callerSignal.addEventListener('abort', onCallerAbort, { once: true });
+  }
+
   try {
     return await fetch(url, { ...init, signal: controller.signal });
   } finally {
     clearTimeout(timer);
+    callerSignal?.removeEventListener?.('abort', onCallerAbort);
   }
 }
 
-interface ApiOptions extends Omit<RequestInit, 'body'> {
+interface ApiOptions<T = unknown> extends Omit<RequestInit, 'body'> {
   body?: BodyInit | null;
   timeoutMs?: number;
   retries?: number;
   cacheMs?: number;
   cacheKey?: string;
+  /**
+   * Optional zod schema. When supplied, the parsed JSON response is validated
+   * before returning; mismatches throw an `ApiError(code: 'UNKNOWN')` with the
+   * offending path. Callers without a schema keep the legacy `as T` cast.
+   */
+  schema?: ZodType<T>;
 }
+
+/**
+ * In-flight GET dedup. Two screens calling `apiGetCached('/store/usage')` at
+ * the same time shared no state before — both fired the request. Now the
+ * second call await the first's promise. Holds only during the lifetime of
+ * the request; failures and successes are removed immediately so retries
+ * after a true network error are not glued to a stale rejection.
+ *
+ * Skipped for non-GET, FormData (caller likely cares about response identity)
+ * and requests with a caller-provided `signal` (cancelation semantics would
+ * leak across callers).
+ */
+const inflightGets = new Map<string, Promise<unknown>>();
 
 export async function api<T = unknown>(
   path: string,
-  options: ApiOptions = {},
+  options: ApiOptions<T> = {},
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
   const isFormData = options.body instanceof FormData;
@@ -97,85 +132,108 @@ export async function api<T = unknown>(
     }
   }
 
-  const authHeaders = await getAuthHeaders();
-  const headers: Record<string, string> = {
-    ...authHeaders,
-    ...(options.headers as Record<string, string>),
-  };
-  if (!isFormData && !headers['Content-Type']) {
-    headers['Content-Type'] = 'application/json';
+  // Dedup concurrent GETs to the same path. See `inflightGets` comment.
+  const dedupKey =
+    method === 'GET' && !isFormData && !options.signal ? cacheKey : null;
+  if (dedupKey) {
+    const inflight = inflightGets.get(dedupKey) as Promise<T> | undefined;
+    if (inflight) return inflight;
   }
 
-  let lastError: ApiError | null = null;
+  const exec = async (): Promise<T> => {
+    const authHeaders = await getAuthHeaders();
+    const headers: Record<string, string> = {
+      ...authHeaders,
+      ...(options.headers as Record<string, string>),
+    };
+    if (!isFormData && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const res = await fetchWithTimeout(
-        `${BASE_URL}${path}`,
-        { ...options, method, headers },
-        timeoutMs,
-      );
+    let lastError: ApiError | null = null;
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        let payloadCode: string | undefined;
-        try {
-          const parsed = JSON.parse(text);
-          payloadCode = parsed?.code;
-        } catch {
-          /* not JSON */
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await fetchWithTimeout(
+          `${BASE_URL}${path}`,
+          { ...options, method, headers },
+          timeoutMs,
+        );
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          let payloadCode: string | undefined;
+          try {
+            const parsed = JSON.parse(text);
+            payloadCode = parsed?.code;
+          } catch {
+            /* not JSON */
+          }
+          const code = classifyStatus(res.status, payloadCode);
+          const err = new ApiError(`API ${res.status}`, res.status, code, sanitizeBody(text));
+
+          // 401 → JWT cacheado pode estar stale. Limpa o cache e tenta de novo
+          // uma vez (em qualquer método). Sem isso, o usuário fica em loop de
+          // erro até o TTL de 30s do JWT expirar e o Clerk gerar um novo.
+          if (res.status === 401 && attempt === 0) {
+            clearAuthTokenCache();
+            const refreshed = await getAuthHeaders();
+            headers.Authorization = refreshed.Authorization || headers.Authorization;
+            continue;
+          }
+
+          if (attempt < maxRetries && shouldRetry(method, res.status)) {
+            await new Promise(r => setTimeout(r, RETRY_BASE_DELAY_MS * Math.pow(2, attempt)));
+            lastError = err;
+            continue;
+          }
+          if (res.status >= 500 || code === 'UNKNOWN') {
+            logger.warn(`API ${method} ${path} failed`, { status: res.status, code });
+          }
+          throw err;
         }
-        const code = classifyStatus(res.status, payloadCode);
-        const err = new ApiError(`API ${res.status}`, res.status, code, sanitizeBody(text));
 
-        // 401 → JWT cacheado pode estar stale. Limpa o cache e tenta de novo
-        // uma vez (em qualquer método). Sem isso, o usuário fica em loop de
-        // erro até o TTL de 30s do JWT expirar e o Clerk gerar um novo.
-        if (res.status === 401 && attempt === 0) {
-          clearAuthTokenCache();
-          const refreshed = await getAuthHeaders();
-          headers.Authorization = refreshed.Authorization || headers.Authorization;
-          continue;
+        const raw = await res.json();
+        const data: T = options.schema
+          ? parseOrApiError(options.schema, raw, path)
+          : (raw as T);
+        if (useCache) await writeCache(cacheKey, data, options.cacheMs!);
+        return data;
+      } catch (e: any) {
+        if (e instanceof ApiError) {
+          lastError = e;
+          throw e;
         }
+        const isAbort = e?.name === 'AbortError';
+        const code: ApiErrorCode = isAbort ? 'TIMEOUT' : 'NETWORK';
+        const err = new ApiError(isAbort ? 'Request timed out' : 'Network error', 0, code);
 
-        if (attempt < maxRetries && shouldRetry(method, res.status)) {
+        if (attempt < maxRetries && shouldRetry(method)) {
           await new Promise(r => setTimeout(r, RETRY_BASE_DELAY_MS * Math.pow(2, attempt)));
           lastError = err;
           continue;
         }
-        if (res.status >= 500 || code === 'UNKNOWN') {
-          logger.warn(`API ${method} ${path} failed`, { status: res.status, code });
-        }
         throw err;
       }
-
-      const data = (await res.json()) as T;
-      if (useCache) await writeCache(cacheKey, data, options.cacheMs!);
-      return data;
-    } catch (e: any) {
-      if (e instanceof ApiError) {
-        lastError = e;
-        throw e;
-      }
-      const isAbort = e?.name === 'AbortError';
-      const code: ApiErrorCode = isAbort ? 'TIMEOUT' : 'NETWORK';
-      const err = new ApiError(isAbort ? 'Request timed out' : 'Network error', 0, code);
-
-      if (attempt < maxRetries && shouldRetry(method)) {
-        await new Promise(r => setTimeout(r, RETRY_BASE_DELAY_MS * Math.pow(2, attempt)));
-        lastError = err;
-        continue;
-      }
-      throw err;
     }
-  }
 
-  throw lastError ?? new ApiError('Unknown error', 0, 'UNKNOWN');
+    throw lastError ?? new ApiError('Unknown error', 0, 'UNKNOWN');
+  };
+
+  if (!dedupKey) return exec();
+
+  const promise = exec().finally(() => {
+    // Always evict so a follow-up request after a failure isn't glued to a
+    // stale rejected promise.
+    inflightGets.delete(dedupKey);
+  });
+  inflightGets.set(dedupKey, promise);
+  return promise;
 }
 
 async function revalidateInBackground<T>(
   path: string,
-  options: ApiOptions,
+  options: ApiOptions<T>,
   cacheKey: string,
 ) {
   try {
@@ -203,27 +261,27 @@ export async function pruneApiCache() {
   await pruneExpiredCache();
 }
 
-export const apiGet = <T = unknown>(path: string, options?: ApiOptions) =>
+export const apiGet = <T = unknown>(path: string, options?: ApiOptions<T>) =>
   api<T>(path, { ...options, method: 'GET' });
 
-export const apiGetCached = <T = unknown>(path: string, ttlMs: number, options?: ApiOptions) =>
+export const apiGetCached = <T = unknown>(path: string, ttlMs: number, options?: ApiOptions<T>) =>
   api<T>(path, { ...options, method: 'GET', cacheMs: ttlMs });
 
-export const apiPost = <T = unknown>(path: string, body?: unknown, options?: ApiOptions) =>
+export const apiPost = <T = unknown>(path: string, body?: unknown, options?: ApiOptions<T>) =>
   api<T>(path, {
     ...options,
     method: 'POST',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-export const apiPatch = <T = unknown>(path: string, body?: unknown, options?: ApiOptions) =>
+export const apiPatch = <T = unknown>(path: string, body?: unknown, options?: ApiOptions<T>) =>
   api<T>(path, {
     ...options,
     method: 'PATCH',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-export const apiDelete = <T = unknown>(path: string, options?: ApiOptions) =>
+export const apiDelete = <T = unknown>(path: string, options?: ApiOptions<T>) =>
   api<T>(path, { ...options, method: 'DELETE' });
 
 /**
