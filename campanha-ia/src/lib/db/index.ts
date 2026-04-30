@@ -793,6 +793,13 @@ export interface SavePipelineResultV3Input {
   prompts: Record<string, unknown>[];
   dicas_postagem: Record<string, unknown>;
   successCount: number;
+  /**
+   * Trial-only campaigns: 2 thumbnails da foto da modelo blurada como teaser
+   * dos "outros 2 ângulos" não gerados. URLs públicas no Storage. Quando
+   * presente, mobile renderiza tira 3-thumb (left blur · hero · right blur)
+   * abaixo da foto principal e faz lock + paywall ao tap.
+   */
+  lockedTeaserUrls?: [string, string];
 }
 
 /**
@@ -818,6 +825,9 @@ export async function savePipelineResultV3(input: SavePipelineResultV3Input) {
         dicas_postagem: input.dicas_postagem,
         success_count: input.successCount,
         generated_at: new Date().toISOString(),
+        ...(input.lockedTeaserUrls
+          ? { locked_teaser_urls: input.lockedTeaserUrls }
+          : {}),
       },
     })
     .eq("id", input.campaignId);

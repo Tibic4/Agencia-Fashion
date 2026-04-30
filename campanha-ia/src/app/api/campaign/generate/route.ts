@@ -156,6 +156,10 @@ export async function POST(request: NextRequest) {
     let needsAvulsoCredit = false;
     let creditReserved = false;
     let planSlotReserved = false;
+    // Trial-only: usuário usou mini-trial e nunca comprou nada. Esses recebem
+    // 1 foto em vez de 3 — corte de ~66% do custo de imagem na geração trial,
+    // que é o caminho de aquisição (deve ser barato pra escalar).
+    let isTrialOnly = false;
     if (store) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
@@ -193,6 +197,40 @@ export async function POST(request: NextRequest) {
         await incrementCampaignsUsed(store.id);
         planSlotReserved = true;
         console.log(`[Generate] 📋 Slot de plano RESERVADO upfront (${quota.used + 1}/${quota.limit})`);
+      }
+
+      // ── Trial-only detection ──
+      // Quem usou mini-trial e nunca comprou nada gera 1 foto em vez de 3.
+      // Sinais combinados:
+      //  1) `creditReserved` (não tá em plano pago)
+      //  2) `mini_trial_uses` tem entrada pra esse clerk_user_id
+      //  3) Zero rows em `credit_purchases` da loja (nunca comprou pacote nem
+      //     "Teste na Prática" R$ 19,90)
+      // Falha de detecção (qualquer query erra) → cai no default de 3 fotos:
+      // melhor pagar o custo a mais do que dar UX degradada pro usuário pago.
+      if (creditReserved && clerkUserId) {
+        try {
+          const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+          const sb = createAdmin();
+          const [{ count: trialCount }, { count: purchaseCount }] = await Promise.all([
+            sb
+              .from("mini_trial_uses")
+              .select("clerk_user_id", { count: "exact", head: true })
+              .eq("clerk_user_id", clerkUserId),
+            sb
+              .from("credit_purchases")
+              .select("id", { count: "exact", head: true })
+              .eq("store_id", store.id),
+          ]);
+          isTrialOnly = (trialCount ?? 0) > 0 && (purchaseCount ?? 0) === 0;
+          if (isTrialOnly) {
+            console.log(`[Generate] 🎁 Trial-only user → 1 foto (corte de custo)`);
+          }
+        } catch (trialErr) {
+          // Detection failure não bloqueia geração — falhamos no caminho seguro
+          // (3 fotos) pra não punir usuário pago se a query do mini_trial der ruim.
+          console.warn("[Generate] trial detection failed, defaulting to 3 photos:", trialErr);
+        }
       }
     }
 
@@ -476,6 +514,8 @@ export async function POST(request: NextRequest) {
               targetAudience: targetAudience && targetAudience !== "auto" ? targetAudience : undefined,
               toneOverride: toneOverride || undefined,
               targetLocale,
+              // Trial-only → 1 foto. Default → 3 (paid plans).
+              photoCount: isTrialOnly ? 1 : 3,
             },
             async (step, label, progress) => {
               console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
@@ -484,10 +524,11 @@ export async function POST(request: NextRequest) {
           );
 
           const { successCount, images, analise, vto_hints, dicas_postagem, durationMs } = pipelineResult;
+          const photoCount = isTrialOnly ? 1 : 3;
 
           // ── Regra de negócio: cobrar crédito SÓ se ≥1 imagem gerada ──
           if (successCount === 0) {
-            if (campaignRecord) await failCampaign(campaignRecord.id, "0/3 images generated");
+            if (campaignRecord) await failCampaign(campaignRecord.id, `0/${photoCount} images generated`);
             // Devolver crédito avulso se reservado upfront
             if (creditReserved && store) {
               try {
@@ -613,6 +654,76 @@ export async function POST(request: NextRequest) {
               return;
             }
 
+            // ── Trial teaser thumbs (3-thumb row no resultado) ──
+            // Trial-only gera só 1 foto. Pra slot 2/3 da carrosselzinha embaixo
+            // do hero, criamos 2 crops blurados da foto da modelo (entrada do
+            // user) com regiões diferentes — esquerda mais top-half, direita
+            // mais bottom-half. Cérebro do usuário interpreta como "outros 2
+            // ângulos" sem precisar de chamada extra ao Gemini.
+            // Custo: ~120ms CPU + ~100KB storage. Skip silencioso em erro —
+            // o resultado funciona normalmente sem os teasers.
+            let lockedTeaserUrls: [string, string] | undefined;
+            if (isTrialOnly) {
+              try {
+                const sharp = (await import("sharp")).default;
+                const modelBuf = Buffer.from(modelImageBase64!, "base64");
+                const meta = await sharp(modelBuf as any).metadata();
+                const w = meta.width ?? 1024;
+                const h = meta.height ?? 1536;
+
+                const [leftBlur, rightBlur] = await Promise.all([
+                  sharp(modelBuf as any)
+                    .extract({ left: 0, top: 0, width: w, height: Math.floor(h * 0.7) })
+                    .resize(400, 600, { fit: "cover" })
+                    .blur(45)
+                    .webp({ quality: 60 })
+                    .toBuffer(),
+                  sharp(modelBuf as any)
+                    .extract({
+                      left: 0,
+                      top: Math.floor(h * 0.3),
+                      width: w,
+                      height: Math.floor(h * 0.7),
+                    })
+                    .resize(400, 600, { fit: "cover" })
+                    .blur(50)
+                    .webp({ quality: 60 })
+                    .toBuffer(),
+                ]);
+
+                const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
+                const sb = createAdmin();
+                const teaserPaths: [string, string] = [
+                  `campaigns/${campaignRecord.id}/teaser_left.webp`,
+                  `campaigns/${campaignRecord.id}/teaser_right.webp`,
+                ];
+                const [{ error: e1 }, { error: e2 }] = await Promise.all([
+                  sb.storage
+                    .from("generated-images")
+                    .upload(teaserPaths[0], leftBlur as any, {
+                      contentType: "image/webp",
+                      upsert: true,
+                    }),
+                  sb.storage
+                    .from("generated-images")
+                    .upload(teaserPaths[1], rightBlur as any, {
+                      contentType: "image/webp",
+                      upsert: true,
+                    }),
+                ]);
+                if (!e1 && !e2) {
+                  const left = sb.storage.from("generated-images").getPublicUrl(teaserPaths[0]).data.publicUrl;
+                  const right = sb.storage.from("generated-images").getPublicUrl(teaserPaths[1]).data.publicUrl;
+                  lockedTeaserUrls = [left, right];
+                  console.log(`[Generate] 🔒 Trial teasers gerados: ${teaserPaths[0]}, ${teaserPaths[1]}`);
+                } else {
+                  console.warn("[Generate] ⚠️ Trial teasers upload falhou:", e1?.message, e2?.message);
+                }
+              } catch (teaserErr) {
+                console.warn("[Generate] ⚠️ Trial teasers skipped:", teaserErr);
+              }
+            }
+
             await savePipelineResultV3({
               campaignId: campaignRecord.id,
               durationMs,
@@ -621,14 +732,15 @@ export async function POST(request: NextRequest) {
               prompts: (vto_hints?.scene_prompts || []) as unknown as Record<string, unknown>[],
               dicas_postagem: dicas_postagem as unknown as Record<string, unknown>,
               successCount,
+              lockedTeaserUrls,
             });
 
             if (needsAvulsoCredit) {
               // Crédito avulso já consumido upfront
-              console.log(`[Generate] 💳 Crédito avulso já reservado upfront (${successCount}/3 imagens geradas)`);
+              console.log(`[Generate] 💳 Crédito avulso já reservado upfront (${successCount}/${photoCount} imagens geradas)`);
             } else if (planSlotReserved) {
               // Slot de plano já reservado upfront (evita double-count)
-              console.log(`[Generate] 📋 Slot de plano já reservado upfront (${successCount}/3 imagens geradas)`);
+              console.log(`[Generate] 📋 Slot de plano já reservado upfront (${successCount}/${photoCount} imagens geradas)`);
             } else {
               await incrementCampaignsUsed(store!.id);
             }

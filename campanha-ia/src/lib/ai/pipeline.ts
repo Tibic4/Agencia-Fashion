@@ -68,6 +68,16 @@ export interface PipelineInput {
   storeId?: string;
   campaignId?: string;
   signal?: AbortSignal;
+
+  /**
+   * Quantas fotos VTO gerar (default 3). Trial/credit-only users recebem 1 —
+   * a route detecta via `mini_trial_uses` + ausência de `credit_purchases` e
+   * passa `photoCount: 1` aqui. Pipeline slica as listas de scene_prompts e
+   * pose_indices pro tamanho pedido antes do VTO, então o Analyzer ainda gera
+   * 3 (custo barato, ~$0.02) mas só 1 chamada de imagem rola (corte de ~66%
+   * no custo da geração — onde o gasto pesa).
+   */
+  photoCount?: 1 | 3;
 }
 
 export interface PipelineResult {
@@ -172,11 +182,11 @@ export async function runCampaignPipeline(
   // — Etapa 2: Em PARALELO: VTO (Gemini) + Copy (Sonnet) ————
   await onProgress?.("prompts_ready", "Montando editoriais + escrevendo copy...", 40);
 
-  // Track per-image completion for granular progress (45→55→68→80%)
+  // Track per-image completion for granular progress (45→85%). Step size is
+  // computed below once `photoCount` is decided (1 for trial, 3 for paid).
   let imagesCompleted = 0;
   const imageProgressBase = 45;  // starting progress
   const imageProgressEnd = 85;   // ending progress after all images
-  const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / 3; // ~13.3% each
 
   const isMale = input.modelInfo?.gender === 'masculino' || input.modelInfo?.gender === 'male' || input.modelInfo?.gender === 'm';
 
@@ -228,9 +238,23 @@ export async function runCampaignPipeline(
     };
   });
 
+  // Photo count: trial / credit-only users recebem 1 foto pra cortar custo.
+  // Default 3 (paid plans, full experience). Slica scene_prompts/pose_indices
+  // pra primeira N: o Analyzer ainda gera 3 (custo barato), mas só 1-3
+  // chamadas de VTO rolam — onde mora 90% do custo da geração.
+  const photoCount: 1 | 3 = input.photoCount === 1 ? 1 : 3;
+  const allPrompts = analyzerResult.vto_hints.scene_prompts as [string, string, string];
+  const stylingPrompts = (
+    photoCount === 1 ? [allPrompts[0]] : allPrompts
+  ) as [string] | [string, string, string];
+
+  // Track per-image completion for granular progress — re-baseline based on
+  // photoCount so trial users see 45→85% across 1 image, not 1/3 of the bar.
+  const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / photoCount;
+
   // VTO Images — roda em paralelo com Sonnet
   const imagePromise = generateWithGeminiVTO({
-    stylingPrompts: analyzerResult.vto_hints.scene_prompts as [string, string, string],
+    stylingPrompts: stylingPrompts as [string, string, string], // VTO type still expects tuple-3; trial path passes [string] which iterates 1x in map()
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
@@ -248,7 +272,7 @@ export async function runCampaignPipeline(
       imagesCompleted++;
       const progressNow = Math.round(imageProgressBase + (imagesCompleted * imageProgressPerImage));
       const emoji = success ? "✅" : "⚠️";
-      const label = `Foto ${imagesCompleted}/3 ${emoji} ${imagesCompleted < 3 ? "— próxima saindo..." : "— finalizando!"}`;
+      const label = `Foto ${imagesCompleted}/${photoCount} ${emoji} ${imagesCompleted < photoCount ? "— próxima saindo..." : "— finalizando!"}`;
       await onProgress?.(`image_${index}_done`, label, progressNow);
     },
   });
@@ -264,10 +288,14 @@ export async function runCampaignPipeline(
       try {
         const { createAdminClient } = await import("@/lib/supabase/admin");
         const supabase = createAdminClient();
-        const updated = updatePoseHistory(
-          excludedPoseIndices,
-          analyzerResult.vto_hints.pose_indices as number[],
+        // Trial path uses only `pose_indices[0]`; record just that one so
+        // we don't burn the unused indices from history. Paid path records
+        // all three.
+        const usedIndices = (analyzerResult.vto_hints.pose_indices as number[]).slice(
+          0,
+          photoCount,
         );
+        const updated = updatePoseHistory(excludedPoseIndices, usedIndices);
         await supabase
           .from("stores")
           .update({ recent_pose_indices: updated })
@@ -283,7 +311,7 @@ export async function runCampaignPipeline(
 
   const durationMs = Date.now() - startTime;
   console.log(
-    `[Pipeline v7] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/3 imagens | peça: ${analyzerResult.analise.tipo_peca} | copy: Sonnet`
+    `[Pipeline v7] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/${photoCount} imagens | peça: ${analyzerResult.analise.tipo_peca} | copy: Sonnet`
   );
 
   return {

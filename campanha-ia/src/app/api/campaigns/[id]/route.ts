@@ -105,6 +105,13 @@ export async function GET(
         // identifica visualmente e PODE mencionar peça/cor/tecido no copy.
       }
 
+      // Trial-only: 2 thumbnails (left/right) blurados da foto da modelo,
+      // usados pelo mobile pra renderizar a tira "lock · hero · lock"
+      // abaixo do hero. Backend gera apenas pra trial users (1 foto real),
+      // mobile decide o layout com base na presença do array.
+      const lockedTeaserUrls =
+        (v3Output.locked_teaser_urls as [string, string] | undefined) || undefined;
+
       return NextResponse.json({
         success: true,
         data: {
@@ -113,6 +120,7 @@ export async function GET(
           data: {
             analise: analise || null,
             images,
+            lockedTeaserUrls,
             prompts: (v3Output.prompts as unknown[]) || [],
             dicas_postagem: mappedDicas,
             durationMs: campaign.pipeline_duration_ms || 0,
