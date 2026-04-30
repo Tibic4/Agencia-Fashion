@@ -136,26 +136,20 @@ The IDENTITY LOCK above always wins over scene description on identity traits.`;
 }
 
 // ═══════════════════════════════════════
-// Pose Bank — 12 poses (8 estáveis + 4 médias)
+// Pose Bank — 8 poses estáveis (foto única universal)
 // ═══════════════════════════════════════
 
 /**
- * Bank de poses curado por risco de alucinação.
+ * Bank de poses curado pra mínima alucinação. Mãos visíveis ancoradas (no
+ * quadril, no bolso) ou ocultas com clareza (atrás das costas) — bate de
+ * frente com os modos de falha documentados em `gemini-vto-generator.ts`
+ * (HANDS & FINGERS, IDENTITY DRIFT, full-body framing).
  *
- * Tier ESTÁVEL (índices 0-7): mãos visíveis ancoradas (no quadril, no bolso)
- * ou ocultas com clareza (atrás das costas) — alucinam quase nunca.
- *
- * Tier MÉDIO (índices 8-11): introduzem complexidade (face em profile,
- * mão no peito, parede como prop) — usar com moderação.
- *
- * REMOVIDAS as 5 poses originalmente arriscadas: walking mid-stride
- * (motion blur), sitting on stool (oclusão de pernas), crouching (joelho +
- * equilíbrio), seated on ground (oclusão massiva), stepping off curb
- * (motion + cenário). Removida também "hands clasped at front" (clássica
- * AI-hands-fail por dedos entrelaçados).
+ * REMOVIDO o tier médio anterior (perfil lateral, encostada na parede,
+ * back-view, mão na lapela): cada uma batia num warning específico do VTO
+ * (face em perfil = identity drift, prop não-controlado, dedos no tecido).
  */
 export const POSE_BANK: ReadonlyArray<string> = [
-  // ════ TIER ESTÁVEL (0-7) ═══════════════════════════════
   "standing with a relaxed three-quarter turn (facing right), one hand resting on her hip, chin slightly tilted up",
   "hands in pockets, weight shifted to one leg, relaxed street-style stance, front-facing",
   "arms behind back with clasped hands, chest open, elegant confident posture, front-facing",
@@ -164,86 +158,81 @@ export const POSE_BANK: ReadonlyArray<string> = [
   "three-quarter turn facing left, both arms relaxed at sides, looking forward",
   "three-quarter turn facing right, both arms relaxed at sides, looking forward",
   "front-facing with subtle S-curve (one hip slightly out), hands relaxed at sides, magazine cover stance",
-
-  // ════ TIER MÉDIO (8-11) ═════════════════════════════════
-  "full side profile, body in side view, arms at sides, head turned slightly toward camera so face is partially visible",
-  "leaning against a wall with one shoulder, weight on the back leg, one arm relaxed at side",
-  "turning to look over her shoulder, three-quarter back view showing garment construction, face in soft profile",
-  "one hand gently touching collar or lapel, the other relaxed at side, front-facing",
 ] as const;
 
-export const POSE_BANK_STABLE_INDICES = [0, 1, 2, 3, 4, 5, 6, 7] as const;
-export const POSE_BANK_TOTAL = POSE_BANK.length; // 12
+export const POSE_BANK_TOTAL = POSE_BANK.length; // 8
 
-/** Cap do histórico de poses por loja. 6 = últimas 2 campanhas. */
-export const POSE_HISTORY_CAP = 6;
+/**
+ * Cap do histórico de poses por loja. 3 = janela pra detectar streak de
+ * 3 usos consecutivos da mesma pose. Não é mais "últimas N bloqueadas":
+ * agora o histórico só serve pra `getStreakBlockedPose()` decidir quando
+ * forçar mudança.
+ */
+export const POSE_HISTORY_CAP = 3;
 
 // ═══════════════════════════════════════
 // Pose Index helpers
 // ═══════════════════════════════════════
 
-/** Resolve indices em prose. Lança se índice inválido. */
-export function resolvePoseIndices(indices: number[]): string[] {
-  return indices.map((i) => {
-    const pose = POSE_BANK[i];
-    if (!pose) {
-      throw new Error(
-        `Pose index inválido: ${i} (válidos: 0-${POSE_BANK_TOTAL - 1})`,
-      );
-    }
-    return pose;
-  });
-}
-
-/**
- * Valida que os 3 indices: distintos + range correto + ≥2 do tier estável
- * + nenhum violando exclusão. Retorna [] se OK, ou erros pra logar/avisar.
- */
-export function validatePoseIndices(
-  indices: unknown,
-  excluded: number[] = [],
-): string[] {
-  const errors: string[] = [];
-  if (!Array.isArray(indices)) return ["pose_indices não é array"];
-  if (indices.length !== 3) {
-    errors.push(`pose_indices precisa ter 3 itens, veio ${indices.length}`);
-  }
-
-  const set = new Set(indices);
-  if (set.size !== indices.length) errors.push("pose_indices tem duplicado");
-
-  for (const i of indices) {
-    if (typeof i !== "number" || i < 0 || i >= POSE_BANK_TOTAL) {
-      errors.push(`índice fora do range: ${i}`);
-    }
-  }
-
-  const stableCount = indices.filter((i) =>
-    (POSE_BANK_STABLE_INDICES as readonly number[]).includes(i as number),
-  ).length;
-  if (stableCount < 2) {
-    errors.push(`apenas ${stableCount} pose(s) do tier estável — exigido ≥2`);
-  }
-
-  const violatesExclusion = indices.filter((i) =>
-    excluded.includes(i as number),
-  );
-  if (violatesExclusion.length > 0) {
-    errors.push(
-      `indices proibidos selecionados: [${violatesExclusion.join(", ")}]`,
+/** Resolve um índice em prose. Lança se índice inválido. */
+export function resolvePoseIndex(index: number): string {
+  const pose = POSE_BANK[index];
+  if (!pose) {
+    throw new Error(
+      `Pose index inválido: ${index} (válidos: 0-${POSE_BANK_TOTAL - 1})`,
     );
   }
+  return pose;
+}
 
+/** Valida um único índice contra o range do bank. Retorna [] se OK. */
+export function validatePoseIndex(
+  index: unknown,
+  blocked: number | null = null,
+): string[] {
+  const errors: string[] = [];
+  if (typeof index !== "number" || !Number.isInteger(index)) {
+    errors.push(`pose_index precisa ser inteiro, veio ${typeof index}`);
+    return errors;
+  }
+  if (index < 0 || index >= POSE_BANK_TOTAL) {
+    errors.push(`pose_index fora do range: ${index} (válido 0-${POSE_BANK_TOTAL - 1})`);
+  }
+  if (blocked !== null && index === blocked) {
+    errors.push(`pose_index ${index} está bloqueado por streak de 3 usos consecutivos`);
+  }
   return errors;
 }
 
 /**
- * Atualiza histórico de poses prependendo as novas e cortando no cap.
- * Mais novas no início (slot 0), oldest caem fora.
+ * Detecta a pose bloqueada por regra de "no máximo 3 usos seguidos".
+ * Recebe o histórico (mais recente no slot 0). Se TODOS os slots forem
+ * iguais e o histórico tiver atingido o cap, devolve esse índice — o
+ * Analyzer NÃO pode escolhê-lo na próxima campanha. Caso contrário, `null`.
+ *
+ * Exemplos com cap=3:
+ *  []           → null (livre)
+ *  [4]          → null
+ *  [4, 4]       → null (ainda permitido subir pra 3)
+ *  [4, 4, 4]    → 4   (streak completo, força mudar)
+ *  [4, 4, 1]    → null
+ */
+export function getStreakBlockedPose(history: number[]): number | null {
+  if (history.length < POSE_HISTORY_CAP) return null;
+  const candidate = history[0];
+  for (let i = 1; i < POSE_HISTORY_CAP; i++) {
+    if (history[i] !== candidate) return null;
+  }
+  return candidate;
+}
+
+/**
+ * Atualiza histórico prependendo a pose nova e cortando no cap.
+ * Mais nova no slot 0, mais velhas caem fora quando estouram o cap.
  */
 export function updatePoseHistory(
   current: number[],
-  newIndices: number[],
+  newIndex: number,
 ): number[] {
-  return [...newIndices, ...current].slice(0, POSE_HISTORY_CAP);
+  return [newIndex, ...current].slice(0, POSE_HISTORY_CAP);
 }

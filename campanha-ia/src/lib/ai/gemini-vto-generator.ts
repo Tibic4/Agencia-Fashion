@@ -24,8 +24,8 @@ import { type ModelInfo, buildIdentityLock } from "./identity-translations";
 // ═══════════════════════════════════════
 
 export interface GeminiVTOInput {
-  /** 3 styling/scene prompts do Gemini Analyzer (cenário + estilo) */
-  stylingPrompts: [string, string, string];
+  /** Styling/scene prompt único do Gemini Analyzer (cenário + estilo) */
+  stylingPrompt: string;
   /** Base64 da foto principal do produto (sem prefixo data:) */
   productImageBase64: string;
   productMediaType?: string;
@@ -51,8 +51,8 @@ export interface GeminiVTOInput {
   /** Store ID para tracking de custos */
   storeId?: string;
   campaignId?: string;
-  /** Callback chamado quando cada imagem individual termina (index 0-2) */
-  onImageComplete?: (index: number, success: boolean) => void | Promise<void>;
+  /** Callback chamado quando a imagem termina */
+  onImageComplete?: (success: boolean) => void | Promise<void>;
 }
 
 export interface GeneratedImage {
@@ -72,6 +72,7 @@ export interface GeneratedImage {
 }
 
 export interface GeminiVTOResult {
+  /** Array de tamanho 1 — null significa que a imagem falhou */
   images: (GeneratedImage | null)[];
   successCount: number;
   totalDurationMs: number;
@@ -269,14 +270,11 @@ SECTION 4: SCENE, ENVIRONMENT & PHOTOGRAPHY DIRECTION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${stylingPrompt}
 
-🚨 BACKGROUND CONSISTENCY (CRITICAL FOR CAMPAIGN COHESION):
-• This image is ONE photo in a 3-photo campaign series — the backdrop MUST be visually identical across all photos
+🚨 BACKGROUND FIDELITY (CRITICAL):
 • If a BACKDROP REFERENCE image was provided (LAST image), reproduce that EXACT environment:
   — Same wall color, same floor color (white matte), same wall-floor junction shadow
   — Same lighting setup, same surface texture, same proportions
   — The floor MUST remain MATTE — no glossy reflections of the model on the floor
-• Same background color, same surface texture, same lighting angle and intensity
-• The ONLY differences between photos should be: POSE, CAMERA ANGLE, and EXPRESSION
 • If the scene description above specifies a backdrop color (hex code), reproduce that EXACT color — do NOT approximate
 • ❌ FORBIDDEN: inventing a different background style, adding/removing props, changing the lighting setup
 
@@ -385,63 +383,48 @@ SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
 
 
 // ═══════════════════════════════════════
-// Função principal — 3 chamadas paralelas
+// Função principal — chamada única (foto única universal)
 // ═══════════════════════════════════════
 
 export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<GeminiVTOResult> {
   const startTime = Date.now();
 
-  console.log(`[Gemini VTO] 🚀 Iniciando 3 chamadas paralelas ao ${MODEL} (${IMAGE_SIZE})...`);
+  console.log(`[Gemini VTO] 🚀 Iniciando chamada ao ${MODEL} (${IMAGE_SIZE})...`);
 
-  // Disparar 3 chamadas INDEPENDENTES em paralelo
-  // Cada chamada notifica o callback quando termina para progresso granular
-  const settled = await Promise.allSettled(
-    input.stylingPrompts.map(async (prompt, index) => {
-      try {
-        const result = await generateSingleImage(
-          prompt,
-          input.productImageBase64,
-          input.productMediaType || "image/jpeg",
-          input.modelImageBase64,
-          input.modelMediaType || "image/jpeg",
-          input.bodyType || "normal",
-          input.aspectRatio || DEFAULT_ASPECT,
-          index,
-          input.gender,
-          input.backdropImageBase64,
-          input.backdropMediaType,
-          input.modelInfo
-        );
-        await input.onImageComplete?.(index, true);
-        return result;
-      } catch (err) {
-        await input.onImageComplete?.(index, false);
-        throw err;
-      }
-    })
-  );
-
-  const images: (GeneratedImage | null)[] = settled.map((r, i) => {
-    if (r.status === "fulfilled") return r.value;
-    console.warn(
-      `[Gemini VTO] ❌ Imagem #${i + 1} falhou: ${(r.reason as Error)?.message || r.reason}`
+  let image: GeneratedImage | null = null;
+  try {
+    image = await generateSingleImage(
+      input.stylingPrompt,
+      input.productImageBase64,
+      input.productMediaType || "image/jpeg",
+      input.modelImageBase64,
+      input.modelMediaType || "image/jpeg",
+      input.bodyType || "normal",
+      input.aspectRatio || DEFAULT_ASPECT,
+      0,
+      input.gender,
+      input.backdropImageBase64,
+      input.backdropMediaType,
+      input.modelInfo,
     );
-    return null;
-  });
+    await input.onImageComplete?.(true);
+  } catch (err) {
+    console.warn(
+      `[Gemini VTO] ❌ Imagem falhou: ${(err as Error)?.message || err}`,
+    );
+    await input.onImageComplete?.(false);
+  }
 
-  const successCount = images.filter(Boolean).length;
+  const images: (GeneratedImage | null)[] = [image];
+  const successCount = image ? 1 : 0;
   const totalDurationMs = Date.now() - startTime;
 
-  console.log(`[Gemini VTO] ✅ ${successCount}/3 imagens geradas em ${totalDurationMs}ms`);
+  console.log(`[Gemini VTO] ✅ ${successCount}/1 imagem gerada em ${totalDurationMs}ms`);
 
-  // Somar tokens reais de todas as imagens bem-sucedidas
-  const totalRealInputTokens = images
-    .filter(Boolean)
-    .reduce((s, img) => s + (img!.tokenUsage?.promptTokenCount || 0), 0);
-  const totalRealOutputTokens = images
-    .filter(Boolean)
-    .reduce((s, img) => s + (img!.tokenUsage?.candidatesTokenCount || 0), 0);
-  const hasRealTokens = totalRealInputTokens > 0 && totalRealOutputTokens > 0;
+  // Tokens reais da imagem (se houve sucesso)
+  const realInputTokens = image?.tokenUsage?.promptTokenCount ?? 0;
+  const realOutputTokens = image?.tokenUsage?.candidatesTokenCount ?? 0;
+  const hasRealTokens = realInputTokens > 0 && realOutputTokens > 0;
 
   // Log de custos (fire-and-forget)
   if (input.storeId) {
@@ -450,8 +433,8 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
       input.campaignId,
       successCount,
       totalDurationMs,
-      hasRealTokens ? totalRealInputTokens : undefined,
-      hasRealTokens ? totalRealOutputTokens : undefined
+      hasRealTokens ? realInputTokens : undefined,
+      hasRealTokens ? realOutputTokens : undefined,
     ).catch((e) => console.warn("[Gemini VTO] Erro ao salvar custo:", e));
   }
 

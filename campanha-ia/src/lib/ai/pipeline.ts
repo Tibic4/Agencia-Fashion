@@ -2,9 +2,9 @@
  * CriaLook Campaign Pipeline v7 — Hybrid (Gemini + Sonnet)
  *
  * Fluxo híbrido otimizado:
- * 1. Gemini 3.1 Pro — Análise visual + scene/styling prompts (visão superior)
+ * 1. Gemini 3.1 Pro — Análise visual + scene/styling prompt (visão superior)
  * 2. EM PARALELO:
- *    a) Gemini 3 Pro Image — 3 chamadas VTO (multi-image fusion)
+ *    a) Gemini 3 Pro Image — 1 chamada VTO (foto única universal)
  *    b) Claude Sonnet 4.6 — Copy premium em PT-BR (dicas de postagem)
  *
  * Cada modelo faz o que faz melhor:
@@ -19,9 +19,9 @@ import { generateWithGeminiVTO } from "./gemini-vto-generator";
 import type { SonnetDicasPostagem } from "./sonnet-copywriter";
 import { generateCopyWithSonnet } from "./sonnet-copywriter";
 import {
-  POSE_HISTORY_CAP,
+  getStreakBlockedPose,
   updatePoseHistory,
-  validatePoseIndices,
+  validatePoseIndex,
 } from "./identity-translations";
 
 // ═══════════════════════════════════════
@@ -70,21 +70,20 @@ export interface PipelineInput {
   signal?: AbortSignal;
 
   /**
-   * Quantas fotos VTO gerar (default 3). Trial/credit-only users recebem 1 —
-   * a route detecta via `mini_trial_uses` + ausência de `credit_purchases` e
-   * passa `photoCount: 1` aqui. Pipeline slica as listas de scene_prompts e
-   * pose_indices pro tamanho pedido antes do VTO, então o Analyzer ainda gera
-   * 3 (custo barato, ~$0.02) mas só 1 chamada de imagem rola (corte de ~66%
-   * no custo da geração — onde o gasto pesa).
+   * @deprecated Foto única é universal — sempre 1 imagem.
+   *
+   * Param mantido só por compat com chamadas legadas do route.ts (até o
+   * agente de pricing/trial limpar o `isTrialOnly ? 1 : 3` lá). Qualquer
+   * valor passado é IGNORADO. Pode remover quando route.ts parar de passar.
    */
-  photoCount?: 1 | 3;
+  photoCount?: number;
 }
 
 export interface PipelineResult {
   analise: GeminiAnalise;
-  vto_hints: { scene_prompts: [string, string, string]; aspect_ratio: string; category: string };
+  vto_hints: { scene_prompts: string[]; aspect_ratio: string; category: string };
   dicas_postagem: SonnetDicasPostagem;
-  /** Array de 3 — null significa que aquela imagem falhou */
+  /** Array de 1 — null significa que a imagem falhou */
   images: (GeneratedImage | null)[];
   successCount: number;
   durationMs: number;
@@ -111,10 +110,11 @@ export async function runCampaignPipeline(
   await onProgress?.("sonnet", "Analisando fotos do produto...", 8);
 
   // — Histórico de poses recentes da loja (anti-monotonia entre campanhas) —
-  // Lê stores.recent_pose_indices: cap em POSE_HISTORY_CAP (6) = últimas 2
-  // campanhas. Esses indices ficam BLOQUEADOS pra esta geração; o Analyzer
-  // recebe a lista e evita-os ao escolher pose_indices.
-  let excludedPoseIndices: number[] = [];
+  // Lê stores.recent_pose_indices (cap = POSE_HISTORY_CAP = 3). Não bloqueia
+  // poses individuais — só detecta streak: se as últimas 3 campanhas usaram
+  // a MESMA pose, força o Analyzer a escolher outra. Caso contrário, o
+  // Analyzer escolhe livre entre as 8 poses do banco.
+  let recentPoseHistory: number[] = [];
   if (input.storeId) {
     try {
       const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -124,11 +124,12 @@ export async function runCampaignPipeline(
         .select("recent_pose_indices")
         .eq("id", input.storeId)
         .single();
-      excludedPoseIndices = (store?.recent_pose_indices as number[] | null) ?? [];
+      recentPoseHistory = (store?.recent_pose_indices as number[] | null) ?? [];
     } catch (e) {
       console.warn("[Pipeline] failed to fetch pose history (continuing without):", e);
     }
   }
+  const blockedPoseIndex = getStreakBlockedPose(recentPoseHistory);
 
   const analyzerStart = Date.now();
   const analyzerResult = await analyzeWithGemini({
@@ -141,25 +142,25 @@ export async function runCampaignPipeline(
     backgroundType: input.backgroundType,
 
     modelInfo: input.modelInfo,
-    excludedPoseIndices,
+    blockedPoseIndex,
   });
   const analyzerDurationMs = Date.now() - analyzerStart;
 
-  // Valida pose_indices retornados (≥2 estáveis, distintos, sem violar
-  // exclusão). Não derruba a campanha se inválido — Gemini já gerou,
-  // adiantar pro VTO. Mas loga pra acompanhar taxa de violação no admin.
-  const poseValidationErrors = validatePoseIndices(
-    analyzerResult.vto_hints.pose_indices,
-    excludedPoseIndices,
+  // Valida o pose_index retornado (range + respeita streak block). Não
+  // derruba a campanha se inválido — Gemini já gerou, adiantar pro VTO.
+  // Mas loga pra acompanhar taxa de violação no admin.
+  const poseValidationErrors = validatePoseIndex(
+    analyzerResult.vto_hints.pose_index,
+    blockedPoseIndex,
   );
   if (poseValidationErrors.length > 0) {
     console.warn(
-      "[Pipeline] ⚠️ pose_indices violou regras:",
+      "[Pipeline] ⚠️ pose_index violou regras:",
       poseValidationErrors,
-      "indices=",
-      analyzerResult.vto_hints.pose_indices,
-      "excluded=",
-      excludedPoseIndices,
+      "index=",
+      analyzerResult.vto_hints.pose_index,
+      "blocked=",
+      blockedPoseIndex,
     );
   }
 
@@ -180,13 +181,11 @@ export async function runCampaignPipeline(
   await onProgress?.("sonnet_done", "Análise completa! Criando looks + copy...", 30);
 
   // — Etapa 2: Em PARALELO: VTO (Gemini) + Copy (Sonnet) ————
-  await onProgress?.("prompts_ready", "Montando editoriais + escrevendo copy...", 40);
+  await onProgress?.("prompts_ready", "Montando editorial + escrevendo copy...", 40);
 
-  // Track per-image completion for granular progress (45→85%). Step size is
-  // computed below once `photoCount` is decided (1 for trial, 3 for paid).
-  let imagesCompleted = 0;
-  const imageProgressBase = 45;  // starting progress
-  const imageProgressEnd = 85;   // ending progress after all images
+  // Single-image flow: progresso vai direto pra 85% quando a imagem termina
+  // (não há mais granularidade de 3 fotos pra mostrar).
+  const imageProgressEnd = 85;
 
   const isMale = input.modelInfo?.gender === 'masculino' || input.modelInfo?.gender === 'male' || input.modelInfo?.gender === 'm';
 
@@ -238,23 +237,13 @@ export async function runCampaignPipeline(
     };
   });
 
-  // Photo count: trial / credit-only users recebem 1 foto pra cortar custo.
-  // Default 3 (paid plans, full experience). Slica scene_prompts/pose_indices
-  // pra primeira N: o Analyzer ainda gera 3 (custo barato), mas só 1-3
-  // chamadas de VTO rolam — onde mora 90% do custo da geração.
-  const photoCount: 1 | 3 = input.photoCount === 1 ? 1 : 3;
-  const allPrompts = analyzerResult.vto_hints.scene_prompts as [string, string, string];
-  const stylingPrompts = (
-    photoCount === 1 ? [allPrompts[0]] : allPrompts
-  ) as [string] | [string, string, string];
+  // Foto única universal — não há mais slicing nem photoCount variável.
+  // Param `input.photoCount` é ignorado por compat (ver doc no PipelineInput).
+  const stylingPrompt = analyzerResult.vto_hints.scene_prompts[0];
 
-  // Track per-image completion for granular progress — re-baseline based on
-  // photoCount so trial users see 45→85% across 1 image, not 1/3 of the bar.
-  const imageProgressPerImage = (imageProgressEnd - imageProgressBase) / photoCount;
-
-  // VTO Images — roda em paralelo com Sonnet
+  // VTO Image — roda em paralelo com Sonnet
   const imagePromise = generateWithGeminiVTO({
-    stylingPrompts: stylingPrompts as [string, string, string], // VTO type still expects tuple-3; trial path passes [string] which iterates 1x in map()
+    stylingPrompt,
     productImageBase64: input.imageBase64,
     productMediaType: input.mediaType,
     modelImageBase64: input.modelImageBase64,
@@ -268,34 +257,26 @@ export async function runCampaignPipeline(
     modelInfo: input.modelInfo,
     storeId: input.storeId,
     campaignId: input.campaignId,
-    onImageComplete: async (index, success) => {
-      imagesCompleted++;
-      const progressNow = Math.round(imageProgressBase + (imagesCompleted * imageProgressPerImage));
+    onImageComplete: async (success) => {
       const emoji = success ? "✅" : "⚠️";
-      const label = `Foto ${imagesCompleted}/${photoCount} ${emoji} ${imagesCompleted < photoCount ? "— próxima saindo..." : "— finalizando!"}`;
-      await onProgress?.(`image_${index}_done`, label, progressNow);
+      const label = `Foto ${emoji} — finalizando!`;
+      await onProgress?.("image_0_done", label, imageProgressEnd);
     },
   });
 
   // Esperar ambos terminarem
   const [copyResult, imageResult] = await Promise.all([copyPromise, imagePromise]);
 
-  // Atualiza histórico de poses se VTO produziu pelo menos 1 imagem com
-  // sucesso (campanha não totalmente perdida). Fire-and-forget — falhar
-  // aqui não derruba a campanha (cap de 6 garante self-healing em ~2 gens).
+  // Atualiza histórico de poses se VTO produziu a imagem com sucesso.
+  // Fire-and-forget — falhar aqui não derruba a campanha (na próxima geração
+  // o histórico se auto-corrige).
   if (input.storeId && imageResult.successCount > 0) {
     void (async () => {
       try {
         const { createAdminClient } = await import("@/lib/supabase/admin");
         const supabase = createAdminClient();
-        // Trial path uses only `pose_indices[0]`; record just that one so
-        // we don't burn the unused indices from history. Paid path records
-        // all three.
-        const usedIndices = (analyzerResult.vto_hints.pose_indices as number[]).slice(
-          0,
-          photoCount,
-        );
-        const updated = updatePoseHistory(excludedPoseIndices, usedIndices);
+        const usedIndex = analyzerResult.vto_hints.pose_index;
+        const updated = updatePoseHistory(recentPoseHistory, usedIndex);
         await supabase
           .from("stores")
           .update({ recent_pose_indices: updated })
@@ -311,7 +292,7 @@ export async function runCampaignPipeline(
 
   const durationMs = Date.now() - startTime;
   console.log(
-    `[Pipeline v7] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/${photoCount} imagens | peça: ${analyzerResult.analise.tipo_peca} | copy: Sonnet`
+    `[Pipeline v7] ✅ Concluído em ${durationMs}ms | ${imageResult.successCount}/1 imagem | peça: ${analyzerResult.analise.tipo_peca} | copy: Sonnet`
   );
 
   return {

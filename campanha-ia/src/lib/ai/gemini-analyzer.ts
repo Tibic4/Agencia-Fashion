@@ -27,7 +27,6 @@ import {
   HAIR_LENGTH_MAP,
   HAIR_TEXTURE_MAP,
   POSE_BANK,
-  POSE_BANK_STABLE_INDICES,
   POSE_BANK_TOTAL,
   SKIN_TONE_MAP,
   isMaleGender,
@@ -122,10 +121,10 @@ export interface GeminiAnalise {
 }
 
 export interface GeminiVTOHint {
-  /** 3 indices DISTINTOS do POSE_BANK (0..POSE_BANK_TOTAL-1). ≥2 do tier estável (0-7). */
-  pose_indices: [number, number, number];
-  /** 3 scene+styling prompts para o Gemini VTO (em inglês). NÃO descrevem cabelo/pele/olhos/idade. */
-  scene_prompts: [string, string, string];
+  /** Único índice do POSE_BANK (0..POSE_BANK_TOTAL-1). */
+  pose_index: number;
+  /** Scene+styling prompt para o Gemini VTO (em inglês). NÃO descreve cabelo/pele/olhos/idade. */
+  scene_prompts: string[];
   /** Aspect ratio sugerido */
   aspect_ratio: "9:16" | "3:4" | "4:5" | "2:3";
   /** Tipo de peça para categorização */
@@ -184,10 +183,11 @@ export interface AnalyzerInput {
   modelInfo?: ModelInfo;
 
   /**
-   * Indices do POSE_BANK que NÃO podem ser escolhidos nesta campanha
-   * (recently used pelo store). Pipeline lê de stores.recent_pose_indices.
+   * Índice do POSE_BANK que NÃO pode ser escolhido nesta campanha — pipeline
+   * passa o resultado de `getStreakBlockedPose(history)`. Só é não-null
+   * quando a mesma pose veio em 3 campanhas seguidas, forçando troca.
    */
-  excludedPoseIndices?: number[];
+  blockedPoseIndex?: number | null;
 }
 
 // ═══════════════════════════════════════
@@ -236,25 +236,24 @@ const RESPONSE_SCHEMA = {
       type: "object",
       description: "Hints para o gerador de imagem VTO (Virtual Try-On)",
       properties: {
-        pose_indices: {
-          type: "array",
-          items: { type: "integer", minimum: 0, maximum: POSE_BANK_TOTAL - 1 },
-          minItems: 3,
-          maxItems: 3,
-          description: `3 indices DISTINTOS do POSE_BANK (0-${POSE_BANK_TOTAL - 1}). PELO MENOS 2 dos 3 indices DEVEM vir do tier estável (0-${POSE_BANK_STABLE_INDICES[POSE_BANK_STABLE_INDICES.length - 1]}). NUNCA repita índice.`,
+        pose_index: {
+          type: "integer",
+          minimum: 0,
+          maximum: POSE_BANK_TOTAL - 1,
+          description: `Índice único do POSE_BANK (0-${POSE_BANK_TOTAL - 1}) que melhor combina com a peça. Todas as poses do bank são estáveis — escolha pela peça, não por tier.`,
         },
         scene_prompts: {
           type: "array",
           items: { type: "string" },
-          minItems: 3,
-          maxItems: 3,
+          minItems: 1,
+          maxItems: 1,
           description:
-            "3 scene prompts narrativos EM INGLÊS para o Gemini VTO. PROIBIDO descrever cabelo/pele/olhos/idade — esses traços vêm fixos do IDENTITY LOCK. Foque em CENÁRIO, ILUMINAÇÃO, ÂNGULO DE CÂMERA, STYLING DO VESTIR e MOOD. A pose vem do pose_indices acima — não duplique a pose no texto.",
+            "Array com EXATAMENTE 1 scene prompt narrativo EM INGLÊS para o Gemini VTO. PROIBIDO descrever cabelo/pele/olhos/idade — esses traços vêm fixos do IDENTITY LOCK. Foque em CENÁRIO, ILUMINAÇÃO, ÂNGULO DE CÂMERA, STYLING DO VESTIR e MOOD. A pose vem do pose_index acima — não duplique a pose no texto.",
         },
         aspect_ratio: {
           type: "string",
           enum: ["9:16", "3:4", "4:5", "2:3"],
-          description: "Aspect ratio sugerido para as imagens",
+          description: "Aspect ratio sugerido para a imagem",
         },
         category: {
           type: "string",
@@ -262,7 +261,7 @@ const RESPONSE_SCHEMA = {
           description: "Categoria da peça",
         },
       },
-      required: ["pose_indices", "scene_prompts", "aspect_ratio", "category"],
+      required: ["pose_index", "scene_prompts", "aspect_ratio", "category"],
     },
     // ⚠️ dicas_postagem removido — agora gerado pelo Sonnet Copywriter
   },
@@ -353,25 +352,15 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
   if (!result.analise?.tipo_peca) {
     throw new Error("Gemini retornou análise incompleta — tente outra foto");
   }
-  if (!result.vto_hints?.scene_prompts || result.vto_hints.scene_prompts.length < 3) {
-    throw new Error("Gemini não gerou os 3 scene prompts para VTO");
+  if (!result.vto_hints?.scene_prompts || result.vto_hints.scene_prompts.length < 1) {
+    throw new Error("Gemini não gerou o scene prompt para VTO");
   }
-  if (!result.vto_hints?.pose_indices || result.vto_hints.pose_indices.length < 3) {
-    throw new Error("Gemini não retornou pose_indices");
+  if (typeof result.vto_hints?.pose_index !== "number") {
+    throw new Error("Gemini não retornou pose_index");
   }
 
-  // Garantir que temos exatamente 3 prompts (tupla)
-  result.vto_hints.scene_prompts = [
-    result.vto_hints.scene_prompts[0],
-    result.vto_hints.scene_prompts[1],
-    result.vto_hints.scene_prompts[2],
-  ] as [string, string, string];
-
-  result.vto_hints.pose_indices = [
-    result.vto_hints.pose_indices[0],
-    result.vto_hints.pose_indices[1],
-    result.vto_hints.pose_indices[2],
-  ] as [number, number, number];
+  // Garantir que temos exatamente 1 prompt (sliciado caso Gemini gere a mais)
+  result.vto_hints.scene_prompts = [result.vto_hints.scene_prompts[0]];
 
   // Tokens de uso — Gemini retorna no candidato
   const usage = response.usageMetadata;
@@ -421,46 +410,42 @@ ${isMale ? "O modelo" : "A modelo"} na foto de referência é: ${genderLabel}, $
     : "";
 
   // Pose bank renderizado a partir do helper compartilhado — fonte única.
-  const poseBankText = POSE_BANK.map((p, i) => {
-    const isStable = (POSE_BANK_STABLE_INDICES as readonly number[]).includes(i);
-    const tier = isStable ? "🟢 ESTÁVEL" : "🟡 MÉDIA";
-    return `   [${i}] ${tier}: ${p}`;
-  }).join("\n");
+  const poseBankText = POSE_BANK.map(
+    (p, i) => `   [${i}] ${p}`,
+  ).join("\n");
 
-  // Exclusion rule (anti-repetição entre campanhas)
-  const exclusionRule = (input.excludedPoseIndices && input.excludedPoseIndices.length > 0)
-    ? `\n\n🚫 ÍNDICES BLOQUEADOS PARA ESTA LOJA (já usados em campanhas recentes):
-[${input.excludedPoseIndices.join(", ")}]
-NÃO escolha esses índices. Se um pose bloqueado seria sua escolha natural, escolha o índice mais próximo NÃO bloqueado, mantendo a regra ≥2 do tier estável (0-${POSE_BANK_STABLE_INDICES[POSE_BANK_STABLE_INDICES.length - 1]}).`
+  // Bloqueio por streak: o histórico mostrou a mesma pose em 3 campanhas
+  // seguidas — o pipeline força mudança nessa próxima geração.
+  const blockRule = (typeof input.blockedPoseIndex === "number")
+    ? `\n\n🚫 ÍNDICE BLOQUEADO NESTA CAMPANHA (foi usado nas 3 últimas seguidas):
+[${input.blockedPoseIndex}]
+ESCOLHA OBRIGATORIAMENTE outro índice. Pegue o que melhor combina com a peça entre os índices restantes (0-${POSE_BANK_TOTAL - 1}).`
     : "";
 
   return `Você é o Fashion Editorial Director mais experiente do Brasil — especializado em fotografia de e-commerce, campanhas para Instagram e virtual try-on com IA.
 
-Sua MISSÃO é analisar a foto de uma peça de roupa e definir 3 cenários DISTINTOS de fotos profissionais que serão executados por IA de Virtual Try-On (outro modelo Gemini Pro Image). Essa IA recebe foto da peça + foto da modelo e gera a imagem fotorrealista da modelo VESTINDO a peça.
+Sua MISSÃO é analisar a foto de uma peça de roupa e definir 1 cenário de foto profissional que será executado por IA de Virtual Try-On (outro modelo Gemini Pro Image). Essa IA recebe foto da peça + foto da modelo e gera a imagem fotorrealista da modelo VESTINDO a peça.
 
 O VTO entende prompts NARRATIVOS ricos. Quanto MAIS detalhado e visual o prompt, MELHOR o resultado.${modelContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PARTE 1 — POSES (campo pose_indices)
+PARTE 1 — POSE (campo pose_index)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Você DEVE escolher 3 índices DISTINTOS do POSE_BANK abaixo. NUNCA repita índice. PELO MENOS 2 dos 3 índices DEVEM vir do tier ESTÁVEL (0-${POSE_BANK_STABLE_INDICES[POSE_BANK_STABLE_INDICES.length - 1]}).
+Você DEVE escolher EXATAMENTE 1 índice do POSE_BANK abaixo (0-${POSE_BANK_TOTAL - 1}). Todas as poses são estáveis — escolha a que MELHOR valoriza a peça.
 
 POSE_BANK:
-${poseBankText}${exclusionRule}
+${poseBankText}${blockRule}
 
-Combinações válidas:
-• Recomendado: 2 estáveis + 1 média (ex: [0, 1, 9])
-• Aceitável: 3 estáveis (ex: [3, 4, 7]) — mais conservador, menos variação
-• PROIBIDO: 3 médias (risco de alucinação somado)
-• PROIBIDO: índice repetido (ex: [0, 0, 1])
-• PROIBIDO: índice em ÍNDICES BLOQUEADOS
-
-Adapte a escolha à peça (mas dentro das regras): vestido longo → poses que mostrem caimento (3, 7, 12 indisponível — use 4 ou 5); jaqueta → poses que mostrem estrutura (4, 6, 10 se disponível).
+Como escolher:
+• Vestido/saia longa → priorize poses que mostrem caimento (3, 7)
+• Jaqueta/blazer estruturado → poses que mostrem ombros/silhueta (3, 4)
+• Look casual/streetwear → poses com atitude (1, 4)
+• Conjunto/peça com detalhe lateral → 3/4 turn (0, 5, 6)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PARTE 2 — SCENE PROMPTS (campo scene_prompts)
+PARTE 2 — SCENE PROMPT (campo scene_prompts, array de 1 item)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Cada scene_prompt é um texto narrativo em INGLÊS de 4-7 frases. A POSE já vem dos pose_indices — NÃO repita a pose textualmente, foque nos OUTROS elementos:
+O scene_prompt é um texto narrativo em INGLÊS de 4-7 frases. A POSE já vem do pose_index — NÃO repita a pose textualmente, foque nos OUTROS elementos:
 
 a) CENÁRIO/AMBIENTE — onde a foto acontece (estúdio, rua, café, jardim, boutique...)
 b) ILUMINAÇÃO — tipo de luz, temperatura, direção (softbox, golden hour, natural window light...)
@@ -475,26 +460,24 @@ Esses estão no IDENTITY LOCK do VTO. Mencionar aqui causa CONFLITO (ex: IDENTIT
 
 ✅ PERMITIDO no scene_prompt: como a luz interage com a pessoa SEM identificar traço de cabelo/pele/olhos (ex: "warm golden-hour light wraps softly around her silhouette", "soft window light catches the fabric", "edge light defines her profile against the dark backdrop").
 
-REGRAS DE COESÃO DA SESSÃO (válidas pra todos os 3 scene_prompts):
-1. Mesmo CENÁRIO/FUNDO nos 3 — campanha é uma sessão coesa, não 3 sessões diferentes
-2. Mesma ILUMINAÇÃO base nos 3 — só ângulo de câmera/expressão muda
-3. Cada prompt deve mencionar SAPATO/CALÇADO (não pés descalços, exceto moda praia)
-4. Cada prompt deve especificar "full-body shot from head to feet/shoes"
-5. Aspect ratio 9:16 (Instagram Stories), orientação retrato
-6. Se a peça é CONJUNTO (blusa+saia, top+calça), TODOS os prompts mencionam TODAS as peças
-7. 💠 DENIM/JEANS: especifique o WASH EXATO ("dark raw indigo denim", "medium stonewash", "light acid-wash", "jet black denim") — jeans é o tecido que mais sofre color shift
-8. PRESERVAR logos/bordados/estampas que são PARTE DO DESIGN — não inventar nem remover
+REGRAS DO PROMPT:
+1. Cada prompt deve mencionar SAPATO/CALÇADO (não pés descalços, exceto moda praia)
+2. Cada prompt deve especificar "full-body shot from head to feet/shoes"
+3. Aspect ratio 9:16 (Instagram Stories), orientação retrato
+4. Se a peça é CONJUNTO (blusa+saia, top+calça), o prompt menciona TODAS as peças
+5. 💠 DENIM/JEANS: especifique o WASH EXATO ("dark raw indigo denim", "medium stonewash", "light acid-wash", "jet black denim") — jeans é o tecido que mais sofre color shift
+6. PRESERVAR logos/bordados/estampas que são PARTE DO DESIGN — não inventar nem remover
 
-EXEMPLO DE SCENE_PROMPT EXCELENTE ✅ (com pose já definida em pose_indices=2):
+EXEMPLO DE SCENE_PROMPT EXCELENTE ✅ (com pose já definida em pose_index=2):
 "Full-body fashion photograph in a bright, airy loft studio with floor-to-ceiling windows casting soft diffused natural light from the left at a 30-degree angle. The garment is neatly tailored, blouse tucked into the high-waisted trousers with a thin belt cinched at the natural waist, sleeves left flowing. She wears nude pointed-toe heels visible in the frame. Shot with an 85mm portrait lens at f/2.8, full-body framing with 10% headroom above and feet visible at the bottom edge. Mood: polished, modern editorial — Vogue Brazil meets everyday elegance."
 
 EXEMPLO RUIM ❌ (descreve cabelo, viola PARTE 2):
 "Studio with light. The model with long blonde hair stands confidently wearing the garment."
 
-EXEMPLO RUIM ❌ (descreve pose — pose vem do pose_indices):
+EXEMPLO RUIM ❌ (descreve pose — pose vem do pose_index):
 "Walking mid-stride with arm swing in a sunlit studio."
 
-IMPORTANTE: NÃO gere dicas de postagem, legendas ou copy. O copy é gerado por outro módulo. Foque APENAS na análise visual + pose_indices + scene_prompts.`;
+IMPORTANTE: NÃO gere dicas de postagem, legendas ou copy. O copy é gerado por outro módulo. Foque APENAS na análise visual + pose_index + scene_prompts.`;
 }
 
 // ═══════════════════════════════════════
@@ -601,9 +584,9 @@ function buildUserPrompt(input: AnalyzerInput): string {
 
   if (bgType && SCENE_MOODS[bgType]) {
     const scene = SCENE_MOODS[bgType];
-    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nTODOS os 3 prompts DEVEM usar este MESMO cenário como fundo.\nVarie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts — o ambiente e iluminação são IGUAIS.`;
+    sceneInstruction = `\n\n🎬 CENÁRIO DEFINIDO: ${scene.name}\n${scene.description}.\n${scene.details}\nUse este cenário como fundo no scene_prompt.`;
   } else {
-    sceneInstruction = `\n\n🎬 CENÁRIO (NENHUM SELECIONADO — ESCOLHA AUTOMÁTICA):\nA lojista NÃO selecionou um cenário. Você DEVE:\n1. Escolher UM único cenário que melhor combine com a peça (estúdio clean, urbano, lifestyle, etc)\n2. Usar esse MESMO cenário nos 3 prompts (scene_prompts[0], [1] e [2])\n3. O ambiente, fundo e iluminação devem ser IDÊNTICOS nos 3 prompts\n4. Varie apenas POSE e ÂNGULO DE CÂMERA entre os 3 prompts\n5. ❌ PROIBIDO: usar cenários diferentes entre os prompts`;
+    sceneInstruction = `\n\n🎬 CENÁRIO (NENHUM SELECIONADO — ESCOLHA AUTOMÁTICA):\nA lojista NÃO selecionou um cenário. Escolha UM cenário que melhor combine com a peça (estúdio clean, urbano, lifestyle, etc) e use no scene_prompt.`;
   }
 
   // ── Model description for prompts ──
@@ -634,7 +617,7 @@ function buildUserPrompt(input: AnalyzerInput): string {
 
   return `Analise ${photoDesc}.${extras.length > 0 ? "\n\nINFO DA LOJISTA:\n" + extras.join("\n") : ""}${sceneInstruction}${modelInstruction}
 
-Gere a análise visual completa e os 3 scene prompts narrativos em inglês.
+Gere a análise visual completa, escolha 1 pose_index e produza 1 scene prompt narrativo em inglês (campo scene_prompts como array de 1 item).
 NÃO gere dicas de postagem — o copy é gerado por outro modelo.`;
 }
 
