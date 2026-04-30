@@ -12,6 +12,7 @@
         "buildType": "apk"
       },
       "env": {
+        "APP_VARIANT": "development",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api"
       }
     },
@@ -22,6 +23,7 @@
         "buildType": "apk"
       },
       "env": {
+        "APP_VARIANT": "preview",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api"
       }
     },
@@ -32,6 +34,7 @@
       },
       "autoIncrement": true,
       "env": {
+        "APP_VARIANT": "production",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api"
       }
     }
@@ -42,6 +45,12 @@
         "serviceAccountKeyPath": "./play-store-key.json",
         "track": "internal",
         "releaseStatus": "draft"
+      },
+      "ios": {
+        "_comment": "Preencha appleId, ascAppId e appleTeamId quando criar o app no App Store Connect. Deixar vazio agora deixa o `eas submit -p ios` falhar com mensagem clara em vez de submeter com creds erradas.",
+        "appleId": "",
+        "ascAppId": "",
+        "appleTeamId": ""
       }
     }
   }

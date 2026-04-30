@@ -1,0 +1,56 @@
+name: Deploy to Production
+
+# Triggera em todo push pra main. O job fingerprint decide se os projetos
+# nativos mudaram; se não, shipamos OTA update barato em vez de rebuild
+# full — economiza build minutes e leva fix pro usuário em segundos.
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  fingerprint:
+    type: fingerprint
+
+  build_android:
+    needs: [fingerprint]
+    if: ${{ needs.fingerprint.outputs.android_fingerprint_changed }}
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  submit_android:
+    needs: [build_android]
+    type: submit
+    params:
+      platform: android
+      build_id: ${{ needs.build_android.outputs.build_id }}
+
+  # Jobs iOS estão ligados mas só rodam quando o submit profile iOS +
+  # credentials da Apple estiverem em eas.json. Até lá, o EAS pula
+  # gracefully pq a plataforma não está totalmente configurada.
+  build_ios:
+    needs: [fingerprint]
+    if: ${{ needs.fingerprint.outputs.ios_fingerprint_changed }}
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    needs: [build_ios]
+    type: submit
+    params:
+      platform: ios
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+
+  # Mudança JS-only shipa como OTA update no channel production.
+  # `runtimeVersion: { policy: 'appVersion' }` em app.config.ts faz clients
+  # com a versão de app correspondente pegarem no próximo launch.
+  publish_update:
+    needs: [fingerprint]
+    if: ${{ !needs.fingerprint.outputs.android_fingerprint_changed && !needs.fingerprint.outputs.ios_fingerprint_changed }}
+    type: update
+    params:
+      channel: production
+      message: ${{ github.event.head_commit.message }}
