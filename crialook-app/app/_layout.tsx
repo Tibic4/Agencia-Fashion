@@ -248,11 +248,17 @@ function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
-  /* `appReady` = fontes carregadas + auth resolveu pra rota correta.
-     Antes só dependia de fontes, então a splash sumia enquanto o Clerk
-     ainda estava hidratando e a tela errada aparecia atrás. */
-  const [authReady, setAuthReady] = useState(false);
-  const appReady = loaded && authReady;
+  /* `appReady` = fontes carregadas.
+     Antes era `loaded && authReady`, com authReady setado pelo callback do
+     AuthGate. Mas o AuthGate ficava DENTRO do <AppFadeIn ready={appReady}>,
+     que retornava null enquanto !ready — então o AuthGate nunca montava,
+     onReady nunca disparava, authReady ficava false pra sempre. Deadlock
+     fresh-install: toda nova instalação travava em splash + tela branca
+     após o safety net forçar hideAsync.
+     AuthGate controla seu próprio render do <Slot/> via routeReady, então
+     mostrar a árvore com o fade-in assim que as fontes carregarem é
+     seguro — o conteúdo da rota só pinta depois que routeReady confirmar. */
+  const appReady = loaded;
 
   useEffect(() => {
     if (error) throw error;
@@ -276,7 +282,7 @@ function RootLayout() {
                     <StatusBar style="auto" />
                     <AppFadeIn ready={appReady}>
                       <OfflineBanner />
-                      <AuthGate onReady={() => setAuthReady(true)} />
+                      <AuthGate />
                       <BiometricConsentMount />
                       {/* Toast host sits at root so any screen can call
                           `toast.success(...)` / `toast.error(...)` and the
