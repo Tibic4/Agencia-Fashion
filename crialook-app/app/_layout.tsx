@@ -64,6 +64,17 @@ export { ErrorBoundary } from 'expo-router';
 // (acontece com fast-refresh e cold start em Hermes).
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Safety net: força hideAsync após 12s independentemente do React tree
+// resolver. Se algo no init quebrou silenciosamente (env faltando, native
+// module crash, font load preso) e o `<AppFadeIn>` nunca chama hideAsync,
+// o usuário fica preso na splash native pra sempre. Aqui garantimos que
+// pelo menos a UI do JS aparece — mesmo que seja a tela de erro do
+// AppErrorBoundary, é melhor que splash eterna.
+const SPLASH_SAFETY_TIMEOUT_MS = 12_000;
+setTimeout(() => {
+  SplashScreen.hideAsync().catch(() => {});
+}, SPLASH_SAFETY_TIMEOUT_MS);
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidCampaignId(value: unknown): value is string {
