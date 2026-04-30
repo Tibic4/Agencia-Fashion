@@ -23,8 +23,11 @@ function isDeepCheckAuthorized(req: NextRequest): boolean {
 /**
  * GET /api/health
  *
- * Modo público (qualquer um): retorna apenas `{status, timestamp}`. Usado por
- * monitores de uptime externos (UptimeRobot, BetterStack).
+ * Modo público (sem header): retorna `{status: "ok", timestamp}` instantâneo,
+ * sem tocar em DB. Monitores externos (UptimeRobot, BetterStack, healthcheck
+ * cron) só precisam saber se o processo Node responde — checar DB no caminho
+ * shallow estourava 3s no cold start (TLS/handshake do Supabase). Quem quiser
+ * status do DB usa o deep check via header.
  *
  * Modo deep (header `x-health-secret` batendo com HEALTH_CHECK_SECRET):
  * retorna status detalhado de DB, APIs e storage. Usado pelo painel interno.
@@ -32,7 +35,16 @@ function isDeepCheckAuthorized(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   const start = Date.now();
 
-  // ── Shallow check: ping rápido ao DB só para dizer se está vivo ──
+  if (!isDeepCheckAuthorized(req)) {
+    return NextResponse.json(
+      { status: "ok", timestamp: new Date().toISOString() },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  // ── Deep check (autorizado): testa DB, storage e presença de chaves ──
+  const checks: Record<string, { status: "ok" | "error" | "warning"; ms?: number; detail?: string }> = {};
+
   let dbAlive = false;
   try {
     const supabase = createAdminClient();
@@ -41,21 +53,6 @@ export async function GET(req: NextRequest) {
   } catch {
     dbAlive = false;
   }
-
-  const shallow = {
-    status: dbAlive ? "ok" : "down",
-    timestamp: new Date().toISOString(),
-  };
-
-  if (!isDeepCheckAuthorized(req)) {
-    return NextResponse.json(shallow, {
-      status: dbAlive ? 200 : 503,
-      headers: { "Cache-Control": "no-store" },
-    });
-  }
-
-  // ── Deep check (autorizado) ──
-  const checks: Record<string, { status: "ok" | "error" | "warning"; ms?: number; detail?: string }> = {};
 
   checks.database = dbAlive
     ? { status: "ok", ms: Date.now() - start }

@@ -60,5 +60,4 @@ export default withSentryConfig(nextConfig, {
   tunnelRoute: "/monitoring",
   // Não subir source maps do client por default (configurar em CI)
   widenClientFileUpload: true,
-  disableLogger: true,
 });
