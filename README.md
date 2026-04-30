@@ -104,13 +104,20 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - **Konva** (canvas editor para Instagram Stories/Posts)
 
 ### Mobile (Android + iOS)
-- **Expo SDK 54** (managed workflow, EAS Build/Submit)
+- **Expo SDK 54** (managed workflow, EAS Build/Submit, EAS Workflows com fingerprint → OTA vs rebuild)
 - **React Native 0.81** com new architecture (Fabric + TurboModules)
 - **Expo Router** (file-based navigation paritária com Next.js App Router)
+- **TanStack Query** (server state + dedup de in-flight + persistência via MMKV pra cold-start instantâneo)
+- **MMKV** (cache HTTP + preferences, sync, sem soft-cap de 6MB do AsyncStorage)
+- **zod** (runtime validation das responses de API)
+- **@shopify/react-native-skia** (Confetti, AuraGlow, MeshGradient, ParticleLoader em GPU thread)
+- **Material You** (palette dinâmica do wallpaper no Android 12+, fallback brand)
+- **app.config.ts dinâmico** (3 variants — dev/preview/prod com bundle ids, schemes e ícones distintos)
 - **Clerk Expo** (auth nativo + deep links)
-- **Storybook on-device** (componentes isolados em catálogo nativo)
-- **Vitest** + **@testing-library/react-native** (testes unitários)
-- Paridade visual com o site — design system compartilhado, dark mode, haptics
+- **react-native-iap 14** (Google Play Billing com obfuscatedAccountId pra anti-replay)
+- **Sentry** (errors + traces + source maps via plugin EAS)
+- **Storybook on-device** + **jest-expo** (catálogo + component tests)
+- Paridade visual com o site — design system compartilhado, dark mode, haptics opt-out
 
 ### Backend
 - **Next.js API Routes** (Edge + Node runtimes)
@@ -154,13 +161,18 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - Lazy-load com `next/dynamic` em componentes below-the-fold
 - Preconnect/dns-prefetch para Supabase, Clerk, Mercado Pago
 - Pipeline de IA com **3 VTOs paralelos** + retries exponenciais com circuit breaker
+- **Trial cost-cut**: usuários no trial geram 1 foto em vez de 3 (-66% no custo de imagem) + 2 thumbs blurados via `sharp` viram teaser de upsell (~120ms CPU)
+- **Pose schema indexada** + temperature 0.3 no Analyzer + Identity Lock (hex de cor) no VTO — anti-alucinação de cabelo/pose entre as 3 fotos
+- **MMKV** sync no mobile elimina o tax de bridge/JSON.parse a cada `apiGetCached` (10-100x mais rápido que AsyncStorage)
 - **Brotli + Nginx `proxy_cache`** em rotas estáticas (com bypass automático para usuários logados) — landing serve em ~14ms internos, throughput 693 req/s
 
 ### Qualidade de código
-- **33 testes unitários** (Vitest) — HMAC validator, rate-limiter, editor sessions, validation
+- **33 testes unitários** web (Vitest) — HMAC validator, rate-limiter, editor sessions, validation
+- **Component tests** mobile (jest + jest-expo) — pulsing badge, hooks de geração, image picker
 - **TypeScript strict** com `noFallthroughCasesInSwitch` + `noImplicitOverride`
 - **CI verde** em cada PR (lint + typecheck + build + tests)
 - **Husky pre-commit** bloqueia commit com type errors
+- **Idempotency-Key** UUID nos POSTs sensíveis (campaign generate, billing verify)
 - **Load testing** com k6 — ramp 1→100 VUs em produção, threshold abort para proteção, métricas baseline vs pós-otimização documentadas em [`loadtests/`](./loadtests/README.md)
 
 ### DevOps
@@ -218,9 +230,15 @@ cp .env.example .env
 # Edita: EXPO_PUBLIC_API_URL (aponta pra sua web local ou prod), CLERK, SENTRY
 
 # Rodar em dev (abre menu Expo: a=Android, i=iOS, w=web)
-npx expo start
+APP_VARIANT=development npx expo start
+# (sem APP_VARIANT cai em production — útil pra QA local sem dev menu)
+
+# Rodar testes
+npm test           # jest watch mode
+npm run test:ci    # jest run
 
 # Build com EAS (Android/iOS)
+APP_VARIANT=preview eas build --profile preview --platform android
 eas build --profile production --platform android
 eas build --profile production --platform ios
 
@@ -246,13 +264,15 @@ npm run storybook:dev
 │   └── public/              # Assets estáticos
 ├── crialook-app/            # App mobile (Expo / React Native)
 │   ├── app/                 # Expo Router (file-based, paritário com Next)
-│   ├── components/          # Componentes RN reutilizáveis
-│   ├── lib/                 # i18n, logger, legal content, hooks de geração
-│   ├── hooks/               # Hooks custom (useModelSelector, etc)
-│   ├── assets/              # Ícones, splash, fontes
+│   ├── components/          # Componentes RN reutilizáveis (+ skia/ pra GPU drawing)
+│   ├── lib/                 # i18n, theme, query-client, schemas, toast, cache MMKV
+│   ├── hooks/               # Hooks custom (useModelSelector, useMaterialYou, etc)
+│   ├── assets/              # Ícones (per-variant), splash, fontes
+│   ├── __tests__/           # jest-expo component tests
 │   ├── store-assets/        # Screenshots + listing Play Store
 │   ├── storybook/           # Catálogo on-device
-│   ├── app.json             # Config Expo (slug, scheme, icons)
+│   ├── .eas/workflows/      # EAS Workflow (fingerprint → build vs OTA)
+│   ├── app.config.ts        # Config Expo dinâmica (3 variants: dev/preview/prod)
 │   └── eas.json             # Profiles de build EAS
 ├── docs/
 │   ├── juridico/            # LGPD compliance + minutas
