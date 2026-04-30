@@ -106,6 +106,12 @@
         "react",
         "react-dom"
       ]
+    },
+    "_autolinking_exclude_reason": "@solana-mobile/mobile-wallet-adapter-protocol entra como dep transitiva via @clerk/clerk-js (clerk-js suporta Solana wallet auth). A gente não habilitou Solana no Clerk Dashboard, então clerk-js nunca chama a lib em runtime. Excluir do autolinking nativo evita compilar o package Kotlin/Java + reduz o tempo do gradle build.",
+    "autolinking": {
+      "exclude": [
+        "@solana-mobile/mobile-wallet-adapter-protocol"
+      ]
     }
   },
   "overrides": {

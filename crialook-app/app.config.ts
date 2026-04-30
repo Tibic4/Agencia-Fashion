@@ -233,11 +233,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-localization',
   ],
   runtimeVersion: { policy: 'appVersion' },
-  updates: {
-    enabled: true,
-    checkAutomatically: 'ON_LOAD',
-    fallbackToCacheTimeout: 0,
-  },
+  // OTA desligado por enquanto. Tinha `enabled: true` sem `url`, daí o module
+  // logava `InitializationError: invalid configuration` no boot e o
+  // `checkAutomatically: 'ON_LOAD'` ainda gastava ciclos antes do React subir.
+  // Pra religar quando a infra de OTA tiver pronta: rodar `eas update:configure`
+  // (gera o URL `https://u.expo.dev/<projectId>`), trocar `enabled` pra true e
+  // restaurar `checkAutomatically` / `fallbackToCacheTimeout`.
+  updates: { enabled: false },
   experiments: { typedRoutes: true },
   extra: {
     router: {},
