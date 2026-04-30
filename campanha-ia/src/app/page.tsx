@@ -137,7 +137,7 @@ export default function Home() {
               </h1>
 
               <p className="text-[13px] sm:text-[15px] leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
-                Foto no manequim ou cabide → 3 fotos com modelo virtual + legendas prontas.{" "}
+                Foto no manequim ou cabide → 1 foto com modelo virtual + legendas prontas.{" "}
                 <strong style={{ color: 'var(--foreground)' }}>Sem fotógrafo. Sem Photoshop.</strong>
               </p>
 
@@ -178,7 +178,7 @@ export default function Home() {
                   <span>Pegar minha vaga grátis</span>
                 </Link>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>
-                  ✓ 1 campanha completa (3 fotos) <strong>grátis</strong> · sem cartão
+                  ✓ 1 campanha completa (1 foto) <strong>grátis</strong> · sem cartão
                 </p>
               </div>
 
@@ -187,10 +187,10 @@ export default function Home() {
                 <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Incluso na vaga grátis</p>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
+                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>1</span>
                     <div>
-                      <p className="text-[13px] font-bold">Fotos com modelo virtual</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Cenários e poses diferentes</p>
+                      <p className="text-[13px] font-bold">Foto com modelo virtual</p>
+                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Cenário e pose escolhidos pela IA</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function Home() {
                 </p>
 
                 <p className="text-lg lg:text-xl leading-relaxed mb-8 max-w-lg" style={{ color: 'var(--muted)' }}>
-                  Foto no manequim ou cabide → 3 fotos com modelo virtual + legendas prontas pra postar.{" "}
+                  Foto no manequim ou cabide → 1 foto com modelo virtual + legendas prontas pra postar.{" "}
                   <strong style={{ color: 'var(--foreground)' }}>Sem fotógrafo. Sem Photoshop.</strong>
                 </p>
 
@@ -255,14 +255,14 @@ export default function Home() {
                   </Link>
                 </div>
                 <p className="text-sm mb-6" style={{ color: 'var(--muted)' }}>
-                  ✓ 1 campanha completa (3 fotos) <strong style={{ color: 'var(--foreground)' }}>grátis</strong> · sem cartão · sem assinatura
+                  ✓ 1 campanha completa (1 foto) <strong style={{ color: 'var(--foreground)' }}>grátis</strong> · sem cartão · sem assinatura
                 </p>
 
                 {/* Pack breakdown — desktop */}
                 <div className="flex items-center gap-6 text-sm" style={{ color: 'var(--muted)' }}>
                   <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
-                    <span><strong style={{ color: 'var(--foreground)' }}>9 fotos</strong> prontas</span>
+                    <span className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>1</span>
+                    <span><strong style={{ color: 'var(--foreground)' }}>foto</strong> pronta</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-base">👩</span>
@@ -501,8 +501,8 @@ export default function Home() {
             {/* Pack breakdown inline */}
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-8 text-sm" style={{ color: 'var(--muted)' }}>
               <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>3</span>
-                <span><strong style={{ color: 'var(--foreground)' }}>9 fotos</strong> prontas</span>
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>1</span>
+                <span><strong style={{ color: 'var(--foreground)' }}>foto</strong> pronta</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-lg">👩</span>
@@ -513,12 +513,12 @@ export default function Home() {
                 <span><strong style={{ color: 'var(--foreground)' }}>Legendas</strong> + hashtags</span>
               </div>
             </div>
-            <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-4 !px-6 sm:!px-10 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Criar minha primeira campanha com IA">
+            <Link href="/sign-up" className="btn-primary text-sm sm:text-base !py-4 !px-6 sm:!px-10 hover:animate-pulse-glow whitespace-normal text-center leading-tight" aria-label="Pegar minha vaga grátis">
               <IconZap className="shrink-0" />
-              <span>Começar por R$ 19,90</span>
+              <span>Pegar minha vaga grátis</span>
               <IconArrowRight className="shrink-0" />
             </Link>
-            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>Pagamento único via PIX ou cartão. Sem assinatura.</p>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>Sem cartão. Sem assinatura.</p>
 
           </div>
         </section>

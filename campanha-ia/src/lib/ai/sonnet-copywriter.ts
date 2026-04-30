@@ -400,7 +400,7 @@ Gere o JSON:
 {
   "melhor_dia": "Dia + justificativa curta",
   "melhor_horario": "Horário + justificativa curta",
-  "sequencia_sugerida": "Como usar as 3 fotos no feed/stories",
+  "sequencia_sugerida": "Como usar a foto no feed/stories (e combinar com close-ups da peça)",
   "caption_sugerida": "Legenda VENDEDORA (200-300 chars, max 2 emojis, hook + benefício + CTA específico. Use \\n entre cada frase)",
   "caption_alternativa": "Segunda opção com TOM OPOSTO. 200-300 chars. Use \\n entre frases.",
   "tom_legenda": "Tom da voz em 3-5 palavras",
@@ -612,7 +612,7 @@ Generate the JSON (keys in Portuguese, values in English):
 {
   "melhor_dia": "Day + short justification",
   "melhor_horario": "Time + short justification",
-  "sequencia_sugerida": "How to use the 3 photos across feed/stories",
+  "sequencia_sugerida": "How to use the photo across feed/stories (paired with close-ups of the piece)",
   "caption_sugerida": "SALES caption (200-300 chars, max 2 emojis, hook + benefit + specific CTA. Use \\n between every sentence)",
   "caption_alternativa": "Second option with OPPOSITE tone. 200-300 chars. Use \\n between sentences.",
   "tom_legenda": "Voice tone in 3-5 words",

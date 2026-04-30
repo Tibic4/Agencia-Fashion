@@ -29,7 +29,7 @@ Monorepo: **web Next.js** ([`campanha-ia/`](./campanha-ia/)) + **app mobile Expo
 
 Lojista envia uma foto da peça (no manequim, cabide ou no chão) e em ~60 segundos recebe:
 
-- **3 fotos editoriais** com modelo virtual ultra-realista vestindo a peça
+- **1 foto editorial** com modelo virtual ultra-realista vestindo a peça
 - **Legendas persuasivas** otimizadas para Instagram, WhatsApp e Meta Ads
 - **Hashtags estratégicas** (entre 8-15) para máximo alcance
 - **Cenário visual** alinhado à identidade visual da loja (cor de marca extraída automaticamente)
@@ -129,7 +129,7 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 ### IA
 - **Anthropic Claude Sonnet 4.6** (`claude-sonnet-4-6`) — copywriting persuasivo PT-BR com análise visual da peça
 - **Google Gemini 3.1 Pro** — vision analyzer (atributos da peça + scene prompts)
-- **Google Gemini 3 Pro Image** — virtual try-on multi-image fusion (3 imagens em paralelo)
+- **Google Gemini 3 Pro Image** — virtual try-on multi-image fusion (1 foto por campanha — pipeline foi consolidado pra chamada única depois que UX padronizou em hero único)
 
 ### Observabilidade
 - **Sentry** (errors + traces, com PII redaction)
@@ -160,9 +160,8 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - Imagens convertidas pra WebP (-90% peso, de 15MB total → 2MB)
 - Lazy-load com `next/dynamic` em componentes below-the-fold
 - Preconnect/dns-prefetch para Supabase, Clerk, Mercado Pago
-- Pipeline de IA com **3 VTOs paralelos** + retries exponenciais com circuit breaker
-- **Trial cost-cut**: usuários no trial geram 1 foto em vez de 3 (-66% no custo de imagem) + 2 thumbs blurados via `sharp` viram teaser de upsell (~120ms CPU)
-- **Pose schema indexada** + temperature 0.3 no Analyzer + Identity Lock (hex de cor) no VTO — anti-alucinação de cabelo/pose entre as 3 fotos
+- Pipeline de IA single-shot (chamada VTO única por campanha) + retries exponenciais com circuit breaker
+- **Pose schema indexada** (`pose_index` único, banco de 8 poses estáveis) + temperature 0.3 no Analyzer + Identity Lock (hex de cor) no VTO — anti-alucinação de cabelo, e streak-block evita repetir a mesma pose 3 campanhas seguidas pro mesmo lojista
 - **MMKV** sync no mobile elimina o tax de bridge/JSON.parse a cada `apiGetCached` (10-100x mais rápido que AsyncStorage)
 - **Brotli + Nginx `proxy_cache`** em rotas estáticas (com bypass automático para usuários logados) — landing serve em ~14ms internos, throughput 693 req/s
 

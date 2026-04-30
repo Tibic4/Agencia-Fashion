@@ -18,17 +18,17 @@ interface Props {
 }
 
 const CREDIT_PACKAGES = [
-  { qty: 3, price: '49,90', perUnit: '16,63' },
-  { qty: 10, price: '149,90', perUnit: '14,99', popular: true },
-  { qty: 20, price: '249,00', perUnit: '12,45', best: true },
+  { qty: 3, price: '24,90', perUnit: '8,30' },
+  { qty: 10, price: '69,90', perUnit: '6,99', popular: true },
+  { qty: 20, price: '119,90', perUnit: '6,00', best: true },
 ];
 
 // Plan name uses i18n key (`planNames.<id>`); price + campaign count are
 // presentation tokens that don't translate.
 const PLANS = [
-  { id: 'essencial' as const, price: 179, campaigns: 15 },
-  { id: 'pro' as const, price: 359, campaigns: 40, recommended: true },
-  { id: 'business' as const, price: 749, campaigns: 100 },
+  { id: 'essencial' as const, price: 89, campaigns: 15 },
+  { id: 'pro' as const, price: 179, campaigns: 40, recommended: true },
+  { id: 'business' as const, price: 379, campaigns: 100 },
 ];
 
 function normalizePlanKey(raw?: string): string | null {

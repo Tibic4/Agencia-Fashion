@@ -96,7 +96,7 @@ const STATUS_MESSAGES: Record<Phase, string[]> = {
   ],
   almostDone: [
     "Salvando em alta resolução",
-    "Preparando suas 3 fotos",
+    "Preparando sua foto",
     "Quase pronto...",
   ],
 };

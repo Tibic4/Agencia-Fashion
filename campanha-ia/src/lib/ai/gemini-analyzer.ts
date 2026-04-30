@@ -64,10 +64,11 @@ export function hexToHSL(hex: string): { h: number; s: number; l: number } {
 /**
  * Generates a DETERMINISTIC textured backdrop description based on brand color.
  * Using photography language (per VTO Expert Gemini skill) to anchor the model
- * on an identical, repeatable backdrop across all 3 photos.
+ * on a controlled, repeatable backdrop.
  *
- * EXPORTED so the pipeline can inject this PROGRAMMATICALLY into each scene_prompt,
- * guaranteeing 100% identical text across all 3 VTO calls.
+ * EXPORTED so the pipeline can inject this PROGRAMMATICALLY into the
+ * scene_prompt, garantindo 100% de consistência mesmo se o futuro voltar a
+ * gerar mais de uma foto por campanha.
  */
 export function getTexturedBackdropPrompt(hex: string): string {
   const { h, s, l } = hexToHSL(hex);
@@ -99,7 +100,7 @@ export function getTexturedBackdropPrompt(hex: string): string {
     lightSetup = "even three-point lighting setup with main softbox from front-right, fill from front-left, and hair light from above-behind";
   }
 
-  return `BACKDROP SPECIFICATION (MUST BE IDENTICAL IN ALL 3 PHOTOS):\n${texture}.\nLIGHTING: ${lightSetup}.\nThe background color MUST be EXACTLY hex ${hex} — do NOT shift, approximate, or reinterpret the hue.\n❌ FORBIDDEN: changing the backdrop color, adding props/objects to the background, using a completely different backdrop style between photos.`;
+  return `BACKDROP SPECIFICATION:\n${texture}.\nLIGHTING: ${lightSetup}.\nThe background color MUST be EXACTLY hex ${hex} — do NOT shift, approximate, or reinterpret the hue.\n❌ FORBIDDEN: changing the backdrop color, adding props/objects to the background.`;
 }
 
 // ═══════════════════════════════════════

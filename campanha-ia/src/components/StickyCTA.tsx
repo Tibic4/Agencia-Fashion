@@ -44,7 +44,7 @@ export default function StickyCTA() {
   return (
     <Link
       href="/sign-up"
-      aria-label="Criar primeira campanha por R$ 19,90"
+      aria-label="Pegar minha vaga grátis no Beta"
       className="fixed left-3 right-3 sm:left-4 sm:right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold text-[13px] sm:text-[15px] animate-in slide-in-from-bottom-10 fade-in duration-300 whitespace-nowrap"
       // respeita safe-area-inset-bottom (notch/home indicator iPhone)
       style={{
@@ -55,7 +55,7 @@ export default function StickyCTA() {
       }}
     >
       <Zap className="w-5 h-5 shrink-0" aria-hidden="true" />
-      Criar Campanha — R$ 19,90
+      Pegar minha vaga grátis
     </Link>
   );
 }

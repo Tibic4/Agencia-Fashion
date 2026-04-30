@@ -12,7 +12,7 @@ O CriaLook transforma fotos simples do seu produto em campanhas profissionais de
 COMO FUNCIONA:
 1. Fotografe sua peça de roupa (foto simples, sem produção)
 2. Escolha a modelo virtual e o cenário
-3. Em ~80 segundos, receba 3 fotos profissionais com modelo vestindo sua peça
+3. Em ~80 segundos, receba 1 foto profissional com modelo vestindo sua peça
 4. Copie a legenda, hashtags e dicas de postagem geradas pela IA
 
 PARA QUEM É:
@@ -22,7 +22,7 @@ PARA QUEM É:
 • Qualquer pessoa que venda roupas online
 
 O QUE VOCÊ RECEBE:
-✅ 3 fotos profissionais com modelo virtual vestindo sua roupa
+✅ 1 foto profissional com modelo virtual vestindo sua roupa
 ✅ Legendas prontas para Instagram e WhatsApp
 ✅ Hashtags relevantes para o seu nicho
 ✅ Dicas de melhor horário para postar
@@ -39,9 +39,9 @@ Branco, Estúdio, Lifestyle, Urbano, Natureza, Praia, Boutique, Luxo, Minimalist
 
 PLANOS:
 • Avulso: compre créditos individuais
-• Essencial: 15 campanhas/mês (R$ 179)
-• Pro: 40 campanhas/mês (R$ 359) — mais popular
-• Business: 100 campanhas/mês (R$ 749)
+• Essencial: 15 campanhas/mês (R$ 89)
+• Pro: 40 campanhas/mês (R$ 179) — mais popular
+• Business: 100 campanhas/mês (R$ 379)
 
 Pagamento seguro via Google Play.
 

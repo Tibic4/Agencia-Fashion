@@ -232,8 +232,8 @@ export default function AdminConfiguracoes() {
         </div>
         <div className="divide-y divide-gray-800">
           {[
-            { icon: "🔍", stage: "Análise + Copy IA", model: "gemini-3.1-pro-preview", cost: "~R$ 0,15", desc: "Analisa peça, gera 3 prompts VTO e copy completo para Instagram (captions, hashtags, story, CTA)" },
-            { icon: "👗", stage: "Virtual Try-On (VTO)", model: "gemini-3-pro-image-preview", cost: "~R$ 2,80", desc: "Gera 3 fotos do modelo vestindo a peça" },
+            { icon: "🔍", stage: "Análise + Copy IA", model: "gemini-3.1-pro-preview", cost: "~R$ 0,15", desc: "Analisa peça, gera o prompt VTO e copy completo para Instagram (captions, hashtags, story, CTA)" },
+            { icon: "👗", stage: "Virtual Try-On (VTO)", model: "gemini-3-pro-image-preview", cost: "~R$ 0,93", desc: "Gera a foto do modelo vestindo a peça" },
             { icon: "🖼️", stage: "Preview de modelo", model: "gemini-3.1-flash-image-preview", cost: "~R$ 0,01", desc: "Preview rápido ao criar modelo virtual" },
           ].map((item) => (
             <div key={item.stage} className="px-4 md:px-6 py-3 flex items-start gap-3">

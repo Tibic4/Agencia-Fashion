@@ -2,8 +2,9 @@
  * CriaLook Backdrop Reference Generator
  *
  * Gera uma foto de estúdio vazio na cor da marca da loja.
- * Essa foto é usada como referência visual nas chamadas VTO
- * para garantir consistência de fundo entre as 3 fotos.
+ * Essa foto é usada como referência visual na chamada VTO pra ancorar
+ * o fundo na cor exata da marca (e manter consistência se o pipeline
+ * voltar a gerar mais de uma foto por campanha).
  *
  * Fluxo:
  * 1. Recebe hex da cor da marca
@@ -193,8 +194,8 @@ export async function generateBackdrop(
     const exchangeRate = await getExchangeRate();
     const modelPrice = pricing[MODEL] || { inputPerMTok: 2.00, outputPerMTok: 120.00 };
 
-    // Backdrop = 1 imagem, mesma lógica do VTO (que faz 3 imagens)
-    // VTO fallback por imagem: 4600 input + 4000 output → backdrop = VTO ÷ 3
+    // Backdrop = 1 imagem; tokens de fallback = média histórica do VTO
+    // (4600 input + 4000 output por imagem).
     const inputTokens = 4600;
     const outputTokens = 4000;
     const costUsd =

@@ -201,13 +201,14 @@ export async function POST(request: NextRequest) {
 
       // ── Trial-only detection ──
       // Quem usou mini-trial e nunca comprou nada gera 1 foto em vez de 3.
-      // Sinais combinados:
+      // Sinais combinados (legacy — ver docs/agent-coordination.md):
       //  1) `creditReserved` (não tá em plano pago)
       //  2) `mini_trial_uses` tem entrada pra esse clerk_user_id
-      //  3) Zero rows em `credit_purchases` da loja (nunca comprou pacote nem
-      //     "Teste na Prática" R$ 19,90)
-      // Falha de detecção (qualquer query erra) → cai no default de 3 fotos:
-      // melhor pagar o custo a mais do que dar UX degradada pro usuário pago.
+      //  3) Zero rows em `credit_purchases` da loja
+      // Hoje o pipeline ignora `photoCount` e gera 1 foto pra todo mundo, mas
+      // a flag `isTrialOnly` ainda é usada pra decidir os teasers blurados de
+      // upsell em `lockedTeaserUrls`. Falha de detecção é fail-safe: o usuário
+      // continua recebendo a foto, só perde o teaser do trial.
       if (creditReserved && clerkUserId) {
         try {
           const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
@@ -227,9 +228,9 @@ export async function POST(request: NextRequest) {
             console.log(`[Generate] 🎁 Trial-only user → 1 foto (corte de custo)`);
           }
         } catch (trialErr) {
-          // Detection failure não bloqueia geração — falhamos no caminho seguro
-          // (3 fotos) pra não punir usuário pago se a query do mini_trial der ruim.
-          console.warn("[Generate] trial detection failed, defaulting to 3 photos:", trialErr);
+          // Detection failure não bloqueia geração — fail-safe pro usuário
+          // recebe a foto mesmo se a detecção do trial falhar (só não vê teaser).
+          console.warn("[Generate] trial detection failed, treating as paid:", trialErr);
         }
       }
     }

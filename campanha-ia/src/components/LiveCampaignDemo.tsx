@@ -322,7 +322,7 @@ export default function LiveCampaignDemo() {
 
                   {/* CTA de conversão pós-demo */}
                   <a href="/sign-up" className="btn-primary w-full text-sm !py-3 min-h-[44px] hover:animate-pulse-glow">
-                    ✨ Quero criar a minha — R$ 19,90
+                    ✨ Quero criar a minha — grátis
                   </a>
                 </div>
 

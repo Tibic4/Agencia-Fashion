@@ -77,7 +77,8 @@ export default function CostComparisonTable() {
               <div className="absolute inset-0 bg-gradient-to-r from-brand-500 to-brand-700 opacity-80 rounded-br-3xl" />
               <div className="relative z-10 flex flex-col items-center justify-center h-full">
                 <span className="block text-xs sm:text-sm text-brand-100 mb-1">Custo de 1 campanha</span>
-                <span className="font-black text-white text-xl sm:text-2xl md:text-4xl animate-pulse-glow drop-shadow-md">R$ 19,90</span>
+                <span className="font-black text-white text-xl sm:text-2xl md:text-4xl animate-pulse-glow drop-shadow-md">Grátis</span>
+                <span className="block text-[10px] sm:text-xs text-brand-100 mt-1">1ª no Beta · depois a partir de R$ 5,93</span>
               </div>
             </div>
           </div>

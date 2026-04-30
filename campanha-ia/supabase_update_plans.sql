@@ -1,10 +1,14 @@
 -- ═══════════════════════════════════════════════════════════
--- CriaLook — Atualização de Planos no Supabase
--- Executar no SQL Editor do Supabase Dashboard
--- Data: 2026-04-13
--- 
--- IMPORTANTE: Execute este script ANTES de fazer deploy do código.
--- Os novos valores no código já refletem estes dados.
+-- ⚠️ OBSOLETO — DESDE 2026-04-30
+--
+-- Este script trazia os preços antigos (179/359/749) que não valem mais.
+-- A última atualização de pricing está em:
+--   supabase/migrations/20260430_180000_update_plan_pricing.sql
+-- (Essencial 89 / Pro 179 / Business 379).
+--
+-- Mantido apenas pra histórico — NÃO rodar em prod.
+-- Quando precisar fazer um seed completo do zero, gere um novo script
+-- a partir de src/lib/plans.ts.
 -- ═══════════════════════════════════════════════════════════
 
 BEGIN;

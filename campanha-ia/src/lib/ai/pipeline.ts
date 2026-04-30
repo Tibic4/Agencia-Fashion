@@ -219,13 +219,13 @@ export async function runCampaignPipeline(
       dicas_postagem: {
         melhor_dia: "Terça — público engajado no meio da semana",
         melhor_horario: "21h — quando relaxam e abrem o Instagram",
-        sequencia_sugerida: "Use as 3 fotos como carrossel no feed para maximizar engajamento",
+        sequencia_sugerida: "Poste a foto principal no feed e use o carrossel pra mostrar detalhes da peça",
         caption_sugerida: "✨ Novidade que vai te surpreender! Confira e me conta o que achou 💕",
         caption_alternativa: "Elegância e atitude em cada detalhe. Para quem sabe o que quer ✨",
         tom_legenda: "Descontraído e acolhedor",
         cta: "Manda QUERO no direct 💬",
-        dica_extra: "Poste as 3 fotos como carrossel e peça para seguidores votarem a favorita nos comentários.",
-        story_idea: "Faça uma enquete com as 3 fotos: 'Qual é a sua vibe? A, B ou C?' — stories com votação têm 3x mais interação.",
+        dica_extra: "Combine a foto com close-up da peça pra valorizar o caimento e os detalhes.",
+        story_idea: "Faça uma enquete no story: 'Comprariam essa peça?' — interação simples puxa engajamento.",
         hashtags: isMale ? ["modamasculina", "lookdodia", "novidade", "tendencia", "estilo"] : ["modafeminina", "lookdodia", "novidade", "tendencia", "estilo"],
         legendas: [
           { foto: 1, plataforma: "Instagram Feed", legenda: "✨ Novidade que vai te surpreender! Confira 💕" },

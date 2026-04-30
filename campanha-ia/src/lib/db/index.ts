@@ -840,6 +840,6 @@ export async function savePipelineResultV3(input: SavePipelineResultV3Input) {
   }
 
   console.log(
-    `[DB] ✅ savePipelineResultV3 | campaign=${input.campaignId} | ${input.successCount}/3 imagens | ${input.durationMs}ms`
+    `[DB] ✅ savePipelineResultV3 | campaign=${input.campaignId} | ${input.successCount} imagem(ns) | ${input.durationMs}ms`
   );
 }

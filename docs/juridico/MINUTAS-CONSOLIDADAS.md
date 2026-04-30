@@ -151,10 +151,10 @@ Via Clerk. Conta pessoal e intransferível. Vedado burlar limites com multi-cont
 Limitada, não exclusiva, intransferível, revogável, não sublicenciável. IP da Plataforma é do CriaLook.
 
 ### 2.6 Planos e Preços
-- Trial R$ 19,90
-- Starter R$ 179/mês
-- Pro R$ 359/mês
-- Business R$ 749/mês
+- Trial gratuito (Beta, vagas limitadas) — 1 campanha com 1 foto, sem cartão
+- Essencial R$ 89/mês
+- Pro R$ 179/mês
+- Business R$ 379/mês
 - Packs avulsos
 
 Reajuste com aviso mínimo de 30 dias. Pagamento via Mercado Pago.

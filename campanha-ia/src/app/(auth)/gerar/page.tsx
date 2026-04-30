@@ -701,7 +701,7 @@ export default function GerarCampanha() {
           Criar <span className="gradient-text">Campanha</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-          Envie a foto do look e receba 3 fotos editoriais prontas para postar
+          Envie a foto do look e receba 1 foto editorial pronta para postar
         </p>
       </div>
 
