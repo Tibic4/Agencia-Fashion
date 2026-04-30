@@ -25,7 +25,33 @@ const PREFIX = '@crialook/cache:';
 
 // Single namespaced instance. Multiple MMKV instances are cheap but a
 // single namespaced one keeps `getAllKeys` predictable for prefix sweeps.
-const storage = new MMKV({ id: 'crialook-api-cache' });
+//
+// LAZY init com try/catch: `new MMKV()` chamado em module scope teria
+// crashado o import inteiro de cache.ts (e via cascata o api.ts e o
+// _layout.tsx) se o native module ou o nitro modules ainda não estivessem
+// prontos no boot. Resultado prático observado: tela branca pós-splash
+// porque o JSBundle nunca chegava a montar a árvore React.
+//
+// Agora a primeira chamada tenta instanciar; se falhar, marca um flag e
+// caímos pra cache só em memória (Map abaixo). A app continua de pé,
+// só perde persistência entre cold starts.
+let _storage: MMKV | null = null;
+let _storageInitFailed = false;
+
+function getStorage(): MMKV | null {
+  if (_storageInitFailed) return null;
+  if (_storage) return _storage;
+  try {
+    _storage = new MMKV({ id: 'crialook-api-cache' });
+    return _storage;
+  } catch (e) {
+    _storageInitFailed = true;
+    if (__DEV__) {
+      console.warn('[cache] MMKV init failed, falling back to in-memory only', e);
+    }
+    return null;
+  }
+}
 
 interface Entry<T> {
   value: T;
@@ -47,14 +73,16 @@ export async function readCache<T>(key: string): Promise<T | null> {
   if (mem && mem.expires > now()) return mem.value;
 
   try {
-    const raw = storage.getString(k(key));
+    const s = getStorage();
+    if (!s) return null;
+    const raw = s.getString(k(key));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Entry<T>;
     if (parsed.expires <= now()) {
       // Async-shaped delete to avoid touching MMKV inline if reader
       // is in a tight loop; MMKV.delete is sync and cheap, but we keep
       // the same shape as before so callers still don't await it.
-      storage.delete(k(key));
+      s.delete(k(key));
       return null;
     }
     memory.set(key, parsed);
@@ -68,7 +96,7 @@ export async function writeCache<T>(key: string, value: T, ttlMs: number) {
   const entry: Entry<T> = { value, expires: now() + ttlMs };
   memory.set(key, entry);
   try {
-    storage.set(k(key), JSON.stringify(entry));
+    getStorage()?.set(k(key), JSON.stringify(entry));
   } catch {
     /* MMKV throws only on encryption mismatch; safe to swallow */
   }
@@ -77,7 +105,7 @@ export async function writeCache<T>(key: string, value: T, ttlMs: number) {
 export async function invalidateCache(key: string) {
   memory.delete(key);
   try {
-    storage.delete(k(key));
+    getStorage()?.delete(k(key));
   } catch {
     /* ignore */
   }
@@ -93,10 +121,12 @@ export async function invalidateCachePrefix(prefix: string) {
     if (mk.startsWith(prefix)) memory.delete(mk);
   }
   try {
+    const s = getStorage();
+    if (!s) return;
     const fullPrefix = PREFIX + prefix;
-    const keys = storage.getAllKeys();
+    const keys = s.getAllKeys();
     for (const sk of keys) {
-      if (sk.startsWith(fullPrefix)) storage.delete(sk);
+      if (sk.startsWith(fullPrefix)) s.delete(sk);
     }
   } catch {
     /* ignore */
@@ -117,17 +147,19 @@ export async function pruneExpiredCache() {
     if (v.expires <= t) memory.delete(mk);
   }
   try {
-    const keys = storage.getAllKeys();
+    const s = getStorage();
+    if (!s) return;
+    const keys = s.getAllKeys();
     for (const sk of keys) {
       if (!sk.startsWith(PREFIX)) continue;
-      const raw = storage.getString(sk);
+      const raw = s.getString(sk);
       if (!raw) continue;
       try {
         const parsed = JSON.parse(raw) as Entry<unknown>;
-        if (parsed.expires <= t) storage.delete(sk);
+        if (parsed.expires <= t) s.delete(sk);
       } catch {
         // Corrupted entry — drop it.
-        storage.delete(sk);
+        s.delete(sk);
       }
     }
   } catch {
@@ -138,9 +170,11 @@ export async function pruneExpiredCache() {
 export async function invalidateAll() {
   memory.clear();
   try {
-    const keys = storage.getAllKeys();
+    const s = getStorage();
+    if (!s) return;
+    const keys = s.getAllKeys();
     for (const sk of keys) {
-      if (sk.startsWith(PREFIX)) storage.delete(sk);
+      if (sk.startsWith(PREFIX)) s.delete(sk);
     }
   } catch {
     /* ignore */
