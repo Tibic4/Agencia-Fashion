@@ -30,7 +30,12 @@ module.exports = {
       // qualquer wrapper futuro do package.json.
       script: "npm",
       args: "start",
-      exec_mode: "fork", // 1 process. Use "cluster" se tiver >2 CPUs e 4GB+ RAM livres.
+      // ⚠️ NÃO trocar pra "cluster" / instances > 1 sem antes migrar o
+      // rate limiter (src/lib/rate-limit.ts) pra storage compartilhado
+      // (Postgres ou Redis). O atual é Map em memória do processo —
+      // multi-instância vai vazar limites em ~50% / instância e abrir
+      // brecha de abuso.
+      exec_mode: "fork",
       instances: 1,
 
       // Reinicia se consumir mais que 1.5GB (pipeline IA pode dar spike).

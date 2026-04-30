@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint-typecheck-build:
-    name: Lint + Type-check + Build
+    name: Lint + Type-check + Build (campanha-ia)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: campanha-ia/package-lock.json
 
@@ -43,7 +43,7 @@ jobs:
         run: npm run build
 
   test:
-    name: Unit tests
+    name: Unit tests (campanha-ia)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,9 +52,35 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: campanha-ia/package-lock.json
       - run: npm ci
       - name: Run vitest
         run: npm test --if-present -- --run
+
+  mobile-typecheck-test:
+    name: Type-check + Unit tests (crialook-app)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crialook-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: crialook-app/package-lock.json
+
+      # `npm ci` no mobile pode falhar se o lock estiver fora de sync com SDK.
+      # Se acontecer, rodar `npm run lock:fix` localmente e commitar.
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Run vitest (lib utils)
+        run: npm test
