@@ -28,21 +28,21 @@ describe('i18n strings', () => {
 
   it('looks up nested keys in both locales', () => {
     i18n.locale = 'pt-BR';
-    expect(i18n.t('common.save')).toBe('Salvar');
+    expect(i18n.t('common.save')).toBe('Salvar alterações');
     expect(i18n.t('plan.title')).toBe('Meu Plano');
 
     i18n.locale = 'en';
-    expect(i18n.t('common.save')).toBe('Save');
+    expect(i18n.t('common.save')).toBe('Save changes');
     expect(i18n.t('plan.title')).toBe('My plan');
   });
 
   it('interpolates placeholders', () => {
     i18n.locale = 'pt-BR';
-    expect(i18n.t('plan.subscribeButton', { plan: 'Pro' })).toBe('Assinar Pro');
+    expect(i18n.t('plan.subscribeButton', { plan: 'Pro' })).toBe('Quero o Pro');
     expect(i18n.t('history.countOther', { n: 5 })).toBe('5 campanhas');
 
     i18n.locale = 'en';
-    expect(i18n.t('plan.subscribeButton', { plan: 'Pro' })).toBe('Subscribe to Pro');
+    expect(i18n.t('plan.subscribeButton', { plan: 'Pro' })).toBe('Get Pro');
     expect(i18n.t('history.countOther', { n: 5 })).toBe('5 campaigns');
   });
 });
