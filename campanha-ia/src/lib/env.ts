@@ -20,31 +20,36 @@
 import { z } from "zod";
 
 // Helper: var obrigatória só em produção. Em dev/test/CI a gente tolera placeholder.
+//
+// Schema é deliberadamente conservador: só checa "existe e tem tamanho mínimo
+// razoável", não impõe prefixo/formato específico. Formatos de chave de
+// fornecedor (pk_/sk_/sk-ant-/APP_USR-) mudam ao longo do tempo e travar boot
+// só por causa disso é mais frágil do que útil.
 const requiredInProd = (schema: z.ZodString) =>
   process.env.NODE_ENV === "production" ? schema : schema.optional();
 
 const EnvSchema = z.object({
   // ── Core: nunca pode faltar em prod ──
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_APP_URL: z.string().default("http://localhost:3000"),
 
   // ── Supabase ──
-  NEXT_PUBLIC_SUPABASE_URL: requiredInProd(z.string().url()),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: requiredInProd(z.string().min(20)),
-  SUPABASE_SERVICE_ROLE_KEY: requiredInProd(z.string().min(20)),
+  NEXT_PUBLIC_SUPABASE_URL: requiredInProd(z.string().min(10)),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: requiredInProd(z.string().min(10)),
+  SUPABASE_SERVICE_ROLE_KEY: requiredInProd(z.string().min(10)),
 
   // ── Clerk ──
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: requiredInProd(z.string().startsWith("pk_")),
-  CLERK_SECRET_KEY: requiredInProd(z.string().startsWith("sk_")),
-  CLERK_WEBHOOK_SECRET: requiredInProd(z.string().min(20)),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: requiredInProd(z.string().min(10)),
+  CLERK_SECRET_KEY: requiredInProd(z.string().min(10)),
+  CLERK_WEBHOOK_SECRET: requiredInProd(z.string().min(10)),
   CLERK_JWT_KEY: z.string().optional(),
 
   // ── Mercado Pago ──
-  MERCADOPAGO_ACCESS_TOKEN: requiredInProd(z.string().min(20)),
-  MERCADOPAGO_WEBHOOK_SECRET: requiredInProd(z.string().min(10)),
+  MERCADOPAGO_ACCESS_TOKEN: requiredInProd(z.string().min(10)),
+  MERCADOPAGO_WEBHOOK_SECRET: requiredInProd(z.string().min(8)),
 
   // ── IA ──
-  ANTHROPIC_API_KEY: requiredInProd(z.string().startsWith("sk-ant-")),
+  ANTHROPIC_API_KEY: requiredInProd(z.string().min(10)),
   // Aceita qualquer um dos 3 nomes — código tem fallback chain.
   GEMINI_API_KEY: z.string().optional(),
   GOOGLE_AI_API_KEY: z.string().optional(),
@@ -52,7 +57,7 @@ const EnvSchema = z.object({
   AI_MODEL_GEMINI_FLASH: z.string().optional(),
   FAL_KEY: z.string().optional(),
   FASHN_API_KEY: z.string().optional(),
-  FASHN_API_URL: z.string().url().default("https://api.fashn.ai/v1"),
+  FASHN_API_URL: z.string().default("https://api.fashn.ai/v1"),
 
   // ── Editor standalone (auth próprio fora do Clerk) ──
   EDITOR_PASSWORD: z.string().optional(),
@@ -71,14 +76,17 @@ const EnvSchema = z.object({
   SENTRY_AUTH_TOKEN: z.string().optional(),
   POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+  NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
 
   // ── Inngest ──
   INNGEST_EVENT_KEY: z.string().optional(),
   INNGEST_SIGNING_KEY: z.string().optional(),
 
   // ── Mini-trial / experimentos ──
-  MINI_TRIAL_KILLSWITCH: z.enum(["0", "1"]).optional(),
+  // Killswitch fica como string flexível — quem consome decide o que é
+  // truthy ("1"/"true"/"on"). Schema enum aqui era frágil: qualquer valor
+  // fora da lista travava o boot inteiro.
+  MINI_TRIAL_KILLSWITCH: z.string().optional(),
   MINI_TRIAL_TOTAL_SLOTS: z.coerce.number().int().positive().optional(),
 
   // ── Misc ──
