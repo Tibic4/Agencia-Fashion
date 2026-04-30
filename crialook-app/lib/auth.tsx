@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, type PropsWithChildren } from 'react';
+import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { ClerkProvider, useAuth as useClerkAuth, useUser, getClerkInstance } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 import type { TokenCache } from '@clerk/clerk-expo';
@@ -27,9 +27,24 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/* Timeout de fallback pro init do Clerk.
+   Se o SDK não hidratar em INIT_TIMEOUT_MS (offline / Clerk API lenta /
+   Client Trust OFF forçando round-trip), libera `loading: false` mesmo
+   assim. App segue pra /sign-in se !isSignedIn, em vez de splash eterna.
+   Quando Clerk hidratar depois (rede voltou), `isSignedIn` atualiza
+   normalmente e o AuthGate recoloca a rota. */
+const INIT_TIMEOUT_MS = 6_000;
+
 function AuthInner({ children }: PropsWithChildren) {
   const { isLoaded, isSignedIn, signOut: clerkSignOut } = useClerkAuth();
   const { user } = useUser();
+  const [initTimedOut, setInitTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded) return;
+    const t = setTimeout(() => setInitTimedOut(true), INIT_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [isLoaded]);
 
   const authUser = user
     ? { id: user.id, email: user.primaryEmailAddress?.emailAddress }
@@ -52,7 +67,9 @@ function AuthInner({ children }: PropsWithChildren) {
       value={{
         isSignedIn: !!isSignedIn,
         user: authUser,
-        loading: !isLoaded,
+        // Considera "carregado" quando Clerk resolveu OU quando passou do timeout.
+        // `loading` é o sinal de gate do AuthGate em app/_layout.tsx.
+        loading: !(isLoaded || initTimedOut),
         signOut,
       }}
     >
