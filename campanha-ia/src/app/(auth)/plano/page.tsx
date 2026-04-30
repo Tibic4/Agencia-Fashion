@@ -74,7 +74,6 @@ export default function Plano() {
   const usage = usageRaw as LocalStoreUsage | null;
   const [credits, setCredits] = useState<StoreCredits | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
-  const [trialUsed, setTrialUsed] = useState(false);
 
   // Fix #2: Read URL params inside useEffect (not during render)
   useEffect(() => {
@@ -171,20 +170,6 @@ export default function Plano() {
       }
     }
     loadStoreData();
-  }, []);
-
-  // Check if trial was already used
-  useEffect(() => {
-    async function loadTrialStatus() {
-      try {
-        const res = await fetch("/api/credits/trial-status");
-        if (res.ok) {
-          const data = await res.json();
-          setTrialUsed(data.used === true);
-        }
-      } catch { /* ignore — will show trial if check fails */ }
-    }
-    loadTrialStatus();
   }, []);
 
   const handleCheckout = async (planId: string) => {
@@ -452,37 +437,9 @@ export default function Plano() {
         })}
       </div>
 
-      {/* Trial — only show for free plan users who haven't used it */}
-      {currentPlanName === "Avulso" && !trialUsed && (
-        <div className="mb-8">
-          <h3 className="text-lg font-bold mb-4">Comece agora</h3>
-          <div className="rounded-2xl p-5 text-center transition-all hover:-translate-y-1" style={{
-            background: "var(--gradient-brand-soft)",
-            border: "1px solid var(--brand-200)",
-            boxShadow: "var(--shadow-md)",
-          }}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="text-xl">🎯</span>
-              <h4 className="text-lg font-bold">Teste na Prática</h4>
-            </div>
-            <div className="flex items-baseline justify-center gap-1 mb-1">
-              <span className="text-2xl font-black">R$ 19,90</span>
-              <span className="text-sm" style={{ color: "var(--muted)" }}>único</span>
-            </div>
-            <p className="text-sm mb-3" style={{ color: "var(--muted)" }}>
-              3 campanhas + 1 modelo virtual • Sem mensalidade
-            </p>
-            <button
-              onClick={() => handleCreditCheckout("trial")}
-              disabled={creditLoading === "trial"}
-              className="w-full max-w-xs mx-auto py-3 px-2 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
-              style={{ background: "var(--gradient-brand)", color: "white" }}
-            >
-              {creditLoading === "trial" ? "Abrindo checkout..." : "⚡ Testar por R$ 19,90"}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Trial pago saiu — agora o "experimente" é o mini-trial gratuito
+          (1 campanha, 1 foto), oferecido pelo ClaimMiniTrialBanner em
+          /gerar. Aqui em /plano deixa o foco nos planos mensais e pacotes. */}
 
       {/* Credits */}
       <h3 className="text-lg font-bold mb-4">Créditos avulsos</h3>

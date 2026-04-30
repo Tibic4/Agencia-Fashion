@@ -86,10 +86,10 @@ const sections: Section[] = [
       "A Plataforma opera em modelo de assinatura mensal com créditos de uso, complementados por pacotes avulsos e trial de entrada:",
     ],
     list: [
-      "Trial R$ 19,90 — permite experimentar a geração de Campanhas com quantidade limitada de créditos;",
-      "Plano Starter — R$ 179,00/mês",
-      "Plano Pro — R$ 359,00/mês",
-      "Plano Business — R$ 749,00/mês",
+      "Trial gratuito (Beta) — 1 (uma) Campanha com 1 (uma) foto, sem custo, sujeito a vagas limitadas e sem necessidade de cartão;",
+      "Plano Essencial — R$ 89,00/mês",
+      "Plano Pro — R$ 179,00/mês",
+      "Plano Business — R$ 379,00/mês",
       "Packs avulsos — créditos adicionais disponíveis sem recorrência.",
     ],
     tail: [

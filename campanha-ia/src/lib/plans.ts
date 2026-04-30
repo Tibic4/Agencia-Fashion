@@ -13,7 +13,7 @@ export const PLANS = {
   essencial: {
     id: "essencial",
     name: "Essencial",
-    price: 179.0,
+    price: 89.0,
     campaigns_per_month: 15,
     models: 5,
     features: [
@@ -28,7 +28,7 @@ export const PLANS = {
   pro: {
     id: "pro",
     name: "Pro",
-    price: 359.0,
+    price: 179.0,
     campaigns_per_month: 40,
     models: 15,
     features: [
@@ -44,7 +44,7 @@ export const PLANS = {
   business: {
     id: "business",
     name: "Business",
-    price: 749.0,
+    price: 379.0,
     campaigns_per_month: 100,
     models: 40,
     features: [
@@ -97,23 +97,23 @@ export const CREDIT_PACKAGES_CAMPAIGNS = {
   "3_campanhas": {
     type: "campaigns" as const,
     quantity: 3,
-    price: 49.90,
+    price: 24.90,
     title: "Starter — 3 Campanhas",
-    description: "3 campanhas completas com modelo virtual (R$ 16,63/cada)",
+    description: "3 campanhas completas com modelo virtual (R$ 8,30/cada)",
   },
   "10_campanhas": {
     type: "campaigns" as const,
     quantity: 10,
-    price: 149.90,
+    price: 69.90,
     title: "Smart — 10 Campanhas",
-    description: "10 campanhas completas com modelo virtual (R$ 14,99/cada)",
+    description: "10 campanhas completas com modelo virtual (R$ 6,99/cada)",
   },
   "20_campanhas": {
     type: "campaigns" as const,
     quantity: 20,
-    price: 249.00,
+    price: 119.90,
     title: "Volume — 20 Campanhas",
-    description: "20 campanhas completas com modelo virtual (R$ 12,45/cada)",
+    description: "20 campanhas completas com modelo virtual (R$ 6,00/cada)",
   },
 } as const;
 
@@ -145,25 +145,15 @@ export const CREDIT_PACKAGES_MODELS = {
   },
 } as const;
 
-// ═══════════════════════════════════════════════════════════
-// TRIAL
-// ═══════════════════════════════════════════════════════════
-
-export const TRIAL_PACKAGE = {
-  type: "campaigns" as const,
-  quantity: 3,
-  price: 19.90,
-  title: "Teste na Prática",
-  description: "3 campanhas completas com modelo virtual + 1 modelo incluso",
-  bonusModels: 1,
-} as const;
+// Trial pago saiu — agora o trial é o mini-trial gratuito (1 campanha,
+// 1 foto), gerenciado pelos endpoints `/api/credits/{claim,}-mini-trial`.
+// Ver `components/ClaimMiniTrialBanner.tsx`.
 
 // ═══════════════════════════════════════════════════════════
 // ALL CREDIT PACKAGES (unified map for API)
 // ═══════════════════════════════════════════════════════════
 
 export const ALL_CREDIT_PACKAGES = {
-  trial: { ...TRIAL_PACKAGE, trial: true, bonusModels: TRIAL_PACKAGE.bonusModels },
   ...Object.fromEntries(
     Object.entries(CREDIT_PACKAGES_CAMPAIGNS).map(([k, v]) => [k, { ...v, trial: false, bonusModels: 0 }])
   ),

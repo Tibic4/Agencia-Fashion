@@ -110,26 +110,20 @@ const softwareJsonLd = {
   offers: [
     {
       "@type": "Offer",
-      name: "Teste na Prática",
-      price: "19.90",
-      priceCurrency: "BRL",
-    },
-    {
-      "@type": "Offer",
       name: "Essencial",
-      price: "179.00",
+      price: "89.00",
       priceCurrency: "BRL",
     },
     {
       "@type": "Offer",
       name: "Pro",
-      price: "359.00",
+      price: "179.00",
       priceCurrency: "BRL",
     },
     {
       "@type": "Offer",
       name: "Business",
-      price: "749.00",
+      price: "379.00",
       priceCurrency: "BRL",
     },
   ],

@@ -54,7 +54,7 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
       } else {
         const reasons: Record<string, string> = {
           already_used: "Você já reivindicou sua vaga grátis 🙂",
-          slots_full: "As 50 vagas grátis acabaram. Mas você pode começar com R$ 19,90.",
+          slots_full: "As 50 vagas grátis acabaram. Dá uma olhada nos planos mensais.",
           killswitch: "Beta encerrado.",
           no_store: "Complete o onboarding primeiro.",
           internal_error: "Erro ao reivindicar. Tenta de novo em alguns minutos.",
@@ -144,7 +144,7 @@ export default function ClaimMiniTrialBanner({ onClaimed }: { onClaimed?: () => 
             className="text-xs sm:text-sm mb-3"
             style={{ color: "var(--muted)" }}
           >
-            3 fotos com modelo virtual + legendas prontas. Sem cartão. Sem pegadinha.
+            1 foto com modelo virtual + legendas prontas. Sem cartão. Sem pegadinha.
           </p>
           <button
             type="button"

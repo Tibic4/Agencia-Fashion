@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { ALL_CREDIT_PACKAGES, type CreditPackageId } from "@/lib/plans";
 import { checkLoginRateLimit } from "@/lib/rate-limit";
@@ -76,24 +75,10 @@ export async function POST(request: NextRequest) {
 
     const pkg = CREDIT_PACKAGES[packageId as CreditPackageId];
 
-    // ── Trial: só pode comprar 1 vez ──
-    if (packageId === "trial") {
-      const supabase = createAdminClient();
-      const { count } = await supabase
-        .from("credit_purchases")
-        .select("id", { count: "exact", head: true })
-        .eq("store_id", store.id)
-        .eq("type", "campaigns")
-        .eq("quantity", 3)
-        .lte("price_brl", 20); // trial = R$ 19,90
-
-      if ((count ?? 0) > 0) {
-        return NextResponse.json(
-          { error: "Você já utilizou o Trial. Confira nossos planos mensais ou créditos avulsos!" },
-          { status: 400 }
-        );
-      }
-    }
+    // Trial pago saiu — agora o trial é o mini-trial gratuito gerenciado
+    // pelos endpoints `/api/credits/{claim,}-mini-trial`. Sem branch
+    // especial aqui: o frontend não envia mais `packageId === "trial"` e
+    // a key foi removida de ALL_CREDIT_PACKAGES.
 
     const userEmail = (session.sessionClaims as Record<string, unknown>)?.email as string || `${session.userId}@crialook.app`;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

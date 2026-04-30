@@ -24,7 +24,7 @@ export const PLANS = {
   essencial: {
     id: "essencial",
     name: "Essencial",
-    price: 179.0,
+    price: 89.0,
     campaigns_per_month: 15,
     models: 5,
     features: [
@@ -39,7 +39,7 @@ export const PLANS = {
   pro: {
     id: "pro",
     name: "Pro",
-    price: 359.0,
+    price: 179.0,
     campaigns_per_month: 40,
     models: 15,
     features: [
@@ -55,7 +55,7 @@ export const PLANS = {
   business: {
     id: "business",
     name: "Business",
-    price: 749.0,
+    price: 379.0,
     campaigns_per_month: 100,
     models: 40,
     features: [

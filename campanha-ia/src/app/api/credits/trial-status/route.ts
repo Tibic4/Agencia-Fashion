@@ -1,42 +1,18 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId } from "@/lib/db";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/credits/trial-status
- * 
- * Retorna se o usuário já utilizou o pacote Trial.
- * Verifica na tabela credit_purchases se há compra com características do trial.
+ * GET /api/credits/trial-status — DEPRECATED
+ *
+ * Existia pra detectar se o usuário já tinha comprado o trial pago de
+ * R$19,90. Esse pacote saiu — o trial agora é gratuito (1 campanha, 1
+ * foto) via `/api/credits/{claim,}-mini-trial`.
+ *
+ * Endpoint mantido como stub pra não quebrar caches do front antigo nem
+ * smoke/load tests externos. Sempre retorna `used: false`. Pode sair
+ * depois que o cache global expirar (~30d) ou no próximo round de cleanup.
  */
 export async function GET() {
-  try {
-    const session = await auth();
-    if (!session.userId) {
-      return NextResponse.json({ used: false });
-    }
-
-    const store = await getStoreByClerkId(session.userId);
-    if (!store) {
-      return NextResponse.json({ used: false });
-    }
-
-    const supabase = createAdminClient();
-    const { count } = await supabase
-      .from("credit_purchases")
-      .select("id", { count: "exact", head: true })
-      .eq("store_id", store.id)
-      .eq("type", "campaigns")
-      .eq("quantity", 3)
-      .lte("price_brl", 20); // trial = R$ 19,90
-
-    return NextResponse.json({ used: (count ?? 0) > 0 });
-  } catch (e) {
-    // em erro, retornamos `used: null` para a UI mostrar "carregando"
-    // em vez de disponibilizar o trial (que seria comportamento inseguro).
-    console.error("[API:trial-status] Erro:", e instanceof Error ? e.message : e);
-    return NextResponse.json({ used: null, error: "check_failed" });
-  }
+  return NextResponse.json({ used: false, deprecated: true });
 }
