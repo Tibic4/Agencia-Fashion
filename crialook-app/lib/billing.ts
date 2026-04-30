@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import {
   initConnection,
@@ -31,7 +30,7 @@ let purchaseUpdatedSub: { remove: () => void } | null = null;
 let purchaseErrorSub: { remove: () => void } | null = null;
 
 export async function initBilling() {
-  if (Platform.OS !== 'android') return;
+  if (process.env.EXPO_OS !== 'android') return;
   if (connected) return;
   await initConnection();
   connected = true;
@@ -55,7 +54,7 @@ export async function initBilling() {
 }
 
 export async function shutdownBilling() {
-  if (Platform.OS !== 'android') return;
+  if (process.env.EXPO_OS !== 'android') return;
   purchaseUpdatedSub?.remove();
   purchaseErrorSub?.remove();
   purchaseUpdatedSub = null;

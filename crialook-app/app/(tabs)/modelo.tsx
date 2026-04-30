@@ -3,22 +3,16 @@ import {
   Alert,
   AppState,
   type AppStateStatus,
-  Dimensions,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Animated, {
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import {
   AnimatedPressable,
   Button,
@@ -36,30 +30,49 @@ import {
 } from '@/components/CreateModelSheet';
 import { ModelPeekProvider, ModelPressable } from '@/components/ModelLongPressPreview';
 import { ModelBottomSheet, type ModelBottomSheetRef } from '@/components/ModelBottomSheet';
+import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { api, apiDelete, apiGet, apiGetCached, apiPost, invalidateApiCache } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, apiDelete, apiGet, apiPost } from '@/lib/api';
+import { qk } from '@/lib/query-client';
+import { toast } from '@/lib/toast';
+import { AuraGlow } from '@/components/skia';
 import { useT } from '@/lib/i18n';
 import type { StoreModel } from '@/types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_GAP = 10;
-// 3 colunas como no site: 20px de padding lateral em cada lado + 2 gaps internos
-const CARD_WIDTH = (SCREEN_WIDTH - 40 - CARD_GAP * 2) / 3;
 
+// 3 colunas como no site: 20px de padding lateral em cada lado + 2 gaps internos.
+// useWindowDimensions re-renderiza em rotação / split-view (iPad) — Dimensions.get
+// captura o valor uma vez no module scope e quebra responsividade.
+//
+// Retorna o array de estilo já merged ao invés de só a width pra que cards em
+// componentes filhos (FreeCard, ModelCard etc) possam aplicar com 1 linha.
+function usePortraitCardStyle() {
+  const { width } = useWindowDimensions();
+  const cardWidth = (width - 40 - CARD_GAP * 2) / 3;
+  return useMemo(() => [styles.portraitCard, { width: cardWidth }], [cardWidth]);
+}
+
+// CSS API do Reanimated 4: declarativo, otimizável (Reanimated sabe exatamente
+// quais props animam, sem worklet runtime). Substitui o useEffect+useSharedValue
+// imperativo da versão anterior. Veja references/animations-and-gestures.md.
 function PulsingBadge({ label }: { label: string }) {
-  const opacity = useSharedValue(1);
-
-  useEffect(() => {
-    opacity.value = withRepeat(withTiming(0.6, { duration: 800 }), -1, true);
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
   return (
-    <Animated.View style={[styles.activeBadge, animStyle]}>
+    <Animated.View
+      style={[
+        styles.activeBadge,
+        {
+          animationName: { '0%': { opacity: 1 }, '50%': { opacity: 0.6 }, '100%': { opacity: 1 } },
+          animationDuration: '1600ms',
+          animationIterationCount: 'infinite',
+          animationTimingFunction: 'ease-in-out',
+        } as any,
+      ]}
+    >
       <Text style={styles.activeBadgeText}>{label}</Text>
     </Animated.View>
   );
@@ -89,17 +102,39 @@ const SKIN_PLACEHOLDER_COLOR: Record<string, string> = {
   negra: '#6B4226',
 };
 
-export default function ModeloScreen() {
+// Query key for the modelo screen's own /model/list view (includes the
+// `limit` field used by canCreate). Distinct from `qk.store.models()` used
+// by useModelSelector — that one normalises the response into ModelItem[]
+// and is shared with /gerar. Keeping them separate avoids the picker
+// caching the wrong shape, but invalidating one invalidates the other via
+// the prefix when needed.
+const MODEL_LIST_KEY = ['modelo', 'list'] as const;
+
+function ModeloScreenInner() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const portraitCardStyle = usePortraitCardStyle();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const { t } = useT();
   const headerH = useHeaderHeight();
   const padBottom = useTabContentPaddingBottom();
 
-  const [models, setModels] = useState<StoreModel[]>([]);
-  const [loadingModels, setLoadingModels] = useState(true);
-  const [modelLimit, setModelLimit] = useState(0);
+  // useQuery owns: cache, dedup, refetch on focus, retry, cancellation.
+  // The model-preview polling effect below mutates this cache directly via
+  // queryClient.setQueryData rather than a separate useState mirror, so
+  // there is exactly one source of truth for the model list on this screen.
+  const modelListQ = useQuery({
+    queryKey: MODEL_LIST_KEY,
+    queryFn: ({ signal }) =>
+      apiGet<{ models: StoreModel[]; limit: number }>('/model/list', { signal }),
+    staleTime: 60_000,
+  });
+  const models = modelListQ.data?.models ?? [];
+  const modelLimit = modelListQ.data?.limit ?? 0;
+  const loadingModels = modelListQ.isPending;
+  const refreshing = modelListQ.isFetching && !modelListQ.isPending;
+
   // When the user has many models we collapse to 6 by default and reveal a
   // gradient "Ver todas" link — a long scroll of avatars feels overwhelming
   // and steals attention from the empty state's CTAs.
@@ -115,23 +150,28 @@ export default function ModeloScreen() {
   const [body, setBody] = useState('media');
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   const sheetRef = useRef<CreateModelSheetRef>(null);
   // BottomSheet de preview com pinch-zoom (acionado pelo botão 🔍 do card).
   const peekSheetRef = useRef<ModelBottomSheetRef>(null);
 
-  const loadModels = useCallback(async (opts?: { skipCache?: boolean }) => {
-    if (opts?.skipCache) await invalidateApiCache('/model/list');
-    const data = await apiGetCached<{ models: StoreModel[]; limit: number }>('/model/list', 60_000);
-    setModels(data.models || []);
-    setModelLimit(data.limit ?? 0);
-  }, []);
+  const onRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: MODEL_LIST_KEY });
+    queryClient.invalidateQueries({ queryKey: qk.store.models() });
+  }, [queryClient]);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try { await loadModels({ skipCache: true }); } catch {} finally { setRefreshing(false); }
-  }, [loadModels]);
+  // Helper: mutate the cached model list in place (used by polling and
+  // optimistic mutations). Centralised so we never accidentally drop the
+  // `limit` field when patching `models`.
+  const patchModels = useCallback(
+    (mutator: (current: StoreModel[]) => StoreModel[]) => {
+      queryClient.setQueryData<{ models: StoreModel[]; limit: number }>(MODEL_LIST_KEY, (old) => {
+        if (!old) return old;
+        return { ...old, models: mutator(old.models) };
+      });
+    },
+    [queryClient],
+  );
 
   const canCreate = models.length < modelLimit;
 
@@ -168,16 +208,12 @@ export default function ModeloScreen() {
     [gender, skin, hairTexture, hairLength, hairColor, body, name],
   );
 
-  useEffect(() => {
-    loadModels().catch(() => {}).finally(() => setLoadingModels(false));
-  }, []);
-
-  // Refetch ao focar a aba — usuário pode ter mudado plano em /plano e voltado
-  // sem reiniciar o app. modelLimit precisa ser fresh pra `canCreate` casar.
+  // Refetch on focus — user may have changed plan in /plano and come back
+  // without restarting the app. modelLimit must be fresh for canCreate to match.
   useFocusEffect(
     useCallback(() => {
-      loadModels({ skipCache: true }).catch(() => {});
-    }, [loadModels]),
+      queryClient.invalidateQueries({ queryKey: MODEL_LIST_KEY });
+    }, [queryClient]),
   );
 
   // Poll for preview generation — stable ref prevents re-triggering on every model state change
@@ -204,8 +240,11 @@ export default function ModeloScreen() {
         const res = await apiGet<{ statuses: Record<string, { url?: string; status?: string }> }>(
           `/model/preview-status?ids=${ids.join(',')}`,
         );
-        setModels(prev =>
-          prev.map(m => {
+        // Patch the cached query directly — keeps the source of truth in
+        // TanStack Query so other consumers (e.g. useModelSelector via
+        // qk.store.models invalidation) see updates without a refetch.
+        patchModels((prev) =>
+          prev.map((m) => {
             const s = res.statuses?.[m.id];
             if (s?.url) return { ...m, photo_url: s.url, preview_failed: false };
             if (s?.status === 'failed') return { ...m, preview_failed: true };
@@ -252,9 +291,18 @@ export default function ModeloScreen() {
     };
   }, [models.length]);
 
-  const handleCreate = async () => {
-    setCreating(true);
-    try {
+  // Mutations: create / delete / activate. Each invalidates both the
+  // modelo screen's MODEL_LIST_KEY and the picker's qk.store.models() so the
+  // /gerar tab also refreshes its model list without a manual call.
+  const invalidateModelLists = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: MODEL_LIST_KEY }),
+      queryClient.invalidateQueries({ queryKey: qk.store.models() }),
+    ]);
+  }, [queryClient]);
+
+  const createMut = useMutation({
+    mutationFn: () => {
       const form = new FormData();
       form.append('skinTone', skin);
       form.append('hairTexture', hairTexture);
@@ -266,12 +314,13 @@ export default function ModeloScreen() {
       form.append('ageRange', gender === 'masculino' ? 'adulto_26_35' : 'adulta_26_35');
       form.append('name', name || 'Modelo');
       form.append('gender', gender);
-
-      const res = await api<{ id?: string; data?: { id?: string; previewUrl?: string } }>(
+      return api<{ id?: string; data?: { id?: string; previewUrl?: string } }>(
         '/model/create',
         { method: 'POST', body: form },
       );
-
+    },
+    onMutate: () => setCreating(true),
+    onSuccess: (res) => {
       const newModel: StoreModel = {
         id: res.data?.id || res.id || Date.now().toString(),
         name: name || 'Modelo',
@@ -286,16 +335,34 @@ export default function ModeloScreen() {
         created_at: new Date().toISOString(),
         photo_url: res.data?.previewUrl || null,
       };
-      setModels(prev => [...prev, newModel]);
-      invalidateApiCache('/model/list').catch(() => {});
+      // Optimistic-ish: insert immediately so the grid updates without
+      // waiting for the refetch. The invalidate then pulls server truth.
+      patchModels((prev) => [...prev, newModel]);
+      invalidateModelLists();
       sheetRef.current?.dismiss();
       resetForm();
-    } catch (e: any) {
-      Alert.alert(t('common.error'), e?.message || t('model.createError'));
-    } finally {
-      setCreating(false);
-    }
-  };
+    },
+    onError: (e: { message?: string }) => {
+      toast.error(e?.message || t('model.createError'));
+    },
+    onSettled: () => setCreating(false),
+  });
+
+  const handleCreate = () => createMut.mutate();
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => apiDelete(`/model/${id}`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: MODEL_LIST_KEY });
+      const prev = queryClient.getQueryData<{ models: StoreModel[]; limit: number }>(MODEL_LIST_KEY);
+      patchModels((current) => current.filter((m) => m.id !== id));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(MODEL_LIST_KEY, ctx.prev);
+    },
+    onSettled: () => invalidateModelLists(),
+  });
 
   const handleDelete = (id: string) => {
     Alert.alert(t('model.deleteTitle'), t('model.deleteMessage'), [
@@ -303,26 +370,26 @@ export default function ModeloScreen() {
       {
         text: t('common.delete'),
         style: 'destructive',
-        onPress: async () => {
-          setModels(prev => prev.filter(m => m.id !== id));
-          try {
-            await apiDelete(`/model/${id}`);
-            invalidateApiCache('/model/list').catch(() => {});
-          } catch {}
-        },
+        onPress: () => deleteMut.mutate(id),
       },
     ]);
   };
 
-  const handleSetActive = async (id: string) => {
-    const prev = [...models];
-    setModels(m => m.map(x => ({ ...x, is_active: x.id === id })));
-    try {
-      await apiPost(`/model/${id}/activate`);
-    } catch {
-      setModels(prev);
-    }
-  };
+  const setActiveMut = useMutation({
+    mutationFn: (id: string) => apiPost(`/model/${id}/activate`),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: MODEL_LIST_KEY });
+      const prev = queryClient.getQueryData<{ models: StoreModel[]; limit: number }>(MODEL_LIST_KEY);
+      patchModels((current) => current.map((x) => ({ ...x, is_active: x.id === id })));
+      return { prev };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(MODEL_LIST_KEY, ctx.prev);
+    },
+    onSettled: () => invalidateModelLists(),
+  });
+
+  const handleSetActive = (id: string) => setActiveMut.mutate(id);
 
   const resetForm = () => {
     setGender('feminino');
@@ -352,7 +419,7 @@ export default function ModeloScreen() {
           </View>
           <View style={styles.grid}>
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <View key={i} style={styles.portraitCard}>
+              <View key={i} style={portraitCardStyle}>
                 <Skeleton width="100%" style={{ aspectRatio: 3 / 4 }} borderRadius={16} />
                 <Skeleton width="70%" height={14} borderRadius={4} style={{ marginTop: 8 }} />
                 <Skeleton width="55%" height={12} borderRadius={4} style={{ marginTop: 4 }} />
@@ -408,6 +475,14 @@ export default function ModeloScreen() {
   );
 }
 
+export default function ModeloScreen() {
+  return (
+    <TabErrorBoundary screen="modelo">
+      <ModeloScreenInner />
+    </TabErrorBoundary>
+  );
+}
+
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 /**
@@ -457,6 +532,7 @@ function ModelsListBody({
     [models, shouldCollapse],
   );
   const hiddenCount = totalShown - COLLAPSE_THRESHOLD;
+  const portraitCardStyle = usePortraitCardStyle();
 
   return (
     <View style={styles.content}>
@@ -536,7 +612,7 @@ function ModelsListBody({
                 entering={FadeInDown.delay(visibleModels.length * 80)
                   .duration(400)
                   .springify()}
-                style={styles.portraitCard}
+                style={portraitCardStyle}
               >
                 <AnimatedPressable
                   onPress={onCreate}
@@ -550,14 +626,41 @@ function ModelsListBody({
                     {
                       borderColor: Colors.brand.primary,
                       backgroundColor: colors.cardElevated,
-                    },
+                      // Subtle brand glow + hover-able look. Reads as
+                      // "tap me — there's more to add" instead of just
+                      // "empty slot". Reanimated 4 CSS pulse keeps it alive
+                      // without being noisy.
+                      boxShadow: `0 0 12px ${Colors.brand.glowMid}`,
+                      animationName: {
+                        '0%': { boxShadow: `0 0 8px ${Colors.brand.glowSoft}` },
+                        '50%': { boxShadow: `0 0 16px ${Colors.brand.glowMid}` },
+                        '100%': { boxShadow: `0 0 8px ${Colors.brand.glowSoft}` },
+                      },
+                      animationDuration: '2400ms',
+                      animationIterationCount: 'infinite',
+                      animationTimingFunction: 'ease-in-out',
+                    } as any,
                   ]}
                 >
-                  <Text
-                    style={[styles.newModelPlus, { color: Colors.brand.primary }]}
+                  {/* Plus glyph in a brand-tinted soft circle — replaces the
+                      flat "+" with a Material-3-flavoured action chip look. */}
+                  <View
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 22,
+                      backgroundColor: Colors.brand.glowSoft,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 6,
+                    }}
                   >
-                    +
-                  </Text>
+                    <Text
+                      style={[styles.newModelPlus, { color: Colors.brand.primary, fontSize: 28, lineHeight: 32 }]}
+                    >
+                      +
+                    </Text>
+                  </View>
                   <Text
                     style={[styles.newModelLabel, { color: Colors.brand.primary }]}
                   >
@@ -566,7 +669,7 @@ function ModelsListBody({
                   <Text
                     style={[
                       styles.newModelCounter,
-                      { color: colors.textSecondary },
+                      { color: colors.textSecondary, fontVariant: ['tabular-nums'] },
                     ]}
                   >
                     {t('model.newModelCardCounter', {
@@ -640,12 +743,42 @@ function ModelGridCard({
   const subtitle = `${genderPrefix} ${labelBody}`;
 
   const hasPhoto = !!model.photo_url;
+  const portraitCardStyle = usePortraitCardStyle();
 
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 80).duration(400).springify()}
-      style={styles.portraitCard}
+      style={portraitCardStyle}
     >
+      {/* AuraGlow brand-tinted halo behind active models — same Skia
+          component used on the Pro plan card in /plano, intentional to
+          reinforce "this is the chosen one" visually across screens.
+          Sized to bleed outside the card edges (negative offsets) so the
+          glow halos the silhouette instead of being clipped by the card
+          border. */}
+      {model.is_active && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: -16,
+            left: -16,
+            right: -16,
+            bottom: -16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: -1,
+          }}
+        >
+          <AuraGlow
+            size={Math.max(160, 200)}
+            color={Colors.brand.secondary}
+            opacityMin={0.18}
+            opacityMax={0.42}
+            periodMs={3200}
+          />
+        </View>
+      )}
       {/* ModelPressable: tap = ativa modelo, long-press = peek preview overlay
           (paridade com a tela /gerar). Border permanente (transparente quando
           inactive) + sem mudança de elevation entre estados — deixa o layout
@@ -678,6 +811,28 @@ function ModelGridCard({
               },
             ]}
           >
+            {/* While the preview generates, the placeholder has a slow shimmer
+                wave overlay (Reanimated CSS API) that signals "this is being
+                worked on" without using a spinner — feels less mechanical. */}
+            {!model.preview_failed && (
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    backgroundColor: 'rgba(255,255,255,0.18)',
+                    animationName: {
+                      '0%': { opacity: 0 },
+                      '50%': { opacity: 0.6 },
+                      '100%': { opacity: 0 },
+                    },
+                    animationDuration: '1800ms',
+                    animationIterationCount: 'infinite',
+                    animationTimingFunction: 'ease-in-out',
+                  } as any,
+                ]}
+              />
+            )}
             <Text style={{ fontSize: 32 }}>
               {model.preview_failed ? '⚠️' : '⏳'}
             </Text>
@@ -745,7 +900,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_700Bold',
     letterSpacing: -0.5,
   },
-  subtitle: { fontSize: 14, marginTop: 2 },
+  // tabular-nums on the "{n}/{limit} criados" label so digits don't jiggle
+  // mid-fetch when the count updates after a create/delete.
+  subtitle: { fontSize: 14, marginTop: 2, fontVariant: ['tabular-nums'] },
   counterPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -758,6 +915,7 @@ const styles = StyleSheet.create({
   counterPillText: {
     fontSize: 13,
     fontFamily: 'Inter_700Bold',
+    fontVariant: ['tabular-nums'],
   },
   newModelCard: {
     borderStyle: 'dashed',
@@ -799,7 +957,7 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
   },
   portraitCard: {
-    width: CARD_WIDTH,
+    // width injetado dinamicamente via useCardWidth() pra responder a rotação / split-view.
     gap: 6,
   },
   portraitImageWrap: {

@@ -366,5 +366,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
     letterSpacing: -0.2,
+    // tabular-nums keeps "12/30" → "13/30" stable when the digit changes,
+    // avoiding the jiggle that the variable-width Inter glyphs would cause.
+    fontVariant: ['tabular-nums'],
   },
 });

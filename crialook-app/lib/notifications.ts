@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -26,7 +25,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
   if (finalStatus !== 'granted') return null;
 
-  if (Platform.OS === 'android') {
+  if (process.env.EXPO_OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'CriaLook',
       importance: Notifications.AndroidImportance.HIGH,
@@ -90,7 +89,7 @@ export async function scheduleCampaignReadyNotification(
         body: 'Suas fotos estão prontas. Toque pra ver.',
         data: { campaignId },
         sound: 'default',
-        ...(Platform.OS === 'android' ? { channelId: 'campaigns' } : {}),
+        ...(process.env.EXPO_OS === 'android' ? { channelId: 'campaigns' } : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,

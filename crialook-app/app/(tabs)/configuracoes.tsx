@@ -6,6 +6,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -24,6 +25,10 @@ import { useRouter } from 'expo-router';
 import { api, apiDelete, apiGetCached, apiPatch, invalidateApiCache } from '@/lib/api';
 import { compressForUpload, buildFormDataFile } from '@/lib/images';
 import { useT, type Locale } from '@/lib/i18n';
+import { usePreference } from '@/lib/preferences';
+import { haptic } from '@/lib/haptics';
+import { toast } from '@/lib/toast';
+import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 
 // Mantenha em sync com `app/onboarding.tsx` SEGMENTS — values têm que bater
 // senão o segment salvo no onboarding nunca casa com a opção exibida aqui.
@@ -41,7 +46,52 @@ const segments = [
 
 const DELETE_CONFIRMATION_WORD = 'EXCLUIR';
 
-export default function ConfiguracoesScreen() {
+/**
+ * PreferenceRow — label + description + native Switch in a single row.
+ * The Switch fires its own native haptic on press; we additionally fire
+ * `haptic.tap()` so users keep feeling something even if their device-level
+ * haptic engine is muted but ours is enabled.
+ */
+function PreferenceRow({ label, description }: { label: string; description: string }) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const [enabled, setEnabled] = usePreference('hapticsEnabled');
+
+  return (
+    <View style={prefRowStyles.row}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[prefRowStyles.label, { color: colors.text }]}>{label}</Text>
+        <Text style={[prefRowStyles.desc, { color: colors.textSecondary }]}>{description}</Text>
+      </View>
+      <Switch
+        value={enabled}
+        onValueChange={(v) => {
+          // Fire BEFORE flipping so the user feels the tap that toggles it
+          // off; flipping first would suppress the feedback that confirms the
+          // action.
+          haptic.tap();
+          setEnabled(v);
+        }}
+        trackColor={{ false: colors.border, true: Colors.brand.primary }}
+        thumbColor={Platform.select({ android: '#fff', default: undefined })}
+        accessibilityLabel={label}
+      />
+    </View>
+  );
+}
+
+const prefRowStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 56,
+  },
+  label: { fontSize: 15, fontWeight: '600' },
+  desc: { fontSize: 12.5, lineHeight: 17 },
+});
+
+function ConfiguracoesScreenInner() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { signOut, user } = useAuth();
@@ -108,7 +158,7 @@ export default function ConfiguracoesScreen() {
       });
       setLogoUrl(res.url);
     } catch (e: any) {
-      Alert.alert(t('common.error'), e?.message || t('errors.logoUploadFailed'));
+      toast.error(e?.message || t('errors.logoUploadFailed'));
     } finally {
       setUploadingLogo(false);
     }
@@ -127,8 +177,12 @@ export default function ConfiguracoesScreen() {
       invalidateApiCache('/store').catch(() => {});
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      // Quiet success confirmation — the in-button "Sucesso" already toggles
+      // (saved state), so toast is the secondary signal that persists for
+      // ~3.5s for users who looked away during save.
+      toast.success(t('common.success'));
     } catch {
-      Alert.alert(t('common.error'), t('errors.saveFailed'));
+      toast.error(t('errors.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -144,7 +198,7 @@ export default function ConfiguracoesScreen() {
   const handleDeleteAccount = async () => {
     const confirmWord = t('config.deleteConfirmationWord');
     if (deleteConfirmation.trim().toUpperCase() !== confirmWord) {
-      Alert.alert(t('common.error'), t('errors.deleteConfirmationInvalid'));
+      toast.warning(t('errors.deleteConfirmationInvalid'));
       return;
     }
     setDeleting(true);
@@ -152,7 +206,7 @@ export default function ConfiguracoesScreen() {
       await apiDelete('/me');
       await signOut();
     } catch (e: any) {
-      Alert.alert(t('common.error'), e?.message || t('errors.deleteAccountFailed'));
+      toast.error(e?.message || t('errors.deleteAccountFailed'), { durationMs: 7000 });
     } finally {
       setDeleting(false);
     }
@@ -323,6 +377,18 @@ export default function ConfiguracoesScreen() {
           loading={saving}
           disabled={saving}
         />
+
+        {/* Preferences — first user-toggleable pref. The Switch component
+            is the platform-native one (Material 3 on Android, UIKit on iOS)
+            so the user gets ripple + sound feedback that match every other
+            switch they've seen on their device. */}
+        <Card style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Acessibilidade</Text>
+          <PreferenceRow
+            label="Vibração"
+            description="Feedback tátil ao tocar nos botões e ao concluir ações."
+          />
+        </Card>
 
         {/* Language */}
         <Card style={styles.section}>
@@ -508,6 +574,14 @@ export default function ConfiguracoesScreen() {
     </ScrollView>
     </View>
     </KeyboardAvoidingView>
+  );
+}
+
+export default function ConfiguracoesScreen() {
+  return (
+    <TabErrorBoundary screen="configuracoes">
+      <ConfiguracoesScreenInner />
+    </TabErrorBoundary>
   );
 }
 

@@ -35,6 +35,13 @@ import {
   type CameraType,
   type FlashMode,
 } from 'expo-camera';
+import { useKeepAwake } from 'expo-keep-awake';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { haptic } from '@/lib/haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Image } from 'expo-image';
@@ -63,6 +70,10 @@ export function CameraCaptureModal({
   onCapture,
 }: CameraCaptureModalProps) {
   const { t } = useT();
+  // Keep the screen awake while the viewfinder is open. Without this, a slow
+  // user / first-time tour reader can have the screen dim mid-flow, which
+  // also pauses the camera preview on some Androids.
+  useKeepAwake();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>('back');
@@ -70,6 +81,12 @@ export function CameraCaptureModal({
   const [busy, setBusy] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [showTour, setShowTour] = useState<boolean | null>(null);
+
+  // Shutter flash overlay — single full-screen white View driven by a worklet
+  // opacity animation. Worklet (not CSS API) because we want a precisely-timed
+  // single-shot sequence (in 80ms → out 200ms) that only fires per capture.
+  const flashOpacity = useSharedValue(0);
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flashOpacity.value }));
 
   // Resolve "have I shown the tour before?" once when the modal first opens.
   useEffect(() => {
@@ -100,7 +117,17 @@ export function CameraCaptureModal({
   const handleShoot = async () => {
     if (!cameraRef.current || busy) return;
     setBusy(true);
-    haptic.confirm();
+    // Snap haptic — different texture from the press/tap used elsewhere, so
+    // the user feels "the shutter fired" not "I pressed a button".
+    haptic.snap();
+    // Shutter flash: white overlay opacity 0 → 1 → 0 in ~280ms. Mimics the
+    // optical flash a DSLR does even with no real flash, providing visual
+    // confirmation that the photo was captured before the preview frame
+    // arrives (which can take 200-500ms on mid-range Androids).
+    flashOpacity.value = withSequence(
+      withTiming(1, { duration: 80 }),
+      withTiming(0, { duration: 200 }),
+    );
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 1,
@@ -293,6 +320,13 @@ export function CameraCaptureModal({
             </Pressable>
           </View>
         </CameraView>
+        {/* Shutter flash overlay — sits above the camera feed and below the
+            modal's chrome (back / flash / flip). pointerEvents none so taps
+            during the 280ms flash still hit the shutter. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: '#fff' }, flashStyle]}
+        />
       </View>
     );
   };

@@ -5,11 +5,19 @@
  *  filter, and tracks selection + preview state. Without isolation, this state
  *  pollutes the main screen and forces every render to reason about it.
  *
- *  This hook also handles the cache call (apiGetCached) once, so callers don't
- *  re-implement TTLs.
+ *  This version uses TanStack Query under the hood:
+ *    - `useQueries` runs both reads concurrently and exposes their state.
+ *    - The bank list has a 24h staleTime (the stock library rarely changes);
+ *      the user list has 60s (paritário com o site /model/list).
+ *    - Both queries share the QueryClient with /modelo + /gerar, so when the
+ *      user creates / deletes a model on the modelo screen, that screen calls
+ *      `invalidateQueries({ queryKey: qk.store.models() })` and the picker
+ *      here updates without a manual refetch.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { apiGetCached } from '@/lib/api';
+import { useMemo, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api';
+import { qk } from '@/lib/query-client';
 import { t } from '@/lib/i18n';
 import type { ModelItem } from '@/types';
 
@@ -51,31 +59,45 @@ interface UseModelSelectorResult {
   isCustomSelection: boolean;
 }
 
+const BANK_KEY = ['models', 'bank'] as const;
+
 export function useModelSelector(): UseModelSelectorResult {
-  const [models, setModels] = useState<ModelItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedModelId, setSelectedModelId] = useState<string>('random');
   const [filter, setFilter] = useState<ModelFilter>('all');
   const [previewModel, setPreviewModel] = useState<ModelItem | null>(null);
 
-  useEffect(() => {
-    Promise.all([
-      apiGetCached<{ models: ModelItem[] }>('/models/bank', 24 * 60 * 60_000)
-        .catch(() => ({ models: [] })),
-      apiGetCached<{ models: ModelItem[] }>('/model/list', 60_000)
-        .catch(() => ({ models: [] })),
-    ])
-      .then(([bank, custom]) => {
-        const stock = (bank.models || []).map(m => ({ ...m, is_custom: false }));
-        const mine = (custom.models || []).map(m => ({
-          ...m,
-          image_url: m.photo_url || m.image_url,
-          is_custom: true,
-        }));
-        setModels([...mine, ...stock]);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const [bankQ, customQ] = useQueries({
+    queries: [
+      {
+        queryKey: BANK_KEY,
+        queryFn: ({ signal }: { signal?: AbortSignal }) =>
+          apiGet<{ models: ModelItem[] }>('/models/bank', { signal }),
+        // Stock library is effectively static during a session.
+        staleTime: 24 * 60 * 60_000,
+        retry: 1,
+      },
+      {
+        queryKey: qk.store.models(),
+        queryFn: ({ signal }: { signal?: AbortSignal }) =>
+          apiGet<{ models: ModelItem[] }>('/model/list', { signal }),
+        staleTime: 60_000,
+      },
+    ],
+  });
+
+  // Either query may fail; we still want to render whatever loaded. Old
+  // behaviour: `.catch(() => ({ models: [] }))` swallowed errors silently.
+  const models = useMemo(() => {
+    const stock = (bankQ.data?.models ?? []).map((m) => ({ ...m, is_custom: false }));
+    const mine = (customQ.data?.models ?? []).map((m) => ({
+      ...m,
+      image_url: m.photo_url || m.image_url,
+      is_custom: true,
+    }));
+    return [...mine, ...stock];
+  }, [bankQ.data, customQ.data]);
+
+  const loading = bankQ.isPending || customQ.isPending;
 
   const filteredModels = useMemo(() => {
     const random: ModelItem = {
@@ -83,13 +105,13 @@ export function useModelSelector(): UseModelSelectorResult {
       name: t('modelNames.random'),
       body_type: '',
     };
-    const base = models.filter(m => matchesFilter(m.body_type, filter));
+    const base = models.filter((m) => matchesFilter(m.body_type, filter));
     return [random, ...base];
   }, [models, filter]);
 
   const isCustomSelection = useMemo(() => {
     if (selectedModelId === 'random') return false;
-    return models.find(m => m.id === selectedModelId)?.is_custom ?? false;
+    return models.find((m) => m.id === selectedModelId)?.is_custom ?? false;
   }, [models, selectedModelId]);
 
   return {

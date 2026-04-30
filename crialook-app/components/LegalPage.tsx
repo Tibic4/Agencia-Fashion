@@ -20,6 +20,7 @@
  */
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -54,15 +55,30 @@ export function LegalPage({ title, subtitle, lastUpdated, blocks }: Props) {
       showsVerticalScrollIndicator={false}
     >
       {lastUpdated && (
-        <Text style={[styles.kicker, { color: colors.textSecondary }]}>
+        <Animated.Text
+          entering={FadeIn.duration(280)}
+          style={[styles.kicker, { color: colors.textSecondary }]}
+          selectable
+        >
           Atualizado em {lastUpdated}
-        </Text>
+        </Animated.Text>
       )}
-      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
+      <Animated.Text
+        entering={FadeInDown.duration(360).delay(40)}
+        style={[styles.title, { color: colors.text }]}
+        accessibilityRole="header"
+        selectable
+      >
         {title}
-      </Text>
+      </Animated.Text>
       {subtitle && (
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+        <Animated.Text
+          entering={FadeInDown.duration(360).delay(80)}
+          style={[styles.subtitle, { color: colors.textSecondary }]}
+          selectable
+        >
+          {subtitle}
+        </Animated.Text>
       )}
 
       <View style={{ height: 24 }} />
@@ -75,50 +91,75 @@ export function LegalPage({ title, subtitle, lastUpdated, blocks }: Props) {
 type SchemeColors = (typeof Colors)['light'];
 
 function renderBlock(block: LegalBlock, key: number, colors: SchemeColors) {
+  // Subtle stagger so the page paints in waves rather than slamming all at
+  // once. Cap the delay so deep documents don't make the bottom blocks feel
+  // laggy. 120ms cap keeps everything visible within ~500ms.
+  const delay = Math.min(120 + key * 30, 360);
+
   switch (block.type) {
     case 'kicker':
       return (
-        <Text key={key} style={[styles.kicker, { color: colors.textSecondary, marginTop: 16 }]}>
+        <Animated.Text
+          key={key}
+          entering={FadeIn.duration(260).delay(delay)}
+          style={[styles.kicker, { color: colors.textSecondary, marginTop: 16 }]}
+          selectable
+        >
           {block.text}
-        </Text>
+        </Animated.Text>
       );
     case 'heading':
       return (
-        <Text
+        <Animated.Text
           key={key}
+          entering={FadeInDown.duration(300).delay(delay)}
           style={[styles.heading, { color: colors.text }]}
           accessibilityRole="header"
+          selectable
         >
           {block.text}
-        </Text>
+        </Animated.Text>
       );
     case 'paragraph':
       return (
-        <Text key={key} style={[styles.paragraph, { color: colors.text }]}>
+        <Animated.Text
+          key={key}
+          entering={FadeIn.duration(280).delay(delay)}
+          style={[styles.paragraph, { color: colors.text }]}
+          selectable
+        >
           {block.text}
-        </Text>
+        </Animated.Text>
       );
     case 'list':
       return (
-        <View key={key} style={styles.list}>
+        <Animated.View
+          key={key}
+          entering={FadeIn.duration(300).delay(delay)}
+          style={styles.list}
+        >
           {block.items.map((item, j) => (
             <View key={j} style={styles.listItem}>
               <Text style={[styles.bullet, { color: Colors.brand.primary }]}>•</Text>
-              <Text style={[styles.listText, { color: colors.text }]}>{item}</Text>
+              <Text style={[styles.listText, { color: colors.text }]} selectable>
+                {item}
+              </Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
       );
     case 'link':
       return (
-        <Text
+        <Animated.Text
           key={key}
+          entering={FadeIn.duration(280).delay(delay)}
           style={[styles.link, { color: Colors.brand.primary }]}
           onPress={() => Linking.openURL(block.href).catch(() => {})}
           accessibilityRole="link"
+          selectable
         >
           {block.label}
-        </Text>
+        </Animated.Text>
       );
     case 'spacer':
       return <View key={key} style={{ height: block.size ?? 16 }} />;

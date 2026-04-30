@@ -18,17 +18,31 @@ import { registerForPushNotifications, addNotificationResponseListener, getLastN
 import { apiPost, apiGet, pruneApiCache } from '@/lib/api';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { AppErrorBoundary } from '@/components/ErrorBoundary';
+import { AppFadeIn } from '@/components/AppFadeIn';
 import { BiometricConsentMount } from '@/components/BiometricConsentModal';
+import { ToastHost } from '@/components/ToastHost';
 import { initBilling, shutdownBilling } from '@/lib/billing';
 import { initSentry, Sentry } from '@/lib/sentry';
 import { initLocale } from '@/lib/i18n';
+import {
+  getQueryClient,
+  wireQueryClientLifecycle,
+  setupQueryPersistence,
+} from '@/lib/query-client';
+import { QueryClientProvider } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 
 initSentry();
 initLocale();
-// Sweep cache stale no boot — sem isso entradas com TTL longo nunca lidas
-// vazam no AsyncStorage até bater no soft-cap de 6MB do Android.
+// Sweep cache stale no boot — entradas com TTL longo nunca relidas continuam
+// ocupando espaço no MMKV file mapping até serem expiradas.
 pruneApiCache().catch(() => {});
+
+// TanStack Query lifecycle: AppState → focus, expo-network → online. Persist
+// query cache to MMKV so cold-start screens paint instantly. See
+// lib/query-client.ts. Idempotent — safe at module scope.
+wireQueryClientLifecycle();
+setupQueryPersistence().catch(() => {});
 
 // Fecha auth session pendente quando o app é reaberto após o OAuth redirect.
 // Sem isso o flow useSSO pode travar esperando um resultado que nunca chega.
@@ -117,6 +131,18 @@ function AuthGate({ onReady }: { onReady?: () => void }) {
     const syncToken = async () => {
       if (pushTokenSyncedRef.current) return;
       try {
+        // IMPORTANT: don't ask for permission here — opt-in rate is 4-5×
+        // higher when we ask AFTER the user has experienced the value
+        // (a successful generation in resultado.tsx). At boot we just
+        // try to fetch the token IF permission was already granted in a
+        // previous session. `registerForPushNotifications()` no-ops the
+        // request when permission is `denied` and only requests when
+        // `undetermined` — see lib/notifications.ts. To be conservative
+        // here, we skip the call entirely and let resultado.tsx own
+        // the timing of the first prompt.
+        const { getPermissionsAsync } = await import('expo-notifications');
+        const { status } = await getPermissionsAsync();
+        if (status !== 'granted') return;
         const token = await registerForPushNotifications();
         if (!token) return;
         await apiPost('/store/push-token', { token });
@@ -211,9 +237,9 @@ function RootLayout() {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (appReady) SplashScreen.hideAsync().catch(() => {});
-  }, [appReady]);
+  // SplashScreen.hideAsync is now called by AppFadeIn the moment it starts
+  // the cross-fade — so the native splash disappears AT the same frame the
+  // JS content begins to fade in (no gap, no double-cut). Don't double-call.
 
   if (!loaded) return null;
 
@@ -221,18 +247,26 @@ function RootLayout() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <BottomSheetModalProvider>
-                <NavigationTheme value={navTheme}>
-                  <StatusBar style="auto" />
-                  <OfflineBanner />
-                  <AuthGate onReady={() => setAuthReady(true)} />
-                  <BiometricConsentMount />
-                </NavigationTheme>
-              </BottomSheetModalProvider>
-            </AuthProvider>
-          </ThemeProvider>
+          <QueryClientProvider client={getQueryClient()}>
+            <ThemeProvider>
+              <AuthProvider>
+                <BottomSheetModalProvider>
+                  <NavigationTheme value={navTheme}>
+                    <StatusBar style="auto" />
+                    <AppFadeIn ready={appReady}>
+                      <OfflineBanner />
+                      <AuthGate onReady={() => setAuthReady(true)} />
+                      <BiometricConsentMount />
+                      {/* Toast host sits at root so any screen can call
+                          `toast.success(...)` / `toast.error(...)` and the
+                          message floats above the tab bar. */}
+                      <ToastHost />
+                    </AppFadeIn>
+                  </NavigationTheme>
+                </BottomSheetModalProvider>
+              </AuthProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </AppErrorBoundary>

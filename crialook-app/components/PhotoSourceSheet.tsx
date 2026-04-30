@@ -76,7 +76,12 @@ export function PhotoSourceSheet({
   }));
 
   const handlePick = (action: () => void) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Use the Rigid impact to signal "your choice has snapped into place" —
+    // distinct from the Medium "press" used by other primary actions, so the
+    // user feels a different texture for picking a source vs submitting.
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    });
     onClose();
     setTimeout(action, 180);
   };

@@ -25,8 +25,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import Animated, {
-  Easing,
   Extrapolation,
   FadeIn,
   FadeInUp,
@@ -36,19 +36,20 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { useFocusEffect } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
+import { Image as ExpoImage } from 'expo-image';
 import { Button } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT, type TKey } from '@/lib/i18n';
 import { setNavigationLocked } from '@/lib/navigationLock';
 import { Sentry } from '@/lib/sentry';
+import { Confetti, MeshGradient } from '@/components/skia';
+import { apiGet } from '@/lib/api';
 
 type Phase = 'analyzing' | 'editorial' | 'shooting' | 'polishing' | 'almostDone';
 
@@ -228,25 +229,11 @@ function ConfettiPiece({ piece }: { piece: ReturnType<typeof generateConfettiPie
 // ─── Animated background blobs (site parity: bg-pulse) ──────────────────
 // Two giant blurred radial gradients sliding in opposite directions, opacity
 // breathing 0.04 → 0.12. The fucsia / purple combo is identical to the site.
+//
+// Migrated from worklets to Reanimated 4 CSS animations: declarative ambient
+// loop, no useSharedValue / useAnimatedStyle / useEffect dance. The two blobs
+// breathe in counter-phase via animationDirection=alternate on each.
 function GradientBlobs({ color1, color2 }: { color1: string; color2: string }) {
-  const t = useSharedValue(0);
-  useEffect(() => {
-    t.value = withRepeat(
-      withTiming(1, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, [t]);
-
-  const blob1Style = useAnimatedStyle(() => ({
-    opacity: interpolate(t.value, [0, 1], [0.15, 0.32], Extrapolation.CLAMP),
-    transform: [{ scale: interpolate(t.value, [0, 1], [1, 1.15]) }],
-  }));
-  const blob2Style = useAnimatedStyle(() => ({
-    opacity: interpolate(t.value, [0, 1], [0.32, 0.15], Extrapolation.CLAMP),
-    transform: [{ scale: interpolate(t.value, [0, 1], [1.15, 1]) }],
-  }));
-
   const { width, height } = Dimensions.get('window');
   const size1 = Math.max(width, 360) * 0.95;
   const size2 = Math.max(width, 360) * 1.1;
@@ -263,8 +250,16 @@ function GradientBlobs({ color1, color2 }: { color1: string; color2: string }) {
             height: size1,
             borderRadius: size1,
             backgroundColor: color1,
-          },
-          blob1Style,
+            // Blob 1 grows + brightens forward, then alternates back.
+            animationName: {
+              '0%': { opacity: 0.15, transform: [{ scale: 1 }] },
+              '100%': { opacity: 0.32, transform: [{ scale: 1.15 }] },
+            },
+            animationDuration: '6000ms',
+            animationIterationCount: 'infinite',
+            animationDirection: 'alternate',
+            animationTimingFunction: 'ease-in-out',
+          } as any,
         ]}
       />
       <Animated.View
@@ -277,8 +272,17 @@ function GradientBlobs({ color1, color2 }: { color1: string; color2: string }) {
             height: size2,
             borderRadius: size2,
             backgroundColor: color2,
-          },
-          blob2Style,
+            // Blob 2 starts in the opposite phase: large + dim → small + bright.
+            // Same timing so they breathe coupled in counter-phase.
+            animationName: {
+              '0%': { opacity: 0.32, transform: [{ scale: 1.15 }] },
+              '100%': { opacity: 0.15, transform: [{ scale: 1 }] },
+            },
+            animationDuration: '6000ms',
+            animationIterationCount: 'infinite',
+            animationDirection: 'alternate',
+            animationTimingFunction: 'ease-in-out',
+          } as any,
         ]}
       />
       {/* Subtle dim overlay so blobs read as background light, not flat color. */}
@@ -289,27 +293,11 @@ function GradientBlobs({ color1, color2 }: { color1: string; color2: string }) {
 }
 
 // ─── Floating particles (4 dots) ───────────────────────────────────────
+// CSS keyframes express the same opacity/translate envelope as the previous
+// worklet: rises 40dp while drifting +8dp then -4dp horizontally, opacity
+// breathes 0 → 0.4 → 0.15 → 0.3 → 0 over 8s. animationDelay handles the
+// per-particle stagger without per-instance useSharedValue.
 function Particle({ left, top, delay, size }: { left: string; top: string; delay: number; size: number }) {
-  const t = useSharedValue(0);
-  useEffect(() => {
-    t.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(1, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        false,
-      ),
-    );
-  }, [t, delay]);
-
-  const style = useAnimatedStyle(() => ({
-    opacity: interpolate(t.value, [0, 0.2, 0.5, 0.8, 1], [0, 0.4, 0.15, 0.3, 0], Extrapolation.CLAMP),
-    transform: [
-      { translateY: interpolate(t.value, [0, 1], [0, -40]) },
-      { translateX: interpolate(t.value, [0, 0.5, 1], [0, 8, -4]) },
-    ],
-  }));
-
   return (
     <Animated.View
       style={[
@@ -321,8 +309,18 @@ function Particle({ left, top, delay, size }: { left: string; top: string; delay
           height: size,
           borderRadius: size,
           backgroundColor: '#f472b6',
-        },
-        style,
+          animationName: {
+            '0%':   { opacity: 0,    transform: [{ translateY: 0 },   { translateX: 0 }] },
+            '20%':  { opacity: 0.4,  transform: [{ translateY: -8 },  { translateX: 3 }] },
+            '50%':  { opacity: 0.15, transform: [{ translateY: -20 }, { translateX: 8 }] },
+            '80%':  { opacity: 0.3,  transform: [{ translateY: -32 }, { translateX: 2 }] },
+            '100%': { opacity: 0,    transform: [{ translateY: -40 }, { translateX: -4 }] },
+          },
+          animationDuration: '8000ms',
+          animationDelay: `${delay}ms`,
+          animationIterationCount: 'infinite',
+          animationTimingFunction: 'ease-in-out',
+        } as any,
       ]}
     />
   );
@@ -338,9 +336,21 @@ function formatTime(seconds: number): string {
 interface Props {
   isComplete: boolean;
   onViewResults: () => void;
+  /** Optional — when provided, the loading screen prefetches the result
+   *  images the moment `isComplete` flips true, so when the user taps
+   *  "Ver fotos" the resultado screen renders instantly with everything
+   *  warmed in the expo-image disk + memory cache. */
+  campaignId?: string | null;
 }
 
-export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
+interface CampaignDetailPayload {
+  data?: {
+    images?: ({ imageUrl?: string } | null)[];
+    lockedTeaserUrls?: [string, string];
+  };
+}
+
+export function GenerationLoadingScreen({ isComplete, onViewResults, campaignId }: Props) {
   useKeepAwake();
   const colorScheme = useColorScheme();
   const themeColors = Colors[colorScheme ?? 'light'];
@@ -370,31 +380,48 @@ export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
     return () => setNavigationLocked(false);
   }, [isComplete]);
 
+  // Prefetch result images the moment polling reports `completed` so resultado
+  // screen lands with images already in expo-image cache. Even on flaky 4G the
+  // user sees the hero photo without a spinner — premium "instant" feel.
+  // Cancellation: if the user taps a tab and unmounts before fetch resolves,
+  // we still prefetch into the cache (no-op on dispose since prefetch is
+  // best-effort). Errors are swallowed — prefetch failures should never gate
+  // the success flow.
+  useEffect(() => {
+    if (!isComplete || !campaignId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiGet<{ data: CampaignDetailPayload }>(`/campaigns/${campaignId}`);
+        if (cancelled) return;
+        const urls: string[] = [];
+        for (const img of res?.data?.data?.images ?? []) {
+          if (img?.imageUrl) urls.push(img.imageUrl);
+        }
+        for (const teaser of res?.data?.data?.lockedTeaserUrls ?? []) {
+          if (teaser) urls.push(teaser);
+        }
+        if (urls.length > 0) {
+          // expo-image's prefetch warms both memory + disk cache. Returns a
+          // promise of bool[] — we don't await individually.
+          ExpoImage.prefetch(urls).catch(() => {});
+        }
+      } catch {
+        /* swallow — prefetch is best-effort */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isComplete, campaignId]);
+
   const [elapsed, setElapsed] = useState(0);
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * FACTS.length));
   const [factsPaused, setFactsPaused] = useState(false);
 
-  const scale = useSharedValue(1);
-  const ringOpacity = useSharedValue(0.6);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.08, { duration: 1500 }),
-        withTiming(1, { duration: 1500 }),
-      ),
-      -1,
-      true,
-    );
-    ringOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.2, { duration: 1500 }),
-        withTiming(0.6, { duration: 1500 }),
-      ),
-      -1,
-      true,
-    );
-  }, []);
+  // Breathing icon scale + ring opacity migrated to Reanimated 4 CSS API —
+  // pure ambient loops, no state read needed. See `ringStyle` consumer below
+  // (kept inline-styled via animationName instead of useAnimatedStyle).
 
   useEffect(() => {
     if (isComplete) return;
@@ -455,10 +482,18 @@ export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
     }
   }, [phase, elapsed]);
 
-  const ringStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: ringOpacity.value,
-  }));
+  // Breathing ring style — CSS keyframes for scale + opacity, paired
+  // counter-phase (when scale peaks at 1.08, opacity dips to 0.2).
+  const ringStyle = {
+    animationName: {
+      '0%':   { transform: [{ scale: 1 }],    opacity: 0.6 },
+      '50%':  { transform: [{ scale: 1.08 }], opacity: 0.2 },
+      '100%': { transform: [{ scale: 1 }],    opacity: 0.6 },
+    },
+    animationDuration: '3000ms',
+    animationIterationCount: 'infinite',
+    animationTimingFunction: 'ease-in-out',
+  } as any;
 
   const togglePauseFacts = useCallback(() => {
     setFactsPaused((p) => !p);
@@ -470,8 +505,22 @@ export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
-      {/* Animated gradient blobs — site parity */}
+      {/* Status bar must read as light over the dark hero — the OS otherwise
+          inherits whatever the previous screen had. iOS auto-restores on
+          unmount; on Android the StatusBar component handles it both ways. */}
+      <StatusBar style="light" backgroundColor="transparent" translucent />
+
+      {/* Animated gradient blobs — site parity. Kept as the base layer because
+          the existing implementation pulses the *current phase color* (which
+          we still want — the screen visibly changes hue per phase). */}
       <GradientBlobs color1={config.color} color2="#a855f7" />
+
+      {/* MeshGradient adds a slow-drifting brand wash on top of the blobs.
+          This brings the same Skia-driven atmosphere we use on auth/onboarding
+          into the long-form loading screen, so the visual language is
+          consistent across the app's "atmosphere" moments. Low opacity so
+          the phase-coloured blobs still drive the dominant hue. */}
+      <MeshGradient opacity={0.18} blurSigma={80} style={StyleSheet.absoluteFill} />
 
       {/* Floating particles */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -621,7 +670,13 @@ export function GenerationLoadingScreen({ isComplete, onViewResults }: Props) {
         {/* Completion */}
         {isComplete && (
           <>
-            {/* Confetti */}
+            {/* Skia confetti — GPU-thread, ~60 particles with gravity arc.
+                Keeps the original DIY confetti as a fallback visual layer
+                because it's already wired and the Skia burst is additive
+                celebration, not replacement. */}
+            <Confetti count={70} durationMs={2400} />
+
+            {/* Legacy confetti (kept) */}
             <View style={styles.confettiContainer} pointerEvents="none">
               {confettiPieces.map((piece) => (
                 <ConfettiPiece key={piece.id} piece={piece} />

@@ -6,6 +6,15 @@
  *     consent modal. They aren't tabs; they're a flow with back navigation.
  *   - We want a clean Stack header (back arrow + title) instead of the
  *     glassy AppHeader used inside (tabs).
+ *
+ * Reading-mode treatment:
+ *   - `headerLargeTitle: true` on iOS gives Apple Mail / Notes-style large
+ *     titles that collapse on scroll. On Android the option is ignored
+ *     (regular header), so cross-platform safe.
+ *   - `contentStyle.padding` is bumped to give the body breathing room
+ *     when individual screens just dump <Markdown /> or <Text> children.
+ *   - Stack animation `slide_from_right` matches the rest of the app's
+ *     navigation rhythm (modal-style would feel jarring for legal flows).
  */
 import { Stack } from 'expo-router';
 import Colors from '@/constants/Colors';
@@ -23,6 +32,12 @@ export default function LegalLayout() {
         headerTitleStyle: {
           fontFamily: 'Inter_700Bold',
           fontSize: 17,
+          color: colors.text,
+        },
+        headerLargeTitle: true,
+        headerLargeTitleStyle: {
+          fontFamily: 'Inter_700Bold',
+          fontSize: 30,
           color: colors.text,
         },
         headerBackTitle: 'Voltar',

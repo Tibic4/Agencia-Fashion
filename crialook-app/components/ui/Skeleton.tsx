@@ -1,5 +1,5 @@
 /**
- * Skeleton — shimmer wave (worklet, no JS re-renders)
+ * Skeleton — shimmer wave (Reanimated 4 CSS animation)
  *
  * Why a moving gradient instead of opacity-only pulse?
  * A pulse signals "loading" but reads as "broken / nothing happening" because
@@ -8,24 +8,16 @@
  * "content is being filled in", which lowers perceived latency by ~15-25%
  * (Doherty threshold studies; SwiftUI redaction reason `.placeholder`).
  *
- * Implementation:
- *   - Reanimated worklet drives translateX of an inner LinearGradient
- *   - Loop: -100% → +200% over 1500ms, infinite, linear
- *   - `useSharedValue` + `useAnimatedStyle` → zero JS bridge traffic
- *   - Container clips with `overflow: hidden` so the streak appears framed
- *   - Theme-aware base color set by parent View; gradient stops are ramped
- *     toward the lighter neutral so the streak is visible in both modes
+ * Why CSS Animations instead of useSharedValue + withRepeat:
+ *   - The animation is a pure ambient loop (no gesture, no state, no
+ *     per-frame derivation). The CSS API is more declarative AND lets
+ *     Reanimated's compiler optimise the path — it knows exactly which
+ *     property animates, no worklet runtime needed.
+ *   - Less code: 5 lines of animationName + duration vs the previous
+ *     useSharedValue + useEffect + useAnimatedStyle dance.
  */
-import { useEffect } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  interpolate,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -36,14 +28,12 @@ type Props = {
   style?: ViewStyle;
 };
 
-const SHIMMER_DURATION = 1500;
+const SHIMMER_DURATION_MS = 1500;
 
 const LIGHT_BASE = '#ececef';
 const LIGHT_HIGHLIGHT = '#f7f5f8';
 const DARK_BASE = '#322a3a';
 const DARK_HIGHLIGHT = '#423650';
-
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export function Skeleton({
   width = '100%',
@@ -57,27 +47,6 @@ export function Skeleton({
   const baseColor = isDark ? DARK_BASE : LIGHT_BASE;
   const highlight = isDark ? DARK_HIGHLIGHT : LIGHT_HIGHLIGHT;
 
-  // Drives the streak position. 0 → -100%, 1 → +200%.
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withRepeat(
-      withTiming(1, { duration: SHIMMER_DURATION, easing: Easing.linear }),
-      -1,
-      false,
-    );
-  }, [progress]);
-
-  // The gradient is 3x as wide as the container so it can fully traverse.
-  // We translate it by -container width → +2x container width (net 3x).
-  // We use percentages so we don't need onLayout (saves a measurement pass).
-  const animatedStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(progress.value, [0, 1], [-1, 2]);
-    return {
-      transform: [{ translateX: `${translateX * 100}%` }],
-    };
-  });
-
   return (
     <View
       style={[
@@ -86,18 +55,38 @@ export function Skeleton({
           width: width as ViewStyle['width'],
           height,
           borderRadius,
+          borderCurve: 'continuous',
           backgroundColor: baseColor,
         },
         style,
       ]}
     >
-      <AnimatedLinearGradient
-        colors={[baseColor, highlight, baseColor]}
-        locations={[0.25, 0.5, 0.75]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={[styles.shimmer, animatedStyle]}
-      />
+      <Animated.View
+        style={[
+          styles.shimmer,
+          {
+            // The streak slides from -100% → +200% of the container width,
+            // so its 100%-wide gradient fully traverses (3× the container
+            // span net of overlap). Linear easing because the eye reads any
+            // ease as a "stutter" in an ambient loop.
+            animationName: {
+              '0%': { transform: [{ translateX: '-100%' as unknown as number }] },
+              '100%': { transform: [{ translateX: '200%' as unknown as number }] },
+            },
+            animationDuration: `${SHIMMER_DURATION_MS}ms`,
+            animationIterationCount: 'infinite',
+            animationTimingFunction: 'linear',
+          } as any,
+        ]}
+      >
+        <LinearGradient
+          colors={[baseColor, highlight, baseColor]}
+          locations={[0.25, 0.5, 0.75]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </Animated.View>
     </View>
   );
 }

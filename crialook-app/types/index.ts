@@ -12,7 +12,27 @@ export interface Campaign {
   pipeline_duration_ms?: number | null;
   output: {
     image_urls?: (string | null)[];
+    /**
+     * Trial-only: 2 thumbnails da foto da modelo blurada como teaser dos
+     * "outros 2 ângulos" não gerados (slot esquerdo + direito). Quando
+     * presente, resultado.tsx renderiza tira 3-thumb (locked · hero · locked)
+     * abaixo da foto principal e abre paywall ao tap.
+     *
+     * Naming: backend serializa em camelCase no endpoint REST (ver
+     * `campanha-ia/src/app/api/campaigns/[id]/route.ts`). A coluna do
+     * Postgres é `locked_teaser_urls` mas o JSON saída é camelCase pra
+     * convenção do app. **Não** mude pra snake_case sem alinhar o backend.
+     */
+    lockedTeaserUrls?: [string, string];
   } | null;
+}
+
+/** Trial campaign = a primeira (grátis) que mostra 1 foto + 2 ângulos
+ *  blurados como teaser. Detecta-se pela presença de `lockedTeaserUrls`
+ *  no payload. Single source of truth pra historico, resultado e qualquer
+ *  futuro consumidor (analytics, badges, banner). */
+export function isTrialCampaign(c: Pick<Campaign, 'output'>): boolean {
+  return Array.isArray(c.output?.lockedTeaserUrls) && c.output!.lockedTeaserUrls!.length === 2;
 }
 
 export interface ModelItem {

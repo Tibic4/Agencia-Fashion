@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   RefreshControl,
@@ -10,13 +10,19 @@ import {
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { AnimatedPressable, Button, Card, GradientText, Skeleton } from '@/components/ui';
-import { haptic } from '@/lib/haptics';
+import { AuraGlow, Confetti } from '@/components/skia';
+import { celebrate, haptic } from '@/lib/haptics';
+import { toast } from '@/lib/toast';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
+import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { apiGetCached, invalidateApiCache } from '@/lib/api';
+import { apiGet } from '@/lib/api';
+import { qk } from '@/lib/query-client';
+import { StoreCreditsResponse, StoreUsageResponse } from '@/lib/schemas';
 import { useFocusEffect } from 'expo-router';
 import { PLANS } from '@/lib/plans';
 import { useT, type TKey } from '@/lib/i18n';
@@ -27,8 +33,7 @@ import {
   restorePurchases,
   type SubscriptionSku,
 } from '@/lib/billing';
-import type { StoreUsage, StoreCredits } from '@/types';
-import type { ProductSubscriptionAndroid } from 'react-native-iap';
+import type { ProductSubscription, ProductSubscriptionAndroid } from 'react-native-iap';
 
 const PLAN_BADGES: Record<string, string> = { essencial: '💡', pro: '🚀', business: '🏢' };
 
@@ -48,20 +53,63 @@ const skuByPlan: Record<keyof typeof PLANS, SubscriptionSku> = {
   business: 'business_mensal',
 };
 
-export default function PlanoScreen() {
+function PlanoScreenInner() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { t } = useT();
   const headerH = useHeaderHeight();
   const padBottom = useTabContentPaddingBottom();
+  const queryClient = useQueryClient();
 
-  const [usage, setUsage] = useState<StoreUsage | null>(null);
-  const [credits, setCredits] = useState<StoreCredits | null>(null);
-  const [offerings, setOfferings] = useState<Record<string, ProductSubscriptionAndroid>>({});
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  // Three independent reads in parallel: server-side usage + credits, and the
+  // local Play Billing offerings (which doesn't hit our API but still benefits
+  // from query state — caching, refetch on focus, isFetching for refresh UX).
+  // useQueries runs them concurrently and exposes a flat array to destructure.
+  const [usageQ, creditsQ, offeringsQ] = useQueries({
+    queries: [
+      {
+        queryKey: qk.store.usage(),
+        queryFn: ({ signal }: { signal?: AbortSignal }) =>
+          apiGet('/store/usage', { signal, schema: StoreUsageResponse }),
+        staleTime: 60_000,
+      },
+      {
+        queryKey: qk.store.credits(),
+        queryFn: ({ signal }: { signal?: AbortSignal }) =>
+          apiGet('/store/credits', { signal, schema: StoreCreditsResponse }),
+        staleTime: 60_000,
+      },
+      {
+        queryKey: ['billing', 'offerings'] as const,
+        // loadSubscriptionOfferings hits Google Play, not our API, so signal
+        // wouldn't help — we just let the platform call run. 5 min staleTime
+        // because Play caches its own catalog and our prices rarely change.
+        queryFn: () => loadSubscriptionOfferings(),
+        staleTime: 5 * 60_000,
+      },
+    ],
+  });
+
+  const usage = usageQ.data?.data;
+  const credits = creditsQ.data?.data;
+  const offerings: Record<string, ProductSubscriptionAndroid> = (() => {
+    const list = (offeringsQ.data ?? []) as ProductSubscription[];
+    const android = list.filter(
+      (o): o is ProductSubscriptionAndroid =>
+        'subscriptionOfferDetailsAndroid' in o && (o as { platform?: string }).platform === 'android',
+    );
+    return Object.fromEntries(android.map(o => [o.id, o]));
+  })();
+
+  const loading = usageQ.isPending || creditsQ.isPending || offeringsQ.isPending;
+  const refreshing =
+    (usageQ.isFetching || creditsQ.isFetching || offeringsQ.isFetching) && !loading;
+
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+  // Triggers a single Skia confetti burst on successful purchase. Set true
+  // when the mutation lands; auto-resets after Confetti calls onComplete.
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const currentPlanKey = planKeyFromServer(usage?.plan_name);
   const currentPlan = t(`planNames.${currentPlanKey}`);
@@ -70,97 +118,94 @@ export default function PlanoScreen() {
   const campaignsLimit = usage?.campaigns_limit ?? 0;
   const usagePercent = campaignsLimit > 0 ? (campaignsUsed / campaignsLimit) * 100 : 0;
 
-  const loadData = async () => {
-    const [usageRes, creditsRes, offeringsRes] = await Promise.all([
-      apiGetCached<{ data: StoreUsage }>('/store/usage', 60_000).catch(() => null),
-      apiGetCached<{ data: StoreCredits }>('/store/credits', 60_000).catch(() => null),
-      loadSubscriptionOfferings().catch(() => []),
+  const refetchAll = useCallback(() => {
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: qk.store.usage() }),
+      queryClient.invalidateQueries({ queryKey: qk.store.credits() }),
+      queryClient.invalidateQueries({ queryKey: ['billing', 'offerings'] }),
     ]);
-    if (usageRes?.data) setUsage(usageRes.data);
-    if (creditsRes?.data) setCredits(creditsRes.data);
-    const androidOfferings = (offeringsRes as ProductSubscriptionAndroid[]).filter(
-      o => 'subscriptionOfferDetailsAndroid' in o && o.platform === 'android',
-    );
-    setOfferings(
-      Object.fromEntries(androidOfferings.map(o => [o.id, o])),
-    );
-  };
+  }, [queryClient]);
 
-  useEffect(() => {
-    loadData().finally(() => setLoading(false));
-  }, []);
-
-  // Refetch ao focar — usuário pode ter comprado em outro device, ou cancelado
-  // a assinatura via Play Store fora do app.
+  // Refetch on focus — user may have purchased on another device, or cancelled
+  // their subscription via Play Store outside the app. Skipped during a live
+  // purchase to avoid swapping offerings under the user mid-flow.
   useFocusEffect(
     useCallback(() => {
-      // Skip se compra ativa, pra não derrubar offerings durante o flow.
       if (purchasing) return;
-      loadData();
-    }, [purchasing]),
+      refetchAll();
+    }, [purchasing, refetchAll]),
   );
 
-  const onRefresh = async () => {
-    // Não permite refresh durante compra ativa — `loadData` substitui offerings
-    // no meio do fluxo de purchase, o que confunde o estado de purchasing.
+  const onRefresh = useCallback(() => {
     if (purchasing) return;
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
+    return refetchAll();
+  }, [purchasing, refetchAll]);
 
-  const handleSubscribe = async (planId: keyof typeof PLANS) => {
-    // Guard: previne double-tap em qualquer botão Assinar enquanto outro está
-    // processando (Google Play já fileira, mas evita 2 dialogs nativos abrindo).
-    if (purchasing) return;
-    haptic.confirm();
-    const sku = skuByPlan[planId];
-    setPurchasing(planId);
-    try {
-      await purchaseSubscription(sku);
-      // Bust o cache de /store/usage e /store/credits — ambos têm TTL 60s e o
-      // backend já gravou o novo plano. Sem isso, loadData() lê stale.
-      await Promise.all([
-        invalidateApiCache('/store/usage').catch(() => {}),
-        invalidateApiCache('/store/credits').catch(() => {}),
-      ]);
-      await loadData();
-      // Cascading haptics for celebration: success ping + light follow-up
-      // creates a "double-tap" sensation that feels like a tiny milestone.
-      haptic.success();
-      setTimeout(() => haptic.tap(), 180);
+  // Mutation = subscribe. Optimistic over Play Billing's own dialog isn't
+  // useful (the OS UI is the source of truth), so we just refetch on success.
+  const subscribeMut = useMutation({
+    mutationFn: (planId: keyof typeof PLANS) => purchaseSubscription(skuByPlan[planId]),
+    onMutate: (planId) => {
+      haptic.confirm();
+      setPurchasing(planId);
+    },
+    onSuccess: async () => {
+      // Bust caches before refetch — server already wrote the new plan, but
+      // our 60s staleTime would otherwise serve the old usage row.
+      await refetchAll();
+      // Trigger the Skia confetti burst BEFORE the alert so the user sees
+      // the celebration through the alert backdrop (Android dialogs are
+      // dimmed but transparent over the screen).
+      setShowConfetti(true);
+      // Cascading haptics — semantic helper centralises the success+tap
+      // pattern used in 2-3 places across the app.
+      celebrate();
       Alert.alert(
         t('plan.welcomeAfterPurchaseTitle'),
         t('plan.welcomeAfterPurchaseMessage'),
       );
-    } catch (e) {
+    },
+    onError: (e) => {
       if (isUserCancelledError(e)) return;
-      haptic.error();
-      Alert.alert(t('common.error'), t('plan.purchaseError'));
-    } finally {
+      // Toast handles haptic.error.
+      toast.error(t('plan.purchaseError'));
+    },
+    onSettled: () => {
       setPurchasing(null);
-    }
+    },
+  });
+
+  const handleSubscribe = (planId: keyof typeof PLANS) => {
+    // Guard: prevent double-tap on any Subscribe button while another is
+    // processing (Google Play already queues, but avoids 2 native dialogs).
+    if (purchasing) return;
+    subscribeMut.mutate(planId);
   };
 
-  const handleRestore = async () => {
-    haptic.tap();
-    setRestoring(true);
-    try {
-      const res = await restorePurchases();
+  const restoreMut = useMutation({
+    mutationFn: () => restorePurchases(),
+    onMutate: () => {
+      haptic.tap();
+      setRestoring(true);
+    },
+    onSuccess: async (res) => {
       if (res.restored > 0) {
-        await loadData();
-        haptic.success();
-        Alert.alert(t('plan.restoredTitle'), t('plan.restoredMessage'));
+        await refetchAll();
+        // Toast handles haptic.success.
+        toast.success(t('plan.restoredMessage'));
       } else {
-        Alert.alert(t('plan.nothingToRestoreTitle'), t('plan.nothingToRestoreMessage'));
+        toast.info(t('plan.nothingToRestoreMessage'));
       }
-    } catch {
-      haptic.error();
-      Alert.alert(t('common.error'), t('plan.restoreError'));
-    } finally {
+    },
+    onError: () => {
+      toast.error(t('plan.restoreError'));
+    },
+    onSettled: () => {
       setRestoring(false);
-    }
-  };
+    },
+  });
+
+  const handleRestore = () => restoreMut.mutate();
 
   if (loading) {
     return (
@@ -180,6 +225,13 @@ export default function PlanoScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
     <AppHeader />
+    {showConfetti && (
+      <Confetti
+        count={80}
+        durationMs={2400}
+        onComplete={() => setShowConfetti(false)}
+      />
+    )}
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingTop: headerH + 16, paddingBottom: padBottom }}
@@ -275,13 +327,28 @@ export default function PlanoScreen() {
                   </Text>
                 </View>
                 <View style={[styles.barTrack, { backgroundColor: colors.border }]}>
-                  <View
+                  {/* When usage > 80% the fill pulses subtly via Reanimated 4 CSS
+                      animation — quiet visual urgency cue, not alarm. Reads as
+                      "you're running low, plan ahead". */}
+                  <Animated.View
                     style={[
                       styles.barFill,
                       {
                         width: `${Math.min(usagePercent, 100)}%`,
                         backgroundColor:
                           usagePercent > 80 ? Colors.brand.warning : Colors.brand.primary,
+                        ...(usagePercent > 80
+                          ? ({
+                              animationName: {
+                                '0%': { opacity: 1 },
+                                '50%': { opacity: 0.7 },
+                                '100%': { opacity: 1 },
+                              },
+                              animationDuration: '1800ms',
+                              animationIterationCount: 'infinite',
+                              animationTimingFunction: 'ease-in-out',
+                            } as any)
+                          : {}),
                       },
                     ]}
                   />
@@ -346,13 +413,33 @@ export default function PlanoScreen() {
               `R$ ${plan.price.toFixed(2)}`;
             const isPurchasing = purchasing === id;
 
+            const isHighlightedPro = id === 'pro' && !isCurrentPlan && !isLowerPlan;
             return (
               <Animated.View key={id} entering={FadeInDown.delay(300 + index * 80)}>
+                {/* Aura glow behind the recommended plan card. Sits in absolute
+                    space so it bleeds beyond the card border and reads as
+                    ambient highlight. Only the "pro" tier gets it. */}
+                {isHighlightedPro && (
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: 'absolute',
+                      top: -20,
+                      left: -20,
+                      right: -20,
+                      bottom: -20,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <AuraGlow size={360} color={Colors.brand.secondary} opacityMin={0.2} opacityMax={0.45} />
+                  </View>
+                )}
                 <Card
                   selected={isCurrentPlan}
                   style={[
                     styles.planCard,
-                    id === 'pro' && !isCurrentPlan && !isLowerPlan && { borderColor: Colors.brand.primary },
+                    isHighlightedPro && { borderColor: Colors.brand.primary },
                     isLowerPlan && styles.planCardDim,
                   ]}
                 >
@@ -361,7 +448,7 @@ export default function PlanoScreen() {
                       <Text style={styles.currentBadgeText}>{t('plan.currentPlan')}</Text>
                     </View>
                   )}
-                  {id === 'pro' && !isCurrentPlan && !isLowerPlan && (
+                  {isHighlightedPro && (
                     <View style={[styles.currentBadge, { backgroundColor: Colors.brand.secondary }]}>
                       <Text style={styles.currentBadgeText}>{t('plan.recommended')}</Text>
                     </View>
@@ -433,6 +520,14 @@ export default function PlanoScreen() {
   );
 }
 
+export default function PlanoScreen() {
+  return (
+    <TabErrorBoundary screen="plano">
+      <PlanoScreenInner />
+    </TabErrorBoundary>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20, gap: 14 },
@@ -445,12 +540,13 @@ const styles = StyleSheet.create({
   planHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   planHeaderText: { flex: 1, minWidth: 0 },
   planName: { fontSize: 20, fontWeight: '700' },
-  creditsText: { fontSize: 12, marginTop: 2 },
+  creditsText: { fontSize: 12, marginTop: 2, fontVariant: ['tabular-nums'] },
   bars: { gap: 12 },
   barLabel: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   barText: { fontSize: 12 },
-  barValue: { fontSize: 12, fontWeight: '700' },
-  barTrack: { height: 10, borderRadius: 5, overflow: 'hidden' },
+  // tabular-nums keeps "12/30" → "13/30" from jiggling when the digit changes.
+  barValue: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  barTrack: { height: 10, borderRadius: 5, borderCurve: 'continuous', overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 5 },
   trialCta: {
     flexDirection: 'row',
@@ -459,6 +555,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 18,
     borderRadius: 16,
+    borderCurve: 'continuous',
     marginTop: 4,
     shadowColor: '#D946EF',
     shadowOffset: { width: 0, height: 6 },
@@ -485,7 +582,7 @@ const styles = StyleSheet.create({
   currentBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   currentBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   planCardName: { fontSize: 20, fontWeight: '700' },
-  planCardPrice: { fontSize: 24, fontWeight: '800' },
+  planCardPrice: { fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] },
   planCardPeriod: { fontSize: 13, fontWeight: '400' },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   featureText: { fontSize: 14 },

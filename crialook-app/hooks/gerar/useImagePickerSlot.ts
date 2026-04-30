@@ -15,11 +15,11 @@
  *  caller still gets a CompressedAsset back the same way.
  */
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { compressForUpload, type CompressedAsset } from '@/lib/images';
 import { logger } from '@/lib/logger';
 import { t } from '@/lib/i18n';
+import { toast } from '@/lib/toast';
 
 interface UseImagePickerSlotOptions {
   fileName: string;
@@ -73,7 +73,7 @@ export function useImagePickerSlot({
       onSuccess?.(compressed);
     } catch (e: any) {
       logger.warn('library pick failed', { message: e?.message });
-      Alert.alert(t('common.error'), e?.message || t('errors.imageProcessFailed'));
+      toast.error(e?.message || t('errors.imageProcessFailed'));
     } finally {
       setBusy(false);
     }

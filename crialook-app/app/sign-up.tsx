@@ -8,6 +8,7 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
+import { MeshGradient } from '@/components/skia';
 
 export default function SignUpScreen() {
   const colorScheme = useColorScheme();
@@ -64,12 +65,15 @@ export default function SignUpScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
+        <MeshGradient
+          opacity={colorScheme === 'dark' ? 0.28 : 0.14}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.content}>
           <Text style={[styles.title, { color: Colors.brand.primary }]}>{t('signUp.verifyTitle')}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             {t('signUp.verifySubtitle', { email })}
           </Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
           <Input
             label={t('signUp.verifyCode')}
             value={code}
@@ -77,6 +81,11 @@ export default function SignUpScreen() {
             keyboardType="number-pad"
             autoFocus
           />
+          {error ? (
+            <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+              ⚠ {error}
+            </Text>
+          ) : null}
           <Button title={t('signUp.verifySubmit')} onPress={handleVerify} loading={loading} />
         </View>
       </KeyboardAvoidingView>
@@ -88,13 +97,15 @@ export default function SignUpScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      <MeshGradient
+        opacity={colorScheme === 'dark' ? 0.28 : 0.14}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.content}>
         <Text style={[styles.title, { color: Colors.brand.primary }]} accessibilityRole="header">
           {t('signUp.title')}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('signUp.subtitle')}</Text>
-
-        {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
         <GoogleSignInButton />
 
@@ -121,6 +132,13 @@ export default function SignUpScreen() {
           textContentType="newPassword"
           autoComplete="new-password"
         />
+        {/* Inline error sits between the last input and the submit button —
+            Material 3 / iOS form pattern. */}
+        {error ? (
+          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            ⚠ {error}
+          </Text>
+        ) : null}
         <Button title={t('signUp.submit')} onPress={handleSignUp} loading={loading} />
         <Link href="/sign-in" style={[styles.link, { color: Colors.brand.primary }]} accessibilityRole="link">
           {t('signUp.haveAccount')}
@@ -135,7 +153,9 @@ const styles = StyleSheet.create({
   content: { padding: 24, gap: 16 },
   title: { fontSize: 36, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 8, fontFamily: 'Inter_400Regular' },
-  error: { color: Colors.brand.error, textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium' },
+  // Left-aligned, smaller, sits with the form (not the page hero) — Material 3
+  // / HIG supporting-text pattern.
+  error: { color: Colors.brand.error, textAlign: 'left', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: -8 },
   link: { textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium', marginTop: 8 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },

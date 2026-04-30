@@ -14,12 +14,14 @@
  */
 import { useCallback, useState } from 'react';
 import * as Crypto from 'expo-crypto';
+import { useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from '@/lib/auth';
 import { invalidateApiCache } from '@/lib/api';
 import { buildFormDataFile, type CompressedAsset } from '@/lib/images';
 import { logger } from '@/lib/logger';
 import { withSpan } from '@/lib/sentry';
 import { t, getLocale } from '@/lib/i18n';
+import { qk } from '@/lib/query-client';
 import type { ModelItem, QuotaData } from '@/types';
 import { useCampaignPolling } from './useCampaignPolling';
 
@@ -75,6 +77,7 @@ interface UseCampaignGeneratorResult {
 export function useCampaignGenerator({
   onComplete,
 }: UseCampaignGeneratorOptions): UseCampaignGeneratorResult {
+  const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationComplete, setGenerationComplete] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
@@ -86,6 +89,20 @@ export function useCampaignGenerator({
       switch (status.kind) {
         case 'completed':
           setGenerationComplete(true);
+          // Refetch (not just invalidate) the campaign list so the cache
+          // contains the freshly-completed campaign even if the user is on
+          // /gerar and never goes to /historico. Without this the unseen-
+          // generations badge in the tab bar can't surface anything new
+          // — it reads from this exact cache key.
+          //
+          // refetchQueries instead of invalidateQueries because the historico
+          // observer normally has refetch-on-stale, but if it isn't mounted
+          // (user is on /gerar) invalidate alone won't pull fresh data —
+          // the badge subscriber sits behind `enabled: false`.
+          queryClient
+            .refetchQueries({ queryKey: qk.campaigns.list() })
+            .catch(() => {});
+          queryClient.invalidateQueries({ queryKey: qk.store.usage() });
           break;
         case 'failed':
           setIsGenerating(false);

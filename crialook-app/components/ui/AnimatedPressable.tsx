@@ -35,6 +35,16 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { fireHaptic, type HapticKind } from '@/lib/haptics';
+import Colors from '@/constants/Colors';
+
+type RippleConfig =
+  | boolean
+  | {
+      color?: string;
+      borderless?: boolean;
+      radius?: number;
+      foreground?: boolean;
+    };
 
 type Props = Omit<PressableProps, 'style'> & {
   /** Final scale value when pressed in. Default 0.96. */
@@ -45,9 +55,25 @@ type Props = Omit<PressableProps, 'style'> & {
   mass?: number;
   /** Semantic haptic to fire on press in, or `false` to disable. */
   haptic?: HapticKind | false;
+  /**
+   * Android Material ripple. Defaults to `true` — a subtle brand-tinted
+   * ripple is added on Android *in addition to* the spring scale, matching
+   * Material 3 expectations. Pass `false` to opt out (e.g., for chip
+   * surfaces where the ripple competes with the brand fill), or an object
+   * to customise color / borderless / radius.
+   *
+   * iOS ignores this prop — Pressable's `android_ripple` is no-op there,
+   * so the spring scale alone provides the touch feedback iOS users expect.
+   */
+  androidRipple?: RippleConfig;
   /** Pressable style. Functional form not supported (animated wrapper takes over). */
   style?: StyleProp<ViewStyle>;
 };
+
+const DEFAULT_RIPPLE = {
+  color: Colors.brand.glowMid,
+  borderless: false,
+} as const;
 
 const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
 
@@ -58,6 +84,7 @@ export const AnimatedPressable = forwardRef<View, Props>(
       damping = 15,
       mass = 0.4,
       haptic = 'tap',
+      androidRipple = true,
       onPressIn,
       onPressOut,
       disabled,
@@ -85,12 +112,22 @@ export const AnimatedPressable = forwardRef<View, Props>(
       onPressOut?.(e);
     };
 
+    // Resolve ripple config — Pressable applies android_ripple only on Android,
+    // so passing the prop unconditionally is safe (it's a no-op on iOS).
+    const ripple =
+      androidRipple === false || disabled
+        ? undefined
+        : androidRipple === true
+        ? DEFAULT_RIPPLE
+        : { ...DEFAULT_RIPPLE, ...androidRipple };
+
     return (
       <AnimatedPressableBase
         ref={ref}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled}
+        android_ripple={ripple}
         style={[style, animatedStyle]}
         {...rest}
       >

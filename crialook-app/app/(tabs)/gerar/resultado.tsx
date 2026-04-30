@@ -14,7 +14,12 @@ import * as Sharing from 'expo-sharing';
 import * as LegacyFS from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
 import { haptic } from '@/lib/haptics';
+import { toast } from '@/lib/toast';
 import { maybeRequestReview, recordSuccess } from '@/lib/reviewGate';
+import { maybeRequestPushPermission } from '@/lib/pushOptInGate';
+import { Confetti, AuraGlow } from '@/components/skia';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -80,6 +85,13 @@ interface CampaignResult {
     images?: (GeneratedImage | null)[];
     dicas_postagem?: DicasPostagem;
     durationMs?: number;
+    /**
+     * Trial-only: dois thumbnails blurados (esquerda + direita) da foto da
+     * modelo escolhida. Quando presentes, a tira "lock · hero · lock" abaixo
+     * do hero indica que existem +2 ângulos editoriais bloqueados, abrindo
+     * paywall ao tap. Sem chamada extra de IA — só sharp.blur no backend.
+     */
+    lockedTeaserUrls?: [string, string];
   };
 }
 
@@ -95,6 +107,152 @@ const FORMAT_PRESETS = [
 
 const PLATFORM_TAB_KEYS = ['result.tabFeed', 'result.tabWhatsapp', 'result.tabStories'] as const satisfies readonly TKey[];
 const CHAR_LIMITS = [125, 200, 100] as const;
+
+/**
+ * LockedTeaserCard — slot da carrossel-3 no modo trial. Mostra um thumb
+ * blurado (vem do backend ~45px) + BlurView nativo por cima como
+ * defesa-em-profundidade (caso o backend bake o blur fraco/falte). Overlay
+ * gradiente brand + lock badge com pulse Skia AuraGlow centralizado.
+ *
+ * Tap → /plano. Ratio 3:4 igual aos thumbs reais pra paridade visual.
+ *
+ * Por que 2 layers de blur (backend + frontend):
+ *   O blur do backend é estático e cacheável (CDN). O frontend BlurView
+ *   garante que mesmo se a foto cacheada for revelada por algum bug
+ *   (override, manual url, debug screen), o usuário NÃO vê o ângulo
+ *   completo da modelo — fica protegido por design.
+ */
+function LockedTeaserCard({
+  uri,
+  onPress,
+  accessibilityLabel,
+}: {
+  uri: string;
+  onPress: () => void;
+  accessibilityLabel: string;
+}) {
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      haptic="tap"
+      scale={0.95}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={[styles.thumb, styles.lockedThumb]}
+    >
+      <Image
+        source={{ uri }}
+        style={styles.thumbImage}
+        contentFit="cover"
+        contentPosition="center"
+        transition={150}
+      />
+      {/* Defense-in-depth blur: backend ships pre-blurred but we stack
+          BlurView intensity 30 to ensure visual lock even if the source
+          loads sharper than expected. Cheap (one Skia layer per thumb). */}
+      <BlurView
+        intensity={30}
+        tint="dark"
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
+      {/* Brand gradient overlay — fades from transparent top to brand fucsia
+          bottom, hinting "premium content behind". Reads as intentional
+          paywall, not broken image. */}
+      <LinearGradient
+        colors={['rgba(15,5,25,0.05)', 'rgba(217,70,239,0.55)']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
+      <View style={styles.lockedOverlay} pointerEvents="none">
+        {/* Soft AuraGlow behind the lock badge — pulsing brand halo draws
+            the eye to the upgrade CTA without being noisy. Behind the badge
+            so the icon stays sharp. Skia GPU-thread, ~zero JS cost. */}
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+          <View style={{ position: 'absolute', top: '50%', left: '50%', marginTop: -38, marginLeft: -38 }}>
+            <AuraGlow size={76} opacityMin={0.35} opacityMax={0.7} periodMs={2400} />
+          </View>
+        </View>
+        <View style={styles.lockedBadge}>
+          <FontAwesome name="lock" size={14} color="#fff" />
+        </View>
+      </View>
+    </AnimatedPressable>
+  );
+}
+
+/**
+ * TrialBanner — top sticky banner que aparece somente em campanhas trial.
+ * Celebra a entrega ("Sua foto-teste ficou pronta") e oferece upgrade
+ * contextual com preço-âncora. Tap → /plano.
+ *
+ * Posicionamento: logo abaixo do header, antes do título principal.
+ * Reads as positive surprise, not push.
+ */
+function TrialBanner({ onPress, t }: { onPress: () => void; t: ReturnType<typeof useT>['t'] }) {
+  return (
+    <Animated.View entering={FadeIn.duration(380).delay(120)} style={trialBannerStyles.wrap}>
+      <AnimatedPressable
+        onPress={onPress}
+        haptic="press"
+        scale={0.985}
+        accessibilityRole="button"
+        accessibilityLabel={t('result.trialBannerCta')}
+      >
+        <LinearGradient
+          colors={Colors.brand.gradientPrimary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={trialBannerStyles.gradient}
+        >
+          <View style={trialBannerStyles.row}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={trialBannerStyles.title}>{t('result.trialBannerTitle')}</Text>
+              <Text style={trialBannerStyles.desc}>{t('result.trialBannerDesc')}</Text>
+            </View>
+            <View style={trialBannerStyles.cta}>
+              <Text style={trialBannerStyles.ctaText}>{t('result.trialBannerCta')}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
+
+const trialBannerStyles = StyleSheet.create({
+  wrap: {
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  gradient: {
+    borderRadius: 16,
+    borderCurve: 'continuous',
+    padding: 16,
+    overflow: 'hidden',
+    // Brand-tinged shadow so it floats above the surface — same depth as
+    // the hero "subscribe" cards on /plano.
+    shadowColor: Colors.brand.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.32,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  title: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: -0.2 },
+  desc: { color: 'rgba(255,255,255,0.92)', fontSize: 12.5, lineHeight: 17 },
+  cta: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderCurve: 'continuous',
+  },
+  ctaText: { color: '#fff', fontSize: 12, fontWeight: '700', letterSpacing: -0.1 },
+});
 
 export default function ResultadoScreen() {
   const colorScheme = useColorScheme();
@@ -295,12 +453,12 @@ export default function ResultadoScreen() {
         level: 'info',
         data: { idx, fullPermission: hasFullPermission },
       });
-      haptic.success();
-      Alert.alert(t('result.saveSuccessTitle'), t('result.saveSuccessMessage'));
+      // Toast handles its own haptic.success (see ToastHost.tsx).
+      toast.success(t('result.saveSuccessMessage'));
     } catch (e) {
       Sentry.captureException(e, { tags: { feature: 'save_photo' } });
-      haptic.error();
-      Alert.alert(t('common.error'), t('result.saveErrorMessage'));
+      // Toast handles haptic.error.
+      toast.error(t('result.saveErrorMessage'));
     } finally {
       setProcessing(null);
     }
@@ -308,18 +466,38 @@ export default function ResultadoScreen() {
 
   const copyText = useCallback(async (text: string, field: string) => {
     await Clipboard.setStringAsync(text);
-    haptic.success();
+    // Toast handles its own haptic.success.
+    toast.success(t('result.copied'), { durationMs: 1800 });
+    // Keep `copiedField` for the inline checkmark on the source button (shows
+    // for 2s) — toast is the global confirmation, the checkmark is the
+    // local "yes, this one was the one I tapped" cue.
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
-  }, []);
+  }, [t]);
+
+  // Skia confetti — fires once per successful campaign view, the moment the
+  // user lands on the result. Auto-clears via onComplete so it doesn't
+  // trigger again on locale change / re-render.
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (!result?.success) return;
+    setShowConfetti(true);
     let cancelled = false;
     (async () => {
       await recordSuccess();
       if (cancelled) return;
-      await maybeRequestReview();
+      // Ask for push permission contextually — RIGHT after the user
+      // experiences the value. Industry data: post-action prompts get 4-5×
+      // the opt-in rate of boot prompts. Idempotent: only ever asks once.
+      // Slight delay so the confetti + success haptic can land first.
+      setTimeout(() => {
+        if (!cancelled) maybeRequestPushPermission();
+      }, 900);
+      // Then check if it's time for an in-app review.
+      setTimeout(() => {
+        if (!cancelled) maybeRequestReview();
+      }, 2200);
     })();
     return () => {
       cancelled = true;
@@ -368,7 +546,11 @@ export default function ResultadoScreen() {
     );
   }
 
-  const { images = [], analise, dicas_postagem: dicas, durationMs } = result.data;
+  const { images = [], analise, dicas_postagem: dicas, durationMs, lockedTeaserUrls } = result.data;
+  // Trial-only: backend devolve 2 teaser URLs blurados da foto da modelo.
+  // Quando presente, exibimos a tira "lock · hero · lock" abaixo do hero
+  // em vez da thumbRow normal (que iteraria sobre as fotos reais).
+  const isTrialView = !!(lockedTeaserUrls && lockedTeaserUrls.length === 2);
   const validImages = images.filter(Boolean) as GeneratedImage[];
   const selectedImage = validImages[selectedIndex] || validImages[0];
   const hasLegendas = dicas?.legendas && dicas.legendas.length >= 3;
@@ -376,6 +558,13 @@ export default function ResultadoScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
     <AppHeader />
+    {showConfetti && (
+      <Confetti
+        count={70}
+        durationMs={2400}
+        onComplete={() => setShowConfetti(false)}
+      />
+    )}
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[styles.scrollContent, { paddingTop: headerH + 16 }]}
@@ -398,6 +587,14 @@ export default function ResultadoScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Trial banner — visível somente p/ campanhas trial. Conta a história
+          do que aconteceu (1 foto-teste pronta) + oferece próximo passo
+          contextual (planos a partir de R$ 39). Aparece logo abaixo do
+          header, antes do hero, pra setar expectativa antes do "wow". */}
+      {isTrialView && (
+        <TrialBanner onPress={() => router.push('/(tabs)/plano')} t={t} />
+      )}
 
       {/* Title — single highlighted word in fucsia gradient, mirrors site hero pattern. */}
       <View style={styles.heroRow}>
@@ -441,18 +638,23 @@ export default function ResultadoScreen() {
         </Animated.View>
       )}
 
-      {/* Thumbnails */}
-      <View style={styles.thumbRow}>
-        {validImages.map((img, idx) => (
-          <AnimatedPressable
-            key={idx}
-            onPress={() => setSelectedIndex(idx)}
-            haptic="selection"
-            scale={0.95}
-            style={[
-              styles.thumb,
-              selectedIndex === idx
-                ? {
+      {/* Thumbnails — trial: lock · hero · lock; paid: lista das fotos reais */}
+      {isTrialView ? (
+        <>
+          <View style={styles.thumbRow}>
+            <LockedTeaserCard
+              uri={lockedTeaserUrls![0]}
+              onPress={() => router.push('/(tabs)/plano')}
+              accessibilityLabel={t('result.lockedTeaserA11y')}
+            />
+            {selectedImage && (
+              <AnimatedPressable
+                onPress={() => setSelectedIndex(0)}
+                haptic="selection"
+                scale={0.95}
+                style={[
+                  styles.thumb,
+                  {
                     borderColor: Colors.brand.primary,
                     borderWidth: 1,
                     shadowColor: Colors.brand.primary,
@@ -460,20 +662,65 @@ export default function ResultadoScreen() {
                     shadowOpacity: 0.32,
                     shadowRadius: 8,
                     elevation: 6,
-                  }
-                : {
-                    borderColor: colors.border,
-                    borderWidth: 1,
                   },
-            ]}
-          >
-            <Image source={{ uri: getImageSrc(img) }} style={styles.thumbImage} contentFit="cover" contentPosition="top" transition={120} />
-            <View style={styles.thumbNumber}>
-              <Text style={styles.thumbNumberText}>{idx + 1}</Text>
-            </View>
-          </AnimatedPressable>
-        ))}
-      </View>
+                ]}
+              >
+                <Image
+                  source={{ uri: getImageSrc(selectedImage) }}
+                  style={styles.thumbImage}
+                  contentFit="cover"
+                  contentPosition="top"
+                  transition={120}
+                />
+                <View style={styles.thumbNumber}>
+                  <Text style={styles.thumbNumberText}>1</Text>
+                </View>
+              </AnimatedPressable>
+            )}
+            <LockedTeaserCard
+              uri={lockedTeaserUrls![1]}
+              onPress={() => router.push('/(tabs)/plano')}
+              accessibilityLabel={t('result.lockedTeaserA11y')}
+            />
+          </View>
+          <Text style={[styles.lockedCaption, { color: colors.textSecondary }]}>
+            {t('result.lockedTeaserCaption')}
+          </Text>
+        </>
+      ) : (
+        <View style={styles.thumbRow}>
+          {validImages.map((img, idx) => (
+            <AnimatedPressable
+              key={idx}
+              onPress={() => setSelectedIndex(idx)}
+              haptic="selection"
+              scale={0.95}
+              style={[
+                styles.thumb,
+                selectedIndex === idx
+                  ? {
+                      borderColor: Colors.brand.primary,
+                      borderWidth: 1,
+                      shadowColor: Colors.brand.primary,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.32,
+                      shadowRadius: 8,
+                      elevation: 6,
+                    }
+                  : {
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+              ]}
+            >
+              <Image source={{ uri: getImageSrc(img) }} style={styles.thumbImage} contentFit="cover" contentPosition="top" transition={120} />
+              <View style={styles.thumbNumber}>
+                <Text style={styles.thumbNumberText}>{idx + 1}</Text>
+              </View>
+            </AnimatedPressable>
+          ))}
+        </View>
+      )}
 
       {/* Format Selector */}
       {selectedImage && (
@@ -489,23 +736,55 @@ export default function ResultadoScreen() {
             </View>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.formatRow}>
-            {FORMAT_PRESETS.map(fmt => (
-              <AnimatedPressable
-                key={fmt.id}
-                onPress={() => setActiveFormat(fmt.id)}
-                haptic="selection"
-                style={[
-                  styles.formatBtn,
-                  { borderColor: activeFormat === fmt.id ? Colors.brand.primary : colors.border },
-                  activeFormat === fmt.id && styles.formatBtnActive,
-                ]}
-              >
-                <Text style={styles.formatIcon}>{fmt.emoji}</Text>
-                <Text style={[styles.formatLabel, activeFormat === fmt.id && styles.formatLabelActive]}>
-                  {t(fmt.labelKey)}
-                </Text>
-              </AnimatedPressable>
-            ))}
+            {FORMAT_PRESETS.map(fmt => {
+              const isActive = activeFormat === fmt.id;
+              return (
+                <AnimatedPressable
+                  key={fmt.id}
+                  onPress={() => setActiveFormat(fmt.id)}
+                  haptic="selection"
+                  style={[
+                    styles.formatBtn,
+                    {
+                      borderColor: isActive ? Colors.brand.primary : colors.border,
+                      // Reanimated 4 CSS transition: smooth border + scale +
+                      // background when activeFormat flips. Replaces the hard
+                      // toggle that just swapped styles instantly.
+                      transform: [{ scale: isActive ? 1.04 : 1 }],
+                      transitionProperty: ['borderColor', 'backgroundColor', 'transform'],
+                      transitionDuration: '180ms',
+                      transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+                    } as any,
+                    isActive && styles.formatBtnActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.formatIcon,
+                      {
+                        transform: [{ scale: isActive ? 1.1 : 1 }],
+                        transitionProperty: ['transform'],
+                        transitionDuration: '180ms',
+                      } as any,
+                    ]}
+                  >
+                    {fmt.emoji}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.formatLabel,
+                      isActive && styles.formatLabelActive,
+                      {
+                        transitionProperty: ['color'],
+                        transitionDuration: '180ms',
+                      } as any,
+                    ]}
+                  >
+                    {t(fmt.labelKey)}
+                  </Text>
+                </AnimatedPressable>
+              );
+            })}
           </ScrollView>
           <Text style={[styles.formatDesc, { color: colors.textSecondary }]}>
             {(() => {
@@ -857,6 +1136,42 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   thumbNumberText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  /* Trial-only: lock thumb (slots 1 + 3 da tira) tem moldura sutil pra parecer
+     irmã das outras mas com ar "bloqueado". O overlay+badge é o que faz a
+     leitura visual clara. */
+  lockedThumb: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  /* Gradiente NÃO usado aqui de propósito — `LinearGradient` adicionaria
+     custo de import por uma sombra leve. Bg semi-transparente fixo já dá o
+     efeito de "estou olhando atrás de um vidro" sem outra dependência. */
+  lockedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(13,10,20,0.42)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(217,70,239,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#D946EF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  lockedCaption: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 8,
+    letterSpacing: 0.2,
+  },
 
   // Format selector
   formatCard: { gap: 8 },

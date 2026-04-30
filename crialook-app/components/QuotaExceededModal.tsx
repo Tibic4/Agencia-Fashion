@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Button } from '@/components/ui';
@@ -96,7 +97,34 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
                     </View>
                   </View>
                   <View style={styles.barTrack}>
-                    <View style={[styles.barFill, { width: `${usagePercent}%` }]} />
+                    {/* Gradient fill (red → amber) instead of solid red — reads
+                        as "you used everything" without screaming, while still
+                        being clearly different from the brand-fucsia bars on
+                        /plano. Reanimated 4 CSS pulse adds quiet urgency. */}
+                    <Animated.View
+                      style={[
+                        styles.barFill,
+                        {
+                          width: `${usagePercent}%`,
+                          overflow: 'hidden',
+                          animationName: {
+                            '0%': { opacity: 1 },
+                            '50%': { opacity: 0.78 },
+                            '100%': { opacity: 1 },
+                          },
+                          animationDuration: '2200ms',
+                          animationIterationCount: 'infinite',
+                          animationTimingFunction: 'ease-in-out',
+                        } as any,
+                      ]}
+                    >
+                      <LinearGradient
+                        colors={[Colors.brand.error, '#F97316']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    </Animated.View>
                   </View>
                   {credits > 0 && (
                     <Text style={styles.creditsAvailable}>
@@ -199,6 +227,7 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderCurve: 'continuous',
     maxHeight: '90%',
   },
   dragHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginTop: 12 },
@@ -211,11 +240,11 @@ const styles = StyleSheet.create({
   usageBoxFree: { backgroundColor: 'rgba(217,70,239,0.08)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(217,70,239,0.18)' },
   usageTextFree: { color: '#fff', fontSize: 13, fontWeight: '500', textAlign: 'center' },
   usageRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  usageText: { color: '#fff', fontSize: 13, fontWeight: '500' },
+  usageText: { color: '#fff', fontSize: 13, fontWeight: '500', fontVariant: ['tabular-nums'] },
   fullBadge: { backgroundColor: 'rgba(239,68,68,0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },
   fullBadgeText: { color: '#F87171', fontSize: 11, fontWeight: '700' },
-  barTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)' },
-  barFill: { height: '100%', borderRadius: 4, backgroundColor: '#EF4444' },
+  barTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 4 },
   creditsAvailable: { color: '#34D399', fontSize: 12, marginTop: 6 },
   tabs: { flexDirection: 'row', margin: 20, marginBottom: 0, padding: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', gap: 4 },
   tab: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
@@ -225,7 +254,7 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#34D399' },
   tabTextActiveUpgrade: { color: '#A78BFA' },
   body: { padding: 20, maxHeight: 300 },
-  pkgCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  pkgCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, borderCurve: 'continuous', padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   pkgPopular: { borderColor: 'rgba(16,185,129,0.3)', borderWidth: 1.5 },
   pkgRecommended: { borderColor: 'rgba(139,92,246,0.3)', borderWidth: 1.5 },
   popularBadge: { backgroundColor: Colors.brand.success, alignSelf: 'flex-end', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginBottom: 8 },
@@ -235,8 +264,8 @@ const styles = StyleSheet.create({
   qtyBadge: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
   qtyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '700' },
   pkgTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  pkgPerUnit: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
-  pkgPrice: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  pkgPerUnit: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontVariant: ['tabular-nums'] },
+  pkgPrice: { color: '#fff', fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] },
   maxPlan: { alignItems: 'center', padding: 20, gap: 8 },
   maxPlanText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   footer: { padding: 20, paddingBottom: 40 },

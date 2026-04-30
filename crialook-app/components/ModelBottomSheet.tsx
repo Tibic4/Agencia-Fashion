@@ -51,6 +51,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import type { ModelItem } from '@/types';
+import { AuraGlow } from '@/components/skia';
 
 // ─── Public API ───────────────────────────────────────────────────────────
 export interface ModelBottomSheetRef {
@@ -304,6 +305,23 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
                 handle the matte. Wrapper is 4:5 (taller than 3:4) so
                 most full-body shots fill nearly the entire box. */}
             <View style={styles.photoWrapper}>
+              {/* AuraGlow brand-tinted halo behind the previewed model.
+                  Same Skia component used on /plano Pro card and the active
+                  model in /modelo grid — visual continuity that signals
+                  "this is the focused subject". Sized to bleed beyond the
+                  photo wrapper so the glow halos the silhouette. */}
+              <View
+                pointerEvents="none"
+                style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}
+              >
+                <AuraGlow
+                  size={360}
+                  color={Colors.brand.secondary}
+                  opacityMin={0.16}
+                  opacityMax={0.36}
+                  periodMs={3600}
+                />
+              </View>
               <GestureDetector gesture={composed}>
                 <Animated.View style={[styles.photoInner, imageStyle]}>
                   {photoUri ? (

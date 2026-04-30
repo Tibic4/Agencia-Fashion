@@ -11,12 +11,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '@/lib/haptics';
-import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
+import Animated, { FadeInRight, FadeOutLeft, FadeInDown } from 'react-native-reanimated';
 import { Button, Input } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { apiPost } from '@/lib/api';
 import { useT } from '@/lib/i18n';
+import { MeshGradient } from '@/components/skia';
 
 interface StoreData {
   name: string;
@@ -110,19 +111,38 @@ export default function OnboardingScreen() {
   };
 
   const steps = [
+    // Step 0 (welcome) gets a stagger across the inner blocks: emoji →
+    // title → description → each feature row. Reads as "the app is
+    // unfolding for you" instead of one slab fading in.
     <Animated.View key={0} entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContent}>
-      <Text style={styles.emoji}>{t('onboarding.welcomeEmoji')}</Text>
-      <Text style={[styles.title, { color: colors.text }]}>{t('onboarding.welcomeTitle')}</Text>
-      <Text style={[styles.description, { color: colors.textSecondary }]}>
+      <Animated.Text entering={FadeInDown.delay(80).duration(420).springify()} style={styles.emoji}>
+        {t('onboarding.welcomeEmoji')}
+      </Animated.Text>
+      <Animated.Text
+        entering={FadeInDown.delay(160).duration(420).springify()}
+        style={[styles.title, { color: colors.text }]}
+      >
+        {t('onboarding.welcomeTitle')}
+      </Animated.Text>
+      <Animated.Text
+        entering={FadeInDown.delay(240).duration(420).springify()}
+        style={[styles.description, { color: colors.textSecondary }]}
+      >
         {t('onboarding.welcomeDesc')}
-      </Text>
+      </Animated.Text>
       <View style={styles.features}>
         {[
           t('onboarding.feature1'),
           t('onboarding.feature2'),
           t('onboarding.feature3'),
         ].map((f, i) => (
-          <Text key={i} style={[styles.featureItem, { color: colors.text }]}>{f}</Text>
+          <Animated.Text
+            key={i}
+            entering={FadeInDown.delay(320 + i * 80).duration(380).springify()}
+            style={[styles.featureItem, { color: colors.text }]}
+          >
+            {f}
+          </Animated.Text>
         ))}
       </View>
     </Animated.View>,
@@ -213,6 +233,14 @@ export default function OnboardingScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/* Brand mesh gradient backdrop — slow-drifting blobs of fuchsia / pink /
+          violet behind the whole flow. opacity 0.35 so it reads as ambient
+          atmosphere, not noise behind the copy. Skia, GPU thread. */}
+      <MeshGradient
+        opacity={colorScheme === 'dark' ? 0.35 : 0.18}
+        style={StyleSheet.absoluteFill}
+      />
+
       {/* Top: progress dots respeitando safe area (notch / status bar) */}
       <View style={[styles.dotsRow, { paddingTop: insets.top + 16 }]}>
         {[0, 1, 2, 3].map(i => (

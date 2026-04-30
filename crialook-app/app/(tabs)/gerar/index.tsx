@@ -44,6 +44,7 @@ import { CameraCaptureModal } from '@/components/CameraCaptureModal';
 import { PhotoSourceSheet } from '@/components/PhotoSourceSheet';
 import { ensureBiometricConsent } from '@/components/BiometricConsentModal';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
+import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 import {
   ModelBottomSheet,
   type ModelBottomSheetRef,
@@ -54,7 +55,11 @@ import {
 } from '@/components/ModelLongPressPreview';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { apiGetCached } from '@/lib/api';
+import { useQueries } from '@tanstack/react-query';
+import { apiGet } from '@/lib/api';
+import { qk } from '@/lib/query-client';
+import { StoreCreditsResponse, StoreUsageResponse } from '@/lib/schemas';
+import { toast } from '@/lib/toast';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useT } from '@/lib/i18n';
 import { isMaleModel } from '@/lib/modelGender';
@@ -184,6 +189,9 @@ function BackgroundCard({
       accessibilityState={{ selected }}
       style={styles.bgCard}
     >
+      {/* Reanimated 4 CSS transitions on border + scale: when `selected` flips,
+          the wrapper smoothly grows ~3% and the brand border thickens. The
+          existing worklet `glowStyle` keeps the breathing shadow alive. */}
       <Animated.View
         style={[
           styles.bgImageWrapper,
@@ -193,7 +201,11 @@ function BackgroundCard({
             shadowColor: Colors.brand.primary,
             shadowOffset: { width: 0, height: 0 },
             shadowRadius: 12,
-          },
+            transform: [{ scale: selected ? 1.03 : 1 }],
+            transitionProperty: ['borderColor', 'borderWidth', 'transform'],
+            transitionDuration: '200ms',
+            transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+          } as any,
           glowStyle,
         ]}
       >
@@ -223,7 +235,7 @@ function BackgroundCard({
   );
 }
 
-export default function GerarScreen() {
+function GerarScreenInner() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -256,26 +268,29 @@ export default function GerarScreen() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // ─── Plan name + quota (used by QuotaExceededModal + pre-flight) ────────
-  const [currentPlan, setCurrentPlan] = useState('free');
-  const [campaignsUsed, setCampaignsUsed] = useState(0);
-  const [campaignsLimit, setCampaignsLimit] = useState(0);
-  const [extraCredits, setExtraCredits] = useState(0);
+  // Same query keys as /plano, so opening this tab right after a purchase
+  // shows fresh quota immediately — the QueryClient is shared.
+  const [usageQ, creditsQ] = useQueries({
+    queries: [
+      {
+        queryKey: qk.store.usage(),
+        queryFn: ({ signal }: { signal?: AbortSignal }) =>
+          apiGet('/store/usage', { signal, schema: StoreUsageResponse }),
+        staleTime: 60_000,
+      },
+      {
+        queryKey: qk.store.credits(),
+        queryFn: ({ signal }: { signal?: AbortSignal }) =>
+          apiGet('/store/credits', { signal, schema: StoreCreditsResponse }),
+        staleTime: 60_000,
+      },
+    ],
+  });
+  const currentPlan = usageQ.data?.data.plan_name ?? 'free';
+  const campaignsUsed = usageQ.data?.data.campaigns_generated ?? 0;
+  const campaignsLimit = usageQ.data?.data.campaigns_limit ?? 0;
+  const extraCredits = creditsQ.data?.data.campaigns ?? 0;
   const isOnline = useNetworkStatus();
-  useEffect(() => {
-    apiGetCached<{ data: { plan_name: string; campaigns_generated?: number; campaigns_limit?: number } }>(
-      '/store/usage',
-      60_000,
-    )
-      .then(usage => {
-        if (usage?.data?.plan_name) setCurrentPlan(usage.data.plan_name);
-        setCampaignsUsed(usage?.data?.campaigns_generated ?? 0);
-        setCampaignsLimit(usage?.data?.campaigns_limit ?? 0);
-      })
-      .catch(() => {});
-    apiGetCached<{ data: { campaigns?: number } }>('/store/credits', 60_000)
-      .then(res => setExtraCredits(res?.data?.campaigns ?? 0))
-      .catch(() => {});
-  }, []);
 
   // Cota total disponível: limite mensal − consumido + créditos avulsos.
   // Usada pra (a) bloquear o submit antes do upload em vez de carregar 3 fotos
@@ -296,7 +311,7 @@ export default function GerarScreen() {
     // subia ~3 fotos compactadas só pra ver erro QUOTA_EXCEEDED ou NETWORK
     // depois — pior caso de UX.
     if (!isOnline) {
-      Alert.alert(t('common.error'), t('errors.network'));
+      toast.error(t('errors.network'));
       return;
     }
     if (remainingQuota <= 0) {
@@ -373,6 +388,9 @@ export default function GerarScreen() {
       <GenerationLoadingScreen
         isComplete={generator.generationComplete}
         onViewResults={generator.viewResults}
+        // Once polling reports completed, the loading screen prefetches the
+        // resulting images via expo-image so resultado renders instantly.
+        campaignId={generator.campaignId}
       />
     );
   }
@@ -800,7 +818,9 @@ export default function GerarScreen() {
         pointerEvents="box-none"
         style={[styles.floatingBtnContainer, { bottom: ctaBottom }]}
       >
-        {/* Banner de cota: faz o usuário ver o estado ANTES de subir foto. */}
+        {/* Banner de cota: faz o usuário ver o estado ANTES de subir foto.
+            Quando `remainingQuota === 1` adicionamos um pulse no boxShadow
+            (CSS API) — é o último-minuto-pra-renovar moment, conversão alta. */}
         {(!isOnline || remainingQuota <= 0 || (remainingQuota <= 3 && !isFreePlan)) && (
           <AnimatedPressable
             onPress={() => router.push('/(tabs)/plano')}
@@ -814,6 +834,8 @@ export default function GerarScreen() {
                 ? t('generate.quotaBannerFree')
                 : remainingQuota <= 0
                 ? t('generate.quotaBannerEmpty')
+                : remainingQuota === 1
+                ? t('generate.quotaBannerLastOne')
                 : t('generate.quotaBannerLow', { n: remainingQuota })
             }
             style={[
@@ -822,7 +844,22 @@ export default function GerarScreen() {
                 ? { backgroundColor: Colors.brand.error }
                 : remainingQuota <= 0
                 ? { backgroundColor: Colors.brand.primary }
+                : remainingQuota === 1
+                ? { backgroundColor: Colors.brand.error }
                 : { backgroundColor: Colors.brand.warning },
+              // Last-one urgency pulse — Reanimated 4 CSS API, lives only when
+              // 1 campaign is left. Quiet (2.4s loop) so it reads as concern,
+              // not panic. Removed when remainingQuota changes (re-render).
+              remainingQuota === 1 && !isFreePlan && ({
+                animationName: {
+                  '0%': { boxShadow: '0 4px 12px rgba(239,68,68,0.30)' },
+                  '50%': { boxShadow: '0 8px 22px rgba(239,68,68,0.55)' },
+                  '100%': { boxShadow: '0 4px 12px rgba(239,68,68,0.30)' },
+                },
+                animationDuration: '2400ms',
+                animationIterationCount: 'infinite',
+                animationTimingFunction: 'ease-in-out',
+              } as any),
             ]}
           >
             <Text style={styles.quotaBannerText} numberOfLines={1}>
@@ -832,6 +869,8 @@ export default function GerarScreen() {
                 ? t('generate.quotaBannerFree')
                 : remainingQuota <= 0
                 ? t('generate.quotaBannerEmpty')
+                : remainingQuota === 1
+                ? t('generate.quotaBannerLastOne')
                 : t('generate.quotaBannerLow', { n: remainingQuota })}
             </Text>
           </AnimatedPressable>
@@ -912,6 +951,14 @@ export default function GerarScreen() {
       <ModelBottomSheet ref={sheetRef} onSelect={handleSheetSelect} />
     </KeyboardAvoidingView>
     </ModelPeekProvider>
+  );
+}
+
+export default function GerarScreen() {
+  return (
+    <TabErrorBoundary screen="gerar">
+      <GerarScreenInner />
+    </TabErrorBoundary>
   );
 }
 

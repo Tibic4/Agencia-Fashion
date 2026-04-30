@@ -8,6 +8,8 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
+import { MeshGradient } from '@/components/skia';
+import { toast } from '@/lib/toast';
 
 export default function SignInScreen() {
   const colorScheme = useColorScheme();
@@ -45,7 +47,7 @@ export default function SignInScreen() {
   const handleForgotPassword = async () => {
     const trimmed = email.trim();
     if (!trimmed || !/\S+@\S+\.\S+/.test(trimmed)) {
-      Alert.alert(t('signIn.forgotTitle'), t('signIn.forgotPromptMissingEmail'));
+      toast.warning(t('signIn.forgotPromptMissingEmail'));
       return;
     }
     if (!isLoaded || !signIn) return;
@@ -54,12 +56,13 @@ export default function SignInScreen() {
         strategy: 'reset_password_email_code',
         identifier: trimmed,
       });
-      Alert.alert(
-        t('signIn.forgotEmailSentTitle'),
-        t('signIn.forgotEmailSentBody', { email: trimmed }),
-      );
+      // Important confirmation but action is "check inbox" — toast is enough
+      // and doesn't block. Longer duration so user reads the email reference.
+      toast.success(t('signIn.forgotEmailSentBody', { email: trimmed }), {
+        durationMs: 6000,
+      });
     } catch {
-      Alert.alert(t('common.error'), t('signIn.forgotError'));
+      toast.error(t('signIn.forgotError'));
     }
   };
 
@@ -68,13 +71,17 @@ export default function SignInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/* Subtle brand mesh — same atmosphere as onboarding, lower opacity so
+          inputs and labels stay legible. Drifts slowly: ~14-18s per blob. */}
+      <MeshGradient
+        opacity={colorScheme === 'dark' ? 0.28 : 0.14}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.content}>
         <Text style={[styles.title, { color: Colors.brand.primary }]} accessibilityRole="header">
           {t('signIn.title')}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('signIn.subtitle')}</Text>
-
-        {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
         <GoogleSignInButton />
 
@@ -101,6 +108,14 @@ export default function SignInScreen() {
           textContentType="password"
           autoComplete="password"
         />
+        {/* Inline error sits between the last input and the submit button —
+            Material 3 / iOS form pattern. The user reads the failure right
+            where she'll act, instead of scrolling back to a top banner. */}
+        {error ? (
+          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            ⚠ {error}
+          </Text>
+        ) : null}
         <Button title={t('signIn.submit')} onPress={handleEmailSignIn} loading={loading} />
 
         <Pressable
@@ -125,7 +140,9 @@ const styles = StyleSheet.create({
   content: { padding: 24, gap: 16 },
   title: { fontSize: 36, fontFamily: 'Inter_700Bold', textAlign: 'center' },
   subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 8, fontFamily: 'Inter_400Regular' },
-  error: { color: Colors.brand.error, textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium' },
+  // Left-aligned, smaller, sits with the form (not the page hero). Reads as
+  // form supporting text in Material 3 / HIG style.
+  error: { color: Colors.brand.error, textAlign: 'left', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: -8 },
   link: { textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium', marginTop: 8 },
   forgotLink: { textAlign: 'center', fontSize: 13, marginTop: -4, fontFamily: 'Inter_400Regular' },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
