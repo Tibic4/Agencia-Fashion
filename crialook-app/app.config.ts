@@ -119,16 +119,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     adaptiveIcon: {
       foregroundImage: adaptiveIconPath,
       backgroundColor: '#D946EF',
-      // Themed icon Material You (Android 13+): quando o usuário habilita
-      // "Themed icons" em Settings → Wallpaper & style, essa máscara
-      // monocromática é tintada pelo sistema pra casar com o wallpaper. O
-      // ícone respira com a home — polish nível Pixel.
-      //
-      // Requer `./assets/images/monochrome-icon.png` (PNG com alpha,
-      // silhueta branca em transparente). Se faltar, o OS cai no adaptive
-      // icon normal — safe shipar essa linha antes do asset existir.
-      // Joga o PNG quando estiver pronto.
-      monochromeImage: './assets/images/monochrome-icon.png',
+      // TODO: themed icon Material You (Android 13+) — gerar
+      // `./assets/images/monochrome-icon.png` (silhueta branca + alpha
+      // transparente) e religar `monochromeImage` aqui. Sem o asset, o
+      // EAS prebuild quebra ao processar o ícone. Por ora ficamos com o
+      // adaptive padrão (sem tema dinâmico do wallpaper).
     },
     edgeToEdgeEnabled: true,
     package: bundleId,
