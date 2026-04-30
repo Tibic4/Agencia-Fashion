@@ -42,7 +42,7 @@ export interface CampaignPeekData {
   id: string;
   title: string;
   thumbnailUrl: string | null;
-  /** Optional subtitle (e.g. "3 fotos · há 2 dias"). */
+  /** Optional subtitle (e.g. "Vestido floral · há 2 dias"). */
   subtitle?: string;
 }
 
