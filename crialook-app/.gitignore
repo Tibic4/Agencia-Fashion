@@ -37,6 +37,10 @@ yarn-error.*
 # credentials
 google-services.json
 play-store-key.json
+# EAS local credentials (gerado por `eas credentials → Download`)
+# Contém senhas do keystore — NUNCA commitar.
+credentials.json
+credentials/
 
 # typescript
 *.tsbuildinfo
