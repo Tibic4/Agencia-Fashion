@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "compress:bg": "node scripts/compress-bg.js",
-    "lock:fix": "node -e \"require('fs').rmSync('package-lock.json',{force:true})\" && npx --yes npm@10 install",
+    "lock:fix": "node -e \"require('fs').rmSync('package-lock.json',{force:true})\" && npx --yes npm@10 install --legacy-peer-deps",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rn": "jest",

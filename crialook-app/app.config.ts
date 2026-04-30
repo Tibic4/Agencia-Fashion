@@ -225,9 +225,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
-    // Skia: 2D GPU-accelerated (confetti, mesh gradients, particle loaders).
-    // Native module — exige rebuild. Ver components/skia/.
-    '@shopify/react-native-skia/plugin',
+    // Skia 2.x não exporta mais subpath `/plugin` — autolinking do Expo cuida
+    // do nativo sozinho. Native module continua exigindo rebuild quando muda
+    // versão. Ver components/skia/ pros consumidores.
     [
       '@sentry/react-native/expo',
       {
