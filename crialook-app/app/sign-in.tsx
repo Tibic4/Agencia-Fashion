@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { MeshGradient } from '@/components/skia';
 import { toast } from '@/lib/toast';
+import { clerkErrorMessage } from '@/lib/clerkErrors';
 
 export default function SignInScreen() {
   const colorScheme = useColorScheme();
@@ -36,9 +37,8 @@ export default function SignInScreen() {
       if (result.status === 'complete' && setActive) {
         await setActive({ session: result.createdSessionId });
       }
-    } catch (e: any) {
-      const msg = e?.errors?.[0]?.longMessage || e?.message || t('signIn.genericError');
-      setError(msg);
+    } catch (e: unknown) {
+      setError(clerkErrorMessage(e, t, 'signIn.genericError'));
     } finally {
       setLoading(false);
     }

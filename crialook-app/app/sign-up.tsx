@@ -9,6 +9,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { MeshGradient } from '@/components/skia';
+import { clerkErrorMessage } from '@/lib/clerkErrors';
 
 export default function SignUpScreen() {
   const colorScheme = useColorScheme();
@@ -36,8 +37,8 @@ export default function SignUpScreen() {
       await signUp.create({ emailAddress: email.trim(), password });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
-    } catch (e: any) {
-      setError(e?.errors?.[0]?.longMessage || e?.message || t('signUp.genericError'));
+    } catch (e: unknown) {
+      setError(clerkErrorMessage(e, t, 'signUp.genericError'));
     } finally {
       setLoading(false);
     }
@@ -52,8 +53,8 @@ export default function SignUpScreen() {
       if (result.status === 'complete' && setActive) {
         await setActive({ session: result.createdSessionId });
       }
-    } catch (e: any) {
-      setError(e?.errors?.[0]?.longMessage || e?.message || t('signUp.invalidCode'));
+    } catch (e: unknown) {
+      setError(clerkErrorMessage(e, t, 'signUp.invalidCode'));
     } finally {
       setLoading(false);
     }

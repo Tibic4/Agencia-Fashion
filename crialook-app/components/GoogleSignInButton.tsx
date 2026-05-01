@@ -27,6 +27,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/lib/toast';
+import { clerkErrorMessage, isOAuthCanceled } from '@/lib/clerkErrors';
 
 /**
  * Google "G" mark — 4-quadrant approximation of the official 4-color logo.
@@ -101,10 +102,11 @@ export function GoogleSignInButton() {
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
       }
-    } catch (e: any) {
-      const msg = e?.errors?.[0]?.longMessage || e?.message;
-      if (msg && !/cancel|dismiss/i.test(msg)) {
-        toast.error(msg);
+    } catch (e: unknown) {
+      // Cancel/dismiss do browser → silêncio. Outros erros viram toast
+      // friendly via clerkErrorMessage.
+      if (!isOAuthCanceled(e)) {
+        toast.error(clerkErrorMessage(e, t, 'signIn.genericError'));
       }
     } finally {
       setLoading(false);

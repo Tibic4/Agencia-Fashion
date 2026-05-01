@@ -604,6 +604,39 @@ export const ptBR = {
     deleteAccountFailed:
       'Não foi possível excluir a conta agora. Entre em contato com o suporte em suporte@crialook.com.br.',
     deleteConfirmationInvalid: 'Digite EXCLUIR para confirmar.',
+    /**
+     * Mensagens dos erros do Clerk traduzidas. As chaves aqui batem com
+     * o map em lib/clerkErrors.ts. Tom: direto, friendly, sem jargão
+     * técnico — usuário só precisa saber o que fazer pra resolver.
+     */
+    clerk: {
+      identifierNotFound: 'Não encontramos uma conta com esse email.',
+      identifierExists: 'Já existe uma conta com esse email. Tente entrar.',
+      formatInvalid: 'Formato inválido. Confira o que digitou.',
+      fieldRequired: 'Preencha todos os campos.',
+      passwordIncorrect: 'Senha incorreta. Tente de novo ou recupere sua senha.',
+      passwordPwned:
+        'Essa senha apareceu em um vazamento conhecido. Use outra mais segura.',
+      passwordWeak: 'Senha muito fraca. Use letras, números e símbolos.',
+      passwordTooShort: 'Senha muito curta (mínimo 6 caracteres).',
+      passwordTooLong: 'Senha muito longa.',
+      sessionExists: 'Você já está conectado nesse aparelho.',
+      sessionExpired: 'Sua sessão expirou. Entre de novo.',
+      authInvalid: 'Não foi possível autenticar. Tente de novo.',
+      verificationFailed: 'Não conseguimos verificar. Tente de novo.',
+      verificationExpired: 'O código expirou. Peça um novo.',
+      codeIncorrect: 'Código incorreto. Confira o email.',
+      alreadyVerified: 'Esse email já foi verificado.',
+      oauthDenied: 'Permissão negada. Tente de novo se quiser entrar pelo Google.',
+      oauthCallbackInvalid:
+        'Algo deu errado no retorno do Google. Tente de novo.',
+      oauthDomainReserved:
+        'Esse domínio é gerenciado por SSO da empresa. Use o login dela.',
+      externalAccountNotFound:
+        'Conta do Google não encontrada. Tente fazer cadastro primeiro.',
+      tooManyRequests:
+        'Muitas tentativas em pouco tempo. Aguarde alguns minutos.',
+    },
   },
 } as const;
 
@@ -1198,5 +1231,31 @@ export const en: StringTree = {
     deleteAccountFailed:
       "Couldn't delete the account right now. Contact support at suporte@crialook.com.br.",
     deleteConfirmationInvalid: 'Type DELETE to confirm.',
+    clerk: {
+      identifierNotFound: "We couldn't find an account with that email.",
+      identifierExists: 'An account with that email already exists. Try signing in.',
+      formatInvalid: 'Invalid format. Check what you typed.',
+      fieldRequired: 'Please fill in all fields.',
+      passwordIncorrect: 'Wrong password. Try again or recover your password.',
+      passwordPwned:
+        'That password appeared in a known data breach. Use a stronger one.',
+      passwordWeak: 'Password too weak. Mix letters, numbers, and symbols.',
+      passwordTooShort: 'Password too short (min 6 characters).',
+      passwordTooLong: 'Password too long.',
+      sessionExists: "You're already signed in on this device.",
+      sessionExpired: 'Your session expired. Sign in again.',
+      authInvalid: "We couldn't authenticate. Try again.",
+      verificationFailed: "We couldn't verify. Try again.",
+      verificationExpired: 'The code expired. Request a new one.',
+      codeIncorrect: 'Wrong code. Check your email.',
+      alreadyVerified: 'This email is already verified.',
+      oauthDenied: 'Permission denied. Try again if you want to sign in with Google.',
+      oauthCallbackInvalid: 'Something went wrong on the Google callback. Try again.',
+      oauthDomainReserved:
+        'This domain is managed by company SSO. Use that login instead.',
+      externalAccountNotFound:
+        "We couldn't find that Google account. Try signing up first.",
+      tooManyRequests: 'Too many tries in a short time. Wait a few minutes.',
+    },
   },
 };
