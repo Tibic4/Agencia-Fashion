@@ -21,16 +21,18 @@ export function initSentry() {
     dsn: DSN,
     enabled: !__DEV__,
     debug: false,
-    // Session Replay desligado: o init nativo do MediaCodec encoder + captura
-    // de framebuffer + registerDefaultNetworkCallback travava o JS thread por
-    // ~54s no boot do AAB de produção (Sentry RN 7.x ativa Replay por
-    // default). Não usamos replay; mantemos crash reports + traces +
-    // breadcrumbs, que é o que importa.
+    // Session Replay desligado em 2 camadas:
+    //   1) Sample rates zerados — Sentry RN só inicializa o native Session
+    //      Replay (MediaCodec encoder + registerDefaultNetworkCallback que
+    //      causava o freeze de 51s no boot do AAB) SE pelo menos um
+    //      sample rate > 0. Com ambos = 0, nem o init nativo roda.
+    //   2) Filter no array de integrations — defesa em profundidade caso
+    //      defaults mudem num bump futuro.
+    // O bug original de freeze (Sentry RN 7.2.0) parece corrigido a partir
+    // da 7.13. Se ele voltar, próxima trincheira: bump pra 8.x ou
+    // downgrade temp pra ≤7.0 sem Replay.
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
-    // Defesa em profundidade: mesmo que Sentry mude defaults num bump
-    // futuro, removemos as integrations de Replay aqui pra garantir que o
-    // boot continue limpo.
     integrations: defaults =>
       defaults.filter(i => i.name !== 'MobileReplay' && i.name !== 'ReplayIntegration'),
     // Default sample rate. Critical flows override this via tracesSampler.

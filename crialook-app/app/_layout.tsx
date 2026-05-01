@@ -22,17 +22,14 @@ import { AppFadeIn } from '@/components/AppFadeIn';
 import { BiometricConsentMount } from '@/components/BiometricConsentModal';
 import { ToastHost } from '@/components/ToastHost';
 import { initBilling, shutdownBilling } from '@/lib/billing';
-// Sentry desligado temporariamente: o native module RNSentry inicializa o
-// Session Replay nativo (MediaCodec encoder + registerDefaultNetworkCallback)
-// que trava o JS thread por ~51s no boot do AAB de produção, mesmo com
-// replaysSessionSampleRate: 0 e filter de integrations no JS — o filter JS
-// não toca no init Android. Confirmado via logcat: gap delimitado entre
-// `Sentry registerDefaultNetworkCallback` e `unregisterNetworkCallback`.
-// Pra reativar com a config certa: descobrir o flag do plugin
-// @sentry/react-native/expo que desabilita Replay nativo (provavelmente
-// `enableSessionReplay: false` ou similar) e voltar com initSentry +
-// Sentry.wrap.
-// import { initSentry, Sentry } from '@/lib/sentry';
+// Sentry religado com Session Replay desligado em 3 camadas — ver
+// lib/sentry.ts (enableMobileReplay: false + sample rate 0 + filter de
+// integrations) e app.config.ts (plugin Expo com enableSessionReplay:
+// false). Antes o native module RNSentry inicializava o Session Replay
+// (MediaCodec encoder + registerDefaultNetworkCallback) que travava o
+// JS thread por ~51s no boot do AAB de produção, mesmo com
+// replaysSessionSampleRate: 0. Confirmado via logcat.
+import { initSentry, Sentry } from '@/lib/sentry';
 import { initLocale } from '@/lib/i18n';
 import {
   getQueryClient,
@@ -42,7 +39,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 
-// initSentry();  // ver comentário no import acima
+initSentry();
 initLocale();
 // Sweep cache stale no boot — entradas com TTL longo nunca relidas continuam
 // ocupando espaço no MMKV file mapping até serem expiradas.
@@ -300,5 +297,6 @@ function RootLayout() {
   );
 }
 
-// Sentry.wrap removido junto com initSentry — ver comentário no topo.
-export default RootLayout;
+// Sentry.wrap envolve o root component em uma boundary de error capture +
+// route tracing. Religado junto com initSentry — ver comentário no topo.
+export default Sentry.wrap(RootLayout);

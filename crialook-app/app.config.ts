@@ -227,7 +227,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       '@sentry/react-native/expo',
       {
         url: 'https://sentry.io/',
-        note: 'org/project/authToken come from SENTRY_ORG, SENTRY_PROJECT and SENTRY_AUTH_TOKEN env vars during EAS build',
+        // Session Replay é evitado via lib/sentry.ts (sample rates = 0
+        // impedem o init nativo). O plugin Expo do Sentry não expõe flag
+        // pra desabilitar Replay no build-time, então a defesa fica
+        // 100% no Sentry.init(...) JS-side.
+        note: 'org/project/authToken come from SENTRY_ORG/SENTRY_PROJECT/SENTRY_AUTH_TOKEN during EAS build.',
       },
     ],
     'expo-localization',
