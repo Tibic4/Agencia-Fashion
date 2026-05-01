@@ -94,7 +94,8 @@ function AuthGate({ onReady }: { onReady?: () => void }) {
 
     const inTabs = segments[0] === '(tabs)';
     const inOnboarding = segments[0] === 'onboarding';
-    const inAuth = segments[0] === 'sign-in' || segments[0] === 'sign-up' || segments[0] === 'sso-callback';
+    const inSignIn = segments[0] === 'sign-in' || segments[0] === 'sign-up';
+    const inSSOCallback = segments[0] === 'sso-callback';
 
     // Caso 1: deslogado num lugar protegido → mandar pra sign-in
     if (!isSignedIn && (inTabs || inOnboarding)) {
@@ -109,14 +110,20 @@ function AuthGate({ onReady }: { onReady?: () => void }) {
       return;
     }
 
-    // Caso 3: logado em rota não-app (sign-in, root) → checar onboarding
-    if (isSignedIn && !inTabs && !inOnboarding && !inAuth) {
+    // SSO callback é route transitória — deixa renderizar enquanto Clerk processa
+    if (inSSOCallback) {
+      setRouteReady(true);
+      return;
+    }
+
+    // Caso 3: logado fora de (tabs)/onboarding (root, sign-in pós-login) → redirect
+    if (!inTabs && !inOnboarding) {
       setRouteReady(false);
       checkOnboardingThenRedirect();
       return;
     }
 
-    // Caso 4: logado em (tabs)/onboarding/auth — destino correto
+    // Caso 4: logado em (tabs)/onboarding — destino correto
     setRouteReady(true);
   }, [isSignedIn, loading, segments]);
 

@@ -19,18 +19,14 @@
  * Tab order matches the site exactly: Criar / Histórico / Modelo / Config /
  * Plano (Plano was second-to-last in the previous app, that drift is gone).
  *
- * Layered structure:
- *   wrapper (absolute, transparent)
- *     └─ shadowLayer (rounded, NO overflow:hidden — shadows only render with
- *                     overflow:visible; classic RN gotcha)
- *          └─ clipLayer (rounded + overflow:hidden — clips BlurView, indicator)
- *               ├─ BlurView
- *               ├─ sliding gradient indicator (animated left+width)
- *               └─ N × Pressable items
+ * Android-only: o app publica só na Play Store. Por isso a sombra usa
+ * `elevation` direto (não precisa do split de camadas que o iOS exigiria
+ * pra contornar o overflow:hidden) e o feedback de press é só `android_ripple`
+ * — sem fallback de opacidade JS, ripple já dá o tátil.
  */
 import { memo, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
@@ -135,8 +131,9 @@ const TabBarItem = memo(function TabBarItem({
 
   const showBadge = badge != null && badge > 0;
 
-  // Android ripple: brand-tinted, contained inside the rounded bounds. iOS
-  // gets opacity feedback via the function-style style prop (no ripple).
+  // Android ripple — único feedback de press. foreground:true desenha o
+  // ripple POR CIMA do conteúdo (em vez de embaixo) pra contornar o nosso
+  // BlurView/LinearGradient cobrirem ele.
   const androidRipple = {
     color: scheme === 'dark' ? Colors.brand.glowMid : Colors.brand.glowSoft,
     borderless: false,
@@ -152,10 +149,7 @@ const TabBarItem = memo(function TabBarItem({
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={label}
       hitSlop={6}
-      style={({ pressed }) => [
-        styles.item,
-        pressed && { opacity: 0.7 },
-      ]}
+      style={styles.item}
     >
       <Animated.View style={animatedIconStyle}>
         <TabIcon route={route} color={color} size={22} />
@@ -185,6 +179,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const colors = Colors[scheme];
   const insets = useSafeAreaInsets();
   const { t } = useT();
+  const router = useRouter();
   const unseenCount = useUnseenHistoricoCount();
   const navLocked = useNavigationLocked();
 
@@ -233,86 +228,88 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   return (
     <View pointerEvents="box-none" style={[styles.wrapper, { bottom }]}>
       <View
+        onLayout={onBarLayout}
         style={[
-          styles.shadowLayer,
-          { shadowColor: scheme === 'dark' ? '#000' : '#0F0519' },
+          styles.bar,
+          { backgroundColor: colors.glass, borderColor: colors.border },
         ]}
       >
-        <View
-          onLayout={onBarLayout}
-          style={[
-            styles.clipLayer,
-            { backgroundColor: colors.glass, borderColor: colors.border },
-          ]}
-        >
-          <BlurView
-            tint={scheme === 'dark' ? 'dark' : 'light'}
-            intensity={scheme === 'dark' ? 70 : 90}
-            style={StyleSheet.absoluteFillObject}
-          />
+        <BlurView
+          tint={scheme === 'dark' ? 'dark' : 'light'}
+          intensity={scheme === 'dark' ? 70 : 90}
+          style={StyleSheet.absoluteFillObject}
+        />
 
-          {/* Sliding active pill — single LinearGradient that animates between
-              tabs instead of N gradients fading in/out. Brand pip lives inside
-              so it slides as one element. pointerEvents="none" lets taps fall
-              through to the Pressable underneath. */}
-          {tabWidth > 0 && (
-            <Animated.View
-              pointerEvents="none"
-              style={[styles.indicator, indicatorStyle]}
-            >
-              <LinearGradient
-                colors={Colors.brand.gradientPrimary}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.indicatorFill}
-              />
-              <View
-                style={[
-                  styles.indicatorDot,
-                  {
-                    backgroundColor:
-                      scheme === 'dark' ? Colors.brand.primaryLight : Colors.brand.primary,
-                  },
-                ]}
-              />
-            </Animated.View>
-          )}
+        {/* Sliding active pill — single LinearGradient que anima entre tabs
+            em vez de N gradients fading in/out. O brand pip mora dentro pra
+            deslizar como um elemento só. pointerEvents="none" deixa o tap
+            cair na Pressable abaixo. */}
+        {tabWidth > 0 && (
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.indicator, indicatorStyle]}
+          >
+            <LinearGradient
+              colors={Colors.brand.gradientPrimary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.indicatorFill}
+            />
+            <View
+              style={[
+                styles.indicatorDot,
+                {
+                  backgroundColor:
+                    scheme === 'dark' ? Colors.brand.primaryLight : Colors.brand.primary,
+                },
+              ]}
+            />
+          </Animated.View>
+        )}
 
-          {state.routes.map((route, index) => {
-            const routeName = route.name as RouteName;
-            if (!TAB_ICON[routeName]) return null;
-            const isActive = route.key === activeRouteKey;
+        {state.routes.map((route) => {
+          const routeName = route.name as RouteName;
+          if (!TAB_ICON[routeName]) return null;
+          const isActive = route.key === activeRouteKey;
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              if (!isActive && !event.defaultPrevented) {
-                Haptics.selectionAsync();
-                navigation.navigate(route.name, route.params);
-              }
-            };
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (event.defaultPrevented) return;
+            Haptics.selectionAsync();
+            if (isActive) {
+              // tap no tab ativo → volta pro index do stack aninhado.
+              // Usamos router.replace direto (em vez de navigation.navigate
+              // com nested screen) porque expo-router resolve a rota
+              // file-based de forma confiável; navigation.navigate com
+              // { screen: 'index' } pode não popar dependendo do estado
+              // atual do stack.
+              router.replace(`/(tabs)/${routeName}` as never);
+            } else {
+              navigation.navigate(route.name, route.params);
+            }
+          };
 
-            const onLongPress = () => {
-              navigation.emit({ type: 'tabLongPress', target: route.key });
-            };
+          const onLongPress = () => {
+            navigation.emit({ type: 'tabLongPress', target: route.key });
+          };
 
-            return (
-              <TabBarItem
-                key={route.key}
-                route={routeName}
-                label={t(`tabs.${routeName}` as 'tabs.gerar')}
-                isActive={isActive}
-                onPress={onPress}
-                onLongPress={onLongPress}
-                badge={routeName === 'historico' ? unseenCount : undefined}
-                scheme={scheme}
-              />
-            );
-          })}
-        </View>
+          return (
+            <TabBarItem
+              key={route.key}
+              route={routeName}
+              label={t(`tabs.${routeName}` as 'tabs.gerar')}
+              isActive={isActive}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              badge={routeName === 'historico' ? unseenCount : undefined}
+              scheme={scheme}
+            />
+          );
+        })}
       </View>
     </View>
   );
@@ -355,19 +352,9 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
     zIndex: 30,
   },
-  // Shadow ONLY here — overflow stays visible so iOS actually paints the
-  // drop shadow (overflow:hidden silently kills shadows on iOS).
-  shadowLayer: {
-    flex: 1,
-    borderRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 28,
-    elevation: 12,
-  },
-  // Clip layer — overflow:hidden is required so the BlurView and the sliding
-  // gradient indicator both respect the rounded corners.
-  clipLayer: {
+  // Camada única — Android-only: `elevation` rende mesmo com overflow:hidden,
+  // então não precisa do split shadowLayer/clipLayer que o iOS exigiria.
+  bar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,6 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
+    elevation: 12,
   },
   item: {
     flex: 1,
