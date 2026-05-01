@@ -383,6 +383,8 @@ export const ptBR = {
     statusCompleted: 'Pronta',
     /** Context menu (3-dots) actions. */
     menuShare: 'Compartilhar',
+    menuMoreActions: 'Mais ações',
+    searchClear: 'Limpar busca',
     shareUnavailable: 'Esta campanha ainda não tem link público.',
     menuFavorite: 'Favoritar',
     menuUnfavorite: 'Desfavoritar',
@@ -485,11 +487,18 @@ export const ptBR = {
     emptyUseStockCta: 'Usar modelo pronto na aba Criar',
     activatePlan: 'Ativar plano',
     createFirst: 'Criar minha primeira modelo',
+    activateAria: 'Ativar modelo {{name}}',
     formNewFemale: 'Nova Modelo Virtual',
     formNewMale: 'Novo Modelo Virtual',
     fieldGender: 'Gênero',
     genderFemale: '♀ Feminino',
     genderMale: '♂ Masculino',
+    /** Prefixo de gênero usado no subtitle do card de modelo (ex.: "Mulher Padrão",
+     *  "Homem Atlético"). Sem o símbolo ♂♀ que `genderMale/Female` traz pro form. */
+    genderPrefix: {
+      male: 'Homem',
+      female: 'Mulher',
+    },
     fieldSkin: 'Tom de pele',
     skinLight: 'Clara',
     skinTanLight: 'Morena clara',
@@ -585,6 +594,8 @@ export const ptBR = {
     analysisStyle: 'Estilo',
     analysisDetails: 'Detalhes',
     notFoundTitle: 'Nenhuma campanha encontrada',
+    notFoundDesc: 'Talvez essa campanha tenha sido removida ou o link ficou velho. Sem stress — você pode criar uma nova ou voltar pro histórico.',
+    notFoundBackToHistory: 'Ver histórico',
     createMore: '✨ Criar mais fotos',
     loadingCampaign: 'Carregando campanha...',
   },
@@ -643,6 +654,20 @@ export const ptBR = {
       tooManyRequests:
         'Muitas tentativas em pouco tempo. Aguarde alguns minutos.',
     },
+  },
+  settings: {
+    accessibility: 'Acessibilidade',
+    vibration: 'Vibração',
+    vibrationDesc: 'Feedback tátil ao tocar nos botões e ao concluir ações.',
+    /** Toast quando MailComposer está indisponível e a gente cai no fallback
+     *  de copiar o email do suporte direto pro clipboard. {{email}} é o
+     *  endereço, não o usuário. */
+    contactEmailCopied: 'Email copiado: {{email}}',
+    contactEmailCopyAction: 'Copiar email',
+  },
+  devTools: {
+    openCatalog: 'Abrir catálogo dev',
+    devCatalogLabel: '🧪 Catálogo dev',
   },
 } as const;
 
@@ -1018,6 +1043,8 @@ export const en: StringTree = {
     statusFailed: 'Failed',
     statusCompleted: 'Ready',
     menuShare: 'Share',
+    menuMoreActions: 'More actions',
+    searchClear: 'Clear search',
     shareUnavailable: "This campaign doesn't have a public link yet.",
     menuFavorite: 'Favorite',
     menuUnfavorite: 'Unfavorite',
@@ -1118,11 +1145,16 @@ export const en: StringTree = {
     emptyUseStockCta: 'Use a stock model in Create',
     activatePlan: 'Activate plan',
     createFirst: 'Create my first model',
+    activateAria: 'Activate model {{name}}',
     formNewFemale: 'New Virtual Model',
     formNewMale: 'New Virtual Model',
     fieldGender: 'Gender',
     genderFemale: '♀ Female',
     genderMale: '♂ Male',
+    genderPrefix: {
+      male: 'Man',
+      female: 'Woman',
+    },
     fieldSkin: 'Skin tone',
     skinLight: 'Light',
     skinTanLight: 'Light tan',
@@ -1218,6 +1250,8 @@ export const en: StringTree = {
     analysisStyle: 'Style',
     analysisDetails: 'Details',
     notFoundTitle: 'No campaign found',
+    notFoundDesc: 'Maybe this campaign was removed or the link is stale. No stress — create a new one or head back to history.',
+    notFoundBackToHistory: 'View history',
     createMore: '✨ Create more photos',
     loadingCampaign: 'Loading campaign…',
   },
@@ -1269,5 +1303,16 @@ export const en: StringTree = {
         "We couldn't find that Google account. Try signing up first.",
       tooManyRequests: 'Too many tries in a short time. Wait a few minutes.',
     },
+  },
+  settings: {
+    accessibility: 'Accessibility',
+    vibration: 'Vibration',
+    vibrationDesc: 'Haptic feedback when tapping buttons and completing actions.',
+    contactEmailCopied: 'Email copied: {{email}}',
+    contactEmailCopyAction: 'Copy email',
+  },
+  devTools: {
+    openCatalog: 'Open dev catalog',
+    devCatalogLabel: '🧪 Dev catalog',
   },
 };
