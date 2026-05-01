@@ -64,6 +64,12 @@ const CODE_TO_KEY: Record<string, string> = {
   oauth_callback_invalid: 'errors.clerk.oauthCallbackInvalid',
   oauth_email_domain_reserved_by_saml: 'errors.clerk.oauthDomainReserved',
   external_account_not_found: 'errors.clerk.externalAccountNotFound',
+  // Redirect URL não aprovado na allowlist do Clerk Dashboard.
+  // O Clerk sometimes serializa como redirect_url_invalid (singular), outras
+  // vezes form_redirect_url_invalid (com prefixo form_). Cobrimos os 2.
+  redirect_url_invalid: 'errors.clerk.redirectUrlInvalid',
+  form_redirect_url_invalid: 'errors.clerk.redirectUrlInvalid',
+  oauth_redirect_url_mismatch: 'errors.clerk.redirectUrlInvalid',
 
   // Rate limiting
   too_many_requests: 'errors.clerk.tooManyRequests',

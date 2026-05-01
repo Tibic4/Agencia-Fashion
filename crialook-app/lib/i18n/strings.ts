@@ -630,6 +630,8 @@ export const ptBR = {
       oauthDenied: 'Permissão negada. Tente de novo se quiser entrar pelo Google.',
       oauthCallbackInvalid:
         'Algo deu errado no retorno do Google. Tente de novo.',
+      redirectUrlInvalid:
+        'Não foi possível concluir o login agora. Tente de novo em alguns segundos.',
       oauthDomainReserved:
         'Esse domínio é gerenciado por SSO da empresa. Use o login dela.',
       externalAccountNotFound:
@@ -1251,6 +1253,8 @@ export const en: StringTree = {
       alreadyVerified: 'This email is already verified.',
       oauthDenied: 'Permission denied. Try again if you want to sign in with Google.',
       oauthCallbackInvalid: 'Something went wrong on the Google callback. Try again.',
+      redirectUrlInvalid:
+        "Couldn't finish sign-in right now. Try again in a few seconds.",
       oauthDomainReserved:
         'This domain is managed by company SSO. Use that login instead.',
       externalAccountNotFound:
