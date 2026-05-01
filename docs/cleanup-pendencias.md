@@ -1,8 +1,8 @@
-# Agent coordination — pendências entre agentes
+# Cleanup — pendências entre frentes de trabalho
 
-Toda vez que dois agentes/PRs tocam no mesmo fluxo em janelas próximas, a
-parte que sobra (cleanup, dead code, comentário desatualizado) cai aqui pra
-não virar dívida silenciosa.
+Toda vez que duas mudanças tocam no mesmo fluxo em janelas próximas, a parte
+que sobra (cleanup, dead code, comentário desatualizado) cai aqui pra não
+virar dívida silenciosa.
 
 ---
 

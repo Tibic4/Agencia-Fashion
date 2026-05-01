@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
 
       // ── Trial-only detection ──
       // Quem usou mini-trial e nunca comprou nada gera 1 foto em vez de 3.
-      // Sinais combinados (legacy — ver docs/agent-coordination.md):
+      // Sinais combinados (legacy — ver docs/cleanup-pendencias.md):
       //  1) `creditReserved` (não tá em plano pago)
       //  2) `mini_trial_uses` tem entrada pra esse clerk_user_id
       //  3) Zero rows em `credit_purchases` da loja

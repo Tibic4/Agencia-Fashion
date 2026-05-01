@@ -287,7 +287,7 @@ npm run storybook:dev
 
 ## 📊 Auditoria & qualidade
 
-Em abril/2026, a aplicação passou por **auditoria de segurança e código** completa por 12 agentes de IA especializados, identificando 270 achados em:
+Em abril/2026 fiz uma rodada de **hardening de segurança e código** cobrindo 270 pontos de atenção em:
 
 - Segurança (auth, webhook, SSRF, IDOR)
 - Camada de dados (RLS, queries, race conditions)
@@ -299,7 +299,7 @@ Em abril/2026, a aplicação passou por **auditoria de segurança e código** co
 - SEO técnico
 - Conversão (CRO)
 
-**~200 fixes aplicados** em 14 commits + 5 migrations Supabase, com CI verde e zero regressões.
+**~230 fixes aplicados** ao longo das rodadas, em commits pequenos e focados, CI verde e zero regressões.
 
 Veja `docs/juridico/LGPD-COMPLIANCE.md` para o checklist legal e `docs/legacy/` para evolução do produto.
 
@@ -315,7 +315,7 @@ Veja `docs/juridico/LGPD-COMPLIANCE.md` para o checklist legal e `docs/legacy/` 
 - **Monitoring:** UptimeRobot + Sentry + cron health-check
 
 **Mobile:**
-- **Android:** Google Play (em fase de submissão)
+- **Android:** Google Play (track Internal Testing → rampa pra Production)
 - **iOS:** App Store (em fase de submissão)
 - **Build/Submit:** EAS (Expo Application Services)
 - **OTA updates:** Expo Updates (canal `production`)
@@ -333,6 +333,6 @@ Construído por **Alton Jorge de Souza Vieira** — desenvolvedor fullstack com 
 
 <div align="center">
 
-Construído com 🤖 + ☕ em Patrocínio/MG
+Construído com 💜 + ☕ em Patrocínio/MG
 
 </div>

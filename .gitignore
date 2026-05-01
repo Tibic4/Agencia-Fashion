@@ -34,7 +34,7 @@ yarn-error.log*
 *~
 *.code-workspace
 
-# ─── AI / LLM tooling (Claude Code, Cursor) ───────────────────
+# ─── Editor / tooling caches locais ───────────────────────────
 .claude/
 .cursor/
 .aider*
