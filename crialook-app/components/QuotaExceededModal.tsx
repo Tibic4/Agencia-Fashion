@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { SlideInDown, SlideOutDown, useReducedMotion } from 'react-native-reanimated';
 import { Button } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -39,6 +39,7 @@ function normalizePlanKey(raw?: string): string | null {
 }
 
 export function QuotaExceededModal({ visible, used, limit, credits, currentPlan, onClose }: Props) {
+  const reduceMotion = useReducedMotion();
   const normalizedPlan = normalizePlanKey(currentPlan);
   const isFreeTier = normalizedPlan === null;
   // Free tier (limit:0) means "no plan", not "100% used" — different visual + copy
@@ -107,14 +108,16 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
                         {
                           width: `${usagePercent}%`,
                           overflow: 'hidden',
-                          animationName: {
-                            '0%': { opacity: 1 },
-                            '50%': { opacity: 0.78 },
-                            '100%': { opacity: 1 },
-                          },
-                          animationDuration: '2200ms',
-                          animationIterationCount: 'infinite',
-                          animationTimingFunction: 'ease-in-out',
+                          ...(reduceMotion ? {} : {
+                            animationName: {
+                              '0%': { opacity: 1 },
+                              '50%': { opacity: 0.78 },
+                              '100%': { opacity: 1 },
+                            },
+                            animationDuration: '2200ms',
+                            animationIterationCount: 'infinite',
+                            animationTimingFunction: 'ease-in-out',
+                          }),
                         } as any,
                       ]}
                     >

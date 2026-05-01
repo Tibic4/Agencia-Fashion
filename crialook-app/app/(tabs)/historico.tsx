@@ -21,6 +21,7 @@ import Animated, {
   FadeIn,
   FadeOut,
   FadeInDown,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatedPressable, Card, GradientText, Skeleton } from '@/components/ui';
@@ -284,6 +285,9 @@ function HistoricoScreenInner() {
   const headerH = useHeaderHeight();
   const padBottom = useTabContentPaddingBottom();
   const queryClient = useQueryClient();
+  // a11y WCAG 2.3.3 — sem isso o pulse infinito em cards favoritados +
+  // stagger de entrada disparam mesmo com "Remover animações" ligado.
+  const reduceMotion = useReducedMotion();
 
   const [filter, setFilter] = useState<'all' | 'favorites'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -476,7 +480,8 @@ function HistoricoScreenInner() {
       // Stagger expandido pra 12 (era 6) — FlashList recicla entre o stagger
       // e o scroll, então 12 entradas únicas = bom equilíbrio entre vivo e
       // não-cansativo. Acima disso vira pulse contínuo desnecessário.
-      const animationDelay = Math.min(item.index, 12) * 45;
+      // Com reduceMotion, sem stagger — entrada instantânea.
+      const animationDelay = reduceMotion ? 0 : Math.min(item.index, 12) * 45;
 
       const statusMeta = getStatusMeta(c.status, t);
       const peekData: CampaignPeekData = {
@@ -528,8 +533,8 @@ function HistoricoScreenInner() {
                   c.is_favorited && styles.cardFavorited,
                   /* Reanimated 4 CSS pulse on the brand shadow when favorited
                      — quiet glow that says "this is the saved one" without
-                     screaming. */
-                  c.is_favorited && ({
+                     screaming. Gate em reduceMotion: vira box-shadow estática. */
+                  c.is_favorited && !reduceMotion && ({
                     animationName: {
                       '0%': { boxShadow: `0 4px 12px rgba(236,72,153,0.15)` },
                       '50%': { boxShadow: `0 6px 20px rgba(236,72,153,0.32)` },
@@ -538,6 +543,9 @@ function HistoricoScreenInner() {
                     animationDuration: '2800ms',
                     animationIterationCount: 'infinite',
                     animationTimingFunction: 'ease-in-out',
+                  } as any),
+                  c.is_favorited && reduceMotion && ({
+                    boxShadow: '0 4px 12px rgba(236,72,153,0.22)',
                   } as any),
                 ]}
               >

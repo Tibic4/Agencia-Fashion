@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import {
   AnimatedPressable,
   Button,
@@ -60,17 +60,20 @@ function usePortraitCardStyle() {
 // CSS API do Reanimated 4: declarativo, otimizável (Reanimated sabe exatamente
 // quais props animam, sem worklet runtime). Substitui o useEffect+useSharedValue
 // imperativo da versão anterior. Veja references/animations-and-gestures.md.
+// Com reduceMotion ativo, badge mostra opacity 1 estático — texto e cor já
+// comunicam "ativo".
 function PulsingBadge({ label }: { label: string }) {
+  const reduceMotion = useReducedMotion();
   return (
     <Animated.View
       style={[
         styles.activeBadge,
-        {
+        !reduceMotion && ({
           animationName: { '0%': { opacity: 1 }, '50%': { opacity: 0.6 }, '100%': { opacity: 1 } },
           animationDuration: '1600ms',
           animationIterationCount: 'infinite',
           animationTimingFunction: 'ease-in-out',
-        } as any,
+        } as any),
       ]}
     >
       <Text style={styles.activeBadgeText}>{label}</Text>
@@ -119,6 +122,8 @@ function ModeloScreenInner() {
   const { t } = useT();
   const headerH = useHeaderHeight();
   const padBottom = useTabContentPaddingBottom();
+  // a11y — gate da pulse do "+" card e do shimmer dos placeholders.
+  const reduceMotion = useReducedMotion();
 
   // useQuery owns: cache, dedup, refetch on focus, retry, cancellation.
   // The model-preview polling effect below mutates this cache directly via
@@ -533,6 +538,10 @@ function ModelsListBody({
   );
   const hiddenCount = totalShown - COLLAPSE_THRESHOLD;
   const portraitCardStyle = usePortraitCardStyle();
+  // a11y — gate da pulse do "+" card. Variável local porque ModelsListBody é
+  // um sub-componente próprio; ModeloScreenInner já tem outra `reduceMotion`
+  // no escopo dele, então sem hoist viral.
+  const reduceMotion = useReducedMotion();
 
   return (
     <View style={styles.content}>
@@ -629,16 +638,18 @@ function ModelsListBody({
                       // Subtle brand glow + hover-able look. Reads as
                       // "tap me — there's more to add" instead of just
                       // "empty slot". Reanimated 4 CSS pulse keeps it alive
-                      // without being noisy.
+                      // without being noisy. Com reduceMotion, glow estática.
                       boxShadow: `0 0 12px ${Colors.brand.glowMid}`,
-                      animationName: {
-                        '0%': { boxShadow: `0 0 8px ${Colors.brand.glowSoft}` },
-                        '50%': { boxShadow: `0 0 16px ${Colors.brand.glowMid}` },
-                        '100%': { boxShadow: `0 0 8px ${Colors.brand.glowSoft}` },
-                      },
-                      animationDuration: '2400ms',
-                      animationIterationCount: 'infinite',
-                      animationTimingFunction: 'ease-in-out',
+                      ...(reduceMotion ? {} : {
+                        animationName: {
+                          '0%': { boxShadow: `0 0 8px ${Colors.brand.glowSoft}` },
+                          '50%': { boxShadow: `0 0 16px ${Colors.brand.glowMid}` },
+                          '100%': { boxShadow: `0 0 8px ${Colors.brand.glowSoft}` },
+                        },
+                        animationDuration: '2400ms',
+                        animationIterationCount: 'infinite',
+                        animationTimingFunction: 'ease-in-out',
+                      }),
                     } as any,
                   ]}
                 >
@@ -729,6 +740,8 @@ function ModelGridCard({
   onDelete: (id: string) => void;
   onZoom: () => void;
 }) {
+  // a11y — gate do shimmer do placeholder enquanto o preview do modelo gera.
+  const reduceMotion = useReducedMotion();
   const matchFem = BODY_TYPES_FEM.find(b => b.value === model.body_type);
   const matchMasc = BODY_TYPES_MASC.find(b => b.value === model.body_type);
   const labelBody = matchFem
@@ -813,8 +826,9 @@ function ModelGridCard({
           >
             {/* While the preview generates, the placeholder has a slow shimmer
                 wave overlay (Reanimated CSS API) that signals "this is being
-                worked on" without using a spinner — feels less mechanical. */}
-            {!model.preview_failed && (
+                worked on" without using a spinner — feels less mechanical.
+                Com reduceMotion, overlay constante a 0.18 (já comunica "vazio"). */}
+            {!model.preview_failed && !reduceMotion && (
               <Animated.View
                 pointerEvents="none"
                 style={[

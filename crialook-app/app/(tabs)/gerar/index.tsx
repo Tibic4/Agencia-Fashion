@@ -27,6 +27,7 @@ import { useRouter } from 'expo-router';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -163,17 +164,21 @@ function BackgroundCard({
   textColor: string;
   onPress: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const glow = useSharedValue(selected ? 1 : 0);
 
   useEffect(() => {
     if (selected) {
       // Why pulse 0.6→1 instead of 0→1? A fully-fading glow looks like a
       // stutter; a soft breath communicates "active" without nagging.
-      glow.value = withRepeat(withTiming(0.6, { duration: 1500 }), -1, true);
+      // Com reduceMotion, glow estática a 0.8 (sem oscilar).
+      glow.value = reduceMotion
+        ? withTiming(0.8, { duration: 200 })
+        : withRepeat(withTiming(0.6, { duration: 1500 }), -1, true);
     } else {
       glow.value = withTiming(0, { duration: 200 });
     }
-  }, [selected, glow]);
+  }, [selected, glow, reduceMotion]);
 
   const glowStyle = useAnimatedStyle(() => ({
     shadowOpacity: glow.value,
@@ -243,6 +248,8 @@ function GerarScreenInner() {
   const { t } = useT();
   const headerH = useHeaderHeight();
   const ctaBottom = useFloatingCtaBottom();
+  // a11y — gate do quota banner pulse (urgência visual quando resta 1 crédito).
+  const reduceMotion = useReducedMotion();
 
   // ─── Photo slots ────────────────────────────────────────────────────────
   const main = useImagePickerSlot({ fileName: 'main.jpg' });
@@ -861,7 +868,8 @@ function GerarScreenInner() {
               // Last-one urgency pulse — Reanimated 4 CSS API, lives only when
               // 1 campaign is left. Quiet (2.4s loop) so it reads as concern,
               // not panic. Removed when remainingQuota changes (re-render).
-              remainingQuota === 1 && !isFreePlan && ({
+              // Com reduceMotion, sombra estática (cor já comunica urgência).
+              remainingQuota === 1 && !isFreePlan && !reduceMotion && ({
                 animationName: {
                   '0%': { boxShadow: '0 4px 12px rgba(239,68,68,0.30)' },
                   '50%': { boxShadow: '0 8px 22px rgba(239,68,68,0.55)' },

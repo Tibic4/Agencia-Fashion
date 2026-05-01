@@ -17,7 +17,7 @@
  *     useSharedValue + useEffect + useAnimatedStyle dance.
  */
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { useReducedMotion } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -43,6 +43,10 @@ export function Skeleton({
 }: Props) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  // a11y — sem shimmer travelling com reduceMotion. O background do baseColor
+  // já comunica "loading"; sem motion fica como redaction estática (Apple HIG
+  // `RedactionReasons.placeholder`). O usuário ainda vê que algo está vindo.
+  const reduceMotion = useReducedMotion();
 
   const baseColor = isDark ? DARK_BASE : LIGHT_BASE;
   const highlight = isDark ? DARK_HIGHLIGHT : LIGHT_HIGHLIGHT;
@@ -61,32 +65,34 @@ export function Skeleton({
         style,
       ]}
     >
-      <Animated.View
-        style={[
-          styles.shimmer,
-          {
-            // The streak slides from -100% → +200% of the container width,
-            // so its 100%-wide gradient fully traverses (3× the container
-            // span net of overlap). Linear easing because the eye reads any
-            // ease as a "stutter" in an ambient loop.
-            animationName: {
-              '0%': { transform: [{ translateX: '-100%' as unknown as number }] },
-              '100%': { transform: [{ translateX: '200%' as unknown as number }] },
-            },
-            animationDuration: `${SHIMMER_DURATION_MS}ms`,
-            animationIterationCount: 'infinite',
-            animationTimingFunction: 'linear',
-          } as any,
-        ]}
-      >
-        <LinearGradient
-          colors={[baseColor, highlight, baseColor]}
-          locations={[0.25, 0.5, 0.75]}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={StyleSheet.absoluteFillObject}
-        />
-      </Animated.View>
+      {!reduceMotion && (
+        <Animated.View
+          style={[
+            styles.shimmer,
+            {
+              // The streak slides from -100% → +200% of the container width,
+              // so its 100%-wide gradient fully traverses (3× the container
+              // span net of overlap). Linear easing because the eye reads any
+              // ease as a "stutter" in an ambient loop.
+              animationName: {
+                '0%': { transform: [{ translateX: '-100%' as unknown as number }] },
+                '100%': { transform: [{ translateX: '200%' as unknown as number }] },
+              },
+              animationDuration: `${SHIMMER_DURATION_MS}ms`,
+              animationIterationCount: 'infinite',
+              animationTimingFunction: 'linear',
+            } as any,
+          ]}
+        >
+          <LinearGradient
+            colors={[baseColor, highlight, baseColor]}
+            locations={[0.25, 0.5, 0.75]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 }

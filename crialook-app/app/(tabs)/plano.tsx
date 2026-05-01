@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { AnimatedPressable, Button, Card, GradientText, Skeleton } from '@/components/ui';
 import { AuraGlow, Confetti } from '@/components/skia';
@@ -60,6 +60,8 @@ function PlanoScreenInner() {
   const headerH = useHeaderHeight();
   const padBottom = useTabContentPaddingBottom();
   const queryClient = useQueryClient();
+  // a11y — gate da pulse > 80% e da AuraGlow do plano ativo.
+  const reduceMotion = useReducedMotion();
 
   // Three independent reads in parallel: server-side usage + credits, and the
   // local Play Billing offerings (which doesn't hit our API but still benefits
@@ -344,7 +346,7 @@ function PlanoScreenInner() {
                         width: `${Math.min(usagePercent, 100)}%`,
                         backgroundColor:
                           usagePercent > 80 ? Colors.brand.warning : Colors.brand.primary,
-                        ...(usagePercent > 80
+                        ...(usagePercent > 80 && !reduceMotion
                           ? ({
                               animationName: {
                                 '0%': { opacity: 1 },
