@@ -37,7 +37,11 @@ export function AppFadeIn({ ready, children }: Props) {
 
   return (
     <Animated.View
-      style={{ flex: 1 }}
+      // bg = cor da splash. Durante o fade-in (opacity 0→1), o que vaza por
+      // baixo do conteúdo é fucsia em vez de branco. Combinado com o bg
+      // do GestureHandlerRootView e o backgroundColor do app.config.ts,
+      // elimina o flash branco no cold start.
+      style={{ flex: 1, backgroundColor: '#D946EF' }}
       entering={FadeIn.duration(280).easing(Easing.out(Easing.cubic))}
     >
       {children}

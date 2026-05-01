@@ -279,7 +279,11 @@ function RootLayout() {
 
   return (
     <AppErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* backgroundColor = cor da splash. Cobre o gap entre splash native
+          sumir e o conteúdo do AppFadeIn pintar — em vez de flash branco,
+          usuário vê fucsia contínuo até o app aparecer. Pareado com
+          `backgroundColor` no app.config.ts (camada nativa). */}
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#D946EF' }}>
         <SafeAreaProvider>
           <QueryClientProvider client={getQueryClient()}>
             <ThemeProvider>

@@ -82,6 +82,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: iconPath,
   scheme,
   userInterfaceStyle: 'automatic',
+  // Match a cor da splash pra eliminar o flash branco que aparecia entre
+  // o splash native sumindo e o primeiro frame JS pintar. Sem isso,
+  // RN window background = branco default, e o usuário via 200-800ms de
+  // tela em branco no cold start.
+  backgroundColor: '#D946EF',
   newArchEnabled: true,
   splash: {
     image: './assets/images/splash-icon.png',
