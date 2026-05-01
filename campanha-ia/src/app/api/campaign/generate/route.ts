@@ -580,29 +580,44 @@ export async function POST(request: NextRequest) {
               for (let i = 0; i < images.length; i++) {
                 const img = images[i];
                 if (!img) { imageUrls.push(null); continue; }
-                try {
-                  // Converter base64 para Buffer e upload direto
-                  const buf = Buffer.from(img.imageBase64, "base64");
-                  const ext = img.mimeType === "image/png" ? "png" : "jpg";
-                  const contentType = img.mimeType || "image/jpeg";
-                  const path = `campaigns/${campaignRecord.id}/v6_look_${i + 1}.${ext}`;
-                  const { error: upErr } = await supabase.storage
-                    .from("generated-images")
-                    .upload(path, buf, { contentType, upsert: true });
-                  if (upErr) {
-                    console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} falhou:`, upErr.message);
-                    imageUrls.push(null);
-                  } else {
-                    const { data: urlData } = supabase.storage
+                // Converter base64 pra Buffer uma vez (não muda entre tentativas)
+                const buf = Buffer.from(img.imageBase64, "base64");
+                const ext = img.mimeType === "image/png" ? "png" : "jpg";
+                const contentType = img.mimeType || "image/jpeg";
+                const path = `campaigns/${campaignRecord.id}/v6_look_${i + 1}.${ext}`;
+                // Retry com backoff exponencial — `fetch failed` na rede VPS↔
+                // Supabase é transitório. Sem retry, 1 blip = campanha inteira
+                // marcada como failed e crédito devolvido (UX ruim).
+                // Tentativas: imediata, 400ms, 1200ms.
+                let uploaded = false;
+                let lastError: string | null = null;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                  try {
+                    const { error: upErr } = await supabase.storage
                       .from("generated-images")
-                      .getPublicUrl(path);
-                    imageUrls.push(urlData.publicUrl);
-                    // Preencher imageUrl no objeto para SSE
-                    img.imageUrl = urlData.publicUrl;
-                    console.log(`[Generate] ✅ Imagem ${i + 1} salva: ${path}`);
+                      .upload(path, buf, { contentType, upsert: true });
+                    if (!upErr) {
+                      const { data: urlData } = supabase.storage
+                        .from("generated-images")
+                        .getPublicUrl(path);
+                      imageUrls.push(urlData.publicUrl);
+                      img.imageUrl = urlData.publicUrl;
+                      console.log(`[Generate] ✅ Imagem ${i + 1} salva (tentativa ${attempt}): ${path}`);
+                      uploaded = true;
+                      break;
+                    }
+                    lastError = upErr.message;
+                    console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} tentativa ${attempt} falhou:`, upErr.message);
+                  } catch (uploadErr) {
+                    lastError = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
+                    console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} tentativa ${attempt} exception:`, lastError);
                   }
-                } catch (uploadErr) {
-                  console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} exception:`, uploadErr);
+                  if (attempt < 3) {
+                    await new Promise(r => setTimeout(r, 400 * attempt));
+                  }
+                }
+                if (!uploaded) {
+                  console.error(`[Generate] 🚨 Imagem ${i + 1} desistiu após 3 tentativas. Último erro: ${lastError}`);
                   imageUrls.push(null);
                 }
               }
