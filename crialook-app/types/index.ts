@@ -6,6 +6,12 @@ export interface Campaign {
   status: string;
   created_at: string;
   is_favorited: boolean;
+  /**
+   * Token público pra compartilhamento (rota /preview/[token] do site).
+   * Sem isso, o share manda pra /campaign/[id] que retorna 404 — não
+   * existe rota pública por id, só por token.
+   */
+  preview_token?: string | null;
   /* Tempo total do pipeline (analyze + VTO ×3 + copy). Usado pra exibir no
      history como "23s" / "1m 12s" — varia bastante por geração, então
      mostrar o tempo real é mais honesto que um placeholder fixo. */

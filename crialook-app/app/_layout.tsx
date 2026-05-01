@@ -110,13 +110,16 @@ function AuthGate({ onReady }: { onReady?: () => void }) {
       return;
     }
 
-    // SSO callback é route transitória — deixa renderizar enquanto Clerk processa
-    if (inSSOCallback) {
+    // SSO callback transitória: se ainda não logado, deixa renderizar
+    // (Clerk está processando o callback do Google). Se isSignedIn=true,
+    // caímos no redirect abaixo — sem isso o usuário ficava preso na
+    // tela "Conectando…" pra sempre depois do login Google.
+    if (inSSOCallback && !isSignedIn) {
       setRouteReady(true);
       return;
     }
 
-    // Caso 3: logado fora de (tabs)/onboarding (root, sign-in pós-login) → redirect
+    // Caso 3: logado fora de (tabs)/onboarding (root, sign-in/sso pós-login) → redirect
     if (!inTabs && !inOnboarding) {
       setRouteReady(false);
       checkOnboardingThenRedirect();

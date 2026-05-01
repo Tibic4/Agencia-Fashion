@@ -377,11 +377,18 @@ function HistoricoScreenInner() {
    * (deep link), or on the website otherwise.
    */
   const shareCampaign = useCallback(
-    async (id: string) => {
+    async (token: string | null | undefined) => {
+      if (!token) {
+        // Sem preview_token, a campanha não tem rota pública. Avisa em vez
+        // de mandar pro 404. Pode acontecer com campanhas em processing
+        // ou failed que ainda não receberam o token gerado.
+        toast.warning(t('history.shareUnavailable'));
+        return;
+      }
       try {
-        const url = `https://crialook.com.br/campaign/${id}`;
-        // RN Share (não expo-sharing) — expo-sharing.shareAsync é só pra
-        // arquivos locais (file://). Pra URL HTTP precisamos do Share da RN.
+        // Site só serve preview público em /preview/[token]; /campaign/[id]
+        // não existe e dava 404 quando alguém abria o link compartilhado.
+        const url = `https://crialook.com.br/preview/${token}`;
         await Share.share({ message: url, url });
       } catch {
         toast.error(t('common.error'));
@@ -710,7 +717,7 @@ function HistoricoScreenInner() {
                       until a row is picked or user taps the trigger again). */}
                   <ContextMenuButton
                     isFavorited={c.is_favorited}
-                    onShare={() => shareCampaign(c.id)}
+                    onShare={() => shareCampaign(c.preview_token)}
                     onToggleFavorite={() => toggleFavorite(c.id, c.is_favorited)}
                     onDelete={deleteSupported ? noopDelete : undefined}
                     t={t}

@@ -380,6 +380,7 @@ export const ptBR = {
     statusCompleted: 'Pronta',
     /** Context menu (3-dots) actions. */
     menuShare: 'Compartilhar',
+    shareUnavailable: 'Esta campanha ainda não tem link público.',
     menuFavorite: 'Favoritar',
     menuUnfavorite: 'Desfavoritar',
     menuDelete: 'Excluir',
@@ -1011,6 +1012,7 @@ export const en: StringTree = {
     statusFailed: 'Failed',
     statusCompleted: 'Ready',
     menuShare: 'Share',
+    shareUnavailable: "This campaign doesn't have a public link yet.",
     menuFavorite: 'Favorite',
     menuUnfavorite: 'Unfavorite',
     menuDelete: 'Delete',

@@ -27,6 +27,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
+import { StackActions } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Feather from '@expo/vector-icons/Feather';
@@ -281,13 +282,30 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             if (event.defaultPrevented) return;
             Haptics.selectionAsync();
             if (isActive) {
-              // tap no tab ativo → volta pro index do stack aninhado.
-              // Usamos router.replace direto (em vez de navigation.navigate
-              // com nested screen) porque expo-router resolve a rota
-              // file-based de forma confiável; navigation.navigate com
-              // { screen: 'index' } pode não popar dependendo do estado
-              // atual do stack.
-              router.replace(`/(tabs)/${routeName}` as never);
+              // Tap no tab ativo → popToTop do stack aninhado (volta pro
+              // index daquela tab). Sem isso, /gerar/resultado fica preso
+              // quando o usuário tenta voltar pra Criar pela tab bar —
+              // ele tapa, sente o haptic, mas a tela não muda.
+              //
+              // Tentativas anteriores com router.replace('/(tabs)/gerar')
+              // ou navigation.navigate(name, { screen: 'index' }) não
+              // popavam de forma confiável no expo-router 6 + RN 0.81.
+              // StackActions.popToTop com target=route.state.key vai
+              // direto no nested stack e popa tudo até o índice.
+              const nestedKey =
+                route.state && 'key' in route.state
+                  ? (route.state as { key?: string }).key
+                  : undefined;
+              if (nestedKey) {
+                navigation.dispatch({
+                  ...StackActions.popToTop(),
+                  target: nestedKey,
+                });
+              } else {
+                // Fallback pra tabs sem stack aninhado (historico, plano,
+                // configuracoes, modelo): só re-navega pra própria.
+                router.replace(`/(tabs)/${routeName}` as never);
+              }
             } else {
               navigation.navigate(route.name, route.params);
             }
