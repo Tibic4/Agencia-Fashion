@@ -1,12 +1,32 @@
+/**
+ * QuotaExceededModal — sheet modal disparado quando o usuário tenta gerar
+ * uma campanha sem cota / sem créditos avulsos. Oferece dois caminhos:
+ * comprar pacote de créditos avulsos (only paid tier) ou fazer upgrade
+ * de plano (free + paid).
+ *
+ * Polish v2:
+ *   - Cores 100% theme-aware (antes era #fff hardcoded sobre `themeColors.card`,
+ *     o que quebrava em light mode — texto branco sobre card branco).
+ *   - Tokens (fontSize/fontWeight/spacing/radii) em vez dos magic numbers
+ *     antigos. `rounded()` helper aplicado em radii ≥16 (continuous superellipse).
+ *   - Hero icon trocou o emoji 🚀 (PT-only feel + no-brand) pela `bolt` do
+ *     FontAwesome com gradient brand atrás — coerente com a credits chip
+ *     do AppHeader.
+ *   - Haptic.selection ao trocar tab + haptic.tap nos packages/upgrades.
+ *   - SlideInDown agora usa tokens.springs.bouncy em vez de damping inline.
+ */
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Animated, { SlideInDown, SlideOutDown, useReducedMotion } from 'react-native-reanimated';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Button } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
+import { haptic } from '@/lib/haptics';
+import { tokens, rounded } from '@/lib/theme/tokens';
 
 interface Props {
   visible: boolean;
@@ -47,42 +67,69 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
   const router = useRouter();
   const { t } = useT();
   const scheme = useColorScheme();
-  const themeColors = Colors[scheme];
+  const c = Colors[scheme];
 
   const usagePercent = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
 
   const handleUpgrade = () => {
+    haptic.tap();
     onClose();
     router.push('/(tabs)/plano');
   };
 
   const handleBuyCredits = (_qty: number) => {
+    haptic.tap();
     onClose();
     router.push('/(tabs)/plano');
+  };
+
+  const switchTab = (next: 'credits' | 'upgrade') => {
+    if (next === tab) return;
+    haptic.selection();
+    setTab(next);
   };
 
   const currentIndex = normalizedPlan ? PLANS.findIndex(p => p.id === normalizedPlan) : -1;
   const availableUpgrades = PLANS.filter((_, i) => i > currentIndex);
 
+  // Tonal surfaces — não hardcoded white-on-white. `surface2` do theme já é
+  // o nosso "raised dentro de card" (light: f7f4f8 / dark: 261f2d).
+  const cardBg = c.card;
+  const innerBg = c.surface2;
+  const innerBorder = c.border;
+  const successGlow = scheme === 'dark' ? 'rgba(16,185,129,0.18)' : 'rgba(16,185,129,0.10)';
+  const violetGlow = scheme === 'dark' ? 'rgba(168,85,247,0.20)' : 'rgba(168,85,247,0.10)';
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Animated.View entering={SlideInDown.springify().damping(25)} exiting={SlideOutDown} style={[styles.sheet, { backgroundColor: themeColors.card }]}>
+      <Pressable style={[styles.overlay, { backgroundColor: c.overlay }]} onPress={onClose}>
+        <Animated.View
+          entering={SlideInDown.springify().damping(tokens.springs.bouncy.damping).mass(tokens.springs.bouncy.mass)}
+          exiting={SlideOutDown}
+          style={[styles.sheet, { backgroundColor: cardBg, borderColor: c.border }]}
+        >
           <Pressable onPress={e => e.stopPropagation()}>
-            {/* Drag handle */}
-            <View style={styles.dragHandle} />
+            {/* Drag handle — neutralizado pra theme */}
+            <View style={[styles.dragHandle, { backgroundColor: c.borderHover }]} />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { borderBottomColor: c.border }]}>
               <View style={styles.headerRow}>
-                <View style={styles.rocketIcon}>
-                  <Text style={{ fontSize: 20 }}>🚀</Text>
+                {/* Brand chip com bolt (paritário com a credits chip do AppHeader) */}
+                <View style={styles.heroChip}>
+                  <LinearGradient
+                    colors={Colors.brand.gradientPrimary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <FontAwesome name="bolt" size={20} color="#fff" />
                 </View>
-                <View>
-                  <Text style={styles.headerTitle}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.headerTitle, { color: c.text }]}>
                     {isFreeTier ? t('quota.headerTitleFree') : t('quota.headerTitle')}
                   </Text>
-                  <Text style={styles.headerSub}>
+                  <Text style={[styles.headerSub, { color: c.textSecondary }]}>
                     {isFreeTier ? t('quota.headerSubFree') : t('quota.headerSub')}
                   </Text>
                 </View>
@@ -90,14 +137,16 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
 
               {/* Usage bar — only for paid tiers (free has no quota to show) */}
               {!isFreeTier ? (
-                <View style={styles.usageBox}>
+                <View style={[styles.usageBox, { backgroundColor: innerBg, borderColor: innerBorder }]}>
                   <View style={styles.usageRow}>
-                    <Text style={styles.usageText}>{t('quota.usageText', { used, limit })}</Text>
-                    <View style={styles.fullBadge}>
+                    <Text style={[styles.usageText, { color: c.text }]}>
+                      {t('quota.usageText', { used, limit })}
+                    </Text>
+                    <View style={[styles.fullBadge, { backgroundColor: 'rgba(239,68,68,0.15)', borderColor: 'rgba(239,68,68,0.25)' }]}>
                       <Text style={styles.fullBadgeText}>100%</Text>
                     </View>
                   </View>
-                  <View style={styles.barTrack}>
+                  <View style={[styles.barTrack, { backgroundColor: c.border }]}>
                     {/* Gradient fill (red → amber) instead of solid red — reads
                         as "you used everything" without screaming, while still
                         being clearly different from the brand-fucsia bars on
@@ -130,34 +179,40 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
                     </Animated.View>
                   </View>
                   {credits > 0 && (
-                    <Text style={styles.creditsAvailable}>
+                    <Text style={[styles.creditsAvailable, { color: Colors.brand.success }]}>
                       {t(credits === 1 ? 'quota.creditsOne' : 'quota.creditsOther', { n: credits })}
                     </Text>
                   )}
                 </View>
               ) : (
-                <View style={styles.usageBoxFree}>
-                  <Text style={styles.usageTextFree}>{t('quota.usageTextFree')}</Text>
+                <View style={[styles.usageBoxFree, { backgroundColor: Colors.brand.glowSoft, borderColor: Colors.brand.glowMid }]}>
+                  <Text style={[styles.usageTextFree, { color: c.text }]}>{t('quota.usageTextFree')}</Text>
                 </View>
               )}
             </View>
 
             {/* Tabs — only paid tiers see "Buy credits"; for free, jump to upgrade */}
             {!isFreeTier && (
-              <View style={styles.tabs}>
+              <View style={[styles.tabs, { backgroundColor: innerBg }]}>
                 <Pressable
-                  onPress={() => setTab('credits')}
-                  style={[styles.tab, tab === 'credits' && styles.tabActive]}
+                  onPress={() => switchTab('credits')}
+                  style={[
+                    styles.tab,
+                    tab === 'credits' && { backgroundColor: successGlow, borderColor: 'rgba(16,185,129,0.3)', borderWidth: StyleSheet.hairlineWidth },
+                  ]}
                 >
-                  <Text style={[styles.tabText, tab === 'credits' && styles.tabTextActive]}>
+                  <Text style={[styles.tabText, { color: tab === 'credits' ? Colors.brand.success : c.textSecondary }]}>
                     {t('quota.tabCredits')}
                   </Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => setTab('upgrade')}
-                  style={[styles.tab, tab === 'upgrade' && styles.tabActiveUpgrade]}
+                  onPress={() => switchTab('upgrade')}
+                  style={[
+                    styles.tab,
+                    tab === 'upgrade' && { backgroundColor: violetGlow, borderColor: 'rgba(168,85,247,0.3)', borderWidth: StyleSheet.hairlineWidth },
+                  ]}
                 >
-                  <Text style={[styles.tabText, tab === 'upgrade' && styles.tabTextActiveUpgrade]}>
+                  <Text style={[styles.tabText, { color: tab === 'upgrade' ? Colors.brand.violet : c.textSecondary }]}>
                     {t('quota.tabUpgrade')}
                   </Text>
                 </Pressable>
@@ -165,22 +220,44 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
             )}
 
             {/* Content */}
-            <ScrollView style={styles.body} contentContainerStyle={{ gap: 10 }}>
+            <ScrollView style={styles.body} contentContainerStyle={{ gap: tokens.spacing.sm + 2 }}>
               {tab === 'credits' ? (
                 <>
                   {CREDIT_PACKAGES.map(pkg => (
-                    <Pressable key={pkg.qty} onPress={() => handleBuyCredits(pkg.qty)} style={[styles.pkgCard, pkg.popular && styles.pkgPopular]}>
-                      {pkg.popular && <View style={styles.popularBadge}><Text style={styles.popularBadgeText}>{t('quota.badgePopular')}</Text></View>}
-                      {pkg.best && <View style={[styles.popularBadge, { backgroundColor: Colors.brand.violet }]}><Text style={styles.popularBadgeText}>{t('quota.badgeBest')}</Text></View>}
+                    <Pressable
+                      key={pkg.qty}
+                      onPress={() => handleBuyCredits(pkg.qty)}
+                      style={[
+                        styles.pkgCard,
+                        { backgroundColor: innerBg, borderColor: innerBorder },
+                        pkg.popular && { borderColor: 'rgba(16,185,129,0.5)', borderWidth: 1.5 },
+                        pkg.best && { borderColor: 'rgba(168,85,247,0.5)', borderWidth: 1.5 },
+                      ]}
+                    >
+                      {pkg.popular && (
+                        <View style={[styles.badge, { backgroundColor: Colors.brand.success }]}>
+                          <Text style={styles.badgeText}>{t('quota.badgePopular')}</Text>
+                        </View>
+                      )}
+                      {pkg.best && (
+                        <View style={[styles.badge, { backgroundColor: Colors.brand.violet }]}>
+                          <Text style={styles.badgeText}>{t('quota.badgeBest')}</Text>
+                        </View>
+                      )}
                       <View style={styles.pkgRow}>
-                        <View style={[styles.qtyBadge, pkg.popular && { backgroundColor: 'rgba(16,185,129,0.2)' }]}>
-                          <Text style={[styles.qtyText, pkg.popular && { color: '#34D399' }]}>+{pkg.qty}</Text>
+                        <View style={[
+                          styles.qtyBadge,
+                          { backgroundColor: pkg.popular ? successGlow : pkg.best ? violetGlow : c.border },
+                        ]}>
+                          <Text style={[styles.qtyText, { color: pkg.popular ? Colors.brand.success : pkg.best ? Colors.brand.violet : c.textSecondary }]}>+{pkg.qty}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.pkgTitle}>{t('quota.pkgCampaigns', { n: pkg.qty })}</Text>
-                          <Text style={styles.pkgPerUnit}>{t('quota.pkgPerUnit', { price: pkg.perUnit })}</Text>
+                          <Text style={[styles.pkgTitle, { color: c.text }]}>{t('quota.pkgCampaigns', { n: pkg.qty })}</Text>
+                          <Text style={[styles.pkgPerUnit, { color: c.textSecondary }]}>{t('quota.pkgPerUnit', { price: pkg.perUnit })}</Text>
                         </View>
-                        <Text style={[styles.pkgPrice, pkg.popular && { color: '#34D399' }]}>{t('quota.pkgPrice', { price: pkg.price })}</Text>
+                        <Text style={[styles.pkgPrice, { color: pkg.popular ? Colors.brand.success : pkg.best ? Colors.brand.violet : c.text }]}>
+                          {t('quota.pkgPrice', { price: pkg.price })}
+                        </Text>
                       </View>
                     </Pressable>
                   ))}
@@ -188,17 +265,31 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
               ) : (
                 <>
                   {availableUpgrades.map(plan => (
-                    <Pressable key={plan.id} onPress={handleUpgrade} style={[styles.pkgCard, plan.recommended && styles.pkgRecommended]}>
-                      {plan.recommended && <View style={styles.recBadge}><Text style={styles.popularBadgeText}>{t('quota.badgeRecommended')}</Text></View>}
+                    <Pressable
+                      key={plan.id}
+                      onPress={handleUpgrade}
+                      style={[
+                        styles.pkgCard,
+                        { backgroundColor: innerBg, borderColor: innerBorder },
+                        plan.recommended && { borderColor: 'rgba(168,85,247,0.5)', borderWidth: 1.5 },
+                      ]}
+                    >
+                      {plan.recommended && (
+                        <View style={[styles.badge, { backgroundColor: Colors.brand.violet }]}>
+                          <Text style={styles.badgeText}>{t('quota.badgeRecommended')}</Text>
+                        </View>
+                      )}
                       <View style={styles.pkgRow}>
-                        <View style={[styles.qtyBadge, plan.recommended && { backgroundColor: 'rgba(139,92,246,0.2)' }]}>
-                          <Text style={[styles.qtyText, plan.recommended && { color: '#A78BFA' }]}>⭐</Text>
+                        <View style={[styles.qtyBadge, { backgroundColor: plan.recommended ? violetGlow : c.border }]}>
+                          <FontAwesome name="star" size={16} color={plan.recommended ? Colors.brand.violet : c.textSecondary} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.pkgTitle}>{t(`planNames.${plan.id}` as const)}</Text>
-                          <Text style={styles.pkgPerUnit}>{t('quota.planMonthly', { n: plan.campaigns })}</Text>
+                          <Text style={[styles.pkgTitle, { color: c.text }]}>{t(`planNames.${plan.id}` as const)}</Text>
+                          <Text style={[styles.pkgPerUnit, { color: c.textSecondary }]}>
+                            {t('quota.planMonthly', { n: plan.campaigns })}
+                          </Text>
                         </View>
-                        <Text style={[styles.pkgPrice, plan.recommended && { color: '#A78BFA' }]}>
+                        <Text style={[styles.pkgPrice, { color: plan.recommended ? Colors.brand.violet : c.text }]}>
                           {t('quota.planPriceMonthly', { price: plan.price })}
                         </Text>
                       </View>
@@ -206,8 +297,8 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
                   ))}
                   {availableUpgrades.length === 0 && (
                     <View style={styles.maxPlan}>
-                      <Text style={{ fontSize: 24 }}>🏆</Text>
-                      <Text style={styles.maxPlanText}>{t('quota.maxPlan')}</Text>
+                      <FontAwesome name="trophy" size={28} color={Colors.brand.accent} />
+                      <Text style={[styles.maxPlanText, { color: c.text }]}>{t('quota.maxPlan')}</Text>
                     </View>
                   )}
                 </>
@@ -226,50 +317,185 @@ export function QuotaExceededModal({ visible, used, limit, credits, currentPlan,
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderCurve: 'continuous',
+    ...rounded(tokens.radii.xxxl),
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 0,
     maxHeight: '90%',
   },
-  dragHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginTop: 12 },
-  header: { padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  rocketIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: Colors.brand.primary, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 14 },
-  usageBox: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
-  usageBoxFree: { backgroundColor: 'rgba(217,70,239,0.08)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(217,70,239,0.18)' },
-  usageTextFree: { color: '#fff', fontSize: 13, fontWeight: '500', textAlign: 'center' },
-  usageRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  usageText: { color: '#fff', fontSize: 13, fontWeight: '500', fontVariant: ['tabular-nums'] },
-  fullBadge: { backgroundColor: 'rgba(239,68,68,0.15)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)' },
-  fullBadgeText: { color: '#F87171', fontSize: 11, fontWeight: '700' },
-  barTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 4 },
-  creditsAvailable: { color: '#34D399', fontSize: 12, marginTop: 6 },
-  tabs: { flexDirection: 'row', margin: 20, marginBottom: 0, padding: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', gap: 4 },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  tabActive: { backgroundColor: 'rgba(16,185,129,0.2)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.25)' },
-  tabActiveUpgrade: { backgroundColor: 'rgba(139,92,246,0.2)', borderWidth: 1, borderColor: 'rgba(139,92,246,0.25)' },
-  tabText: { color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: '600' },
-  tabTextActive: { color: '#34D399' },
-  tabTextActiveUpgrade: { color: '#A78BFA' },
-  body: { padding: 20, maxHeight: 300 },
-  pkgCard: { backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, borderCurve: 'continuous', padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  pkgPopular: { borderColor: 'rgba(16,185,129,0.3)', borderWidth: 1.5 },
-  pkgRecommended: { borderColor: 'rgba(139,92,246,0.3)', borderWidth: 1.5 },
-  popularBadge: { backgroundColor: Colors.brand.success, alignSelf: 'flex-end', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginBottom: 8 },
-  recBadge: { backgroundColor: Colors.brand.violet, alignSelf: 'flex-end', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginBottom: 8 },
-  popularBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
-  pkgRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  qtyBadge: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
-  qtyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '700' },
-  pkgTitle: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  pkgPerUnit: { color: 'rgba(255,255,255,0.4)', fontSize: 12, fontVariant: ['tabular-nums'] },
-  pkgPrice: { color: '#fff', fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  maxPlan: { alignItems: 'center', padding: 20, gap: 8 },
-  maxPlanText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  footer: { padding: 20, paddingBottom: 40 },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: tokens.radii.xs / 2,
+    alignSelf: 'center',
+    marginTop: tokens.spacing.md,
+  },
+  header: {
+    padding: tokens.spacing.xl,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.md,
+    marginBottom: tokens.spacing.lg,
+  },
+  heroChip: {
+    width: 48,
+    height: 48,
+    ...rounded(tokens.radii.xl),
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: tokens.fontSize.xxxl,
+    fontFamily: 'Inter_700Bold',
+    letterSpacing: -0.4,
+  },
+  headerSub: {
+    fontSize: tokens.fontSize.base,
+    fontFamily: 'Inter_500Medium',
+    marginTop: 2,
+  },
+  usageBox: {
+    ...rounded(tokens.radii.md),
+    padding: tokens.spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  usageBoxFree: {
+    ...rounded(tokens.radii.md),
+    padding: tokens.spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  usageTextFree: {
+    fontSize: tokens.fontSize.md,
+    fontFamily: 'Inter_500Medium',
+    textAlign: 'center',
+  },
+  usageRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: tokens.spacing.sm,
+  },
+  usageText: {
+    fontSize: tokens.fontSize.md,
+    fontFamily: 'Inter_500Medium',
+    fontVariant: ['tabular-nums'],
+  },
+  fullBadge: {
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: tokens.radii.sm + 2,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  fullBadgeText: {
+    color: '#F87171',
+    fontSize: tokens.fontSize.xs,
+    fontFamily: 'Inter_700Bold',
+  },
+  barTrack: {
+    height: 8,
+    borderRadius: tokens.radii.xs,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: tokens.radii.xs,
+  },
+  creditsAvailable: {
+    fontSize: tokens.fontSize.sm,
+    fontFamily: 'Inter_600SemiBold',
+    marginTop: 6,
+  },
+  tabs: {
+    flexDirection: 'row',
+    margin: tokens.spacing.xl,
+    marginBottom: 0,
+    padding: tokens.spacing.xs,
+    borderRadius: tokens.radii.md,
+    gap: tokens.spacing.xs,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: tokens.spacing.sm + 2,
+    borderRadius: tokens.radii.sm,
+    alignItems: 'center',
+  },
+  tabText: {
+    fontSize: tokens.fontSize.md,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  body: {
+    padding: tokens.spacing.xl,
+    maxHeight: 320,
+  },
+  pkgCard: {
+    ...rounded(tokens.radii.xl),
+    padding: tokens.spacing.md + 2,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  badge: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: tokens.radii.sm,
+    marginBottom: tokens.spacing.sm,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontFamily: 'Inter_700Bold',
+  },
+  pkgRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: tokens.spacing.md,
+  },
+  qtyBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: tokens.radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyText: {
+    fontSize: tokens.fontSize.base,
+    fontFamily: 'Inter_700Bold',
+  },
+  pkgTitle: {
+    fontSize: tokens.fontSize.base,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  pkgPerUnit: {
+    fontSize: tokens.fontSize.sm,
+    fontFamily: 'Inter_400Regular',
+    fontVariant: ['tabular-nums'],
+    marginTop: 2,
+  },
+  pkgPrice: {
+    fontSize: tokens.fontSize.xl,
+    fontFamily: 'Inter_700Bold',
+    fontVariant: ['tabular-nums'],
+  },
+  maxPlan: {
+    alignItems: 'center',
+    padding: tokens.spacing.xl,
+    gap: tokens.spacing.sm,
+  },
+  maxPlanText: {
+    fontSize: tokens.fontSize.base,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  footer: {
+    padding: tokens.spacing.xl,
+    paddingBottom: 40,
+  },
 });
