@@ -554,10 +554,12 @@ export default function ResultadoScreen() {
 
   const { images = [], analise, dicas_postagem: dicas, durationMs, lockedTeaserUrls } = result.data;
   // Trial-only: backend devolve 2 teaser URLs blurados da foto da modelo.
-  // Quando presente, exibimos a tira "lock · hero · lock" abaixo do hero
-  // em vez da thumbRow normal (que iteraria sobre as fotos reais).
-  // Temporariamente desabilitado — vamos trabalhar só com 1 foto.
-  const isTrialView = false && !!(lockedTeaserUrls && lockedTeaserUrls.length === 2);
+  // Quando isTrialView=true, exibimos a tira "lock · hero · lock" abaixo do
+  // hero em vez da thumbRow normal. Temporariamente desabilitado: hoje
+  // mostramos só 1 foto e ignoramos os teasers, mas mantemos a destruturação
+  // pra reativar quando o flow voltar a usar 3 fotos.
+  void lockedTeaserUrls;
+  const isTrialView = false;
   // Limita a 1 foto no resultado enquanto refinamos o flow.
   const validImages = (images.filter(Boolean) as GeneratedImage[]).slice(0, 1);
   const selectedImage = validImages[selectedIndex] || validImages[0];

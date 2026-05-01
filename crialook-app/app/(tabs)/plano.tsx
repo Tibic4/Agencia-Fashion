@@ -261,7 +261,7 @@ function PlanoScreenInner() {
             style={[
               styles.trialCta,
               {
-                backgroundColor: scheme === 'dark'
+                backgroundColor: colorScheme === 'dark'
                   ? 'rgba(217, 70, 239, 0.10)'
                   : 'rgba(217, 70, 239, 0.06)',
                 borderColor: Colors.brand.primary + '40',
