@@ -292,10 +292,14 @@ function GerarScreenInner() {
   const extraCredits = creditsQ.data?.data.campaigns ?? 0;
   const isOnline = useNetworkStatus();
 
-  // Cota total disponível: limite mensal − consumido + créditos avulsos.
-  // Usada pra (a) bloquear o submit antes do upload em vez de carregar 3 fotos
-  // pra ver QUOTA_EXCEEDED, e (b) renderizar banner contextual no header.
-  const remainingQuota = Math.max(0, campaignsLimit - campaignsUsed) + extraCredits;
+  // Cota total disponível.
+  // O backend `/api/store/usage` já retorna `campaigns_limit = plano + créditos
+  // avulsos` (ver campanha-ia/.../store/usage/route.ts). Antes a gente somava
+  // `extraCredits` de novo aqui — contando crédito duas vezes. Resultado: app
+  // mostrava quota inflada e o usuário gerava QUOTA_EXCEEDED do servidor numa
+  // request que parecia ter saldo. `extraCredits` segue no scope só pra
+  // `QuotaExceededModal` exibir o split "X do plano + Y avulsos".
+  const remainingQuota = Math.max(0, campaignsLimit - campaignsUsed);
   const isFreePlan = currentPlan === 'free' || currentPlan === 'gratis' || currentPlan === 'avulso';
 
   // ─── Submission + polling (handled by the hook) ────────────────────────
