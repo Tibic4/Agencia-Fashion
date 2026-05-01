@@ -4,12 +4,13 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  Share,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import * as LegacyFS from 'expo-file-system/legacy';
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -126,9 +127,7 @@ function SectionHeader({ title, color }: { title: string; color: string }) {
 
 // ─── Context menu (3-dots) ────────────────────────────────────────────────
 interface ContextMenuButtonProps {
-  isFavorited: boolean;
   onShare: () => void;
-  onToggleFavorite: () => void;
   /** Optional — quando undefined, esconde a opção "Excluir" (ex: enquanto o
    *  endpoint DELETE no backend não existe). */
   onDelete?: () => void;
@@ -139,9 +138,7 @@ interface ContextMenuButtonProps {
 }
 
 function ContextMenuButton({
-  isFavorited,
   onShare,
-  onToggleFavorite,
   onDelete,
   t,
   textColor,
@@ -214,15 +211,9 @@ function ContextMenuButton({
                 onShare();
               }}
             />
-            <MenuRow
-              icon={isFavorited ? 'star' : 'star-o'}
-              label={isFavorited ? t('history.menuUnfavorite') : t('history.menuFavorite')}
-              color={textColor}
-              onPress={() => {
-                close();
-                onToggleFavorite();
-              }}
-            />
+            {/* Favoritar/desfavoritar foi removido daqui — já temos 2 affordances
+                redundantes pra mesma ação (swipe pra esquerda + tap na estrela
+                inline no card). Adicionar aqui só polui o menu. */}
             {onDelete && (
               <MenuRow
                 icon="trash"
@@ -377,19 +368,31 @@ function HistoricoScreenInner() {
    * (deep link), or on the website otherwise.
    */
   const shareCampaign = useCallback(
-    async (token: string | null | undefined) => {
-      if (!token) {
-        // Sem preview_token, a campanha não tem rota pública. Avisa em vez
-        // de mandar pro 404. Pode acontecer com campanhas em processing
-        // ou failed que ainda não receberam o token gerado.
+    async (campaign: Campaign) => {
+      // Paridade com o share da resultado.tsx: compartilha o ARQUIVO da
+      // foto (download → cache → Sharing.shareAsync), não a URL. Assim o
+      // usuário escolhe Insta/Stories/WhatsApp e a imagem é enviada
+      // diretamente em vez de cair num link externo.
+      const imageUrl = campaign.output?.image_urls?.find((u) => !!u) ?? null;
+      if (!imageUrl) {
+        // Campanha em processing/failed sem foto pronta — não tem o que
+        // compartilhar. Avisa em vez de cair em erro silencioso.
         toast.warning(t('history.shareUnavailable'));
         return;
       }
       try {
-        // Site só serve preview público em /preview/[token]; /campaign/[id]
-        // não existe e dava 404 quando alguém abria o link compartilhado.
-        const url = `https://crialook.com.br/preview/${token}`;
-        await Share.share({ message: url, url });
+        haptic.tap();
+        const localUri = `${LegacyFS.cacheDirectory}crialook_share_${campaign.id}_${Date.now()}.jpg`;
+        await LegacyFS.downloadAsync(imageUrl, localUri);
+        const available = await Sharing.isAvailableAsync();
+        if (!available) {
+          toast.error(t('common.error'));
+          return;
+        }
+        await Sharing.shareAsync(localUri, {
+          mimeType: 'image/jpeg',
+          dialogTitle: t('history.menuShare'),
+        });
       } catch {
         toast.error(t('common.error'));
       }
@@ -716,9 +719,7 @@ function HistoricoScreenInner() {
                       the scroll listener if needed; for now it stays open
                       until a row is picked or user taps the trigger again). */}
                   <ContextMenuButton
-                    isFavorited={c.is_favorited}
-                    onShare={() => shareCampaign(c.preview_token)}
-                    onToggleFavorite={() => toggleFavorite(c.id, c.is_favorited)}
+                    onShare={() => shareCampaign(c)}
                     onDelete={deleteSupported ? noopDelete : undefined}
                     t={t}
                     textColor={colors.textSecondary}

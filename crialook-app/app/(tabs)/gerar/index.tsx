@@ -1037,7 +1037,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   customBadgeText: { fontSize: 9, fontWeight: '800', color: '#fff' },
-  bgList: { gap: BG_CARD_GAP, paddingVertical: 4, paddingRight: 4 },
+  // paddingHorizontal:4 (era só paddingRight:4) garante que o ring de
+  // seleção rosa do PRIMEIRO item não fique cortado contra a borda esquerda
+  // da ScrollView. paddingVertical:6 dá folga pro shadow não clipar em cima/
+  // baixo também.
+  bgList: { gap: BG_CARD_GAP, paddingVertical: 6, paddingHorizontal: 4 },
   bgCard: { width: BG_CARD_WIDTH, alignItems: 'center', gap: 6 },
   bgImageWrapper: {
     width: BG_CARD_WIDTH,
