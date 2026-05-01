@@ -100,11 +100,12 @@
     "vitest": "^4.1.5"
   },
   "expo": {
-    "_install_exclude_reason": "expo install --fix tries to align react/react-dom to whatever the SDK pins. We pin them explicitly to 19.1.0 here + in overrides because (1) react-native 0.81.5 ships a renderer that requires exactly 19.1.0 and (2) downstream Storybook/vitest deps occasionally pull a newer 19.x peer that breaks the renderer at runtime. Until those deps drop their floating peer ranges, keep this exclude.",
+    "_install_exclude_reason": "expo install --fix tries to align react/react-dom to whatever the SDK pins. We pin them explicitly to 19.1.0 here + in overrides because (1) react-native 0.81.5 ships a renderer that requires exactly 19.1.0 and (2) downstream Storybook/vitest deps occasionally pull a newer 19.x peer that breaks the renderer at runtime. Until those deps drop their floating peer ranges, keep this exclude. @sentry/react-native está fixado em 7.13 (acima do ~7.2 que SDK 54 lista) porque a 7.2 tinha bug nativo que travava o JS thread por 51s no boot AAB de prod (MediaCodec + registerDefaultNetworkCallback rodando mesmo com replaysSessionSampleRate: 0). 7.13+ resolveu esse path no AAR.",
     "install": {
       "exclude": [
         "react",
-        "react-dom"
+        "react-dom",
+        "@sentry/react-native"
       ]
     },
     "_autolinking_exclude_reason": "@solana-mobile/mobile-wallet-adapter-protocol entra como dep transitiva via @clerk/clerk-js (clerk-js suporta Solana wallet auth). A gente não habilitou Solana no Clerk Dashboard, então clerk-js nunca chama a lib em runtime. Excluir do autolinking nativo evita compilar o package Kotlin/Java + reduz o tempo do gradle build.",
