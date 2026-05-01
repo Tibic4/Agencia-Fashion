@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Feather from '@expo/vector-icons/Feather';
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring, withSequence } from 'react-native-reanimated';
 
@@ -111,11 +112,14 @@ function nextThemeMode(mode: ThemeMode, effectiveScheme: 'light' | 'dark'): Them
   return current === 'light' ? 'dark' : 'light';
 }
 
-function themeModeIcon(mode: ThemeMode, effectiveScheme: 'light' | 'dark'): string {
-  // Em modo 'system' mostra o ícone DO MODO ATUAL DO DEVICE (não o monitor).
-  // Assim o ícone sempre representa visualmente o tema que o user vê.
+function themeModeIcon(mode: ThemeMode, effectiveScheme: 'light' | 'dark'): 'sun' | 'moon' {
+  // Em modo 'system' mostra o ícone DO MODO ATUAL DO DEVICE.
+  // Antes usávamos emoji ☀️/🌙 — em algumas skins de dark mode (warm-grey
+  // bg + 78% glass blur) o emoji ficava com pouquíssimo contraste e o
+  // affordance "tem tema aqui" sumia. Trocamos por Feather sun/moon que
+  // herdam currentColor — sempre fuchsia brand, sempre legível.
   const visual = mode === 'system' ? effectiveScheme : mode;
-  return visual === 'light' ? '☀️' : '🌙';
+  return visual === 'light' ? 'sun' : 'moon';
 }
 
 function pillColorFor(used: number, limit: number, fallback: string): { bg: string; fg: string } {
@@ -223,13 +227,24 @@ export function AppHeader() {
             hitSlop={12}
             style={({ pressed }) => [
               styles.iconBtn,
-              { backgroundColor: colors.surface2 },
+              {
+                // Brand-glow tinted backdrop instead of plain surface2 — the
+                // toggle now reads as a clearly tappable brand affordance in
+                // both modes (dark surface2 + 78% glass made it disappear).
+                backgroundColor: Colors.brand.glowSoft,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: scheme === 'dark' ? Colors.brand.glowMid : Colors.brand.glowSoft,
+              },
               pressed && { opacity: 0.7 },
             ]}
           >
-            <Animated.Text style={[styles.iconChar, animatedIconStyle]}>
-              {themeModeIcon(mode, scheme)}
-            </Animated.Text>
+            <Animated.View style={animatedIconStyle}>
+              <Feather
+                name={themeModeIcon(mode, scheme)}
+                size={16}
+                color={scheme === 'dark' ? Colors.brand.primaryLight : Colors.brand.primary}
+              />
+            </Animated.View>
           </Pressable>
 
           {showCredits && (
@@ -351,9 +366,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconChar: {
-    fontSize: 16,
   },
   creditsChip: {
     flexDirection: 'row',
