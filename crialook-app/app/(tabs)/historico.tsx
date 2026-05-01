@@ -668,6 +668,35 @@ function HistoricoScreenInner() {
                           </View>
                         )
                       )}
+                      {/* Score badge — paridade com o site, lê o nota_geral
+                          do campaign_scores que vem da query Supabase
+                          (relação 1:N, mas só usamos a primeira entrada).
+                          Só aparece em status=completed e quando score existe. */}
+                      {(() => {
+                        const score = c.campaign_scores?.[0]?.nota_geral;
+                        if (c.status !== 'completed' || score == null) return null;
+                        // Cores por banda: ≥8 verde, 6–7.99 âmbar, <6 vermelho.
+                        const band =
+                          score >= 8
+                            ? { bg: 'rgba(34,197,94,0.14)', border: 'rgba(34,197,94,0.32)', fg: '#16a34a' }
+                            : score >= 6
+                              ? { bg: 'rgba(245,158,11,0.14)', border: 'rgba(245,158,11,0.32)', fg: '#d97706' }
+                              : { bg: 'rgba(239,68,68,0.14)', border: 'rgba(239,68,68,0.32)', fg: '#dc2626' };
+                        return (
+                          <View
+                            style={[
+                              styles.objectivePill,
+                              { backgroundColor: band.bg, borderColor: band.border },
+                            ]}
+                            accessibilityLabel={`Nota ${score.toFixed(1)} de 10`}
+                          >
+                            <FontAwesome name="star" size={9} color={band.fg} />
+                            <Text style={[styles.objectiveLabel, { color: band.fg }]}>
+                              {score.toFixed(1)}
+                            </Text>
+                          </View>
+                        );
+                      })()}
                       <Text style={[styles.metaText, { color: colors.textSecondary }]}>
                         {formatDate(c.created_at, t, locale)}
                       </Text>

@@ -25,6 +25,13 @@ export interface Campaign {
      */
     lockedTeaserUrls?: [string, string];
   } | null;
+  /**
+   * Nota geral da campanha (0–10) calculada pelo analisador no backend.
+   * Vem como array (Postgres relação 1:N), mas hoje sempre é 0 ou 1 entrada.
+   * Mostrado como badge no card do histórico — paridade com o site
+   * (`campanha-ia/src/app/(auth)/historico/page.tsx`).
+   */
+  campaign_scores?: Array<{ nota_geral: number | null }>;
 }
 
 /** Trial campaign = a primeira (grátis) que mostra 1 foto + 2 ângulos
