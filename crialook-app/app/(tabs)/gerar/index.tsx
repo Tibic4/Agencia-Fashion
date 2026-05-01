@@ -45,6 +45,7 @@ import { PhotoSourceSheet } from '@/components/PhotoSourceSheet';
 import { ensureBiometricConsent } from '@/components/BiometricConsentModal';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import { TabErrorBoundary } from '@/components/TabErrorBoundary';
+import { ClaimMiniTrialBanner } from '@/components/ClaimMiniTrialBanner';
 import {
   ModelBottomSheet,
   type ModelBottomSheetRef,
@@ -426,6 +427,12 @@ function GerarScreenInner() {
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           {t('generate.subtitle')}
         </Text>
+
+        {/* Banner de trial — só aparece pra usuário eligible (logado, sem
+            ter usado, vagas restantes). Espelho do banner que existe em
+            campanha-ia/src/components/ClaimMiniTrialBanner. Sem isso o
+            mobile nunca conseguia reivindicar a 1ª campanha grátis. */}
+        <ClaimMiniTrialBanner />
 
         {generator.error && (
           <Card style={styles.errorCard}>
