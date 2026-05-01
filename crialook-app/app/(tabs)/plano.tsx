@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   Alert,
+  Linking,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -403,15 +404,27 @@ function PlanoScreenInner() {
         </Text>
 
         {(() => {
-          // Rank do plano atual — usa pra dimmar planos abaixo (downgrade não
-          // faz sentido pro usuário). Mesma lógica do site /plano.
+          // Padrão "big company" (Spotify/Notion/Linear): planos abaixo do
+          // atual são ESCONDIDOS, não só dimmed — usuário pago não tem o
+          // que fazer com downgrade UI-side (cancelamento é via Play Store).
+          // Recommendation badge é dinâmica:
+          //  - free user (avulso) → Pro (mid-tier, melhor conversão)
+          //  - paid user → próximo tier acima (currentRank+1)
+          //  - business user (top) → ninguém marcado, e mostramos um banner
+          //    "você está no plano mais completo" no fim.
           const planEntries = Object.entries(PLANS) as [keyof typeof PLANS, typeof PLANS[keyof typeof PLANS]][];
           const currentRank = planEntries.findIndex(([id]) => id === currentPlanKey);
+          const isPaidUser = currentRank >= 0;
+          const recommendedIndex = isPaidUser
+            ? currentRank + 1
+            : planEntries.findIndex(([id]) => id === 'pro');
+
           return planEntries.map(([id, plan], index) => {
+            // Esconde planos abaixo do atual (downgrade). Free user
+            // (currentRank=-1) vê todos.
+            if (isPaidUser && index < currentRank) return null;
+
             const isCurrentPlan = id === currentPlanKey;
-            // Plano de rank menor que o atual = "downgrade" → dim 0.5 e disable.
-            // Pro user em "Avulso" (rank -1), nada é lower (todos são upgrade).
-            const isLowerPlan = currentRank >= 0 && index < currentRank && !isCurrentPlan;
             const sku = skuByPlan[id];
             const offering = offerings[sku];
             const priceLabel =
@@ -419,13 +432,16 @@ function PlanoScreenInner() {
               `R$ ${plan.price.toFixed(2)}`;
             const isPurchasing = purchasing === id;
 
-            const isHighlightedPro = id === 'pro' && !isCurrentPlan && !isLowerPlan;
+            const isRecommended = !isCurrentPlan && index === recommendedIndex;
+            // Mantido pra compat de styling — não há mais lower visível,
+            // mas serve de fallback se a lógica de hide acima falhar.
+            const isLowerPlan = false;
             return (
               <Animated.View key={id} entering={FadeInDown.delay(300 + index * 80)}>
                 {/* Aura glow behind the recommended plan card. Sits in absolute
                     space so it bleeds beyond the card border and reads as
                     ambient highlight. Only the "pro" tier gets it. */}
-                {isHighlightedPro && (
+                {isRecommended && (
                   <View
                     pointerEvents="none"
                     style={{
@@ -445,7 +461,7 @@ function PlanoScreenInner() {
                   selected={isCurrentPlan}
                   style={[
                     styles.planCard,
-                    isHighlightedPro && { borderColor: Colors.brand.primary },
+                    isRecommended && { borderColor: Colors.brand.primary },
                     isLowerPlan && styles.planCardDim,
                   ]}
                 >
@@ -454,7 +470,7 @@ function PlanoScreenInner() {
                       <Text style={styles.currentBadgeText}>{t('plan.currentPlan')}</Text>
                     </View>
                   )}
-                  {isHighlightedPro && (
+                  {isRecommended && (
                     <View style={[styles.currentBadge, { backgroundColor: Colors.brand.secondary }]}>
                       <Text style={styles.currentBadgeText}>{t('plan.recommended')}</Text>
                     </View>
@@ -499,6 +515,52 @@ function PlanoScreenInner() {
             );
           });
         })()}
+
+        {/* Banner "você está no topo" pro user em Business — sem upgrade
+            disponível, então a tela ficaria com 1 card só. Banner reforça
+            que ele tem o melhor que oferecemos. */}
+        {currentPlanKey === 'business' && (
+          <Animated.View
+            entering={FadeInDown.delay(420)}
+            style={[
+              styles.topTierBanner,
+              { backgroundColor: Colors.brand.success + '14', borderColor: Colors.brand.success + '40' },
+            ]}
+          >
+            <Text style={styles.topTierEmoji}>🎉</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.topTierTitle, { color: Colors.brand.success }]}>
+                {t('plan.topTierTitle')}
+              </Text>
+              <Text style={[styles.topTierDesc, { color: colors.textSecondary }]}>
+                {t('plan.topTierDesc')}
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Gerenciar assinatura via Play Store — só pra usuário pago. App
+            não cancela diretamente (Google Play é o source of truth do
+            billing recorrente); deep-link abre a tela de subscription do
+            Play onde o cancelamento mora. */}
+        {!isFreePlan && (
+          <AnimatedPressable
+            onPress={() =>
+              Linking.openURL(
+                `https://play.google.com/store/account/subscriptions?package=com.crialook.app`,
+              ).catch(() => toast.error(t('common.error')))
+            }
+            haptic="tap"
+            scale={0.97}
+            accessibilityRole="button"
+            accessibilityLabel={t('plan.manageSubscription')}
+            style={styles.restoreButton}
+          >
+            <Text style={[styles.restoreText, { color: Colors.brand.primary }]}>
+              {t('plan.manageSubscription')}
+            </Text>
+          </AnimatedPressable>
+        )}
 
         <AnimatedPressable
           onPress={handleRestore}
@@ -593,6 +655,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   restoreText: { fontSize: 14, fontWeight: '700' },
+  topTierBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  topTierEmoji: { fontSize: 28 },
+  topTierTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
+  topTierDesc: {
+    fontSize: 12.5,
+    marginTop: 2,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 16,
+  },
   securityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
