@@ -7,6 +7,7 @@ import {
   planFromSku,
   type ValidSku,
 } from "@/lib/payments/google-play";
+import { verifyPubSubJwt } from "@/lib/payments/google-pubsub-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -125,13 +126,15 @@ export async function POST(req: NextRequest) {
     }
 
     // ─── 1. Validar JWT do Pub/Sub ────────────────────────────────────
-    // TODO quando a config chegar: validar header Authorization Bearer JWT
-    // contra GOOGLE_PUBSUB_ALLOWED_SERVICE_ACCOUNT + GOOGLE_PUBSUB_AUDIENCE
-    // (issuer accounts.google.com, aud = nossa URL, email = SA esperado).
-    // Sem essa validação, qualquer um pode forjar eventos via curl.
-    const authHeader = req.headers.get("authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Missing token" }, { status: 401 });
+    // Verifica que o request veio do Google Pub/Sub: assinatura Google JWKS,
+    // issuer=accounts.google.com, audience bate com GOOGLE_PUBSUB_AUDIENCE,
+    // email do payload bate com GOOGLE_PUBSUB_ALLOWED_SERVICE_ACCOUNT.
+    // Sem isso, qualquer um com curl forja eventos e cancela subscription
+    // de qualquer usuário.
+    const authResult = await verifyPubSubJwt(req.headers.get("authorization"));
+    if (!authResult.ok) {
+      logger.warn("billing_rtdn_jwt_invalid", { reason: authResult.reason });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // ─── 2. Parse do envelope Pub/Sub ─────────────────────────────────
