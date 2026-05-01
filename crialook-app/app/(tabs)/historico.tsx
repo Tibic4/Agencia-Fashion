@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Modal,
   Pressable,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -10,7 +12,6 @@ import {
 } from 'react-native';
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -148,17 +149,30 @@ function ContextMenuButton({
   borderColor,
 }: ContextMenuButtonProps) {
   const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const triggerRef = useRef<View>(null);
 
   const close = useCallback(() => setOpen(false), []);
 
+  const openMenu = useCallback(() => {
+    // Mede a posição do trigger no viewport e ancora o Modal lá.
+    // Sem Modal, o menu é clipado pelo Card (overflow: hidden) — o usuário
+    // só via metade do "Compartilhar".
+    triggerRef.current?.measureInWindow((x, y, _w, h) => {
+      setAnchor({ x, y: y + h + 4 });
+      setOpen(true);
+    });
+  }, []);
+
   return (
-    <View style={{ position: 'relative' }}>
+    <>
       <Pressable
+        ref={triggerRef}
         onPress={(e) => {
           // Prevent the parent CampaignPressable from receiving this tap.
           e.stopPropagation();
           haptic.tap();
-          setOpen((o) => !o);
+          openMenu();
         }}
         hitSlop={10}
         accessibilityRole="button"
@@ -167,47 +181,63 @@ function ContextMenuButton({
       >
         <FontAwesome name="ellipsis-v" size={16} color={textColor} />
       </Pressable>
-      {open && (
-        <Animated.View
-          entering={FadeIn.duration(140)}
-          exiting={FadeOut.duration(100)}
-          style={[
-            styles.menu,
-            { backgroundColor: surfaceColor, borderColor },
-          ]}
-        >
-          <MenuRow
-            icon="share-square-o"
-            label={t('history.menuShare')}
-            color={textColor}
-            onPress={() => {
-              close();
-              onShare();
-            }}
-          />
-          <MenuRow
-            icon={isFavorited ? 'star' : 'star-o'}
-            label={isFavorited ? t('history.menuUnfavorite') : t('history.menuFavorite')}
-            color={textColor}
-            onPress={() => {
-              close();
-              onToggleFavorite();
-            }}
-          />
-          {onDelete && (
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={close}
+        statusBarTranslucent
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={close}>
+          <View
+            style={[
+              styles.menu,
+              {
+                backgroundColor: surfaceColor,
+                borderColor,
+                // Ancora pelo right: alinhado à direita do trigger menos a
+                // largura mínima do menu (170 + 16 de respiro).
+                top: anchor.y,
+                right: 16,
+              },
+            ]}
+            // Stop propagation: tapping inside the menu shouldn't close it
+            // before the row's onPress fires.
+            onStartShouldSetResponder={() => true}
+          >
             <MenuRow
-              icon="trash"
-              label={t('history.menuDelete')}
-              color={Colors.brand.error}
+              icon="share-square-o"
+              label={t('history.menuShare')}
+              color={textColor}
               onPress={() => {
                 close();
-                onDelete();
+                onShare();
               }}
             />
-          )}
-        </Animated.View>
-      )}
-    </View>
+            <MenuRow
+              icon={isFavorited ? 'star' : 'star-o'}
+              label={isFavorited ? t('history.menuUnfavorite') : t('history.menuFavorite')}
+              color={textColor}
+              onPress={() => {
+                close();
+                onToggleFavorite();
+              }}
+            />
+            {onDelete && (
+              <MenuRow
+                icon="trash"
+                label={t('history.menuDelete')}
+                color={Colors.brand.error}
+                onPress={() => {
+                  close();
+                  onDelete();
+                }}
+              />
+            )}
+          </View>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -350,12 +380,9 @@ function HistoricoScreenInner() {
     async (id: string) => {
       try {
         const url = `https://crialook.com.br/campaign/${id}`;
-        const available = await Sharing.isAvailableAsync();
-        if (available) {
-          await Sharing.shareAsync(url, { dialogTitle: t('history.menuShare') });
-        } else {
-          toast.info(url);
-        }
+        // RN Share (não expo-sharing) — expo-sharing.shareAsync é só pra
+        // arquivos locais (file://). Pra URL HTTP precisamos do Share da RN.
+        await Share.share({ message: url, url });
       } catch {
         toast.error(t('common.error'));
       }
