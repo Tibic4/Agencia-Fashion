@@ -11,7 +11,13 @@ const isEditorRoute = createRouteMatcher([
   "/api/editor-auth(.*)",
 ]);
 
-// Rotas que exigem login
+// Rotas de PÁGINA que exigem login (HTML, browser segue redirect).
+// Importante: NÃO incluir rotas /api/* aqui. O `auth.protect()` em rotas
+// /api/* redireciona pra /sign-in (HTML 307) quando o JWT falha — o
+// mobile, que faz fetch JSON com Bearer header, recebe HTML e não
+// consegue parsear, falhando todo o flow pós-login. Cada route handler
+// /api/* já valida com `auth().userId` próprio e retorna 401 JSON
+// quando deveria — deixar middleware fora dele.
 const isProtectedRoute = createRouteMatcher([
   "/gerar(.*)",
   "/historico(.*)",
@@ -20,9 +26,6 @@ const isProtectedRoute = createRouteMatcher([
   "/plano(.*)",
   "/onboarding(.*)",
   "/admin(.*)",
-  "/api/campaigns(.*)",
-  "/api/store(.*)",
-  "/api/me(.*)",
 ]);
 
 const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
