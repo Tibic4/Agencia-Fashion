@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { AnimatedPressable, Button, Card, GradientText, Skeleton } from '@/components/ui';
 import { AuraGlow, Confetti } from '@/components/skia';
@@ -257,24 +256,31 @@ function PlanoScreenInner() {
         </Animated.Text>
 
         {isFreePlan && (
-          <Animated.View entering={FadeInDown.delay(150)}>
-            <LinearGradient
-              colors={Colors.brand.gradientPrimary}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.trialCta}
-            >
-              <Text style={{ fontSize: 22 }}>✨</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.trialTitle}>{t('plan.upgradePromptTitle')}</Text>
-                <Text style={styles.trialDesc}>
-                  {t('plan.upgradePromptDesc')}
-                </Text>
-              </View>
-              <View style={styles.trialChevron}>
-                <FontAwesome name="chevron-right" size={12} color="#fff" />
-              </View>
-            </LinearGradient>
+          <Animated.View
+            entering={FadeInDown.delay(150)}
+            style={[
+              styles.trialCta,
+              {
+                backgroundColor: scheme === 'dark'
+                  ? 'rgba(217, 70, 239, 0.10)'
+                  : 'rgba(217, 70, 239, 0.06)',
+                borderColor: Colors.brand.primary + '40',
+              },
+            ]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.trialTitle, { color: Colors.brand.primary }]}>
+                {t('plan.upgradePromptTitle')}
+              </Text>
+              <Text style={[styles.trialDesc, { color: colors.textSecondary }]}>
+                {t('plan.upgradePromptDesc')}
+              </Text>
+            </View>
+            <FontAwesome
+              name="arrow-right"
+              size={14}
+              color={Colors.brand.primary}
+            />
           </Animated.View>
         )}
 
@@ -551,27 +557,20 @@ const styles = StyleSheet.create({
   trialCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    borderRadius: 16,
-    borderCurve: 'continuous',
-    marginTop: 4,
-    shadowColor: '#D946EF',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  trialTitle: { fontSize: 16, fontWeight: '800', color: '#fff', letterSpacing: 0.2 },
-  trialDesc: { fontSize: 12.5, marginTop: 2, color: 'rgba(255,255,255,0.92)' },
-  trialChevron: {
-    width: 28,
-    height: 28,
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  trialTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
+  trialDesc: {
+    fontSize: 12.5,
+    marginTop: 2,
+    fontFamily: 'Inter_400Regular',
+    lineHeight: 16,
   },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 8 },
   planCard: { gap: 8 },
