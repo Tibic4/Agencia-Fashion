@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -550,8 +551,10 @@ export default function ResultadoScreen() {
   // Trial-only: backend devolve 2 teaser URLs blurados da foto da modelo.
   // Quando presente, exibimos a tira "lock · hero · lock" abaixo do hero
   // em vez da thumbRow normal (que iteraria sobre as fotos reais).
-  const isTrialView = !!(lockedTeaserUrls && lockedTeaserUrls.length === 2);
-  const validImages = images.filter(Boolean) as GeneratedImage[];
+  // Temporariamente desabilitado — vamos trabalhar só com 1 foto.
+  const isTrialView = false && !!(lockedTeaserUrls && lockedTeaserUrls.length === 2);
+  // Limita a 1 foto no resultado enquanto refinamos o flow.
+  const validImages = (images.filter(Boolean) as GeneratedImage[]).slice(0, 1);
   const selectedImage = validImages[selectedIndex] || validImages[0];
   const hasLegendas = dicas?.legendas && dicas.legendas.length >= 3;
 
@@ -739,50 +742,27 @@ export default function ResultadoScreen() {
             {FORMAT_PRESETS.map(fmt => {
               const isActive = activeFormat === fmt.id;
               return (
-                <AnimatedPressable
+                <Pressable
                   key={fmt.id}
-                  onPress={() => setActiveFormat(fmt.id)}
-                  haptic="selection"
-                  style={[
+                  onPress={() => {
+                    haptic.selection();
+                    setActiveFormat(fmt.id);
+                  }}
+                  android_ripple={{ color: Colors.brand.glowSoft }}
+                  style={({ pressed }) => [
                     styles.formatBtn,
                     {
                       borderColor: isActive ? Colors.brand.primary : colors.border,
-                      // Reanimated 4 CSS transition: smooth border + scale +
-                      // background when activeFormat flips. Replaces the hard
-                      // toggle that just swapped styles instantly.
-                      transform: [{ scale: isActive ? 1.04 : 1 }],
-                      transitionProperty: ['borderColor', 'backgroundColor', 'transform'],
-                      transitionDuration: '180ms',
-                      transitionTimingFunction: 'ease-out',
-                    } as any,
+                      opacity: pressed ? 0.85 : 1,
+                    },
                     isActive && styles.formatBtnActive,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.formatIcon,
-                      {
-                        transform: [{ scale: isActive ? 1.1 : 1 }],
-                        transitionProperty: ['transform'],
-                        transitionDuration: '180ms',
-                      } as any,
-                    ]}
-                  >
-                    {fmt.emoji}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.formatLabel,
-                      isActive && styles.formatLabelActive,
-                      {
-                        transitionProperty: ['color'],
-                        transitionDuration: '180ms',
-                      } as any,
-                    ]}
-                  >
+                  <Text style={styles.formatIcon}>{fmt.emoji}</Text>
+                  <Text style={[styles.formatLabel, isActive && styles.formatLabelActive]}>
                     {t(fmt.labelKey)}
                   </Text>
-                </AnimatedPressable>
+                </Pressable>
               );
             })}
           </ScrollView>
