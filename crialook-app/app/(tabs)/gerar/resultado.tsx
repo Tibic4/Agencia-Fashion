@@ -1,16 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { ZoomablePhoto } from '@/components/ZoomablePhoto';
 import { Sentry } from '@/lib/sentry';
+import { tokens, rounded } from '@/lib/theme/tokens';
 import * as Sharing from 'expo-sharing';
 import * as LegacyFS from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
@@ -226,14 +225,13 @@ function TrialBanner({ onPress, t }: { onPress: () => void; t: ReturnType<typeof
 
 const trialBannerStyles = StyleSheet.create({
   wrap: {
-    paddingHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 4,
+    paddingHorizontal: tokens.spacing.xl,
+    marginTop: tokens.spacing.sm,
+    marginBottom: tokens.spacing.xs,
   },
   gradient: {
-    borderRadius: 16,
-    borderCurve: 'continuous',
-    padding: 16,
+    ...rounded(tokens.radii.xl),
+    padding: tokens.spacing.lg,
     overflow: 'hidden',
     // Brand-tinged shadow so it floats above the surface — same depth as
     // the hero "subscribe" cards on /plano.
@@ -243,17 +241,17 @@ const trialBannerStyles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 6,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  title: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: -0.2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.md },
+  title: { color: '#fff', fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.black, letterSpacing: -0.2 },
   desc: { color: 'rgba(255,255,255,0.92)', fontSize: 12.5, lineHeight: 17 },
   cta: {
     backgroundColor: 'rgba(255,255,255,0.18)',
     paddingVertical: 9,
-    paddingHorizontal: 12,
+    paddingHorizontal: tokens.spacing.md,
     borderRadius: 10,
     borderCurve: 'continuous',
   },
-  ctaText: { color: '#fff', fontSize: 12, fontWeight: '700', letterSpacing: -0.1 },
+  ctaText: { color: '#fff', fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold, letterSpacing: -0.1 },
 });
 
 export default function ResultadoScreen() {
@@ -520,22 +518,34 @@ export default function ResultadoScreen() {
         <AppHeader />
         <ScrollView
           contentContainerStyle={{
-            padding: 20,
-            paddingTop: headerH + 16,
+            padding: tokens.spacing.xl,
+            paddingTop: headerH + tokens.spacing.lg,
             paddingBottom: tabPad,
           }}
         >
           <Skeleton width={140} height={24} borderRadius={12} />
-          <Skeleton width={220} height={28} borderRadius={8} style={{ marginTop: 12 }} />
+          <Skeleton width={220} height={28} borderRadius={8} style={{ marginTop: tokens.spacing.md }} />
           <Skeleton width="60%" height={14} borderRadius={6} style={{ marginTop: 6 }} />
-          <Skeleton width="100%" style={{ aspectRatio: 3 / 4, marginTop: 16 }} borderRadius={20} />
-          <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+          {/* Hero photo + "Foto 1 de N" badge sobreposto no canto top-left,
+              espelhando o layout real (heroBadge sobre heroWrap). Sem ele,
+              o eye lê o skeleton como "só uma foto" e estranha o badge
+              aparecendo de repente quando carrega. */}
+          <View style={{ marginTop: tokens.spacing.lg }}>
+            <Skeleton width="100%" style={{ aspectRatio: 3 / 4 }} borderRadius={20} />
+            <Skeleton
+              width={88}
+              height={22}
+              borderRadius={11}
+              style={{ position: 'absolute', top: tokens.spacing.md, left: tokens.spacing.md }}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: tokens.spacing.lg }}>
             <Skeleton width={72} height={96} borderRadius={12} />
             <Skeleton width={72} height={96} borderRadius={12} />
             <Skeleton width={72} height={96} borderRadius={12} />
           </View>
-          <Skeleton width="100%" height={110} borderRadius={14} style={{ marginTop: 16 }} />
-          <Skeleton width="100%" height={48} borderRadius={14} style={{ marginTop: 16 }} />
+          <Skeleton width="100%" height={110} borderRadius={14} style={{ marginTop: tokens.spacing.lg }} />
+          <Skeleton width="100%" height={48} borderRadius={14} style={{ marginTop: tokens.spacing.lg }} />
           <Skeleton width="100%" height={48} borderRadius={14} style={{ marginTop: 10 }} />
         </ScrollView>
       </View>
@@ -547,7 +557,28 @@ export default function ResultadoScreen() {
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={{ fontSize: 40 }}>📷</Text>
         <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('result.notFoundTitle')}</Text>
-        <Button title={t('result.createMore')} onPress={goBack} />
+        {/* Descrição + 2 CTAs (criar nova OU escapar pro histórico) — antes
+            só "Criar mais fotos" travava o usuário num caminho. */}
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: tokens.fontSize.md,
+            textAlign: 'center',
+            marginTop: tokens.spacing.sm,
+            paddingHorizontal: tokens.spacing.xl,
+            lineHeight: 18,
+          }}
+        >
+          {t('result.notFoundDesc')}
+        </Text>
+        <View style={{ width: '100%', gap: tokens.spacing.sm, marginTop: tokens.spacing.lg, paddingHorizontal: tokens.spacing.xl }}>
+          <Button title={t('result.createMore')} onPress={goBack} />
+          <Button
+            title={t('result.notFoundBackToHistory')}
+            variant="ghost"
+            onPress={() => router.replace('/(tabs)/historico')}
+          />
+        </View>
       </View>
     );
   }
@@ -556,9 +587,9 @@ export default function ResultadoScreen() {
   // Trial-only: backend devolve 2 teaser URLs blurados da foto da modelo.
   // Quando isTrialView=true, exibimos a tira "lock · hero · lock" abaixo do
   // hero em vez da thumbRow normal. Temporariamente desabilitado: hoje
-  // mostramos só 1 foto e ignoramos os teasers, mas mantemos a destruturação
-  // pra reativar quando o flow voltar a usar 3 fotos.
-  void lockedTeaserUrls;
+  // mostramos só 1 foto e ignoramos os teasers, mas a destruturação segue
+  // viva pra reativar quando o flow voltar a usar 3 fotos (referenciado
+  // dentro do branch trial mais abaixo).
   const isTrialView = false;
   // Limita a 1 foto no resultado enquanto refinamos o flow.
   const validImages = (images.filter(Boolean) as GeneratedImage[]).slice(0, 1);
@@ -579,7 +610,7 @@ export default function ResultadoScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingTop: headerH + 16, paddingBottom: tabPad },
+        { paddingTop: headerH + tokens.spacing.lg, paddingBottom: tabPad },
       ]}
     >
       {/* Header */}
@@ -652,11 +683,11 @@ export default function ResultadoScreen() {
       )}
 
       {/* Thumbnails — trial: lock · hero · lock; paid: lista das fotos reais */}
-      {isTrialView ? (
+      {isTrialView && (lockedTeaserUrls?.length ?? 0) >= 2 ? (
         <>
           <View style={styles.thumbRow}>
             <LockedTeaserCard
-              uri={lockedTeaserUrls![0]}
+              uri={lockedTeaserUrls?.[0] ?? ''}
               onPress={() => router.push('/(tabs)/plano')}
               accessibilityLabel={t('result.lockedTeaserA11y')}
             />
@@ -691,7 +722,7 @@ export default function ResultadoScreen() {
               </AnimatedPressable>
             )}
             <LockedTeaserCard
-              uri={lockedTeaserUrls![1]}
+              uri={lockedTeaserUrls?.[1] ?? ''}
               onPress={() => router.push('/(tabs)/plano')}
               accessibilityLabel={t('result.lockedTeaserA11y')}
             />
@@ -1010,9 +1041,14 @@ export default function ResultadoScreen() {
           style={[styles.analysisHeader, { borderColor: colors.border, backgroundColor: isDark ? colors.backgroundSecondary : colors.background }]}
         >
           <Text style={[styles.analysisHeaderText, { color: colors.text }]}>{t('result.analysisHeader')}</Text>
-          <Text style={[styles.analysisChevron, { color: colors.textSecondary }]}>
-            {showAnalysis ? '▲' : '▼'}
-          </Text>
+          <FontAwesome
+            name={showAnalysis ? 'chevron-up' : 'chevron-down'}
+            size={12}
+            color={colors.textSecondary}
+          />
+          {/* Antes: glyphs ▲▼ literais. Não escalavam com fontSize, alinhavam
+              estranho no baseline e o weight não batia com o resto dos
+              ícones FontAwesome do app. */}
         </AnimatedPressable>
       )}
       {showAnalysis && analise?.produto && (
@@ -1047,7 +1083,7 @@ export default function ResultadoScreen() {
       <Button
         title={t('result.createMore')}
         onPress={goBack}
-        style={{ marginTop: 16 }}
+        style={{ marginTop: tokens.spacing.lg }}
       />
     </ScrollView>
     </View>
@@ -1056,33 +1092,33 @@ export default function ResultadoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 20, gap: 12, paddingBottom: 60 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 20 },
-  loadingText: { fontSize: 14, marginTop: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: '600' },
+  scrollContent: { padding: tokens.spacing.xl, gap: tokens.spacing.md, paddingBottom: 60 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.spacing.md, padding: tokens.spacing.xl },
+  loadingText: { fontSize: tokens.fontSize.base, marginTop: tokens.spacing.sm },
+  emptyTitle: { fontSize: tokens.fontSize.xl, fontWeight: tokens.fontWeight.semibold },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8 },
-  backText: { fontSize: 14, fontWeight: '500' },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: tokens.spacing.sm },
+  backText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.medium },
   photoBadge: {
     backgroundColor: 'rgba(124,58,237,0.15)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: tokens.spacing.xs,
     borderRadius: 12,
   },
-  photoBadgeText: { color: Colors.brand.primary, fontSize: 12, fontWeight: '700' },
+  photoBadgeText: { color: Colors.brand.primary, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
 
   // Hero row keeps the highlighted gradient word inline with the surrounding
   // copy. flexWrap ensures the long success line ("Suas fotos ficaram
   // incríveis!") gracefully spans 2 lines on narrow devices.
   heroRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  title: { fontSize: 22, fontWeight: '700' },
-  subtitle: { fontSize: 13, marginTop: -4 },
+  title: { fontSize: tokens.fontSize.display, fontWeight: tokens.fontWeight.bold },
+  subtitle: { fontSize: tokens.fontSize.md, marginTop: -4 },
 
   heroWrap: {
     aspectRatio: 3 / 4,
     width: '100%',
-    borderRadius: 20,
+    ...rounded(tokens.radii.xxl),
     // Halo glow — approximates the site's 1px line + 4px inner halo + 24px
     // ambient drop shadow. RN can't stack shadows; this is the best single
     // shadow that conveys "brand-tinged elevation".
@@ -1098,7 +1134,7 @@ const styles = StyleSheet.create({
      gritante. Tom escuro neutro funciona em light e dark. */
   heroInner: {
     flex: 1,
-    borderRadius: 20,
+    ...rounded(tokens.radii.xxl),
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.brand.primary,
@@ -1107,28 +1143,28 @@ const styles = StyleSheet.create({
   heroImage: { width: '100%', height: '100%' },
   heroBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: tokens.spacing.md,
+    left: tokens.spacing.md,
     backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: tokens.spacing.xs,
     borderRadius: 10,
   },
-  heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  heroBadgeText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
 
   thumbRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
   thumb: { width: 72, height: 96, borderRadius: 12, overflow: 'hidden', backgroundColor: '#0d0a14' },
   thumbImage: { width: '100%', height: '100%' },
   thumbNumber: {
     position: 'absolute',
-    bottom: 4,
+    bottom: tokens.spacing.xs,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: tokens.radii.sm,
   },
-  thumbNumberText: { color: '#fff', fontSize: 9, fontWeight: '700' },
+  thumbNumberText: { color: '#fff', fontSize: 9, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
   /* Trial-only: lock thumb (slots 1 + 3 da tira) tem moldura sutil pra parecer
      irmã das outras mas com ar "bloqueado". O overlay+badge é o que faz a
      leitura visual clara. */
@@ -1159,20 +1195,20 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   lockedCaption: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: tokens.fontSize.sm,
+    fontWeight: tokens.fontWeight.semibold,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: tokens.spacing.sm,
     letterSpacing: 0.2,
   },
 
   // Format selector
-  formatCard: { gap: 8 },
+  formatCard: { gap: tokens.spacing.sm },
   formatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  formatHeaderText: { fontSize: 14, fontWeight: '700' },
-  formatRatioBadge: { backgroundColor: 'rgba(124,58,237,0.12)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  formatRatioText: { color: Colors.brand.primary, fontSize: 10, fontWeight: '700' },
-  formatRow: { gap: 8, paddingVertical: 4 },
+  formatHeaderText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
+  formatRatioBadge: { backgroundColor: 'rgba(124,58,237,0.12)', paddingHorizontal: tokens.spacing.sm, paddingVertical: 3, borderRadius: tokens.radii.sm },
+  formatRatioText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.bold },
+  formatRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs },
   formatBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1183,22 +1219,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   formatBtnActive: { backgroundColor: Colors.brand.primary, borderColor: Colors.brand.primary },
-  formatIcon: { fontSize: 16 },
-  formatLabel: { fontSize: 12, fontWeight: '600', color: '#888' },
+  formatIcon: { fontSize: tokens.fontSize.xl },
+  formatLabel: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, color: '#888' },
   formatLabelActive: { color: '#fff' },
-  formatDesc: { fontSize: 11 },
+  formatDesc: { fontSize: tokens.fontSize.xs },
 
   actions: { gap: 10 },
 
   // AI badge
-  aiBadgeRow: { flexDirection: 'row', marginTop: 16, marginBottom: 4 },
+  aiBadgeRow: { flexDirection: 'row', marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.xs },
   aiBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: tokens.spacing.xs,
     borderRadius: 12,
     backgroundColor: 'rgba(124,58,237,0.12)',
   },
-  aiBadgeText: { color: Colors.brand.primary, fontSize: 10, fontWeight: '800' },
+  aiBadgeText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.black },
 
   // Tabs
   tabsCard: { padding: 0, overflow: 'hidden' },
@@ -1210,7 +1246,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabActive: { backgroundColor: 'rgba(124,58,237,0.06)' },
-  tabText: { fontSize: 12, fontWeight: '700', color: '#999' },
+  tabText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold, color: '#999' },
   tabTextActive: { color: Colors.brand.primary },
   tabIndicator: {
     position: 'absolute',
@@ -1221,55 +1257,55 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.brand.primary,
   },
-  tabContent: { padding: 16, gap: 8 },
+  tabContent: { padding: tokens.spacing.lg, gap: tokens.spacing.sm },
 
   // Tips — gap 10 entre header/conteúdo e marginTop 12 entre cards (respiro tipo Linear/Stripe).
-  tipCard: { gap: 10, marginTop: 12 },
+  tipCard: { gap: 10, marginTop: tokens.spacing.md },
   tipCardAlt: { backgroundColor: 'rgba(124,58,237,0.04)' },
-  tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  tipLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  tipText: { fontSize: 14, lineHeight: 21 },
-  tipValue: { fontSize: 14, fontWeight: '600' },
-  tipHint: { fontSize: 12, fontStyle: 'italic' },
+  tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: tokens.spacing.md },
+  tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm },
+  tipLabel: { fontSize: 10, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.6 },
+  tipText: { fontSize: tokens.fontSize.base, lineHeight: 21 },
+  tipValue: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.semibold },
+  tipHint: { fontSize: tokens.fontSize.sm, fontStyle: 'italic' },
   /* marginTop extra: o botão "Copiar" do header alinha à direita e o
      primeiro pill de hashtag ficava praticamente colado embaixo dele.
      Sem isso, visualmente parecia que o pill era um continuation do botão. */
   hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   hashtagPill: {
     backgroundColor: 'rgba(124,58,237,0.08)',
-    paddingHorizontal: 12,
+    paddingHorizontal: tokens.spacing.md,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(124,58,237,0.15)',
   },
-  hashtagText: { color: Colors.brand.primary, fontSize: 12, fontWeight: '600', letterSpacing: 0.1 },
+  hashtagText: { color: Colors.brand.primary, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, letterSpacing: 0.1 },
 
   // Char badge
   charBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
-  charBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.2 },
+  charBadgeText: { fontSize: 10, fontWeight: tokens.fontWeight.black, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
 
   /* Copy button — visualmente compacto (não rouba peso visual da label do card),
      mas mantemos área tocável >=44px via hitSlop no Pressable, atendendo
      guideline de acessibilidade (WCAG 2.5.5 / Material/HIG 44dp mínimo). */
   copyButton: {
     backgroundColor: 'rgba(124,58,237,0.12)',
-    paddingHorizontal: 12,
+    paddingHorizontal: tokens.spacing.md,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: tokens.radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   copyButtonCopied: { backgroundColor: Colors.brand.primary },
-  copyButtonText: { color: Colors.brand.primary, fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
+  copyButtonText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.black, letterSpacing: 0.4 },
   copyButtonTextCopied: { color: '#fff' },
 
   // Info grid
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: tokens.spacing.md },
   infoCard: { flex: 1, minWidth: '45%', gap: 6 },
   infoCardFull: { width: '100%', gap: 6 },
-  infoValue: { fontSize: 13, fontWeight: '700', lineHeight: 18 },
+  infoValue: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold, lineHeight: 18 },
 
   // Story card — agora 2 colunas (sem o copiar). Padding e gap maior pra parecer card ativo.
   storyCard: {
@@ -1281,49 +1317,49 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(124,58,237,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(124,58,237,0.15)',
-    marginTop: 12,
+    marginTop: tokens.spacing.md,
   },
-  storyIcon: { fontSize: 16, marginTop: 1 },
-  storyContent: { flex: 1, gap: 4 },
-  storyLabel: { fontSize: 10, fontWeight: '800', color: Colors.brand.primary, letterSpacing: 0.6, textTransform: 'uppercase' },
-  storyText: { fontSize: 13, fontWeight: '500', color: Colors.brand.primary, lineHeight: 19 },
+  storyIcon: { fontSize: tokens.fontSize.xl, marginTop: 1 },
+  storyContent: { flex: 1, gap: tokens.spacing.xs },
+  storyLabel: { fontSize: 10, fontWeight: tokens.fontWeight.black, color: Colors.brand.primary, letterSpacing: 0.6, textTransform: 'uppercase' },
+  storyText: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.medium, color: Colors.brand.primary, lineHeight: 19 },
 
   // Dica extra
   dicaExtraCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
-    padding: 12,
+    gap: tokens.spacing.sm,
+    padding: tokens.spacing.md,
     borderRadius: 12,
     backgroundColor: 'rgba(124,58,237,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(124,58,237,0.15)',
-    marginTop: 8,
+    marginTop: tokens.spacing.sm,
   },
-  dicaExtraIcon: { fontSize: 14, marginTop: 2 },
-  dicaExtraText: { flex: 1, fontSize: 12, fontWeight: '500', color: Colors.brand.primary, lineHeight: 17 },
+  dicaExtraIcon: { fontSize: tokens.fontSize.base, marginTop: 2 },
+  dicaExtraText: { flex: 1, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium, color: Colors.brand.primary, lineHeight: 17 },
 
   // Analysis
   analysisHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: tokens.spacing.lg,
+    ...rounded(tokens.radii.xl),
     borderWidth: 1,
-    marginTop: 8,
+    marginTop: tokens.spacing.sm,
   },
-  analysisHeaderText: { fontSize: 14, fontWeight: '700' },
-  analysisChevron: { fontSize: 12 },
+  analysisHeaderText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
   analysisBody: {
     borderWidth: 1,
     borderTopWidth: 0,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    padding: 12,
+    borderBottomLeftRadius: tokens.radii.xl,
+    borderBottomRightRadius: tokens.radii.xl,
+    borderCurve: 'continuous',
+    padding: tokens.spacing.md,
     marginTop: -8,
   },
-  analysisGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  analysisGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing.sm },
   analysisItem: {
     minWidth: '45%',
     flex: 1,
@@ -1332,6 +1368,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 2,
   },
-  analysisItemLabel: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  analysisItemValue: { fontSize: 13, fontWeight: '700' },
+  analysisItemLabel: { fontSize: 9, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  analysisItemValue: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold },
 });
