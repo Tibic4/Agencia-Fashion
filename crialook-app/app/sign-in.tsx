@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { haptic } from '@/lib/haptics';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -11,6 +11,7 @@ import { useT } from '@/lib/i18n';
 import { MeshGradient } from '@/components/skia';
 import { toast } from '@/lib/toast';
 import { clerkErrorMessage } from '@/lib/clerkErrors';
+import { tokens } from '@/lib/theme/tokens';
 
 export default function SignInScreen() {
   const colorScheme = useColorScheme();
@@ -112,7 +113,12 @@ export default function SignInScreen() {
             Material 3 / iOS form pattern. The user reads the failure right
             where she'll act, instead of scrolling back to a top banner. */}
         {error ? (
-          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+          <Text
+            style={styles.error}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            selectable
+          >
             ⚠ {error}
           </Text>
         ) : null}
@@ -137,15 +143,15 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center' },
-  content: { padding: 24, gap: 16 },
-  title: { fontSize: 36, fontFamily: 'Inter_700Bold', textAlign: 'center' },
-  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 8, fontFamily: 'Inter_400Regular' },
+  content: { padding: tokens.spacing.xxl, gap: tokens.spacing.lg },
+  title: { fontSize: tokens.fontSize.displayXl, fontFamily: 'Inter_700Bold', textAlign: 'center' },
+  subtitle: { fontSize: tokens.fontSize.xl, textAlign: 'center', marginBottom: tokens.spacing.sm, fontFamily: 'Inter_400Regular' },
   // Left-aligned, smaller, sits with the form (not the page hero). Reads as
   // form supporting text in Material 3 / HIG style.
-  error: { color: Colors.brand.error, textAlign: 'left', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: -8 },
-  link: { textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium', marginTop: 8 },
-  forgotLink: { textAlign: 'center', fontSize: 13, marginTop: -4, fontFamily: 'Inter_400Regular' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
+  error: { color: Colors.brand.error, textAlign: 'left', fontSize: tokens.fontSize.md, fontFamily: 'Inter_500Medium', marginTop: -8 },
+  link: { textAlign: 'center', fontSize: tokens.fontSize.base, fontFamily: 'Inter_500Medium', marginTop: tokens.spacing.sm },
+  forgotLink: { textAlign: 'center', fontSize: tokens.fontSize.md, marginTop: -4, fontFamily: 'Inter_400Regular' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.md, marginVertical: tokens.spacing.xs },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
-  dividerLabel: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  dividerLabel: { fontSize: tokens.fontSize.sm, fontFamily: 'Inter_500Medium' },
 });

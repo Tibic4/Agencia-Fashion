@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { MeshGradient } from '@/components/skia';
 import { clerkErrorMessage } from '@/lib/clerkErrors';
+import { tokens } from '@/lib/theme/tokens';
 
 export default function SignUpScreen() {
   const colorScheme = useColorScheme();
@@ -83,7 +84,12 @@ export default function SignUpScreen() {
             autoFocus
           />
           {error ? (
-            <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Text
+              style={styles.error}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              selectable
+            >
               ⚠ {error}
             </Text>
           ) : null}
@@ -136,7 +142,12 @@ export default function SignUpScreen() {
         {/* Inline error sits between the last input and the submit button —
             Material 3 / iOS form pattern. */}
         {error ? (
-          <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
+          <Text
+            style={styles.error}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            selectable
+          >
             ⚠ {error}
           </Text>
         ) : null}
@@ -151,14 +162,14 @@ export default function SignUpScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center' },
-  content: { padding: 24, gap: 16 },
-  title: { fontSize: 36, fontFamily: 'Inter_700Bold', textAlign: 'center' },
-  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 8, fontFamily: 'Inter_400Regular' },
+  content: { padding: tokens.spacing.xxl, gap: tokens.spacing.lg },
+  title: { fontSize: tokens.fontSize.displayXl, fontFamily: 'Inter_700Bold', textAlign: 'center' },
+  subtitle: { fontSize: tokens.fontSize.xl, textAlign: 'center', marginBottom: tokens.spacing.sm, fontFamily: 'Inter_400Regular' },
   // Left-aligned, smaller, sits with the form (not the page hero) — Material 3
   // / HIG supporting-text pattern.
-  error: { color: Colors.brand.error, textAlign: 'left', fontSize: 13, fontFamily: 'Inter_500Medium', marginTop: -8 },
-  link: { textAlign: 'center', fontSize: 14, fontFamily: 'Inter_500Medium', marginTop: 8 },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
+  error: { color: Colors.brand.error, textAlign: 'left', fontSize: tokens.fontSize.md, fontFamily: 'Inter_500Medium', marginTop: -8 },
+  link: { textAlign: 'center', fontSize: tokens.fontSize.base, fontFamily: 'Inter_500Medium', marginTop: tokens.spacing.sm },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.md, marginVertical: tokens.spacing.xs },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
-  dividerLabel: { fontSize: 12, fontFamily: 'Inter_500Medium' },
+  dividerLabel: { fontSize: tokens.fontSize.sm, fontFamily: 'Inter_500Medium' },
 });

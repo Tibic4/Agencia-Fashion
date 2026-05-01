@@ -15,6 +15,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { MeshGradient, ParticleLoader } from '@/components/skia';
 import { useT } from '@/lib/i18n';
+import { tokens } from '@/lib/theme/tokens';
 
 export default function SSOCallback() {
   const scheme = useColorScheme();
@@ -25,13 +26,13 @@ export default function SSOCallback() {
       <MeshGradient opacity={scheme === 'dark' ? 0.4 : 0.22} style={StyleSheet.absoluteFill} />
       <ParticleLoader size={180} count={20} />
       <Text style={[styles.label, { color: colors.textSecondary }]} selectable>
-        {t('signIn.sso.connecting' as any) || 'Conectando…'}
+        {t('signIn.sso.connecting')}
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  label: { fontSize: 14, fontWeight: '500', marginTop: 8 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.md },
+  label: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.medium, marginTop: tokens.spacing.sm },
 });

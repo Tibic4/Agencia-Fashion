@@ -18,6 +18,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { apiPost } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { MeshGradient } from '@/components/skia';
+import { tokens } from '@/lib/theme/tokens';
 
 interface StoreData {
   name: string;
@@ -301,17 +302,17 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingBottom: 8 },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: tokens.spacing.sm, paddingBottom: tokens.spacing.sm },
   dot: { width: 8, height: 8, borderRadius: 4 },
   dotActive: { width: 24 },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 24 },
-  stepContent: { paddingHorizontal: 24, gap: 14, alignItems: 'center' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: tokens.spacing.xxl },
+  stepContent: { paddingHorizontal: tokens.spacing.xxl, gap: 14, alignItems: 'center' },
   emoji: { fontSize: 48 },
-  title: { fontSize: 28, fontWeight: '800', textAlign: 'center' },
-  description: { fontSize: 16, textAlign: 'center', lineHeight: 24, paddingHorizontal: 8 },
-  features: { gap: 8, marginTop: 8, alignSelf: 'stretch' },
-  featureItem: { fontSize: 15, paddingVertical: 6, paddingHorizontal: 16, lineHeight: 22 },
-  formArea: { width: '100%', gap: 12, marginTop: 8 },
+  title: { fontSize: tokens.fontSize.displayLg, fontWeight: tokens.fontWeight.black, textAlign: 'center' },
+  description: { fontSize: tokens.fontSize.xl, textAlign: 'center', lineHeight: 24, paddingHorizontal: tokens.spacing.sm },
+  features: { gap: tokens.spacing.sm, marginTop: tokens.spacing.sm, alignSelf: 'stretch' },
+  featureItem: { fontSize: tokens.fontSize.lg, paddingVertical: 6, paddingHorizontal: tokens.spacing.lg, lineHeight: 22 },
+  formArea: { width: '100%', gap: tokens.spacing.md, marginTop: tokens.spacing.sm },
   /* Grid 2 colunas: row + wrap + slot 48% (gap 8 ÷ 2 = 4 de cada lado).
      Garante botões de mesma largura — antes a grid centralizava itens
      com larguras intrínsecas e ficava "tortinho". */
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     width: '100%',
-    marginTop: 8,
+    marginTop: tokens.spacing.sm,
   },
   segmentSlot: { width: '48%' },
   /* Footer com border-top sutil pra separar visualmente do content quando
@@ -328,8 +329,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: tokens.spacing.xl,
+    paddingTop: tokens.spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   footerBack: { flex: 1 },
