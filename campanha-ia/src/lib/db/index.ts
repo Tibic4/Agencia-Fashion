@@ -395,7 +395,7 @@ export async function failCampaign(campaignId: string, errorMessage: string) {
 // STORE USAGE (Quota)
 // ═══════════════════════════════════════════════════════════
 
-/** Busca o uso atual do período da loja */
+/** Busca o uso atual do período da loja (sem auto-criar) */
 export async function getCurrentUsage(storeId: string) {
   const supabase = createAdminClient();
   const today = new Date().toISOString().split("T")[0];
@@ -413,9 +413,78 @@ export async function getCurrentUsage(storeId: string) {
   return data;
 }
 
+/**
+ * Garante que existe uma linha de store_usage pro período atual da loja.
+ * Cria uma com `campaigns_limit` derivado do plano da loja se não existir.
+ *
+ * Bug histórico: stores criadas via paths que não passavam por `createStore`
+ * (webhook Clerk antigo, migração, admin) não tinham linha em store_usage,
+ * então `incrementCampaignsUsed` virava no-op silencioso e o counter "X/Y"
+ * no app ficava preso em 0. Self-heal aqui resolve sem backfill manual.
+ */
+export async function getOrCreateCurrentUsage(storeId: string) {
+  const existing = await getCurrentUsage(storeId);
+  if (existing) return existing;
+
+  const supabase = createAdminClient();
+
+  // Descobrir o limite do plano atual da loja. Se a loja não tem plan_id
+  // ou o plano não retorna, cai no plano grátis. Limite = 0 é fail-safe:
+  // pior caso o user fica preso no QUOTA_EXCEEDED até comprar avulso, mas
+  // o counter passa a existir e a próxima gen consegue incrementar.
+  const { data: store } = await supabase
+    .from("stores")
+    .select("plan_id")
+    .eq("id", storeId)
+    .single();
+
+  let campaignsLimit = 0;
+  if (store?.plan_id) {
+    const { data: plan } = await supabase
+      .from("plans")
+      .select("campaigns_per_month")
+      .eq("id", store.plan_id)
+      .single();
+    campaignsLimit = plan?.campaigns_per_month ?? 0;
+  } else {
+    const { data: freePlan } = await supabase
+      .from("plans")
+      .select("campaigns_per_month")
+      .eq("name", "gratis")
+      .single();
+    campaignsLimit = freePlan?.campaigns_per_month ?? 0;
+  }
+
+  const now = new Date();
+  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  const { data: created, error } = await supabase
+    .from("store_usage")
+    .insert({
+      store_id: storeId,
+      period_start: periodStart.toISOString().split("T")[0],
+      period_end: periodEnd.toISOString().split("T")[0],
+      campaigns_generated: 0,
+      campaigns_limit: campaignsLimit,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // Race condition: outra request criou a linha entre o check e o insert.
+    // Refaz o read pra retornar a versão correta em vez de propagar o erro.
+    console.warn(`[DB] store_usage insert falhou (provavelmente race), refazendo read: ${error.message}`);
+    return await getCurrentUsage(storeId);
+  }
+
+  console.log(`[DB] 📋 store_usage auto-criado pra loja ${storeId} (limite=${campaignsLimit})`);
+  return created;
+}
+
 /** Incrementa o contador de campanhas geradas (ATÔMICO via RPC) */
 export async function incrementCampaignsUsed(storeId: string) {
-  const usage = await getCurrentUsage(storeId);
+  const usage = await getOrCreateCurrentUsage(storeId);
   if (!usage) return;
 
   const supabase = createAdminClient();
@@ -436,7 +505,7 @@ export async function incrementCampaignsUsed(storeId: string) {
 
 /** Verifica se a loja pode gerar mais campanhas neste período */
 export async function canGenerateCampaign(storeId: string): Promise<{ allowed: boolean; used: number; limit: number; hasAvulso: boolean }> {
-  const usage = await getCurrentUsage(storeId);
+  const usage = await getOrCreateCurrentUsage(storeId);
   const credits = await getStoreCredits(storeId);
   const avulso = credits.campaigns || 0;
 

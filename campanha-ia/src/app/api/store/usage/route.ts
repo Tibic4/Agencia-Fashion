@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, getCurrentUsage, getStorePlanName, getModelLimitForPlan, getHistoryDaysForPlan, getStoreCredits } from "@/lib/db";
+import { getStoreByClerkId, getCurrentUsage, getOrCreateCurrentUsage, getStorePlanName, getModelLimitForPlan, getHistoryDaysForPlan, getStoreCredits } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,9 @@ export async function GET() {
       return NextResponse.json({ error: "Loja não encontrada", code: "NO_STORE" }, { status: 404 });
     }
 
-    let usage = await getCurrentUsage(store.id);
+    // Auto-cria a linha de usage se não existe — vai zerar pra usuários
+    // antigos que nunca tiveram a linha criada (counter ficava 0/0).
+    let usage = await getOrCreateCurrentUsage(store.id);
     let planName = await getStorePlanName(store.id);
     const credits = await getStoreCredits(store.id);
 
