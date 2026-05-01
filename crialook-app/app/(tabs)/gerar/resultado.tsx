@@ -28,6 +28,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { AnimatedPressable, Button, Card, GradientText, Skeleton } from '@/components/ui';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
+import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { apiGet, apiFetchRaw } from '@/lib/api';
@@ -262,6 +263,10 @@ export default function ResultadoScreen() {
   const router = useRouter();
   const { t } = useT();
   const headerH = useHeaderHeight();
+  // Pad o final do scroll pra o último botão "Criar mais fotos" não ficar
+  // atrás da floating tab bar. Antes era paddingBottom:60 fixo, mas a barra
+  // gasta ~100-120px com safe area + altura.
+  const tabPad = useTabContentPaddingBottom();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 
   /* Back inteligente — se o user veio do /historico, volta pra lá (e não
@@ -517,7 +522,7 @@ export default function ResultadoScreen() {
           contentContainerStyle={{
             padding: 20,
             paddingTop: headerH + 16,
-            paddingBottom: 32,
+            paddingBottom: tabPad,
           }}
         >
           <Skeleton width={140} height={24} borderRadius={12} />
@@ -570,7 +575,10 @@ export default function ResultadoScreen() {
     )}
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.scrollContent, { paddingTop: headerH + 16 }]}
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingTop: headerH + 16, paddingBottom: tabPad },
+      ]}
     >
       {/* Header */}
       <View style={styles.header}>
