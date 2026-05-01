@@ -127,7 +127,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     edgeToEdgeEnabled: true,
     package: bundleId,
-    versionCode: 1,
     allowBackup: false,
     permissions: [
       'android.permission.VIBRATE',
