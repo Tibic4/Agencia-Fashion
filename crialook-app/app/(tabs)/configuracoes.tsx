@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,6 +13,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Application from 'expo-application';
 import * as MailComposer from 'expo-mail-composer';
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { AnimatedPressable, Button, Card, GradientText, Input, Skeleton } from '@/components/ui';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
@@ -29,6 +29,8 @@ import { usePreference } from '@/lib/preferences';
 import { haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
 import { TabErrorBoundary } from '@/components/TabErrorBoundary';
+import { tokens, rounded } from '@/lib/theme/tokens';
+import { useConfirmSheet } from '@/components/ConfirmSheet';
 
 // Mantenha em sync com `app/onboarding.tsx` SEGMENTS — values têm que bater
 // senão o segment salvo no onboarding nunca casa com a opção exibida aqui.
@@ -84,10 +86,10 @@ const prefRowStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: tokens.spacing.md,
     minHeight: 56,
   },
-  label: { fontSize: 15, fontWeight: '600' },
+  label: { fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.semibold },
   desc: { fontSize: 12.5, lineHeight: 17 },
 });
 
@@ -99,6 +101,9 @@ function ConfiguracoesScreenInner() {
   const router = useRouter();
   const headerH = useHeaderHeight();
   const padBottom = useTabContentPaddingBottom();
+  // Imperative confirm sheet — substitui Alert.alert pra ações destrutivas
+  // (signOut). `ConfirmEl` precisa estar montado abaixo no JSX.
+  const { ConfirmEl, ask } = useConfirmSheet();
 
   const [storeName, setStoreName] = useState('');
   const [city, setCity] = useState('');
@@ -188,11 +193,14 @@ function ConfiguracoesScreenInner() {
     }
   };
 
-  const handleSignOut = () => {
-    Alert.alert(t('auth.signOutConfirmTitle'), t('auth.signOutConfirmMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('auth.signOutConfirmTitle'), style: 'destructive', onPress: signOut },
-    ]);
+  const handleSignOut = async () => {
+    const ok = await ask({
+      title: t('auth.signOutConfirmTitle'),
+      message: t('auth.signOutConfirmMessage'),
+      variant: 'danger',
+      confirmLabel: t('auth.signOutConfirmTitle'),
+    });
+    if (ok) signOut();
   };
 
   const handleDeleteAccount = async () => {
@@ -383,10 +391,10 @@ function ConfiguracoesScreenInner() {
             so the user gets ripple + sound feedback that match every other
             switch they've seen on their device. */}
         <Card style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Acessibilidade</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.accessibility')}</Text>
           <PreferenceRow
-            label="Vibração"
-            description="Feedback tátil ao tocar nos botões e ao concluir ações."
+            label={t('settings.vibration')}
+            description={t('settings.vibrationDesc')}
           />
         </Card>
 
@@ -410,7 +418,7 @@ function ConfiguracoesScreenInner() {
                   },
                 ]}
               >
-                <Text style={{ fontSize: 20 }}>{code === 'pt-BR' ? '🇧🇷' : '🇺🇸'}</Text>
+                <Text style={{ fontSize: tokens.fontSize.xxxl }}>{code === 'pt-BR' ? '🇧🇷' : '🇺🇸'}</Text>
                 <Text
                   style={[
                     styles.langLabel,
@@ -488,7 +496,7 @@ function ConfiguracoesScreenInner() {
                 accessibilityLabel={t('common.cancel')}
                 style={styles.dangerCancel}
               >
-                <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>
+                <Text style={{ color: colors.textSecondary, fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.semibold }}>
                   {t('common.cancel')}
                 </Text>
               </AnimatedPressable>
@@ -528,27 +536,38 @@ function ConfiguracoesScreenInner() {
             title={t('config.contactSupport')}
             variant="ghost"
             onPress={async () => {
+              const SUPPORT_EMAIL = 'suporte@crialook.com.br';
               const body = `\n\n---\nApp: ${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})\nOS: ${Platform.OS} ${Platform.Version}`;
               const subject = `Suporte CriaLook v${Application.nativeApplicationVersion || '1.0.0'}`;
+              // Toast informational com action de copiar — substitui o Alert
+              // de sistema. `setStringAsync` é fire-and-forget (Promise sem
+              // await): clipboard write é < 1ms e não tem path de erro útil.
+              const showFallback = () => {
+                toast.info(
+                  t('settings.contactEmailCopied', { email: SUPPORT_EMAIL }),
+                  {
+                    action: {
+                      label: t('settings.contactEmailCopyAction'),
+                      onPress: () => {
+                        Clipboard.setStringAsync(SUPPORT_EMAIL).catch(() => {});
+                      },
+                    },
+                  },
+                );
+              };
               try {
                 const available = await MailComposer.isAvailableAsync();
                 if (!available) {
-                  Alert.alert(
-                    t('common.error'),
-                    `suporte@crialook.com.br\n\n${body.trim()}`,
-                  );
+                  showFallback();
                   return;
                 }
                 await MailComposer.composeAsync({
-                  recipients: ['suporte@crialook.com.br'],
+                  recipients: [SUPPORT_EMAIL],
                   subject,
                   body,
                 });
               } catch {
-                Alert.alert(
-                  t('common.error'),
-                  `suporte@crialook.com.br\n\n${body.trim()}`,
-                );
+                showFallback();
               }
             }}
           />
@@ -561,11 +580,11 @@ function ConfiguracoesScreenInner() {
               haptic="tap"
               hitSlop={12}
               accessibilityRole="button"
-              accessibilityLabel="Open dev catalog"
-              style={{ paddingVertical: 8, minHeight: 40, justifyContent: 'center' }}
+              accessibilityLabel={t('devTools.openCatalog')}
+              style={{ paddingVertical: tokens.spacing.sm, minHeight: 40, justifyContent: 'center' }}
             >
-              <Text style={{ color: Colors.brand.primary, fontSize: 12, fontWeight: '600' }}>
-                🧪 Dev catalog
+              <Text style={{ color: Colors.brand.primary, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold }}>
+                {t('devTools.devCatalogLabel')}
               </Text>
             </AnimatedPressable>
           )}
@@ -573,6 +592,7 @@ function ConfiguracoesScreenInner() {
       </View>
     </ScrollView>
     </View>
+    {ConfirmEl}
     </KeyboardAvoidingView>
   );
 }
@@ -588,19 +608,19 @@ export default function ConfiguracoesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 20, gap: 14 },
-  title: { fontSize: 28, fontWeight: '700' },
+  content: { padding: tokens.spacing.xl, gap: 14 },
+  title: { fontSize: tokens.fontSize.displayLg, fontWeight: tokens.fontWeight.bold },
   // Why marginTop:-4 instead of -12: -12 made the subtitle visually attached
   // to the title's descenders (g, p) on Inter; -4 keeps the duo tight without
   // collision and matches the marketing site's hero spacing.
-  subtitle: { fontSize: 14, marginTop: -4, marginBottom: 4 },
-  section: { gap: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '600' },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  subtitle: { fontSize: tokens.fontSize.base, marginTop: -4, marginBottom: tokens.spacing.xs },
+  section: { gap: tokens.spacing.md },
+  sectionTitle: { fontSize: tokens.fontSize.xxl, fontWeight: tokens.fontWeight.semibold },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.lg },
   logoBox: {
     width: 80,
     height: 80,
-    borderRadius: 16,
+    ...rounded(16),
     borderWidth: 2,
     borderStyle: 'dashed',
     alignItems: 'center',
@@ -608,40 +628,40 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoImg: { width: '100%', height: '100%' },
-  row: { flexDirection: 'row', gap: 12 },
-  segmentGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  row: { flexDirection: 'row', gap: tokens.spacing.md },
+  segmentGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing.sm },
   segmentBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.md,
+    borderRadius: tokens.radii.md,
     borderWidth: 1,
     minHeight: 48,
   },
-  segmentEmoji: { fontSize: 16 },
-  segmentLabel: { fontSize: 13, fontWeight: '500' },
-  signOutSection: { alignItems: 'center', paddingTop: 20, gap: 8 },
-  signOutTitle: { fontSize: 18, fontWeight: '600' },
-  signOutDesc: { fontSize: 14, marginBottom: 8 },
-  versionText: { fontSize: 12, marginTop: 4 },
+  segmentEmoji: { fontSize: tokens.fontSize.xl },
+  segmentLabel: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.medium },
+  signOutSection: { alignItems: 'center', paddingTop: tokens.spacing.xl, gap: tokens.spacing.sm },
+  signOutTitle: { fontSize: tokens.fontSize.xxl, fontWeight: tokens.fontWeight.semibold },
+  signOutDesc: { fontSize: tokens.fontSize.base, marginBottom: tokens.spacing.sm },
+  versionText: { fontSize: tokens.fontSize.sm, marginTop: tokens.spacing.xs },
   langRow: { flexDirection: 'row', gap: 10 },
   langBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: tokens.spacing.sm,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: tokens.radii.md,
     borderWidth: 1,
     minHeight: 48,
   },
-  langLabel: { fontSize: 14, fontWeight: '600' },
-  dangerCard: { gap: 12, borderWidth: 1.5, marginTop: 12 },
-  legalCard: { gap: 4, marginTop: 12 },
-  legalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  langLabel: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.semibold },
+  dangerCard: { gap: tokens.spacing.md, borderWidth: 1.5, marginTop: tokens.spacing.md },
+  legalCard: { gap: tokens.spacing.xs, marginTop: tokens.spacing.md },
+  legalTitle: { fontSize: tokens.fontSize.xl, fontWeight: tokens.fontWeight.bold, marginBottom: tokens.spacing.xs },
   legalLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -649,22 +669,22 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     minHeight: 48,
   },
-  legalLinkLabel: { fontSize: 15, fontFamily: 'Inter_500Medium' },
+  legalLinkLabel: { fontSize: tokens.fontSize.lg, fontFamily: 'Inter_500Medium' },
   legalChevron: { fontSize: 22, fontFamily: 'Inter_400Regular', lineHeight: 22 },
-  dangerTitle: { fontSize: 16, fontWeight: '700' },
-  dangerDesc: { fontSize: 13, lineHeight: 19 },
-  dangerToggle: { paddingVertical: 12, alignItems: 'center', minHeight: 48, justifyContent: 'center' },
-  dangerToggleText: { fontSize: 14, fontWeight: '700' },
-  dangerHint: { fontSize: 13, lineHeight: 19 },
+  dangerTitle: { fontSize: tokens.fontSize.xl, fontWeight: tokens.fontWeight.bold },
+  dangerDesc: { fontSize: tokens.fontSize.md, lineHeight: 19 },
+  dangerToggle: { paddingVertical: tokens.spacing.md, alignItems: 'center', minHeight: 48, justifyContent: 'center' },
+  dangerToggleText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
+  dangerHint: { fontSize: tokens.fontSize.md, lineHeight: 19 },
   dangerInput: {
     borderWidth: 1.5,
-    borderRadius: 12,
+    borderRadius: tokens.radii.md,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontWeight: '700',
+    paddingVertical: tokens.spacing.md,
+    fontSize: tokens.fontSize.xl,
+    fontWeight: tokens.fontWeight.bold,
     letterSpacing: 1.5,
     minHeight: 48,
   },
-  dangerCancel: { paddingVertical: 12, alignItems: 'center', minHeight: 48, justifyContent: 'center' },
+  dangerCancel: { paddingVertical: tokens.spacing.md, alignItems: 'center', minHeight: 48, justifyContent: 'center' },
 });
