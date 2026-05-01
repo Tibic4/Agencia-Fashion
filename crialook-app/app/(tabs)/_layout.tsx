@@ -287,33 +287,31 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             });
             if (event.defaultPrevented) return;
             Haptics.selectionAsync();
-            if (isActive) {
-              // Tap no tab ativo → popToTop do stack aninhado (volta pro
-              // index daquela tab). Sem isso, /gerar/resultado fica preso
-              // quando o usuário tenta voltar pra Criar pela tab bar —
-              // ele tapa, sente o haptic, mas a tela não muda.
-              //
-              // Tentativas anteriores com router.replace('/(tabs)/gerar')
-              // ou navigation.navigate(name, { screen: 'index' }) não
-              // popavam de forma confiável no expo-router 6 + RN 0.81.
-              // StackActions.popToTop com target=route.state.key vai
-              // direto no nested stack e popa tudo até o índice.
-              const nestedKey =
-                route.state && 'key' in route.state
-                  ? (route.state as { key?: string }).key
-                  : undefined;
-              if (nestedKey) {
-                navigation.dispatch({
-                  ...StackActions.popToTop(),
-                  target: nestedKey,
-                });
-              } else {
-                // Fallback pra tabs sem stack aninhado (historico, plano,
-                // configuracoes, modelo): só re-navega pra própria.
-                router.replace(`/(tabs)/${routeName}` as never);
-              }
-            } else {
+
+            // Pop o nested stack do tab tapado SEMPRE que ele tem mais
+            // que o screen index (ex: /resultado em cima de /index na
+            // gerar). Aplica tanto pro tab ativo (popToTop clássico)
+            // quanto pra inativo — caso clássico: usuário em /historico
+            // clica em campanha → push pra /gerar/resultado → back volta
+            // pra /historico, mas o gerar stack continua [index,resultado].
+            // Se a gente só navigate sem popar, ao tapar 'Criar' o user vê
+            // a /resultado em vez do form. Popando antes de navegar resolve.
+            const nestedState = route.state as
+              | { key?: string; routes?: unknown[] }
+              | undefined;
+            const hasNestedHistory = !!(nestedState?.routes && nestedState.routes.length > 1);
+            if (hasNestedHistory && nestedState?.key) {
+              navigation.dispatch({
+                ...StackActions.popToTop(),
+                target: nestedState.key,
+              });
+            }
+            if (!isActive) {
               navigation.navigate(route.name, route.params);
+            } else if (!hasNestedHistory) {
+              // Tab ativo sem stack history (historico/plano/etc): re-navega
+              // pra própria como fallback (faz tab "atualizar" se quiser).
+              router.replace(`/(tabs)/${routeName}` as never);
             }
           };
 
