@@ -137,9 +137,17 @@ function AuthGate({ onReady }: { onReady?: () => void }) {
 
   const checkOnboardingThenRedirect = async () => {
     try {
-      const res = await apiGet<{ data: { name?: string } | null }>('/store');
-      const hasStore = !!res.data?.name;
-      router.replace(hasStore ? '/(tabs)/gerar' : '/onboarding');
+      const res = await apiGet<{
+        data: { name?: string; onboarding_completed?: boolean } | null;
+      }>('/store');
+      // Antes a checagem era !!data.name, mas o webhook do Clerk cria uma
+      // loja placeholder com name=emailPrefix antes do user fazer onboarding —
+      // resultado: todo signup pulava a tela de onboarding direto pro /gerar.
+      // Agora gateamos pelo flag explícito; legacy stores sem o campo (null/
+      // undefined) são tratadas como completas pra não bloquear quem já tava
+      // dentro do app.
+      const onboardingDone = res.data?.onboarding_completed !== false;
+      router.replace(onboardingDone ? '/(tabs)/gerar' : '/onboarding');
     } catch {
       router.replace('/(tabs)/gerar');
     }

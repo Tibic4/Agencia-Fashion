@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createStore, createStoreModel, getStoreByClerkId } from "@/lib/db";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/store/onboarding
- * 
- * Cria a loja e modelo virtual do usuário após o onboarding.
+ *
+ * Cria/atualiza a loja e modelo virtual do usuário após o onboarding.
+ *
+ * Atenção ao caminho do webhook: `clerk.user.created` cria uma loja
+ * placeholder (name=emailPrefix, segment_primary='outro',
+ * onboarding_completed=false) ANTES do usuário ver o form. Quando ele
+ * termina o onboarding e chega aqui, a loja JÁ existe — então:
+ *
+ *  - existing.onboarding_completed = true  → retorna idempotente (já fez)
+ *  - existing.onboarding_completed = false → UPDATE com dados do form +
+ *    seta onboarding_completed=true. Antes a função early-returnava
+ *    "Loja já existe" e os dados do form eram silenciosamente descartados.
+ *  - sem existing → CREATE clássico.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -16,18 +28,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // Verificar se já tem loja
+    const body = await request.json();
+    const { storeName, segment, city, state, instagram, model, brandColor } = body;
+
     const existing = await getStoreByClerkId(session.userId);
-    if (existing) {
+
+    // Idempotência: já completou onboarding antes — retorna sem reescrever.
+    if (existing && existing.onboarding_completed) {
       return NextResponse.json({
         success: true,
         data: { store: existing },
-        message: "Loja já existe",
+        message: "Onboarding já foi concluído",
       });
     }
-
-    const body = await request.json();
-    const { storeName, segment, city, state, instagram, model, brandColor } = body;
 
     if (!storeName || !segment) {
       return NextResponse.json(
@@ -36,16 +49,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Criar loja
-    const store = await createStore({
-      clerkUserId: session.userId,
-      name: storeName,
-      segmentPrimary: segment,
-      city: city || undefined,
-      state: state || undefined,
-      instagramHandle: instagram || undefined,
-      brandColor: brandColor || undefined,
-    });
+    let store;
+    if (existing) {
+      // Placeholder do webhook → UPDATE com dados reais do form
+      const supabase = createAdminClient();
+      const { data: updated, error: updateErr } = await supabase
+        .from("stores")
+        .update({
+          name: storeName,
+          segment_primary: segment,
+          city: city || null,
+          state: state || null,
+          instagram_handle: instagram || null,
+          brand_colors: brandColor ? { primary: brandColor } : null,
+          onboarding_completed: true,
+        })
+        .eq("id", existing.id)
+        .select()
+        .single();
+      if (updateErr || !updated) {
+        throw new Error(`Erro ao atualizar loja placeholder: ${updateErr?.message ?? "sem dados retornados"}`);
+      }
+      store = updated;
+    } else {
+      // 1. Criar loja (caso o webhook tenha falhado ou não tenha disparado)
+      store = await createStore({
+        clerkUserId: session.userId,
+        name: storeName,
+        segmentPrimary: segment,
+        city: city || undefined,
+        state: state || undefined,
+        instagramHandle: instagram || undefined,
+        brandColor: brandColor || undefined,
+      });
+    }
 
     // 2. Criar modelo virtual (se não pulou E se o plano permite)
     let storeModel = null;
@@ -97,10 +134,22 @@ export async function POST(request: NextRequest) {
 
 
 
-    return NextResponse.json({
+    // Bust o cache do middleware: o cookie cl_hs_<userId> ficava com "0"
+    // (placeholder sem onboarding) por 1h, fazendo o user voltar pra
+    // /onboarding mesmo depois de concluir. Sobrescrever pra "1" aqui
+    // garante que a próxima request middleware-side já leia "tem store
+    // completo" sem ida ao DB.
+    const response = NextResponse.json({
       success: true,
       data: { store, model: storeModel },
     });
+    response.cookies.set(`cl_hs_${session.userId}`, "1", {
+      maxAge: 60 * 60,
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
+    return response;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:store/onboarding] Error:", message);

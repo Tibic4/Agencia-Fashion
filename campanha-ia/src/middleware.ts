@@ -66,14 +66,21 @@ async function hasStore(clerkUserId: string): Promise<boolean | "unknown"> {
   try {
     const { data, error } = await supabase
       .from("stores")
-      .select("id")
+      .select("id, onboarding_completed")
       .eq("clerk_user_id", clerkUserId)
       .maybeSingle();
     if (error) {
       console.warn(`[middleware/hasStore] Supabase error: ${error.message}`);
       return "unknown";
     }
-    return !!data;
+    if (!data) return false;
+    // O webhook clerk.user.created cria uma loja placeholder antes do user
+    // fazer onboarding (clerk-side, agnóstica ao fluxo). Com isso `data` já
+    // existe pra qualquer usuário recém-cadastrado e a checagem antiga
+    // (!!data) sempre dava true → middleware pulava /onboarding pro /gerar.
+    // Gateamos pelo flag explícito; legacy stores sem o campo (null/undefined)
+    // contam como completas pra não interromper quem já tá dentro do app.
+    return data.onboarding_completed !== false;
   } catch (e) {
     console.warn(`[middleware/hasStore] Exception:`, e);
     return "unknown";
