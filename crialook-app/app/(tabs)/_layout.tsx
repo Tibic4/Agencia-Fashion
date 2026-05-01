@@ -254,7 +254,13 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
               colors={Colors.brand.gradientPrimary}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.indicatorFill}
+              // Em light mode o tab bar tem BlurView translúcido sobre fundo
+              // claro — o gradient a 14% (default pro dark) sumia. Sobe pra
+              // 26% em light pra o pill ficar visível sem ficar berrante.
+              style={[
+                styles.indicatorFill,
+                { opacity: scheme === 'dark' ? 0.16 : 0.26 },
+              ]}
             />
             <View
               style={[
@@ -402,7 +408,8 @@ const styles = StyleSheet.create({
   },
   indicatorFill: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.14,
+    // opacity é definida inline na render por scheme — light precisa de
+    // mais opacidade que dark pra visibilidade sobre o BlurView claro.
   },
   indicatorDot: {
     position: 'absolute',

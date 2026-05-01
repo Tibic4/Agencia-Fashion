@@ -1039,10 +1039,13 @@ export default function ResultadoScreen() {
         </Animated.View>
       )}
 
-      {/* New campaign */}
+      {/* New campaign — CTA primária do resultado. Antes era variant
+          'secondary', mas em light mode o gradient de surface é branco-on-
+          branco com border #f3f1f5 quase invisível, deixava o botão
+          sumindo. Primary fucsia bate com a hierarquia (essa É a próxima
+          ação esperada). */}
       <Button
         title={t('result.createMore')}
-        variant="secondary"
         onPress={goBack}
         style={{ marginTop: 16 }}
       />
