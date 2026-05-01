@@ -423,6 +423,9 @@ export const ptBR = {
     genericError: 'Erro ao entrar',
     googleButton: 'Continuar com Google',
     orDivider: 'ou',
+    sso: {
+      connecting: 'Conectando…',
+    },
   },
   signUp: {
     title: 'CriaLook',
@@ -1014,6 +1017,9 @@ export const en: StringTree = {
     genericError: 'Sign-in failed',
     googleButton: 'Continue with Google',
     orDivider: 'or',
+    sso: {
+      connecting: 'Connecting…',
+    },
   },
   signUp: {
     title: 'CriaLook',
