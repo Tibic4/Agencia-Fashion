@@ -126,18 +126,21 @@ export const durations = {
 } as const;
 
 /**
- * Strings de easing CSS — pareadas com a API CSS do Reanimated 4.
+ * Strings de easing — Reanimated 4 só aceita os 7 nomes predefinidos no CSS
+ * Animations API (não parseia `cubic-bezier(...)` literal). Curvas Material 3
+ * mapeadas pros equivalentes mais próximos: standard/decelerate ≈ ease-out,
+ * accelerate ≈ ease-in, emphasized ≈ ease-in-out.
  * `springs` (abaixo) é pra `withSpring` imperativo (config worklet).
  */
 export const easings = {
-  /** Material 3 standard — pra motion geral */
-  standard: 'cubic-bezier(0.2, 0, 0, 1)',
+  /** Material 3 standard — decelerate-ish, pra motion geral */
+  standard: 'ease-out',
   /** Decelerate — elementos entrando na tela */
-  decelerate: 'cubic-bezier(0, 0, 0, 1)',
+  decelerate: 'ease-out',
   /** Accelerate — elementos saindo da tela */
-  accelerate: 'cubic-bezier(0.3, 0, 1, 1)',
-  /** Emphasized — transições hero/importantes (Material 3 expressive) */
-  emphasized: 'cubic-bezier(0.05, 0.7, 0.1, 1.0)',
+  accelerate: 'ease-in',
+  /** Emphasized — transições hero/importantes */
+  emphasized: 'ease-in-out',
   /** Linear — loops ambient (shimmer wave) */
   linear: 'linear',
   /** EaseInOut — breathing / pulse */

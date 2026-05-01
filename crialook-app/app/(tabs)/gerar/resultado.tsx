@@ -753,7 +753,7 @@ export default function ResultadoScreen() {
                       transform: [{ scale: isActive ? 1.04 : 1 }],
                       transitionProperty: ['borderColor', 'backgroundColor', 'transform'],
                       transitionDuration: '180ms',
-                      transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+                      transitionTimingFunction: 'ease-out',
                     } as any,
                     isActive && styles.formatBtnActive,
                   ]}

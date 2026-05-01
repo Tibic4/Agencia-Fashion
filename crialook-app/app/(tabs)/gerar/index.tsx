@@ -204,7 +204,7 @@ function BackgroundCard({
             transform: [{ scale: selected ? 1.03 : 1 }],
             transitionProperty: ['borderColor', 'borderWidth', 'transform'],
             transitionDuration: '200ms',
-            transitionTimingFunction: 'cubic-bezier(0.2, 0, 0, 1)',
+            transitionTimingFunction: 'ease-out',
           } as any,
           glowStyle,
         ]}
