@@ -8,18 +8,28 @@
  *   nothing like the site's mobile shell. Users move between site and app
  *   constantly — brand continuity beats native chrome at this scale. This
  *   custom bar matches the site's MobileTabBar 1:1: lucide-style outline
- *   icons (Feather is the visual ancestor of lucide), gradient pill on the
- *   active item, fuchsia tint, brand pip on top.
+ *   icons (Feather is the visual ancestor of lucide), a gradient pill that
+ *   *slides* between tabs (mirrors framer-motion's `layoutId`), fuchsia tint,
+ *   brand pip on top.
  *
  *   We keep parity for the things native bars give for free: tabPress events
  *   for stack-reset, badges, accessibilityRole="tab" + selected state, haptic
- *   feedback on tap, safe-area awareness.
+ *   feedback on tap, safe-area awareness, Android ripple.
  *
  * Tab order matches the site exactly: Criar / Histórico / Modelo / Config /
  * Plano (Plano was second-to-last in the previous app, that drift is gone).
+ *
+ * Layered structure:
+ *   wrapper (absolute, transparent)
+ *     └─ shadowLayer (rounded, NO overflow:hidden — shadows only render with
+ *                     overflow:visible; classic RN gotcha)
+ *          └─ clipLayer (rounded + overflow:hidden — clips BlurView, indicator)
+ *               ├─ BlurView
+ *               ├─ sliding gradient indicator (animated left+width)
+ *               └─ N × Pressable items
  */
-import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { memo, useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -58,6 +68,13 @@ const TAB_ICON: Record<RouteName, { lib: 'feather' | 'mi'; name: string }> = {
   plano: { lib: 'feather', name: 'credit-card' },
 };
 
+// Spring tuned to match framer-motion's stiffness:380 damping:32 from the
+// site (motion.div animate={{ left, width }}). Higher stiffness = snappier
+// snap into place; mass kept light so the bar feels weightless.
+const INDICATOR_SPRING = { mass: 0.6, damping: 26, stiffness: 320 };
+const ICON_SPRING = { mass: 0.5, damping: 14, stiffness: 180 };
+const BAR_PADDING_X = 4;
+
 function TabIcon({
   route,
   color,
@@ -82,9 +99,7 @@ function TabIcon({
   );
 }
 
-const SPRING = { mass: 0.5, damping: 14, stiffness: 180 };
-
-function TabBarItem({
+const TabBarItem = memo(function TabBarItem({
   route,
   label,
   isActive,
@@ -104,15 +119,14 @@ function TabBarItem({
   const colors = Colors[scheme];
   const activeColor =
     scheme === 'dark' ? Colors.brand.primaryLight : Colors.brand.primary;
-  const inactiveColor = colors.textSecondary;
-  const color = isActive ? activeColor : inactiveColor;
+  const color = isActive ? activeColor : colors.textSecondary;
 
   const scale = useSharedValue(isActive ? 1 : 0.92);
   const translateY = useSharedValue(isActive ? -1 : 0);
 
   useEffect(() => {
-    scale.value = withSpring(isActive ? 1 : 0.92, SPRING);
-    translateY.value = withSpring(isActive ? -1 : 0, SPRING);
+    scale.value = withSpring(isActive ? 1 : 0.92, ICON_SPRING);
+    translateY.value = withSpring(isActive ? -1 : 0, ICON_SPRING);
   }, [isActive, scale, translateY]);
 
   const animatedIconStyle = useAnimatedStyle(() => ({
@@ -121,59 +135,50 @@ function TabBarItem({
 
   const showBadge = badge != null && badge > 0;
 
+  // Android ripple: brand-tinted, contained inside the rounded bounds. iOS
+  // gets opacity feedback via the function-style style prop (no ripple).
+  const androidRipple = {
+    color: scheme === 'dark' ? Colors.brand.glowMid : Colors.brand.glowSoft,
+    borderless: false,
+    foreground: true,
+  } as const;
+
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
+      android_ripple={androidRipple}
       accessibilityRole="tab"
       accessibilityState={{ selected: isActive }}
       accessibilityLabel={label}
-      style={styles.item}
-      hitSlop={4}
+      hitSlop={6}
+      style={({ pressed }) => [
+        styles.item,
+        pressed && { opacity: 0.7 },
+      ]}
     >
-      {isActive && (
-        // Gradient pill backdrop — matches the site's `var(--gradient-brand)`
-        // at 12% opacity, nudged up to 14% to survive RN's blur backdrop.
-        <LinearGradient
-          colors={Colors.brand.gradientPrimary}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.activeFill}
-        />
-      )}
-      {isActive && (
-        // Brand pip on top — same affordance as `tab-dot` on the site.
-        <View style={[styles.activeDot, { backgroundColor: activeColor }]} />
-      )}
-
       <Animated.View style={animatedIconStyle}>
         <TabIcon route={route} color={color} size={22} />
       </Animated.View>
 
       <Text
         numberOfLines={1}
-        style={[
-          styles.label,
-          { color, opacity: isActive ? 1 : 0.65 },
-        ]}
+        style={[styles.label, { color, opacity: isActive ? 1 : 0.65 }]}
       >
         {label}
       </Text>
 
       {showBadge && (
         <View
-          style={[
-            styles.badge,
-            { backgroundColor: Colors.brand.primary },
-          ]}
-          accessibilityLabel={`${badge} novos`}
+          style={[styles.badge, { backgroundColor: Colors.brand.primary }]}
+          accessibilityLabel={`${badge} ${badge === 1 ? 'novo' : 'novos'}`}
         >
           <Text style={styles.badgeText}>{badge > 99 ? '99+' : String(badge)}</Text>
         </View>
       )}
     </Pressable>
   );
-}
+});
 
 function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const scheme = useColorScheme();
@@ -183,71 +188,131 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const unseenCount = useUnseenHistoricoCount();
   const navLocked = useNavigationLocked();
 
-  // Hide the bar during long-running flows (campaign generation). The
-  // generation screen takes over /gerar so the user has nowhere to navigate
-  // to anyway — this matches the previous behaviour exactly.
-  if (navLocked) return null;
+  const [barWidth, setBarWidth] = useState(0);
+  const isFirstLayout = useRef(true);
 
+  // The active pill is a single shared element that slides between tabs —
+  // mirrors framer-motion's `layoutId` on the site. Animating left/width
+  // beats fade-in-fade-out: zero flicker, the eye tracks the indicator
+  // through the transition.
+  const indicatorLeft = useSharedValue(0);
+  const indicatorWidth = useSharedValue(0);
+
+  const tabCount = state.routes.length;
+  const tabWidth = barWidth > 0 ? (barWidth - BAR_PADDING_X * 2) / tabCount : 0;
+
+  useEffect(() => {
+    if (tabWidth <= 0) return;
+    const targetLeft = BAR_PADDING_X + state.index * tabWidth;
+    if (isFirstLayout.current) {
+      // First mount: snap into place without springing from x=0 (looks
+      // janky and draws attention to a non-event).
+      indicatorLeft.value = targetLeft;
+      indicatorWidth.value = tabWidth;
+      isFirstLayout.current = false;
+      return;
+    }
+    indicatorLeft.value = withSpring(targetLeft, INDICATOR_SPRING);
+    indicatorWidth.value = withSpring(tabWidth, INDICATOR_SPRING);
+  }, [state.index, tabWidth, indicatorLeft, indicatorWidth]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    left: indicatorLeft.value,
+    width: indicatorWidth.value,
+  }));
+
+  if (navLocked) return null;
   const bottom = Math.max(insets.bottom, 12) + TAB_BAR_BOTTOM_GAP;
+
+  const onBarLayout = (e: LayoutChangeEvent) => {
+    setBarWidth(e.nativeEvent.layout.width);
+  };
+
+  const activeRouteKey = state.routes[state.index]?.key;
 
   return (
     <View pointerEvents="box-none" style={[styles.wrapper, { bottom }]}>
       <View
         style={[
-          styles.bar,
-          {
-            backgroundColor: colors.glass,
-            borderColor: colors.border,
-            shadowColor: scheme === 'dark' ? '#000' : '#0F0519',
-          },
+          styles.shadowLayer,
+          { shadowColor: scheme === 'dark' ? '#000' : '#0F0519' },
         ]}
       >
-        <BlurView
-          tint={scheme === 'dark' ? 'dark' : 'light'}
-          intensity={scheme === 'dark' ? 70 : 90}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {state.routes.map((route, index) => {
-          const routeName = route.name as RouteName;
-          if (!TAB_ICON[routeName]) return null;
+        <View
+          onLayout={onBarLayout}
+          style={[
+            styles.clipLayer,
+            { backgroundColor: colors.glass, borderColor: colors.border },
+          ]}
+        >
+          <BlurView
+            tint={scheme === 'dark' ? 'dark' : 'light'}
+            intensity={scheme === 'dark' ? 70 : 90}
+            style={StyleSheet.absoluteFillObject}
+          />
 
-          const isActive = state.index === index;
+          {/* Sliding active pill — single LinearGradient that animates between
+              tabs instead of N gradients fading in/out. Brand pip lives inside
+              so it slides as one element. pointerEvents="none" lets taps fall
+              through to the Pressable underneath. */}
+          {tabWidth > 0 && (
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.indicator, indicatorStyle]}
+            >
+              <LinearGradient
+                colors={Colors.brand.gradientPrimary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.indicatorFill}
+              />
+              <View
+                style={[
+                  styles.indicatorDot,
+                  {
+                    backgroundColor:
+                      scheme === 'dark' ? Colors.brand.primaryLight : Colors.brand.primary,
+                  },
+                ]}
+              />
+            </Animated.View>
+          )}
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!isActive && !event.defaultPrevented) {
-              Haptics.selectionAsync();
-              // navigation.navigate signature on the bottom-tab navigator
-              // is overloaded; the simplest typing-friendly invocation is
-              // a single object with `name` + optional `params`.
-              (navigation as unknown as { navigate: (target: { name: string; params?: object | undefined }) => void }).navigate({
-                name: route.name,
-                params: route.params as object | undefined,
+          {state.routes.map((route, index) => {
+            const routeName = route.name as RouteName;
+            if (!TAB_ICON[routeName]) return null;
+            const isActive = route.key === activeRouteKey;
+
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
               });
-            }
-          };
+              if (!isActive && !event.defaultPrevented) {
+                Haptics.selectionAsync();
+                navigation.navigate(route.name, route.params);
+              }
+            };
 
-          const onLongPress = () => {
-            navigation.emit({ type: 'tabLongPress', target: route.key });
-          };
+            const onLongPress = () => {
+              navigation.emit({ type: 'tabLongPress', target: route.key });
+            };
 
-          return (
-            <TabBarItem
-              key={route.key}
-              route={routeName}
-              label={t(`tabs.${routeName}` as 'tabs.gerar')}
-              isActive={isActive}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              badge={routeName === 'historico' ? unseenCount : undefined}
-              scheme={scheme}
-            />
-          );
-        })}
+            return (
+              <TabBarItem
+                key={route.key}
+                route={routeName}
+                label={t(`tabs.${routeName}` as 'tabs.gerar')}
+                isActive={isActive}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                badge={routeName === 'historico' ? unseenCount : undefined}
+                scheme={scheme}
+              />
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -290,18 +355,26 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
     zIndex: 30,
   },
-  bar: {
+  // Shadow ONLY here — overflow stays visible so iOS actually paints the
+  // drop shadow (overflow:hidden silently kills shadows on iOS).
+  shadowLayer: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4,
     borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.18,
     shadowRadius: 28,
     elevation: 12,
+  },
+  // Clip layer — overflow:hidden is required so the BlurView and the sliding
+  // gradient indicator both respect the rounded corners.
+  clipLayer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: BAR_PADDING_X,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
   item: {
     flex: 1,
@@ -311,16 +384,24 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingVertical: 6,
     borderRadius: 16,
+    overflow: 'hidden', // keep Android ripple inside rounded bounds
     position: 'relative',
   },
-  activeFill: {
-    ...StyleSheet.absoluteFillObject,
+  indicator: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
     borderRadius: 16,
+    overflow: 'hidden',
+  },
+  indicatorFill: {
+    ...StyleSheet.absoluteFillObject,
     opacity: 0.14,
   },
-  activeDot: {
+  indicatorDot: {
     position: 'absolute',
-    top: 1,
+    top: -3,
+    alignSelf: 'center',
     width: 4,
     height: 4,
     borderRadius: 2,
