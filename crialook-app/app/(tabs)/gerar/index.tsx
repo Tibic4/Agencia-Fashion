@@ -11,7 +11,6 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -47,6 +46,7 @@ import { ensureBiometricConsent } from '@/components/BiometricConsentModal';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 import { ClaimMiniTrialBanner } from '@/components/ClaimMiniTrialBanner';
+import { useConfirmSheet } from '@/components/ConfirmSheet';
 import {
   ModelBottomSheet,
   type ModelBottomSheetRef,
@@ -71,6 +71,7 @@ import {
   useCampaignGenerator,
   type ModelFilter,
 } from '@/hooks/gerar';
+import { tokens, rounded } from '@/lib/theme/tokens';
 
 // Why labelKey + t() at render time? The locale toggle (PT-BR ↔ EN) happens
 // without unmounting screens, so labels must resolve fresh each render.
@@ -250,6 +251,8 @@ function GerarScreenInner() {
   const ctaBottom = useFloatingCtaBottom();
   // a11y — gate do quota banner pulse (urgência visual quando resta 1 crédito).
   const reduceMotion = useReducedMotion();
+  // ConfirmSheet imperativo — substitui Alert.alert (single-photo confirm).
+  const { ConfirmEl: ConfirmSinglePhotoEl, ask: askConfirmSinglePhoto } = useConfirmSheet();
 
   // ─── Photo slots ────────────────────────────────────────────────────────
   const main = useImagePickerSlot({ fileName: 'main.jpg' });
@@ -363,14 +366,17 @@ function GerarScreenInner() {
     };
 
     if (!closeup.value && !second.value) {
-      Alert.alert(
-        t('generate.confirmSinglePhotoTitle'),
-        t('generate.confirmSinglePhotoMessage'),
-        [
-          { text: t('generate.confirmAddMore'), style: 'cancel' },
-          { text: t('generate.confirmGenerate'), onPress: () => { submitGated(); } },
-        ],
-      );
+      // ConfirmSheet brand-aware no lugar do Alert.alert. Não é "danger" —
+      // não tem destruição, só um aviso de qualidade ("foto melhor com mais
+      // input"). Variant default = 'confirm' (gradient brand).
+      askConfirmSinglePhoto({
+        title: t('generate.confirmSinglePhotoTitle'),
+        message: t('generate.confirmSinglePhotoMessage'),
+        confirmLabel: t('generate.confirmGenerate'),
+        cancelLabel: t('generate.confirmAddMore'),
+      }).then((ok) => {
+        if (ok) submitGated();
+      });
     } else {
       submitGated();
     }
@@ -393,6 +399,7 @@ function GerarScreenInner() {
     campaignsLimit,
     extraCredits,
     t,
+    askConfirmSinglePhoto,
   ]);
 
   if (generator.isGenerating) {
@@ -417,7 +424,7 @@ function GerarScreenInner() {
           styles.scrollContent,
           // ScrollView pad must clear the floating CTA + tab bar so the last
           // form field is reachable on small phones (S22 base @ 6.1").
-          { paddingBottom: ctaBottom + 80, paddingTop: headerH + 16 },
+          { paddingBottom: ctaBottom + 80, paddingTop: headerH + tokens.spacing.lg },
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -443,7 +450,10 @@ function GerarScreenInner() {
 
         {generator.error && (
           <Card style={styles.errorCard}>
-            <Text style={styles.errorText}>{generator.error}</Text>
+            {/* selectable pra usuário copiar a mensagem pro suporte. */}
+            <Text style={styles.errorText} selectable accessibilityRole="alert">
+              {generator.error}
+            </Text>
             <View style={styles.errorReassurance}>
               <Text style={styles.errorReassuranceText}>{t('generate.creditsIntact')}</Text>
               <Text style={styles.errorReassuranceDesc}>{t('generate.creditsIntactDesc')}</Text>
@@ -570,7 +580,10 @@ function GerarScreenInner() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.modelList}>
           {modelSel.loading ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            // 6 = ~visíveis (3-4) + glimpse do próximo card pra comunicar
+            // "lista horizontal contínua". 4 fixos ficavam parecendo carrossel
+            // pequeno; o usuário tinha que carregar pra perceber que tem mais.
+            Array.from({ length: 6 }).map((_, i) => (
               <View
                 key={i}
                 style={[
@@ -778,8 +791,8 @@ function GerarScreenInner() {
                   <Text
                     style={{
                       color: audience === a.value ? '#fff' : colors.text,
-                      fontSize: 12,
-                      fontWeight: '600',
+                      fontSize: tokens.fontSize.sm,
+                      fontWeight: tokens.fontWeight.semibold,
                     }}
                   >
                     {t(a.labelKey)}
@@ -819,8 +832,8 @@ function GerarScreenInner() {
                   <Text
                     style={{
                       color: tone === tn.value ? '#fff' : colors.text,
-                      fontSize: 12,
-                      fontWeight: '600',
+                      fontSize: tokens.fontSize.sm,
+                      fontWeight: tokens.fontWeight.semibold,
                     }}
                   >
                     {t(tn.labelKey)}
@@ -968,6 +981,7 @@ function GerarScreenInner() {
       />
 
       <ModelBottomSheet ref={sheetRef} onSelect={handleSheetSelect} />
+      {ConfirmSinglePhotoEl}
     </KeyboardAvoidingView>
     </ModelPeekProvider>
   );
@@ -983,40 +997,40 @@ export default function GerarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 20, gap: 12 },
+  scrollContent: { padding: tokens.spacing.xl, gap: tokens.spacing.md },
   heroRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline' },
-  title: { fontSize: 28, fontFamily: 'Inter_700Bold', letterSpacing: -0.5 },
-  subtitle: { fontSize: 14, fontFamily: 'Inter_400Regular', marginTop: -4 },
-  sectionTitle: { fontSize: 16, fontFamily: 'Inter_700Bold', marginTop: 8 },
+  title: { fontSize: tokens.fontSize.displayLg, fontFamily: 'Inter_700Bold', letterSpacing: -0.5 },
+  subtitle: { fontSize: tokens.fontSize.base, fontFamily: 'Inter_400Regular', marginTop: -4 },
+  sectionTitle: { fontSize: tokens.fontSize.xl, fontFamily: 'Inter_700Bold', marginTop: tokens.spacing.sm },
   errorCard: { backgroundColor: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.3)' },
-  errorText: { color: '#EF4444', fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  errorText: { color: '#EF4444', fontSize: tokens.fontSize.md, fontFamily: 'Inter_600SemiBold' },
   errorReassurance: {
     backgroundColor: 'rgba(34,197,94,0.1)',
     borderRadius: 10,
     padding: 10,
-    marginTop: 8,
+    marginTop: tokens.spacing.sm,
   },
-  errorReassuranceText: { color: '#16A34A', fontSize: 12, fontWeight: '700' },
-  errorReassuranceDesc: { color: '#16A34A', fontSize: 11, marginTop: 2 },
-  errorActions: { gap: 8, marginTop: 8 },
+  errorReassuranceText: { color: '#16A34A', fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold },
+  errorReassuranceDesc: { color: '#16A34A', fontSize: tokens.fontSize.xs, marginTop: 2 },
+  errorActions: { gap: tokens.spacing.sm, marginTop: tokens.spacing.sm },
   errorDismiss: {
     color: '#EF4444',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: tokens.fontSize.sm,
+    fontWeight: tokens.fontWeight.semibold,
     textAlign: 'center',
-    padding: 12,
+    padding: tokens.spacing.md,
     minHeight: 48,
   },
   photoRow: { flexDirection: 'row', gap: 10 },
-  photoMain: { flex: 2, aspectRatio: 3 / 4, borderRadius: 16 },
+  photoMain: { flex: 2, aspectRatio: 3 / 4, ...rounded(tokens.radii.xl) },
   photoSecondary: { flex: 1, gap: 10 },
   photoSmall: { flex: 1, borderRadius: 12 },
   photoSlot: { borderWidth: 2, borderStyle: 'dashed', overflow: 'hidden' },
   photoImage: { width: '100%', height: '100%' },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  photoLabel: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
+  photoLabel: { fontSize: tokens.fontSize.md, fontFamily: 'Inter_600SemiBold' },
   photoLabelSmall: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
-  modelList: { gap: 10, paddingVertical: 4 },
+  modelList: { gap: 10, paddingVertical: tokens.spacing.xs },
   modelCard: { width: 100, alignItems: 'center', borderRadius: 14, borderWidth: 2, overflow: 'hidden' },
   modelCardSelected: { borderWidth: 2.5 },
   modelThumb: { width: '100%', aspectRatio: 3 / 4 },
@@ -1029,38 +1043,38 @@ const styles = StyleSheet.create({
     fontSize: 36,
   },
   modelName: {
-    fontSize: 11,
+    fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingHorizontal: tokens.spacing.xs,
   },
   customBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: tokens.spacing.xs,
+    right: tokens.spacing.xs,
     backgroundColor: '#F59E0B',
-    borderRadius: 8,
+    borderRadius: tokens.radii.sm,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  customBadgeText: { fontSize: 9, fontWeight: '800', color: '#fff' },
+  customBadgeText: { fontSize: 9, fontWeight: tokens.fontWeight.black, color: '#fff' },
   // paddingHorizontal:4 (era só paddingRight:4) garante que o ring de
   // seleção rosa do PRIMEIRO item não fique cortado contra a borda esquerda
   // da ScrollView. paddingVertical:6 dá folga pro shadow não clipar em cima/
   // baixo também.
-  bgList: { gap: BG_CARD_GAP, paddingVertical: 6, paddingHorizontal: 4 },
+  bgList: { gap: BG_CARD_GAP, paddingVertical: 6, paddingHorizontal: tokens.spacing.xs },
   bgCard: { width: BG_CARD_WIDTH, alignItems: 'center', gap: 6 },
   bgImageWrapper: {
     width: BG_CARD_WIDTH,
     height: BG_CARD_HEIGHT,
-    borderRadius: 16,
+    ...rounded(tokens.radii.xl),
     overflow: 'hidden',
     backgroundColor: 'rgba(0,0,0,0.04)',
   },
   bgImage: { width: '100%', height: '100%' },
   bgLabel: {
-    fontSize: 12,
+    fontSize: tokens.fontSize.sm,
     fontFamily: 'Inter_600SemiBold',
     textAlign: 'center',
     width: BG_CARD_WIDTH,
@@ -1085,28 +1099,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 12,
+    paddingVertical: tokens.spacing.md,
     minHeight: 48,
   },
-  advancedText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
-  advancedSection: { gap: 12 },
+  advancedText: { fontSize: tokens.fontSize.md, fontFamily: 'Inter_600SemiBold' },
+  advancedSection: { gap: tokens.spacing.md },
   input: {
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
+    paddingVertical: tokens.spacing.md,
+    fontSize: tokens.fontSize.base,
     fontFamily: 'Inter_400Regular',
     minHeight: 48,
   },
-  fieldLabel: { fontSize: 12, fontFamily: 'Inter_600SemiBold', marginTop: 4 },
+  fieldLabel: { fontSize: tokens.fontSize.sm, fontFamily: 'Inter_600SemiBold', marginTop: tokens.spacing.xs },
   chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, minHeight: 40 },
-  chipRow: { gap: 8, paddingVertical: 4 },
+  chipRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs },
   floatingBtnContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: tokens.spacing.xl,
     backgroundColor: 'transparent',
   },
   floatingBtn: {
@@ -1120,15 +1134,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    marginBottom: 8,
+    marginBottom: tokens.spacing.sm,
     minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quotaBannerText: { color: '#fff', fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
-  filterRow: { gap: 6, paddingVertical: 4, marginBottom: 4 },
+  quotaBannerText: { color: '#fff', fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold, letterSpacing: 0.2 },
+  filterRow: { gap: 6, paddingVertical: tokens.spacing.xs, marginBottom: tokens.spacing.xs },
   filterTab: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, minHeight: 40 },
-  filterTabText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
+  filterTabText: { fontSize: tokens.fontSize.sm, fontFamily: 'Inter_600SemiBold' },
   infoBadge: {
     position: 'absolute',
     // Anchored just above the name strip so the lupa never sits over text.

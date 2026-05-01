@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   AppState,
   type AppStateStatus,
   RefreshControl,
@@ -31,10 +30,12 @@ import {
 import { ModelPeekProvider, ModelPressable } from '@/components/ModelLongPressPreview';
 import { ModelBottomSheet, type ModelBottomSheetRef } from '@/components/ModelBottomSheet';
 import { TabErrorBoundary } from '@/components/TabErrorBoundary';
+import { useConfirmSheet } from '@/components/ConfirmSheet';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { tokens, rounded } from '@/lib/theme/tokens';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, apiDelete, apiGet, apiPost } from '@/lib/api';
 import { qk } from '@/lib/query-client';
@@ -124,6 +125,8 @@ function ModeloScreenInner() {
   const padBottom = useTabContentPaddingBottom();
   // a11y — gate da pulse do "+" card e do shimmer dos placeholders.
   const reduceMotion = useReducedMotion();
+  // ConfirmSheet imperativo — substitui Alert.alert na deleção de modelo.
+  const { ConfirmEl: ConfirmDeleteEl, ask: askDeleteModel } = useConfirmSheet();
 
   // useQuery owns: cache, dedup, refetch on focus, retry, cancellation.
   // The model-preview polling effect below mutates this cache directly via
@@ -369,15 +372,14 @@ function ModeloScreenInner() {
     onSettled: () => invalidateModelLists(),
   });
 
-  const handleDelete = (id: string) => {
-    Alert.alert(t('model.deleteTitle'), t('model.deleteMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () => deleteMut.mutate(id),
-      },
-    ]);
+  const handleDelete = async (id: string) => {
+    const ok = await askDeleteModel({
+      title: t('model.deleteTitle'),
+      message: t('model.deleteMessage'),
+      variant: 'danger',
+      confirmLabel: t('common.delete'),
+    });
+    if (ok) deleteMut.mutate(id);
   };
 
   const setActiveMut = useMutation({
@@ -475,6 +477,7 @@ function ModeloScreenInner() {
     />
     {/* Pinch-to-zoom sheet — quando o user confirma na CTA, ativa esse modelo. */}
     <ModelBottomSheet ref={peekSheetRef} onSelect={handleSetActive} />
+    {ConfirmDeleteEl}
     </View>
     </ModelPeekProvider>
   );
@@ -594,7 +597,17 @@ function ModelsListBody({
               />
             </View>
           ) : (
-            <Button title={t('model.createFirst')} onPress={onCreate} />
+            // canCreate: ainda 2 CTAs — primária "criar primeiro modelo",
+            // escape pra galeria de modelos prontos. Antes era só uma e o
+            // usuário sem inspiração ficava travado.
+            <View style={styles.emptyCtaStack}>
+              <Button title={t('model.createFirst')} onPress={onCreate} />
+              <Button
+                title={t('model.emptyUseStockCta')}
+                variant="ghost"
+                onPress={() => router.push('/(tabs)/gerar')}
+              />
+            </View>
           )}
         </View>
       ) : (
@@ -750,9 +763,9 @@ function ModelGridCard({
     ? t(matchMasc.labelKey)
     : model.body_type;
   // Subtitle paritário com o site: "Mulher Padrão" / "Homem Atlético" etc.
-  // Inline em vez de i18n porque os keys existentes (genderMale/Female) trazem
-  // símbolo ♂♀ que poluiria a frase. O site também usa literais aqui.
-  const genderPrefix = matchMasc ? 'Homem' : 'Mulher';
+  // Keys dedicadas (genderPrefix.male/female) — os keys genderMale/Female
+  // trazem símbolo ♂♀ pro form e poluiriam a frase aqui.
+  const genderPrefix = t(matchMasc ? 'model.genderPrefix.male' : 'model.genderPrefix.female');
   const subtitle = `${genderPrefix} ${labelBody}`;
 
   const hasPhoto = !!model.photo_url;
@@ -800,7 +813,7 @@ function ModelGridCard({
         model={model as never}
         disablePeek={!hasPhoto}
         onPress={() => onSetActive(model.id)}
-        accessibilityLabel={`Ativar modelo ${model.name}`}
+        accessibilityLabel={t('model.activateAria', { name: model.name })}
         style={{
           ...styles.portraitImageWrap,
           borderWidth: 2,
@@ -907,27 +920,27 @@ function ModelGridCard({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, gap: 16 },
+  content: { padding: tokens.spacing.xl, gap: tokens.spacing.lg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   titleHero: {
-    fontSize: 28,
+    fontSize: tokens.fontSize.displayLg,
     fontFamily: 'Inter_700Bold',
     letterSpacing: -0.5,
   },
   // tabular-nums on the "{n}/{limit} criados" label so digits don't jiggle
   // mid-fetch when the count updates after a create/delete.
-  subtitle: { fontSize: 14, marginTop: 2, fontVariant: ['tabular-nums'] },
+  subtitle: { fontSize: tokens.fontSize.base, marginTop: 2, fontVariant: ['tabular-nums'] },
   counterPill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: tokens.spacing.md,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
     borderWidth: 1,
     minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   counterPillText: {
-    fontSize: 13,
+    fontSize: tokens.fontSize.md,
     fontFamily: 'Inter_700Bold',
     fontVariant: ['tabular-nums'],
   },
@@ -936,32 +949,32 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: tokens.spacing.xs,
   },
   newModelPlus: {
-    fontSize: 32,
+    fontSize: tokens.spacing.xxxl,
     fontFamily: 'Inter_700Bold',
     lineHeight: 36,
   },
   newModelLabel: {
-    fontSize: 13,
+    fontSize: tokens.fontSize.md,
     fontFamily: 'Inter_700Bold',
   },
   newModelCounter: {
-    fontSize: 11,
+    fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_500Medium',
     marginTop: 2,
   },
   viewAllBtn: {
     alignSelf: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.spacing.lg,
     minHeight: 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: tokens.fontSize.base,
     fontFamily: 'Inter_700Bold',
     letterSpacing: 0.2,
   },
@@ -977,31 +990,31 @@ const styles = StyleSheet.create({
   portraitImageWrap: {
     width: '100%',
     aspectRatio: 3 / 4,
-    borderRadius: 16,
+    ...rounded(tokens.radii.xl),
     overflow: 'hidden',
     position: 'relative',
   },
   portraitImage: { width: '100%', height: '100%' },
   modelPlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  generatingText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  generatingText: { color: '#fff', fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, marginTop: tokens.spacing.xs },
   activeBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: tokens.spacing.sm,
+    right: tokens.spacing.sm,
     backgroundColor: Colors.brand.success,
-    paddingHorizontal: 8,
+    paddingHorizontal: tokens.spacing.sm,
     paddingVertical: 3,
     borderRadius: 10,
   },
-  activeBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  activeBadgeText: { color: '#fff', fontSize: 10, fontWeight: tokens.fontWeight.black },
   // Pareado com infoBadge/infoBadgeInner do /gerar pra paridade visual:
   // mesmo formato redondo, glow fucsia, ring branco. Antes ficava
   // visualmente "hexagonal" porque o inner não tinha borderRadius e o
   // border de 1px desenhava reto sobre o gradient clipado pelo outer.
   zoomBadge: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
+    bottom: tokens.spacing.sm,
+    right: tokens.spacing.sm,
     width: 26,
     height: 26,
     borderRadius: 13,
@@ -1020,9 +1033,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: 'rgba(255,255,255,0.65)',
   },
-  modelName: { fontSize: 14, fontWeight: '600' },
-  modelSubtitle: { fontSize: 12, fontWeight: '500', marginTop: -2 },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 16 },
+  modelName: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.semibold },
+  modelSubtitle: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium, marginTop: -2 },
+  empty: { alignItems: 'center', paddingTop: 60, gap: tokens.spacing.lg },
   emptyIconWrap: {
     width: 88,
     height: 88,
@@ -1030,9 +1043,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(139,92,246,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: tokens.spacing.xs,
   },
-  emptyTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
-  emptyDesc: { fontSize: 14, textAlign: 'center', paddingHorizontal: 24, lineHeight: 20 },
-  emptyCtaStack: { gap: 8, alignSelf: 'stretch', paddingHorizontal: 32, marginTop: 12 },
+  emptyTitle: { fontSize: tokens.fontSize.xxxl, fontWeight: tokens.fontWeight.bold, textAlign: 'center' },
+  emptyDesc: { fontSize: tokens.fontSize.base, textAlign: 'center', paddingHorizontal: tokens.spacing.xxl, lineHeight: tokens.spacing.xl },
+  emptyCtaStack: { gap: tokens.spacing.sm, alignSelf: 'stretch', paddingHorizontal: tokens.spacing.xxxl, marginTop: tokens.spacing.md },
 });

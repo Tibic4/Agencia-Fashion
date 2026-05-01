@@ -1,6 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
-  Alert,
   Linking,
   RefreshControl,
   ScrollView,
@@ -9,12 +8,14 @@ import {
   View,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { AnimatedPressable, Button, Card, GradientText, Skeleton } from '@/components/ui';
 import { AuraGlow, Confetti } from '@/components/skia';
 import { celebrate, haptic } from '@/lib/haptics';
 import { toast } from '@/lib/toast';
+import { maybeRequestReview, recordSuccess } from '@/lib/reviewGate';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
@@ -25,6 +26,7 @@ import { qk } from '@/lib/query-client';
 import { StoreCreditsResponse, StoreUsageResponse } from '@/lib/schemas';
 import { useFocusEffect } from 'expo-router';
 import { PLANS } from '@/lib/plans';
+import { tokens, rounded } from '@/lib/theme/tokens';
 import { useT, type TKey } from '@/lib/i18n';
 import {
   isUserCancelledError,
@@ -62,6 +64,11 @@ function PlanoScreenInner() {
   const queryClient = useQueryClient();
   // a11y — gate da pulse > 80% e da AuraGlow do plano ativo.
   const reduceMotion = useReducedMotion();
+  // Scroll-to-plans quando o trialCta é tappado. Em vez de measureLayout
+  // (precisa de ref + nodeHandle, rico em race condition), capturamos o Y
+  // do "Section title" via onLayout — barato e síncrono.
+  const scrollRef = useRef<ScrollView>(null);
+  const planSectionY = useRef(0);
 
   // Three independent reads in parallel: server-side usage + credits, and the
   // local Play Billing offerings (which doesn't hit our API but still benefits
@@ -155,17 +162,25 @@ function PlanoScreenInner() {
       // Bust caches before refetch — server already wrote the new plan, but
       // our 60s staleTime would otherwise serve the old usage row.
       await refetchAll();
-      // Trigger the Skia confetti burst BEFORE the alert so the user sees
-      // the celebration through the alert backdrop (Android dialogs are
-      // dimmed but transparent over the screen).
+      // Trigger the Skia confetti burst — agora é o feedback principal de
+      // celebração (em vez do Alert nativo que quebrava continuidade visual).
       setShowConfetti(true);
       // Cascading haptics — semantic helper centralises the success+tap
       // pattern used in 2-3 places across the app.
       celebrate();
-      Alert.alert(
-        t('plan.welcomeAfterPurchaseTitle'),
-        t('plan.welcomeAfterPurchaseMessage'),
+      // Toast.success durando 5s pra dar tempo do confetti rodar e o user
+      // ler a mensagem. Combina título + mensagem na mesma linha; toast já
+      // tem peso visual brand-aware (cor, haptic, tipografia) que substitui
+      // bem o Alert.alert.
+      toast.success(
+        `${t('plan.welcomeAfterPurchaseTitle')} ${t('plan.welcomeAfterPurchaseMessage')}`,
+        { durationMs: 5000 },
       );
+      // Pico de NPS — purchase é o melhor momento pra in-app review depois
+      // do user cumular alguns sucessos. recordSuccess() incrementa o
+      // contador; maybeRequestReview() abre o nativo se passou os limites
+      // (3+ sucessos, >30 dias quietos, etc).
+      void recordSuccess().then(() => maybeRequestReview());
     },
     onError: (e) => {
       if (isUserCancelledError(e)) return;
@@ -213,12 +228,17 @@ function PlanoScreenInner() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <AppHeader />
-        <View style={[styles.content, { paddingTop: headerH + 16, paddingBottom: padBottom }]}>
+        <View style={[styles.content, { paddingTop: headerH + tokens.spacing.lg, paddingBottom: padBottom }]}>
+          {/* Hero title + subtitle */}
           <Skeleton width={180} height={28} borderRadius={8} />
-          <Skeleton width={260} height={14} borderRadius={6} style={{ marginTop: 8 }} />
-          <Skeleton width="100%" height={140} borderRadius={16} style={{ marginTop: 16 }} />
-          <Skeleton width="100%" height={260} borderRadius={16} style={{ marginTop: 16 }} />
-          <Skeleton width="100%" height={260} borderRadius={16} style={{ marginTop: 12 }} />
+          <Skeleton width={260} height={14} borderRadius={6} style={{ marginTop: tokens.spacing.sm }} />
+          {/* Usage / current plan card — header + bar + restore button */}
+          <Skeleton width="100%" height={140} borderRadius={16} style={{ marginTop: tokens.spacing.lg }} />
+          {/* 3 plan cards (essencial / pro / business) — antes só 2 viam,
+              quando o real renderiza 3 e o eye perde o lugar quando carrega. */}
+          <Skeleton width="100%" height={220} borderRadius={16} style={{ marginTop: tokens.spacing.lg }} />
+          <Skeleton width="100%" height={220} borderRadius={16} style={{ marginTop: tokens.spacing.md }} />
+          <Skeleton width="100%" height={220} borderRadius={16} style={{ marginTop: tokens.spacing.md }} />
         </View>
       </View>
     );
@@ -235,6 +255,7 @@ function PlanoScreenInner() {
       />
     )}
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1 }}
       contentContainerStyle={{ paddingTop: headerH + 16, paddingBottom: padBottom }}
       refreshControl={
@@ -259,31 +280,55 @@ function PlanoScreenInner() {
         </Animated.Text>
 
         {isFreePlan && (
-          <Animated.View
-            entering={FadeInDown.delay(150)}
-            style={[
-              styles.trialCta,
-              {
-                backgroundColor: colorScheme === 'dark'
-                  ? 'rgba(217, 70, 239, 0.10)'
-                  : 'rgba(217, 70, 239, 0.06)',
-                borderColor: Colors.brand.primary + '40',
-              },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.trialTitle, { color: Colors.brand.primary }]}>
-                {t('plan.upgradePromptTitle')}
-              </Text>
-              <Text style={[styles.trialDesc, { color: colors.textSecondary }]}>
-                {t('plan.upgradePromptDesc')}
-              </Text>
-            </View>
-            <FontAwesome
-              name="arrow-right"
-              size={14}
-              color={Colors.brand.primary}
-            />
+          <Animated.View entering={FadeInDown.delay(150)}>
+            {/* Tappable agora — antes era só uma faixa decorativa com seta
+                que sugeria interação sem entregar. Tap dispara haptic e
+                rola pra primeira planCard (o que o usuário já queria fazer
+                quando viu a seta). */}
+            <AnimatedPressable
+              haptic="tap"
+              scale={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={t('plan.upgradePromptTitle')}
+              onPress={() => {
+                const y = Math.max(0, planSectionY.current - headerH - 8);
+                scrollRef.current?.scrollTo({ y, animated: true });
+              }}
+              style={[
+                styles.trialCta,
+                {
+                  backgroundColor: colorScheme === 'dark'
+                    ? 'rgba(217, 70, 239, 0.10)'
+                    : 'rgba(217, 70, 239, 0.06)',
+                  borderColor: Colors.brand.primary + '40',
+                },
+              ]}
+            >
+              {/* Hero chip com gradient brand — ancora visualmente o CTA, dá
+                  a ele densidade de "card" em vez de só faixa de texto. */}
+              <View style={styles.trialChip}>
+                <LinearGradient
+                  colors={Colors.brand.gradientPrimary}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <FontAwesome name="bolt" size={16} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.trialTitle, { color: Colors.brand.primary }]}>
+                  {t('plan.upgradePromptTitle')}
+                </Text>
+                <Text style={[styles.trialDesc, { color: colors.textSecondary }]}>
+                  {t('plan.upgradePromptDesc')}
+                </Text>
+              </View>
+              <FontAwesome
+                name="chevron-right"
+                size={14}
+                color={Colors.brand.primary}
+              />
+            </AnimatedPressable>
           </Animated.View>
         )}
 
@@ -401,7 +446,10 @@ function PlanoScreenInner() {
           </Card>
         </Animated.View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        <Text
+          onLayout={(e) => { planSectionY.current = e.nativeEvent.layout.y; }}
+          style={[styles.sectionTitle, { color: colors.text }]}
+        >
           {isFreePlan ? t('plan.upgradeSection') : t('plan.plansSection')}
         </Text>
 
@@ -573,9 +621,19 @@ function PlanoScreenInner() {
           accessibilityLabel={t('a11y.restorePurchases')}
           style={styles.restoreButton}
         >
-          <Text style={[styles.restoreText, { color: Colors.brand.primary }]}>
-            {restoring ? t('plan.restoring') : t('plan.restorePurchases')}
-          </Text>
+          {restoring ? (
+            // Skeleton inline com a mesma altura/largura do label — antes era
+            // só swap de texto, parecia que travou. Agora o user vê movimento
+            // (shimmer wave) confirmando que algo está rodando.
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm }}>
+              <Skeleton width={18} height={18} borderRadius={9} />
+              <Skeleton width={140} height={14} borderRadius={6} />
+            </View>
+          ) : (
+            <Text style={[styles.restoreText, { color: Colors.brand.primary }]}>
+              {t('plan.restorePurchases')}
+            </Text>
+          )}
         </AnimatedPressable>
 
         <View style={styles.securityBadge}>
@@ -600,87 +658,95 @@ export default function PlanoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, gap: 14 },
-  title: { fontSize: 28, fontWeight: '700' },
+  content: { padding: tokens.spacing.xl, gap: tokens.radii.lg },
+  title: { fontSize: tokens.fontSize.displayLg, fontWeight: tokens.fontWeight.bold },
   heroRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline' },
   // Why marginTop:-2 instead of -8: -8 was overlapping the title's descenders.
   // The marketing site uses ~4px between hero and subtitle.
-  subtitle: { fontSize: 14, marginTop: -2, marginBottom: 4 },
-  usageCard: { gap: 16 },
-  planHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  subtitle: { fontSize: tokens.fontSize.base, marginTop: -2, marginBottom: tokens.spacing.xs },
+  usageCard: { gap: tokens.spacing.lg },
+  planHeader: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.md },
   planHeaderText: { flex: 1, minWidth: 0 },
-  planName: { fontSize: 20, fontWeight: '700' },
-  creditsText: { fontSize: 12, marginTop: 2, fontVariant: ['tabular-nums'] },
-  bars: { gap: 12 },
+  planName: { fontSize: tokens.fontSize.xxxl, fontWeight: tokens.fontWeight.bold },
+  creditsText: { fontSize: tokens.fontSize.sm, marginTop: 2, fontVariant: ['tabular-nums'] },
+  bars: { gap: tokens.spacing.md },
   barLabel: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  barText: { fontSize: 12 },
+  // tabular-nums on the bar label too — pairs with barValue so labels like
+  // "Campanhas" and the numeric value share the same baseline rhythm.
+  barText: { fontSize: tokens.fontSize.sm, fontVariant: ['tabular-nums'] },
   // tabular-nums keeps "12/30" → "13/30" from jiggling when the digit changes.
-  barValue: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  barValue: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
   barTrack: { height: 10, borderRadius: 5, borderCurve: 'continuous', overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 5 },
   trialCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: tokens.spacing.md,
     paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    borderCurve: 'continuous',
+    paddingHorizontal: tokens.spacing.lg,
+    ...rounded(tokens.radii.xl),
     borderWidth: 1,
-    marginTop: 4,
+    marginTop: tokens.spacing.xs,
   },
-  trialTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
+  trialChip: {
+    width: 36,
+    height: 36,
+    ...rounded(tokens.radii.md),
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trialTitle: { fontSize: tokens.fontSize.base, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
   trialDesc: {
     fontSize: 12.5,
     marginTop: 2,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 16,
+    lineHeight: tokens.spacing.lg,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginTop: 8 },
-  planCard: { gap: 8 },
+  sectionTitle: { fontSize: tokens.fontSize.xxl, fontWeight: tokens.fontWeight.bold, marginTop: tokens.spacing.sm },
+  planCard: { gap: tokens.spacing.sm },
   /* Planos abaixo do atual ficam dim 50% — paridade com /plano do site.
      Não faz sentido oferecer downgrade pelo botão, então também desabilitamos
      o tap (logic acima) e mudamos o título do botão. */
   planCardDim: { opacity: 0.5 },
-  currentBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  currentBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  planCardName: { fontSize: 20, fontWeight: '700' },
-  planCardPrice: { fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  planCardPeriod: { fontSize: 13, fontWeight: '400' },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  featureText: { fontSize: 14 },
+  currentBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: tokens.spacing.xs, borderRadius: tokens.radii.md },
+  currentBadgeText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold },
+  planCardName: { fontSize: tokens.fontSize.xxxl, fontWeight: tokens.fontWeight.bold },
+  planCardPrice: { fontSize: tokens.fontSize.display, fontWeight: tokens.fontWeight.black, fontVariant: ['tabular-nums'] },
+  planCardPeriod: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.regular },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm },
+  featureText: { fontSize: tokens.fontSize.base },
   restoreButton: {
     alignSelf: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.xl,
     minHeight: 48,
     justifyContent: 'center',
   },
-  restoreText: { fontSize: 14, fontWeight: '700' },
+  restoreText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
   topTierBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: tokens.spacing.md,
     padding: 14,
-    borderRadius: 14,
-    borderCurve: 'continuous',
+    ...rounded(tokens.radii.lg),
     borderWidth: 1,
-    marginTop: 8,
+    marginTop: tokens.spacing.sm,
   },
-  topTierEmoji: { fontSize: 28 },
-  topTierTitle: { fontSize: 14, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
+  topTierEmoji: { fontSize: tokens.fontSize.displayLg },
+  topTierTitle: { fontSize: tokens.fontSize.base, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
   topTierDesc: {
     fontSize: 12.5,
     marginTop: 2,
     fontFamily: 'Inter_400Regular',
-    lineHeight: 16,
+    lineHeight: tokens.spacing.lg,
   },
   securityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingTop: 8,
+    paddingTop: tokens.spacing.sm,
   },
-  securityText: { fontSize: 12, fontWeight: '500' },
+  securityText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium },
 });

@@ -37,6 +37,7 @@ import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { tokens, rounded } from '@/lib/theme/tokens';
 import { apiGet, apiPatch } from '@/lib/api';
 import { qk } from '@/lib/query-client';
 import { CampaignListResponse } from '@/lib/schemas';
@@ -174,7 +175,7 @@ function ContextMenuButton({
         }}
         hitSlop={10}
         accessibilityRole="button"
-        accessibilityLabel="Mais ações"
+        accessibilityLabel={t('history.menuMoreActions')}
         style={styles.menuTrigger}
       >
         <FontAwesome name="ellipsis-v" size={16} color={textColor} />
@@ -315,12 +316,15 @@ function HistoricoScreenInner() {
 
   useFocusEffect(
     useCallback(() => {
-      refetch();
+      // Antes: refetch() em todo focus — flash de skeleton mesmo com data
+      // fresh (o staleTime de 30s era ignorado). Agora deixa o tanstack-query
+      // decidir: se os dados estão stale, ele refetch sozinho ao montar; se
+      // não, mantém o cache. Sem flicker quando o user só pula entre tabs.
       // Stamp "seen now" so the tab badge clears. Cleared on every focus —
       // any new campaigns that complete while this tab is active won't show
       // a badge until the user navigates away and the next one finishes.
       markHistoricoSeen();
-    }, [refetch]),
+    }, []),
   );
 
   const onRefresh = useCallback(() => {
@@ -694,12 +698,15 @@ function HistoricoScreenInner() {
                         const score = c.campaign_scores?.[0]?.nota_geral;
                         if (c.status !== 'completed' || score == null) return null;
                         // Cores por banda: ≥8 verde, 6–7.99 âmbar, <6 vermelho.
+                        // Foreground via Colors.brand pra ficar atrelado ao
+                        // ramp da paleta; background/border permanecem rgba()
+                        // pra controle fino do alpha (14% bg, 32% border).
                         const band =
                           score >= 8
-                            ? { bg: 'rgba(34,197,94,0.14)', border: 'rgba(34,197,94,0.32)', fg: '#16a34a' }
+                            ? { bg: 'rgba(34,197,94,0.14)', border: 'rgba(34,197,94,0.32)', fg: Colors.brand.success }
                             : score >= 6
-                              ? { bg: 'rgba(245,158,11,0.14)', border: 'rgba(245,158,11,0.32)', fg: '#d97706' }
-                              : { bg: 'rgba(239,68,68,0.14)', border: 'rgba(239,68,68,0.32)', fg: '#dc2626' };
+                              ? { bg: 'rgba(245,158,11,0.14)', border: 'rgba(245,158,11,0.32)', fg: Colors.brand.warning }
+                              : { bg: 'rgba(239,68,68,0.14)', border: 'rgba(239,68,68,0.32)', fg: Colors.brand.error };
                         return (
                           <View
                             style={[
@@ -810,7 +817,7 @@ function HistoricoScreenInner() {
                 onPress={() => setSearchQuery('')}
                 hitSlop={10}
                 accessibilityRole="button"
-                accessibilityLabel="Limpar busca"
+                accessibilityLabel={t('history.searchClear')}
               >
                 <FontAwesome name="times-circle" size={14} color={colors.textSecondary} />
               </Pressable>
@@ -1012,67 +1019,65 @@ export default function HistoricoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 16, gap: 2 },
-  title: { fontSize: 28, fontWeight: '700' },
+  header: { paddingHorizontal: tokens.spacing.xl, paddingTop: tokens.spacing.lg, gap: 2 },
+  title: { fontSize: tokens.fontSize.displayLg, fontWeight: tokens.fontWeight.bold },
   // tabular-nums on the running campaign count so the number doesn't reflow
   // mid-fetch when the value updates.
-  count: { fontSize: 14, fontVariant: ['tabular-nums'] },
+  count: { fontSize: tokens.fontSize.base, fontVariant: ['tabular-nums'] },
   // ─── Search bar ─────────────────────────────────────────────
-  searchRow: { paddingHorizontal: 20, paddingTop: 8 },
+  searchRow: { paddingHorizontal: tokens.spacing.xl, paddingTop: tokens.spacing.sm },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: tokens.spacing.md,
     minHeight: 44,
-    borderRadius: 12,
-    borderCurve: 'continuous',
+    ...rounded(tokens.radii.md),
     borderWidth: 1,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: tokens.fontSize.base,
     fontFamily: 'Inter_500Medium',
     paddingVertical: 0,
     minHeight: 44,
   },
   // ─── Filters ─────────────────────────────────────────────
-  filters: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 12, gap: 8 },
+  filters: { flexDirection: 'row', paddingHorizontal: tokens.spacing.xl, paddingTop: tokens.spacing.md, gap: tokens.spacing.sm },
   filterBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderCurve: 'continuous',
+    paddingHorizontal: tokens.spacing.lg,
+    paddingVertical: tokens.spacing.md,
+    ...rounded(tokens.radii.xxl),
     borderWidth: 1,
     minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterText: { fontSize: 13, fontWeight: '600' },
-  list: { padding: 16 },
+  filterText: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.semibold },
+  list: { padding: tokens.spacing.lg },
   // ─── Section headers (FlashList interleaved) ─────────────
   sectionHeader: {
     paddingTop: 14,
     paddingBottom: 6,
-    paddingHorizontal: 4,
+    paddingHorizontal: tokens.spacing.xs,
   },
   sectionHeaderText: {
-    fontSize: 11,
+    fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_700Bold',
     letterSpacing: 1.2,
   },
   // ─── Card ─────────────────────────────────────────────────
   card: {
-    padding: 12,
+    padding: tokens.spacing.md,
     marginBottom: 10,
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: 14,
+    borderRadius: tokens.radii.lg,
     borderCurve: 'continuous',
     borderWidth: 1,
     borderColor: 'rgba(217,70,239,0.18)',
     shadowColor: '#0c0410',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: tokens.spacing.xs },
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 2,
@@ -1085,7 +1090,7 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 5,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.md },
   thumbWrap: { width: 60, height: 60, position: 'relative' },
   thumb: {
     width: 60,
@@ -1105,13 +1110,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.primary,
     paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
     borderWidth: 2,
     borderColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
   },
-  thumbCountText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  thumbCountText: { color: '#fff', fontSize: 9, fontWeight: tokens.fontWeight.black },
   starBtn: {
     width: 36,
     height: 36,
@@ -1131,49 +1136,49 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(120,120,120,0.08)',
   },
   info: { flex: 1, gap: 6, justifyContent: 'center' },
-  headline: { fontSize: 15, fontWeight: '700', lineHeight: 20 },
+  headline: { fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.bold, lineHeight: tokens.spacing.xl },
   // ─── Status pill (substitui o statusDot 7px) ─────────────
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: tokens.spacing.xs,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
     borderWidth: 1,
   },
-  statusPillText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.2 },
+  statusPillText: { fontSize: 10, fontWeight: tokens.fontWeight.bold, letterSpacing: 0.2 },
   // ─── Objective / trial pill ─────────────────────────────
   objectivePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
+    gap: tokens.spacing.xs,
+    paddingHorizontal: tokens.spacing.sm,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
     borderWidth: 1,
   },
-  objectiveEmoji: { fontSize: 11 },
-  objectiveLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  metaText: { fontSize: 12, fontWeight: '500' },
+  objectiveEmoji: { fontSize: tokens.fontSize.xs },
+  objectiveLabel: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, letterSpacing: 0.2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm, flexWrap: 'wrap' },
+  metaText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium },
   // ─── Empty / error states ───────────────────────────────
-  empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 24, gap: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
-  emptyDesc: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: tokens.spacing.xxl, gap: tokens.spacing.sm },
+  emptyTitle: { fontSize: tokens.fontSize.xxl, fontWeight: tokens.fontWeight.semibold, textAlign: 'center' },
+  emptyDesc: { fontSize: tokens.fontSize.base, textAlign: 'center', lineHeight: tokens.spacing.xl },
   emptyCtaButton: {
     marginTop: 18,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
     overflow: 'hidden',
     minHeight: 48,
   },
   emptyCtaInner: {
-    paddingHorizontal: 24,
+    paddingHorizontal: tokens.spacing.xxl,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyCtaText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  emptyCtaText: { color: '#fff', fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.bold },
   // ─── Context menu (3-dots) ──────────────────────────────
   menuTrigger: {
     width: 32,
@@ -1186,34 +1191,32 @@ const styles = StyleSheet.create({
     top: 36,
     right: 0,
     minWidth: 170,
-    borderRadius: 12,
-    borderCurve: 'continuous',
+    ...rounded(tokens.radii.md),
     borderWidth: 1,
     overflow: 'hidden',
-    paddingVertical: 4,
+    paddingVertical: tokens.spacing.xs,
     zIndex: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: tokens.spacing.sm },
     shadowOpacity: 0.32,
-    shadowRadius: 16,
+    shadowRadius: tokens.spacing.lg,
     elevation: 12,
   },
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: tokens.spacing.md,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: tokens.spacing.md,
     minHeight: 44,
   },
-  menuLabel: { fontSize: 14, fontWeight: '600' },
+  menuLabel: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.semibold },
   // ─── Swipe action surfaces ──────────────────────────────
   swipeAction: {
     width: 80,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
-    borderRadius: 14,
-    borderCurve: 'continuous',
+    ...rounded(tokens.radii.lg),
   },
 });
