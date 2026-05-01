@@ -61,8 +61,11 @@ export class TabErrorBoundary extends React.Component<Props, State> {
           Toca em "Tentar de novo" — as outras abas continuam funcionando
           normalmente.
         </Text>
-        {__DEV__ && (
-          <Text style={styles.errorText} numberOfLines={4} selectable>
+        {/* Mensagem visível em release enquanto Sentry DSN não está
+            configurado nas builds preview. Reverter pra `__DEV__` depois
+            que o EXPO_PUBLIC_SENTRY_DSN entrar no eas.json. */}
+        {!!this.state.error.message && (
+          <Text style={styles.errorText} numberOfLines={8} selectable>
             {this.state.error.message}
           </Text>
         )}
