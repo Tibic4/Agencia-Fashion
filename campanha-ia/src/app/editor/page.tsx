@@ -78,14 +78,14 @@ export default function StandaloneEditorPage() {
                 Cria<span className="text-fuchsia-400">Look</span>
               </span>
             </div>
-            <p className="text-sm text-[#71717A] mt-3">Editor de Post</p>
+            <p className="text-sm text-muted-foreground mt-3">Editor de Post</p>
           </div>
 
           {/* Password input */}
           <div className="space-y-2">
             <label
               htmlFor="editor-password"
-              className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider"
+              className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
             >
               Senha de acesso
             </label>
@@ -97,7 +97,7 @@ export default function StandaloneEditorPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite a senha…"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:border-fuchsia-500/50 transition placeholder:text-[#52525B]"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white outline-none focus:border-fuchsia-500/50 transition placeholder:text-muted-foreground"
             />
             {error && (
               <p className="text-xs text-red-400 animate-fade-in">{error}</p>
@@ -133,10 +133,10 @@ export default function StandaloneEditorPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-lg sm:text-2xl font-black text-[#FAFAFA] tracking-tight">
+          <h1 className="text-lg sm:text-2xl font-black text-foreground tracking-tight">
             Editor de Post
           </h1>
-          <p className="text-xs sm:text-sm text-[#A1A1AA] mt-0.5">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Monte posts prontos para Instagram — feed 4:5 ou stories 9:16
           </p>
         </div>

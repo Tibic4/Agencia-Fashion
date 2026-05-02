@@ -109,9 +109,9 @@ function StatCard({ label, value, subtitle, color }: { label: string; value: str
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
       
       <div className="relative z-10">
-        <p className="text-[13px] font-medium text-[#A1A1AA] mb-1">{label}</p>
+        <p className="text-[13px] font-medium text-muted-foreground mb-1">{label}</p>
         <p className={`text-xl sm:text-3xl font-black tracking-tight ${color}`}>{value}</p>
-        {subtitle && <p className="text-[11px] uppercase tracking-wider text-[#71717A] mt-2 font-medium">{subtitle}</p>}
+        {subtitle && <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-2 font-medium">{subtitle}</p>}
       </div>
     </div>
   );
@@ -156,16 +156,16 @@ export default async function AdminDashboard() {
     <div className="space-y-4 sm:space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-[#FAFAFA] tracking-tight">Dashboard Overview</h1>
-        <p className="text-sm font-medium text-[#A1A1AA] mt-1">Métricas e performance do ecossistema CriaLook</p>
+        <h1 className="text-2xl font-black text-foreground tracking-tight">Dashboard Overview</h1>
+        <p className="text-sm font-medium text-muted-foreground mt-1">Métricas e performance do ecossistema CriaLook</p>
       </div>
 
       {/* KPI Cards — Linha 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Lojas cadastradas" value={m.totalStores} subtitle={`${m.activeStores} ativas · ${m.paidStores} pagantes`} color="text-[#FAFAFA]" />
+        <StatCard label="Lojas cadastradas" value={m.totalStores} subtitle={`${m.activeStores} ativas · ${m.paidStores} pagantes`} color="text-foreground" />
         <StatCard label="MRR (Recorrência)" value={`R$ ${m.mrr.toFixed(2)}`} subtitle={`+ R$ ${m.creditStats.totalRevenue.toFixed(2)} avulsos`} color="text-[#34D399]" />
         <StatCard label="Campanhas no mês" value={m.campaignsThisMonth} subtitle={`${successRate}% sucesso`} color="text-[#FBBF24]" />
-        <StatCard label="Custo API (mês)" value={`R$ ${m.apiCostBrl.toFixed(2)}`} subtitle={`Margem: R$ ${(totalMrrCredits - m.apiCostBrl).toFixed(2)}`} color="text-[#FAFAFA]" />
+        <StatCard label="Custo API (mês)" value={`R$ ${m.apiCostBrl.toFixed(2)}`} subtitle={`Margem: R$ ${(totalMrrCredits - m.apiCostBrl).toFixed(2)}`} color="text-foreground" />
       </div>
 
       {/* Vendas por Plano + Créditos Avulsos */}
@@ -174,7 +174,7 @@ export default async function AdminDashboard() {
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/5">
-            <h2 className="text-[13px] font-bold text-[#FAFAFA] uppercase tracking-widest">Distribuição por Plano</h2>
+            <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest">Distribuição por Plano</h2>
           </div>
           <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 relative z-10">
             {Object.entries(m.planCounts)
@@ -187,8 +187,8 @@ export default async function AdminDashboard() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[13px] font-semibold text-[#E4E4E7]">{plan.display}</span>
                     <div className="text-right flex items-baseline gap-2">
-                      <span className="text-sm font-black text-[#FAFAFA]">{plan.count} <span className="text-[10px] font-medium text-[#71717A]">lojas</span></span>
-                      <span className="text-[11px] font-medium text-[#A1A1AA] w-16 text-right">
+                      <span className="text-sm font-black text-foreground">{plan.count} <span className="text-[10px] font-medium text-muted-foreground">lojas</span></span>
+                      <span className="text-[11px] font-medium text-muted-foreground w-16 text-right">
                         {plan.price > 0 ? `R$ ${(plan.count * plan.price).toFixed(0)}` : "free"}
                       </span>
                     </div>
@@ -196,13 +196,13 @@ export default async function AdminDashboard() {
                   <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden shadow-[inset_0_1px_rgba(0,0,0,0.5)]">
                     <div className={`${barGradient} h-1.5 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${Math.max(pct, 2)}%` }} />
                   </div>
-                  <p className="text-[10px] font-medium text-[#71717A] mt-1.5">{pct.toFixed(1)}% da base ativa</p>
+                  <p className="text-[10px] font-medium text-muted-foreground mt-1.5">{pct.toFixed(1)}% da base ativa</p>
                 </div>
               );
             })}
             <div className="border-t border-white/5 pt-4 mt-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-wider">MRR Fixado</span>
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">MRR Fixado</span>
                 <span className="text-lg font-black text-[#34D399]">R$ {m.mrr.toFixed(2)}</span>
               </div>
             </div>
@@ -213,17 +213,17 @@ export default async function AdminDashboard() {
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden relative flex flex-col">
           <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/5">
-            <h2 className="text-[13px] font-bold text-[#FAFAFA] uppercase tracking-widest">Marketplace de Créditos</h2>
+            <h2 className="text-[13px] font-bold text-foreground uppercase tracking-widest">Marketplace de Créditos</h2>
           </div>
           <div className="p-4 sm:p-6 flex-1 flex flex-col relative z-10">
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-3 sm:p-5 text-center">
-                <p className="text-xl sm:text-3xl font-black text-[#FAFAFA]">{m.creditStats.totalPurchases}</p>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-[#71717A] mt-1">Transações</p>
+                <p className="text-xl sm:text-3xl font-black text-foreground">{m.creditStats.totalPurchases}</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mt-1">Transações</p>
               </div>
               <div className="bg-[#121212] border border-white/[0.03] shadow-[inset_0_1px_rgba(255,255,255,0.02)] rounded-2xl p-3 sm:p-5 text-center">
                 <p className="text-xl sm:text-3xl font-black text-[#FBBF24]">R$ {m.creditStats.totalRevenue.toFixed(0)}</p>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-[#71717A] mt-1">Volume R$</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mt-1">Volume R$</p>
               </div>
             </div>
 
@@ -233,7 +233,7 @@ export default async function AdminDashboard() {
                   <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/[0.05]">
                     <span className="text-[14px]">📝</span>
                   </div>
-                  <span className="text-[13px] font-semibold text-[#A1A1AA]">Campanhas Extras</span>
+                  <span className="text-[13px] font-semibold text-muted-foreground">Campanhas Extras</span>
                 </div>
                 <span className="text-[13px] font-black text-[#FBBF24]">+{m.creditStats.campaigns}</span>
               </div>
@@ -243,7 +243,7 @@ export default async function AdminDashboard() {
                   <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/[0.05]">
                     <span className="text-[14px]">🧍</span>
                   </div>
-                  <span className="text-[13px] font-semibold text-[#A1A1AA]">Modelos Extras</span>
+                  <span className="text-[13px] font-semibold text-muted-foreground">Modelos Extras</span>
                 </div>
                 <span className="text-[13px] font-black text-[#D946EF]">+{m.creditStats.models}</span>
               </div>
@@ -253,7 +253,7 @@ export default async function AdminDashboard() {
                   <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/[0.05]">
                     <span className="text-[14px]">🔄</span>
                   </div>
-                  <span className="text-[13px] font-semibold text-[#A1A1AA]">Regenerações</span>
+                  <span className="text-[13px] font-semibold text-muted-foreground">Regenerações</span>
                 </div>
                 <span className="text-[13px] font-black text-[#60A5FA]">+{m.creditStats.regenerations}</span>
               </div>
@@ -262,10 +262,10 @@ export default async function AdminDashboard() {
             <div className="border-t border-white/5 pt-4 mt-auto">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[11px] font-bold text-[#A1A1AA] uppercase tracking-wider block">Gross Revenue (Mês)</span>
-                  <p className="text-[10px] text-[#71717A] mt-0.5">Assinaturas + Avulsos</p>
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">Gross Revenue (Mês)</span>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Assinaturas + Avulsos</p>
                 </div>
-                <span className="text-xl font-black text-[#FAFAFA]">R$ {(m.mrr + m.creditStats.totalRevenue).toFixed(2)}</span>
+                <span className="text-xl font-black text-foreground">R$ {(m.mrr + m.creditStats.totalRevenue).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -277,7 +277,7 @@ export default async function AdminDashboard() {
         <StatCard label="Conversão Funil" value={m.totalStores > 0 ? `${((m.paidStores / m.totalStores) * 100).toFixed(1)}%` : "0%"} subtitle="free → pagante" color="text-[#D946EF]" />
         <StatCard label="ARPU (Ticket Médio)" value={m.paidStores > 0 ? `R$ ${(m.mrr / m.paidStores).toFixed(2)}` : "—"} subtitle="por loja ativa" color="text-[#FBBF24]" />
         <StatCard label="Intensidade de Uso" value={m.activeStores > 0 ? (m.campaignsThisMonth / m.activeStores).toFixed(1) : "0"} subtitle="campanhas/loja (mês)" color="text-[#60A5FA]" />
-        <StatCard label="Erros IA" value={m.pipelineErrors + m.failedThisMonth} subtitle={m.pipelineErrors > 0 ? Object.entries(m.pipelineErrorCounts).map(([k,v]) => `${k}: ${v}`).join(' · ') : 'sem erros'} color={m.pipelineErrors + m.failedThisMonth > 0 ? "text-[#F87171]" : "text-[#71717A]"} />
+        <StatCard label="Erros IA" value={m.pipelineErrors + m.failedThisMonth} subtitle={m.pipelineErrors > 0 ? Object.entries(m.pipelineErrorCounts).map(([k,v]) => `${k}: ${v}`).join(' · ') : 'sem erros'} color={m.pipelineErrors + m.failedThisMonth > 0 ? "text-[#F87171]" : "text-muted-foreground"} />
       </div>
 
       {/* Two columns — Recent activity */}
@@ -285,12 +285,12 @@ export default async function AdminDashboard() {
         {/* Recent Campaigns */}
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-            <h2 className="text-[12px] font-bold text-[#FAFAFA] uppercase tracking-widest">Activity Feed</h2>
+            <h2 className="text-[12px] font-bold text-foreground uppercase tracking-widest">Activity Feed</h2>
             <a href="/admin/campanhas" className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Ver Full Log →</a>
           </div>
           <div className="divide-y divide-white/5 border-t-0">
             {m.recentCampaigns.length === 0 ? (
-              <div className="px-6 py-16 text-center text-[#71717A] text-[13px] font-medium">
+              <div className="px-6 py-16 text-center text-muted-foreground text-[13px] font-medium">
                 Nenhum evento registrado.
               </div>
             ) : (
@@ -298,7 +298,7 @@ export default async function AdminDashboard() {
                 <div key={campaign.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[48px] sm:min-h-[56px]">
                   <div>
                     <p className="text-[13px] font-semibold text-[#E4E4E7]">{(campaign.stores as Record<string, string>)?.name || "Store desativada"}</p>
-                    <p className="text-[11px] text-[#71717A] font-medium mt-0.5">
+                    <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
                       {formatDateBR(campaign.created_at as string)}
                     </p>
                   </div>
@@ -312,12 +312,12 @@ export default async function AdminDashboard() {
         {/* Recent Stores */}
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-            <h2 className="text-[12px] font-bold text-[#FAFAFA] uppercase tracking-widest">Latest Client Onboards</h2>
+            <h2 className="text-[12px] font-bold text-foreground uppercase tracking-widest">Latest Client Onboards</h2>
             <a href="/admin/clientes" className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Database →</a>
           </div>
           <div className="divide-y divide-white/5 border-t-0">
             {m.recentStores.length === 0 ? (
-              <div className="px-6 py-16 text-center text-[#71717A] text-[13px] font-medium">
+              <div className="px-6 py-16 text-center text-muted-foreground text-[13px] font-medium">
                 Nenhuma conta criada.
               </div>
             ) : (
@@ -328,8 +328,8 @@ export default async function AdminDashboard() {
                       {(store.name as string)?.charAt(0)?.toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-[13px] font-semibold text-[#FAFAFA]">{store.name as string}</p>
-                      <p className="text-[11px] text-[#71717A] font-medium mt-0.5">{store.segment_primary as string} · {(store.plans as Record<string, string>)?.display_name || "Free Tier"}</p>
+                      <p className="text-[13px] font-semibold text-foreground">{store.name as string}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{store.segment_primary as string} · {(store.plans as Record<string, string>)?.display_name || "Free Tier"}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">

@@ -44,7 +44,7 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen bg-[#050505] text-[#FAFAFA] selection:bg-fuchsia-500/30">
+    <div className="flex min-h-screen bg-[#050505] text-foreground selection:bg-fuchsia-500/30">
       {/* Sidebar — Desktop */}
       <aside className="hidden lg:flex flex-col w-[260px] fixed inset-y-0 left-0 z-30 bg-[#050505] border-r border-white/5">
         {/* Logo */}
@@ -54,7 +54,7 @@ export default function AdminLayout({
           </div>
           <span className="text-lg font-bold tracking-tight">
             Cria<span className="text-fuchsia-400">Look</span>
-            <span className="text-[10px] ml-1.5 uppercase tracking-widest text-[#A1A1AA] font-semibold">Admin</span>
+            <span className="text-[10px] ml-1.5 uppercase tracking-widest text-muted-foreground font-semibold">Admin</span>
           </span>
         </div>
 
@@ -70,7 +70,7 @@ export default function AdminLayout({
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all min-h-[44px] ${
                   isActive
                     ? "text-white bg-white/5 shadow-[inset_0_1px_rgba(255,255,255,0.05)] border-l-[2px] border-fuchsia-400"
-                    : "text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-white/[0.02] border-l-[2px] border-transparent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.02] border-l-[2px] border-transparent"
                 }`}
               >
                 <div className={isActive ? "text-fuchsia-400" : "opacity-70"}>{item.icon}</div>
@@ -84,7 +84,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-white/5 space-y-2">
           <Link
             href="/gerar"
-            className="flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-medium text-[#A1A1AA] hover:text-white hover:bg-white/5 transition min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition min-h-[44px]"
           >
             <span className="opacity-70"><IconArrowLeft /></span>
             Voltar ao painel cliente
@@ -93,7 +93,7 @@ export default function AdminLayout({
             <UserButton />
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-semibold truncate">Administrador</p>
-              <p className="text-[10px] uppercase tracking-widest text-[#71717A] truncate">System</p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground truncate">System</p>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ export default function AdminLayout({
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/gerar" className="text-xs text-[#A1A1AA] hover:text-white font-medium flex items-center gap-1 transition">
+          <Link href="/gerar" className="text-xs text-muted-foreground hover:text-white font-medium flex items-center gap-1 transition">
             Voltar
           </Link>
           <UserButton />
@@ -129,7 +129,7 @@ export default function AdminLayout({
               className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] min-h-[48px] justify-center shrink-0 ${
                 isActive 
                   ? "bg-white/10 text-white shadow-[inset_0_1px_rgba(255,255,255,0.05)]" 
-                  : "text-[#71717A] hover:text-white"
+                  : "text-muted-foreground hover:text-white"
               }`}
             >
               <span className={isActive ? "text-fuchsia-400" : ""}>{item.icon}</span>

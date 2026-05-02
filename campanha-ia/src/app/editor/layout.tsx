@@ -12,7 +12,7 @@ export default function EditorLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#050505] text-[#FAFAFA] selection:bg-fuchsia-500/30">
+    <div className="min-h-screen bg-[#050505] text-foreground selection:bg-fuchsia-500/30">
       <main className="w-full min-h-screen">
         {children}
       </main>
