@@ -32,7 +32,7 @@ export default function DpoPage() {
         <div className="container max-w-3xl">
           {/* Header */}
           <div className="mb-10 md:mb-14">
-            <div className="badge badge-brand mb-4 inline-flex text-[11px]">Legal · LGPD</div>
+            <div className="badge badge-brand mb-4 inline-flex text-xs">Legal · LGPD</div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">
               Encarregado pelo Tratamento de Dados Pessoais (DPO)
             </h1>

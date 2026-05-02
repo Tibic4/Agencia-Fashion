@@ -141,7 +141,7 @@ export default function StandaloneEditorPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-pink-400 to-fuchsia-600 text-white text-[10px] font-black">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-pink-400 to-fuchsia-600 text-white text-2xs font-black">
             A
           </div>
           <span className="hidden sm:inline text-sm font-bold tracking-tight">

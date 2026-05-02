@@ -508,7 +508,7 @@ export default function InstagramEditor() {
             {/* Size — horizontal scroll */}
             <div className="overflow-x-auto pb-1 -mx-1 px-1">
               <div className="flex gap-1.5 w-max items-center">
-                <span className="text-[10px] text-muted-foreground shrink-0 mr-1">Tamanho</span>
+                <span className="text-2xs text-muted-foreground shrink-0 mr-1">Tamanho</span>
                 {FONT_SIZES.map(s => (
                   <button key={s} onClick={() => patchSelected({ fontSize: s })}
                     className={`shrink-0 w-10 h-9 rounded-xl text-xs font-bold transition ${selected.fontSize === s ? "bg-fuchsia-500/30 text-fuchsia-200" : "bg-white/5 text-muted-foreground active:bg-white/10"}`}>{s}</button>
@@ -541,7 +541,7 @@ export default function InstagramEditor() {
             {/* Colors — horizontal scroll */}
             <div className="overflow-x-auto pb-1 -mx-1 px-1">
               <div className="flex gap-1.5 w-max items-center">
-                <span className="text-[10px] text-muted-foreground shrink-0 mr-1">Cor</span>
+                <span className="text-2xs text-muted-foreground shrink-0 mr-1">Cor</span>
                 {BRAND_COLORS.map(c => (
                   <button key={c} onClick={() => patchSelected({ fill: c })} title={c}
                     className={`shrink-0 w-8 h-8 rounded-lg transition ${selected.fill === c ? "ring-2 ring-fuchsia-400 ring-offset-1 ring-offset-[#0A0A0A] scale-110" : "active:scale-110"}`}
@@ -553,7 +553,7 @@ export default function InstagramEditor() {
             {/* Contorno */}
             <div className="overflow-x-auto pb-1 -mx-1 px-1">
               <div className="flex gap-1.5 w-max items-center">
-                <span className="text-[10px] text-muted-foreground shrink-0 mr-1">Contorno</span>
+                <span className="text-2xs text-muted-foreground shrink-0 mr-1">Contorno</span>
                 {["", "#000000", "#FFFFFF", "#D946EF", "#DC2626", "#F59E0B"].map(c => (
                   <button key={c} onClick={() => patchSelected({ stroke: c, strokeWidth: c ? 3 : 0 })}
                     className={`shrink-0 w-8 h-8 rounded-lg transition border ${selected.stroke === c ? "ring-2 ring-fuchsia-400 ring-offset-1 ring-offset-[#0A0A0A]" : ""} ${!c ? "border-white/20 text-xs text-muted-foreground" : "border-white/5"}`}
@@ -566,7 +566,7 @@ export default function InstagramEditor() {
             {/* Badge fundo */}
             <div className="overflow-x-auto pb-1 -mx-1 px-1">
               <div className="flex gap-1.5 w-max items-center">
-                <span className="text-[10px] text-muted-foreground shrink-0 mr-1">Badge</span>
+                <span className="text-2xs text-muted-foreground shrink-0 mr-1">Badge</span>
                 <button onClick={() => patchSelected({ bgColor: "" })}
                   className={`shrink-0 w-8 h-8 rounded-lg border text-xs text-muted-foreground transition ${!selected.bgColor ? "ring-2 ring-fuchsia-400 ring-offset-1 ring-offset-[#0A0A0A] border-white/20" : "border-white/10"}`}>✕</button>
                 {["#000000", "#D946EF", "#DC2626", "#059669", "#2563EB", "#F59E0B", "rgba(0,0,0,0.6)"].map(c => (
@@ -616,7 +616,7 @@ export default function InstagramEditor() {
                 <div className="flex flex-wrap gap-1.5">
                   {PRESET_PHRASES.map((p, i) => (
                     <button key={i} onClick={() => addText({ text: p.text, fontSize: p.fontSize, bgColor: p.bgColor ?? "", bgPadding: p.bgColor ? 14 : 16 })}
-                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-white/5 text-muted-foreground hover:text-white active:bg-fuchsia-500/20 transition border border-transparent active:border-fuchsia-500/30 truncate max-w-full">
+                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-muted-foreground hover:text-white active:bg-fuchsia-500/20 transition border border-transparent active:border-fuchsia-500/30 truncate max-w-full">
                       {p.text}
                     </button>
                   ))}
@@ -682,10 +682,10 @@ export default function InstagramEditor() {
                           className={`py-2 rounded-xl text-sm font-bold transition border ${logoPos === v ? "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" : "bg-white/5 text-muted-foreground border-transparent"}`}>{icon}</button>
                       ))}
                     </div>
-                    <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
                       Opacidade <input type="range" min={10} max={100} value={Math.round(logoOpacity * 100)} onChange={e => setLogoOpacity(Number(e.target.value) / 100)} className="flex-1 h-1 accent-fuchsia-500" /> {Math.round(logoOpacity * 100)}%
                     </label>
-                    <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
                       Tamanho <input type="range" min={5} max={40} value={Math.round(logoScale * 100)} onChange={e => setLogoScale(Number(e.target.value) / 100)} className="flex-1 h-1 accent-fuchsia-500" /> {Math.round(logoScale * 100)}%
                     </label>
                   </div>
@@ -695,7 +695,7 @@ export default function InstagramEditor() {
           )}
           {tab === "templates" && (
             <Section title="Layouts prontos">
-              <p className="text-[11px] text-muted-foreground mb-2">Aplica textos e visual. Fotos são mantidas.</p>
+              <p className="text-xs text-muted-foreground mb-2">Aplica textos e visual. Fotos são mantidas.</p>
               <div className="space-y-2">
                 {TEMPLATES.map((tpl, i) => (
                   <button key={i} onClick={() => applyTemplate(tpl)}
@@ -704,7 +704,7 @@ export default function InstagramEditor() {
                       <span className="text-xl">{tpl.icon}</span>
                       <div>
                         <p className="text-sm font-bold text-foreground">{tpl.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{tpl.format === "feed" ? "Feed" : "Stories"} · {tpl.mode === "split" ? "Antes/Depois" : "1 foto"} · {tpl.texts.length} textos</p>
+                        <p className="text-xs text-muted-foreground">{tpl.format === "feed" ? "Feed" : "Stories"} · {tpl.mode === "split" ? "Antes/Depois" : "1 foto"} · {tpl.texts.length} textos</p>
                       </div>
                     </div>
                   </button>
@@ -730,7 +730,7 @@ export default function InstagramEditor() {
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_PHRASES.map((p, i) => (
                       <button key={i} onClick={() => { addText({ text: p.text, fontSize: p.fontSize, bgColor: p.bgColor ?? "", bgPadding: p.bgColor ? 14 : 16 }); setMobileOpen(false); }}
-                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-white/5 text-muted-foreground active:bg-fuchsia-500/20 transition border border-transparent active:border-fuchsia-500/30 truncate max-w-full">
+                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white/5 text-muted-foreground active:bg-fuchsia-500/20 transition border border-transparent active:border-fuchsia-500/30 truncate max-w-full">
                         {p.text}
                       </button>
                     ))}
@@ -796,10 +796,10 @@ export default function InstagramEditor() {
                             className={`py-2 rounded-xl text-sm font-bold transition border ${logoPos === v ? "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" : "bg-white/5 text-muted-foreground border-transparent"}`}>{icon}</button>
                         ))}
                       </div>
-                      <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
                         Opacidade <input type="range" min={10} max={100} value={Math.round(logoOpacity * 100)} onChange={e => setLogoOpacity(Number(e.target.value) / 100)} className="flex-1 h-1 accent-fuchsia-500" /> {Math.round(logoOpacity * 100)}%
                       </label>
-                      <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
                         Tamanho <input type="range" min={5} max={40} value={Math.round(logoScale * 100)} onChange={e => setLogoScale(Number(e.target.value) / 100)} className="flex-1 h-1 accent-fuchsia-500" /> {Math.round(logoScale * 100)}%
                       </label>
                     </div>
@@ -809,7 +809,7 @@ export default function InstagramEditor() {
             )}
             {tab === "templates" && (
               <Section title="Layouts prontos">
-                <p className="text-[11px] text-muted-foreground mb-2">Aplica textos e visual. Fotos são mantidas.</p>
+                <p className="text-xs text-muted-foreground mb-2">Aplica textos e visual. Fotos são mantidas.</p>
                 <div className="space-y-2">
                   {TEMPLATES.map((tpl, i) => (
                     <button key={i} onClick={() => { applyTemplate(tpl); setMobileOpen(false); }}
@@ -818,7 +818,7 @@ export default function InstagramEditor() {
                         <span className="text-xl">{tpl.icon}</span>
                         <div>
                           <p className="text-sm font-bold text-foreground">{tpl.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{tpl.format === "feed" ? "Feed" : "Stories"} · {tpl.mode === "split" ? "Antes/Depois" : "1 foto"} · {tpl.texts.length} textos</p>
+                          <p className="text-xs text-muted-foreground">{tpl.format === "feed" ? "Feed" : "Stories"} · {tpl.mode === "split" ? "Antes/Depois" : "1 foto"} · {tpl.texts.length} textos</p>
                         </div>
                       </div>
                     </button>
@@ -847,7 +847,7 @@ export default function InstagramEditor() {
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <div><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">{title}</p>{children}</div>;
+  return <div><p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{title}</p>{children}</div>;
 }
 
 function Toggle({ value, options, onChange }: { value: string; options: [string, string][]; onChange: (v: string) => void }) {
@@ -888,7 +888,7 @@ function UploadSlot({ label, preview, onChange, onClear }: {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
+      <p className="text-2xs text-muted-foreground mb-1">{label}</p>
       {preview ? (
         <div className="relative rounded-xl overflow-hidden h-16">
           {/* eslint-disable-next-line @next/next/no-img-element */}

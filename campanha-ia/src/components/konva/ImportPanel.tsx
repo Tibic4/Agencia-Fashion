@@ -58,7 +58,7 @@ export default function ImportPanel({
           </span>
           {elements.length > 0 && (
             <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+              className="text-2xs px-1.5 py-0.5 rounded-full font-semibold"
               style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}
             >
               {elements.length}
@@ -70,7 +70,7 @@ export default function ImportPanel({
           {/* Import button */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-80"
             style={{
               background: "var(--gradient-brand)",
               color: "white",
@@ -140,10 +140,10 @@ export default function ImportPanel({
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-medium truncate" style={{ color: "var(--foreground)" }}>
+                  <p className="text-xs font-medium truncate" style={{ color: "var(--foreground)" }}>
                     {el.name}
                   </p>
-                  <p className="text-[9px]" style={{ color: "var(--muted)" }}>
+                  <p className="text-2xs" style={{ color: "var(--muted)" }}>
                     {el.originalWidth}×{el.originalHeight}px · {Math.round(el.opacity * 100)}%
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export default function ImportPanel({
                   <button
                     onClick={() => onReorder(el.id, "up")}
                     disabled={idx === elements.length - 1}
-                    className="p-1 rounded text-[10px] hover:opacity-70 disabled:opacity-20"
+                    className="p-1 rounded text-2xs hover:opacity-70 disabled:opacity-20"
                     title="Mover para frente"
                     aria-label="Mover para frente"
                   >
@@ -163,7 +163,7 @@ export default function ImportPanel({
                   <button
                     onClick={() => onReorder(el.id, "down")}
                     disabled={idx === 0}
-                    className="p-1 rounded text-[10px] hover:opacity-70 disabled:opacity-20"
+                    className="p-1 rounded text-2xs hover:opacity-70 disabled:opacity-20"
                     title="Mover para trás"
                     aria-label="Mover para trás"
                   >
@@ -172,7 +172,7 @@ export default function ImportPanel({
                   {/* Remove */}
                   <button
                     onClick={() => onRemove(el.id)}
-                    className="p-1 rounded text-[10px] hover:opacity-70 transition-opacity"
+                    className="p-1 rounded text-2xs hover:opacity-70 transition-opacity"
                     style={{ color: "#ef4444" }}
                     title="Remover elemento"
                     aria-label={`Remover ${el.name}`}
@@ -190,7 +190,7 @@ export default function ImportPanel({
               className="mt-2 pt-2 flex items-center gap-3"
               style={{ borderTop: "1px solid var(--border)" }}
             >
-              <label className="flex items-center gap-1.5 text-[10px]" style={{ color: "var(--muted)" }}>
+              <label className="flex items-center gap-1.5 text-2xs" style={{ color: "var(--muted)" }}>
                 Opacidade
                 <input
                   type="range"
@@ -211,10 +211,10 @@ export default function ImportPanel({
       {/* Empty state */}
       {elements.length === 0 && (
         <div className="px-3 py-3 text-center">
-          <p className="text-[11px]" style={{ color: "var(--muted)" }}>
+          <p className="text-xs" style={{ color: "var(--muted)" }}>
             Importe logos, selos ou stickers para personalizar o criativo.
           </p>
-          <p className="text-[9px] mt-1" style={{ color: "var(--muted)", opacity: 0.6 }}>
+          <p className="text-2xs mt-1" style={{ color: "var(--muted)", opacity: 0.6 }}>
             PNG/JPEG/WebP · Mín 128×128px · Máx 10MB
           </p>
         </div>

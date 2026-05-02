@@ -432,7 +432,7 @@ export default function ResultadoCampanha() {
                     </div>
                   )}
                   <div
-                    className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                    className="absolute bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full text-2xs font-bold"
                     style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
                   >
                     {idx + 1}
@@ -473,7 +473,7 @@ export default function ResultadoCampanha() {
                       <IconCheck />
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: "rgba(0,0,0,0.55)", color: "white" }}>
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-2xs font-bold" style={{ background: "rgba(0,0,0,0.55)", color: "white" }}>
                     {idx + 1}
                   </div>
                 </button>
@@ -500,7 +500,7 @@ export default function ResultadoCampanha() {
               <IconStar />
               <span className="font-bold text-sm">Foto {(selectedIndex ?? 0) + 1} selecionada</span>
               <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-semibold ml-auto"
+                className="text-2xs px-2 py-0.5 rounded-full font-semibold ml-auto"
                 style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}
               >
                 {FORMAT_PRESETS.find(f => f.id === activeFormat)?.ratio}
@@ -530,7 +530,7 @@ export default function ResultadoCampanha() {
                   >
                     <span className="text-base">{fmt.icon}</span>
                     <span>{fmt.label}</span>
-                    <span className="text-[10px] opacity-70">{fmt.w}×{fmt.h}</span>
+                    <span className="text-2xs opacity-70">{fmt.w}×{fmt.h}</span>
                   </button>
                 ))}
               </div>
@@ -547,7 +547,7 @@ export default function ResultadoCampanha() {
                       {FORMAT_PRESETS.find(f => f.id === activeFormat)?.icon}
                     </div>
                     <div className="text-left">
-                      <p className="text-[10px] font-bold tracking-wider uppercase mb-0.5" style={{ color: "var(--muted)" }}>Proporção e Crop</p>
+                      <p className="text-2xs font-bold tracking-wider uppercase mb-0.5" style={{ color: "var(--muted)" }}>Proporção e Crop</p>
                       <p className="text-sm font-bold leading-none" style={{ color: "var(--brand-600)" }}>
                         {FORMAT_PRESETS.find(f => f.id === activeFormat)?.label} ({FORMAT_PRESETS.find(f => f.id === activeFormat)?.ratio})
                       </p>
@@ -577,7 +577,7 @@ export default function ResultadoCampanha() {
                   className="w-full h-full object-contain"
                 />
                 <div
-                  className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-bold"
+                  className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-2xs font-bold"
                   style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
                 >
                   {FORMAT_PRESETS.find(f => f.id === activeFormat)?.ratio}
@@ -622,7 +622,7 @@ export default function ResultadoCampanha() {
           <div className="space-y-3">
             {/* AI Copy badge */}
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "linear-gradient(135deg, var(--brand-100), var(--brand-200))", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Copy por IA</span>
+              <span className="text-2xs font-bold px-2 py-0.5 rounded-full truncate" style={{ background: "linear-gradient(135deg, var(--brand-100), var(--brand-200))", color: "var(--brand-700)", maxWidth: "100%" }}>✨ Copy por IA</span>
             </div>
 
             {/* ── Legendas por plataforma (tabs) ── */}
@@ -690,11 +690,11 @@ export default function ResultadoCampanha() {
                         {/* Header + copy + counter */}
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <p className="text-[10px] sm:text-xs font-bold truncate" style={{ color: "var(--muted)" }}>
+                            <p className="text-2xs sm:text-xs font-bold truncate" style={{ color: "var(--muted)" }}>
                               {leg.plataforma}
                             </p>
                             <span
-                              className="text-[9px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                              className="text-2xs font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
                               style={{
                                 background: isOver ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
                                 color: isOver ? "#D97706" : "#16A34A",
@@ -710,7 +710,7 @@ export default function ResultadoCampanha() {
                               setCopiedTip(`tab${copyTab}`);
                               setTimeout(() => setCopiedTip(null), 2000);
                             }}
-                            className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] flex-shrink-0 active:scale-[0.95] flex items-center gap-1"
+                            className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] flex-shrink-0 active:scale-[0.95] flex items-center gap-1"
                             style={{ background: copiedTip === `tab${copyTab}` ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === `tab${copyTab}` ? "white" : "var(--brand-700)" }}
                           >
                             {copiedTip === `tab${copyTab}` ? "✓ Copiado!" : "📋 Copiar"}
@@ -722,7 +722,7 @@ export default function ResultadoCampanha() {
 
                         {/* Platform tip */}
                         {leg.dica && (
-                          <p className="text-[11px] italic" style={{ color: "var(--muted)" }}>💡 {leg.dica}</p>
+                          <p className="text-xs italic" style={{ color: "var(--muted)" }}>💡 {leg.dica}</p>
                         )}
                       </>
                     );
@@ -735,9 +735,9 @@ export default function ResultadoCampanha() {
                 <div className="surface-card p-4 space-y-2 relative">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
+                      <p className="text-2xs sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📝 CAPTION PRONTA</p>
                       <span
-                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                        className="text-2xs font-bold px-1.5 py-0.5 rounded-md"
                         style={{
                           background: (dicas.caption_sugerida.length > 300) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
                           color: (dicas.caption_sugerida.length > 300) ? "#D97706" : "#16A34A",
@@ -753,7 +753,7 @@ export default function ResultadoCampanha() {
                         setCopiedTip("caption");
                         setTimeout(() => setCopiedTip(null), 2000);
                       }}
-                      className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                      className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
                       style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
                     >
                       {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
@@ -768,7 +768,7 @@ export default function ResultadoCampanha() {
             {dicas.hashtags && dicas.hashtags.length > 0 && (
               <div className="surface-card p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}># HASHTAGS</p>
+                  <p className="text-2xs sm:text-xs font-bold" style={{ color: "var(--muted)" }}># HASHTAGS</p>
                   <button
                     onClick={async () => {
                       const hashText = dicas.hashtags.slice(0, 5).map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
@@ -777,7 +777,7 @@ export default function ResultadoCampanha() {
                       setCopiedTip("hashtags");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                    className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
                     style={{ background: copiedTip === "hashtags" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "hashtags" ? "white" : "var(--brand-700)" }}
                   >
                     {copiedTip === "hashtags" ? "✓ Copiado!" : "📋 Copiar"}
@@ -802,9 +802,9 @@ export default function ResultadoCampanha() {
               <div className="surface-card p-4 space-y-2 relative">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
+                    <p className="text-2xs sm:text-xs font-bold" style={{ color: "var(--muted)" }}>🔄 OPÇÃO B</p>
                     <span
-                      className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                      className="text-2xs font-bold px-1.5 py-0.5 rounded-md"
                       style={{
                         background: (dicas.caption_alternativa.length > 300) ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
                         color: (dicas.caption_alternativa.length > 300) ? "#D97706" : "#16A34A",
@@ -820,7 +820,7 @@ export default function ResultadoCampanha() {
                       setCopiedTip("alt");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                    className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
                     style={{ background: copiedTip === "alt" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "alt" ? "white" : "var(--brand-700)" }}
                   >
                     {copiedTip === "alt" ? "✓ Copiado!" : "📋 Copiar"}
@@ -833,15 +833,15 @@ export default function ResultadoCampanha() {
             {/* ── Grid: Horário + Tom + CTA ── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="surface-card p-3 sm:p-4 space-y-1 relative">
-                <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
+                <p className="text-2xs sm:text-xs font-bold" style={{ color: "var(--muted)" }}>⏰ POSTE ÀS</p>
                 <p className="text-xs sm:text-sm font-semibold">{dicas.melhor_horario || "Entre 18h–21h"}</p>
               </div>
               <div className="surface-card p-3 sm:p-4 space-y-1">
-                <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
+                <p className="text-2xs sm:text-xs font-bold" style={{ color: "var(--muted)" }}>💬 TOM DA VOZ</p>
                 <p className="text-xs sm:text-sm font-semibold">{dicas.tom_legenda || "Descontraído e acolhedor"}</p>
               </div>
               <div className="surface-card p-3 sm:p-4 space-y-1 col-span-2 sm:col-span-1">
-                <p className="text-[10px] sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
+                <p className="text-2xs sm:text-xs font-bold" style={{ color: "var(--muted)" }}>📣 CHAMADA PRA AÇÃO</p>
                 <p className="text-xs sm:text-sm font-semibold">{dicas.cta || "Chama no direct!"}</p>
               </div>
             </div>
@@ -851,7 +851,7 @@ export default function ResultadoCampanha() {
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: "linear-gradient(135deg, var(--brand-50), var(--surface))", border: "1px solid var(--brand-100)" }}>
                 <span className="text-sm flex-shrink-0">📱</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold mb-0.5" style={{ color: "var(--brand-700)" }}>IDEIA PARA STORY</p>
+                  <p className="text-2xs font-bold mb-0.5" style={{ color: "var(--brand-700)" }}>IDEIA PARA STORY</p>
                   <p className="text-xs font-medium" style={{ color: "var(--brand-700)" }}>{dicas.story_idea}</p>
                 </div>
               </div>
@@ -889,14 +889,14 @@ export default function ResultadoCampanha() {
                   .filter(f => f.value)
                   .map((f, i) => (
                     <div key={i} className="rounded-xl p-3" style={{ background: "var(--background)", border: "1px solid var(--border)" }}>
-                      <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>{f.label}</p>
+                      <p className="text-2xs font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>{f.label}</p>
                       <p className="text-sm font-semibold mt-0.5">{f.value}</p>
                     </div>
                   ))}
               </div>
               {analise.negative_prompt && (
                 <div className="rounded-xl p-3" style={{ background: "var(--background)", border: "1px dashed var(--border)", overflowX: "hidden" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Negative prompt usado</p>
+                  <p className="text-2xs font-bold uppercase tracking-wide mb-1" style={{ color: "var(--muted)" }}>Negative prompt usado</p>
                   <p className="text-xs font-mono" style={{ color: "var(--muted)", wordBreak: "break-all" }}>{analise.negative_prompt}</p>
                 </div>
               )}
@@ -969,7 +969,7 @@ export default function ResultadoCampanha() {
                         <p className="text-sm font-bold" style={{ color: activeFormat === fmt.id ? "var(--brand-700)" : "var(--foreground)" }}>
                           {fmt.label}
                         </p>
-                        <p className="text-[10px] uppercase font-bold" style={{ color: "var(--muted)" }}>
+                        <p className="text-2xs uppercase font-bold" style={{ color: "var(--muted)" }}>
                           {fmt.w} × {fmt.h} pixels
                         </p>
                       </div>

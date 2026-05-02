@@ -235,7 +235,7 @@ export default function Configuracoes() {
                 ) : (
                   <div className="text-center">
                     <span className="text-2xl sm:text-3xl">📷</span>
-                    <p className="text-[10px] mt-1 hidden sm:block" style={{ color: "var(--muted)" }}>Sua logo</p>
+                    <p className="text-2xs mt-1 hidden sm:block" style={{ color: "var(--muted)" }}>Sua logo</p>
                   </div>
                 )}
               </div>

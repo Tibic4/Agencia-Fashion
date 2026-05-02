@@ -275,9 +275,9 @@ export default function AdminClientes() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-medium truncate">{store.name}</p>
-                      <p className="text-[11px] text-gray-500">{store.segment_primary || "Sem segmento"}</p>
+                      <p className="text-xs text-gray-500">{store.segment_primary || "Sem segmento"}</p>
                     </div>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${store.onboarding_completed ? "text-emerald-400" : "text-yellow-400"}`}>
+                    <span className={`inline-flex items-center gap-1 text-2xs font-medium ${store.onboarding_completed ? "text-emerald-400" : "text-yellow-400"}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${store.onboarding_completed ? "bg-emerald-400" : "bg-yellow-400"}`} />
                       {store.onboarding_completed ? "Ativo" : "Onboarding"}
                     </span>
@@ -380,10 +380,10 @@ export default function AdminClientes() {
                     <div>
                       <h2 className="text-lg font-bold text-white">{selectedStore.name}</h2>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${planColor(selectedStore.plans?.display_name)}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-2xs font-medium border ${planColor(selectedStore.plans?.display_name)}`}>
                           {selectedStore.plans?.display_name || "Sem plano"}
                         </span>
-                        <span className="text-gray-500 text-[11px]">{selectedStore.segment_primary || ""}</span>
+                        <span className="text-gray-500 text-xs">{selectedStore.segment_primary || ""}</span>
                       </div>
                     </div>
                   </div>
@@ -395,7 +395,7 @@ export default function AdminClientes() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-white flex items-center gap-2">📸 Estúdio IA</h3>
                     {selectedStore.backdrop_ref_url && (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+                      <span className="text-2xs text-emerald-400 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Gerado
                         {selectedStore.backdrop_season && (
                           <span className="ml-1">{seasonEmoji(selectedStore.backdrop_season)}</span>
@@ -410,7 +410,7 @@ export default function AdminClientes() {
                       {selectedStore.backdrop_color && (
                         <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm">
                           <div className="w-3 h-3 rounded-full" style={{ background: selectedStore.backdrop_color }} />
-                          <span className="text-[10px] text-white font-mono">{selectedStore.backdrop_color}</span>
+                          <span className="text-2xs text-white font-mono">{selectedStore.backdrop_color}</span>
                         </div>
                       )}
                     </div>
@@ -419,7 +419,7 @@ export default function AdminClientes() {
                   )}
 
                   <div className="flex items-center justify-between">
-                    <div className="text-[11px] text-gray-400">
+                    <div className="text-xs text-gray-400">
                       {selectedStore.backdrop_updated_at
                         ? `Último: ${formatDateBR(selectedStore.backdrop_updated_at)}`
                         : "Sem cooldown ativo"}
@@ -427,7 +427,7 @@ export default function AdminClientes() {
                     <button
                       onClick={handleResetBackdrop}
                       disabled={saving || !selectedStore.backdrop_updated_at}
-                      className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20"
                     >
                       🔓 Liberar regeneração
                     </button>
@@ -437,7 +437,7 @@ export default function AdminClientes() {
                 {/* Credits */}
                 <div className="rounded-xl p-4 border border-gray-800 bg-gray-800/30 space-y-4">
                   <h3 className="text-sm font-semibold text-white">🎛️ Créditos extras</h3>
-                  <p className="text-[11px] text-gray-500 -mt-2">Somados ao limite do plano</p>
+                  <p className="text-xs text-gray-500 -mt-2">Somados ao limite do plano</p>
 
                   {/* Campanhas */}
                   <div>
@@ -464,11 +464,11 @@ export default function AdminClientes() {
                       >+</button>
                       <button
                         onClick={() => setCreditCampaigns(creditCampaigns + 5)}
-                        className="text-[10px] font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
+                        className="text-2xs font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
                       >+5</button>
                       <button
                         onClick={() => setCreditCampaigns(creditCampaigns + 10)}
-                        className="text-[10px] font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
+                        className="text-2xs font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
                       >+10</button>
                     </div>
                   </div>
@@ -498,11 +498,11 @@ export default function AdminClientes() {
                       >+</button>
                       <button
                         onClick={() => setCreditModels(creditModels + 3)}
-                        className="text-[10px] font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
+                        className="text-2xs font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
                       >+3</button>
                       <button
                         onClick={() => setCreditModels(creditModels + 5)}
-                        className="text-[10px] font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
+                        className="text-2xs font-medium px-2 py-1.5 rounded-lg bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition"
                       >+5</button>
                     </div>
                   </div>
@@ -538,10 +538,10 @@ export default function AdminClientes() {
                     </button>
                   ) : (
                     <div className="space-y-3">
-                      <p className="text-[11px] text-red-300">
+                      <p className="text-xs text-red-300">
                         Essa ação é <strong>irreversível</strong>. Todos os dados serão apagados: campanhas, modelos, fotos, custos e configurações.
                       </p>
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-xs text-gray-400">
                         Digite <strong className="text-red-400">{selectedStore.name}</strong> para confirmar:
                       </p>
                       <input
@@ -578,7 +578,7 @@ export default function AdminClientes() {
                 </div>
 
                 {/* Footer info */}
-                <p className="text-[10px] text-gray-600 text-center">
+                <p className="text-2xs text-gray-600 text-center">
                   ID: {selectedStore.id} · Cadastro: {formatDateBR(selectedStore.created_at)}
                 </p>
               </div>

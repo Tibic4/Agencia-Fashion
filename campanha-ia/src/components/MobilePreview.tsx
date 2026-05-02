@@ -29,7 +29,7 @@ export default function MobilePreview({
           📲 Preview Mobile
         </span>
         <span
-          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+          className="text-2xs px-2 py-0.5 rounded-full font-medium"
           style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}
         >
           Instagram

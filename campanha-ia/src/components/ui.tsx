@@ -149,7 +149,7 @@ export function ScoreCircle({
       <span className="text-lg font-bold" style={{ color, marginTop: -size / 2 - 10, position: "relative" }}>
         {score}
       </span>
-      {label && <span className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>{label}</span>}
+      {label && <span className="text-2xs mt-2" style={{ color: "var(--muted)" }}>{label}</span>}
     </div>
   );
 }

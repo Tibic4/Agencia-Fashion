@@ -108,7 +108,7 @@ export default function SubprocessadoresPage() {
         <div className="container max-w-5xl">
           {/* Header */}
           <div className="mb-10 md:mb-14">
-            <div className="badge badge-brand mb-4 inline-flex text-[11px]">Legal · Transparência</div>
+            <div className="badge badge-brand mb-4 inline-flex text-xs">Legal · Transparência</div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-2">Subprocessadores</h1>
             <p className="text-sm" style={{ color: "var(--muted)" }}>
               Lista pública e atualizada dos operadores que tratam dados pessoais em nome do CriaLook, nos termos do

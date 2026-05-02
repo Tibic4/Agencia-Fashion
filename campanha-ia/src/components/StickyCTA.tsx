@@ -45,7 +45,7 @@ export default function StickyCTA() {
     <Link
       href="/sign-up"
       aria-label="Pegar minha vaga grátis no Beta"
-      className="fixed left-3 right-3 sm:left-4 sm:right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold text-[13px] sm:text-[15px] animate-in slide-in-from-bottom-10 fade-in duration-300 whitespace-nowrap"
+      className="fixed left-3 right-3 sm:left-4 sm:right-4 z-40 md:hidden h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 gap-2 font-bold text-sm sm:text-base animate-in slide-in-from-bottom-10 fade-in duration-300 whitespace-nowrap"
       // respeita safe-area-inset-bottom (notch/home indicator iPhone)
       style={{
         bottom: "calc(16px + env(safe-area-inset-bottom, 0px))",

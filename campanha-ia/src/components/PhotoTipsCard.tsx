@@ -144,7 +144,7 @@ export default function PhotoTipsCard({ hasPhoto }: { hasPhoto: boolean }) {
             style={{ background: "var(--brand-50)", border: "1px solid var(--brand-100)" }}
           >
             <span className="text-sm shrink-0">💡</span>
-            <p className="text-[11px]" style={{ color: "var(--brand-700)" }}>
+            <p className="text-xs" style={{ color: "var(--brand-700)" }}>
               <strong>Dica pro:</strong> Quanto mais fotos e ângulos, melhor a IA entende sua peça. Use o campo &quot;Detalhe do tecido&quot; para enviar um close — o resultado fica muito mais realista!
             </p>
           </div>

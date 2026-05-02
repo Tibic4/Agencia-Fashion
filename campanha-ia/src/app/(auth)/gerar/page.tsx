@@ -814,7 +814,7 @@ export default function GerarCampanha() {
                     <p className="text-xs" style={{ color: "var(--muted)" }}>
                       O look inteiro, de frente
                     </p>
-                    <p className="text-[10px] mt-2 flex items-center justify-center gap-1" style={{ color: "var(--muted)" }}>
+                    <p className="text-2xs mt-2 flex items-center justify-center gap-1" style={{ color: "var(--muted)" }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                       Apenas roupas e acessórios
                     </p>
@@ -870,7 +870,7 @@ export default function GerarCampanha() {
                     >
                       <IconX />
                     </button>
-                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>Close-up</span>
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-2xs font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>Close-up</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-2 p-2 sm:p-3 h-full overflow-hidden w-full">
@@ -878,10 +878,10 @@ export default function GerarCampanha() {
                       <IconSearch />
                     </div>
                     <div className="text-center w-full min-w-0">
-                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Detalhe ou ângulo</p>
-                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Textura, costura, estampa</p>
+                      <p className="text-2xs sm:text-xs font-semibold leading-tight truncate px-1">Detalhe ou ângulo</p>
+                      <p className="text-2xs sm:text-2xs leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Textura, costura, estampa</p>
                     </div>
-                    <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-2xs sm:text-2xs px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -931,7 +931,7 @@ export default function GerarCampanha() {
                     >
                       <IconX />
                     </button>
-                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>2ª peça</span>
+                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-2xs font-semibold" style={{ background: "rgba(0,0,0,0.6)", color: "white" }}>2ª peça</span>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-2 p-2 sm:p-3 h-full overflow-hidden w-full">
@@ -939,10 +939,10 @@ export default function GerarCampanha() {
                       <IconPlus />
                     </div>
                     <div className="text-center w-full min-w-0">
-                      <p className="text-[10px] sm:text-xs font-semibold leading-tight truncate px-1">Segunda peça</p>
-                      <p className="text-[9px] sm:text-[10px] leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Ex: calça do conjunto</p>
+                      <p className="text-2xs sm:text-xs font-semibold leading-tight truncate px-1">Segunda peça</p>
+                      <p className="text-2xs sm:text-2xs leading-tight mt-1 truncate px-1" style={{ color: "var(--muted)" }}>Ex: calça do conjunto</p>
                     </div>
-                    <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
+                    <span className="text-2xs sm:text-2xs px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}>opcional</span>
                   </div>
                 )}
               </div>
@@ -950,7 +950,7 @@ export default function GerarCampanha() {
           </div>
 
           {/* Aviso compacto + dicas — só no mobile, inline */}
-          <p className="text-[11px] text-center" style={{ color: "var(--muted)" }}>
+          <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
             🛡️ Apenas roupas e acessórios · Conteúdo impróprio é bloqueado pela IA
           </p>
           <PhotoTipsCard hasPhoto={!!preview} />
@@ -1032,7 +1032,7 @@ export default function GerarCampanha() {
                           : "ring-1 ring-inset ring-[var(--border)] opacity-50"
                       }`} />
                       <span className="text-lg drop-shadow-sm relative z-20">🎲</span>
-                      <span className="text-[10px] font-medium mt-1 relative z-20" style={{ color: "var(--muted)" }}>Aleatória</span>
+                      <span className="text-2xs font-medium mt-1 relative z-20" style={{ color: "var(--muted)" }}>Aleatória</span>
                     </button>
 
                     {/* Modelos visíveis (custom + stock combinados) */}
@@ -1070,7 +1070,7 @@ export default function GerarCampanha() {
                                 ? "ring-2 ring-inset ring-brand-500 shadow-[inset_0_0_12px_rgba(236,72,153,0.3)]" 
                                 : "ring-2 ring-inset ring-[#D4A017] shadow-[inset_0_0_8px_rgba(212,160,23,0.25)]"
                             }`} />
-                            <div className="absolute top-1 left-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full z-20" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
+                            <div className="absolute top-1 left-1 text-2xs font-bold px-1.5 py-0.5 rounded-full z-20" style={{ background: "linear-gradient(135deg, #D4A017, #F5C842)", color: "white" }}>
                               ⭐ Sua
                             </div>
                             {selectedModelId === model.id && (
@@ -1172,7 +1172,7 @@ export default function GerarCampanha() {
                       <div className="col-span-3 sm:col-span-4 aspect-[3/4] max-h-[160px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all mx-0" style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}>
                         <span className="text-xl mb-1 opacity-70">📭</span>
                         <span className="text-xs font-semibold">Nenhuma modelo salva.</span>
-                        <Link href="/modelo" className="text-[10px] mt-1 font-bold underline transition-opacity hover:opacity-70" style={{ color: "var(--brand-500)" }}>Criar personalizada</Link>
+                        <Link href="/modelo" className="text-2xs mt-1 font-bold underline transition-opacity hover:opacity-70" style={{ color: "var(--brand-500)" }}>Criar personalizada</Link>
                       </div>
                     )}
 
@@ -1189,8 +1189,8 @@ export default function GerarCampanha() {
                         title="Criar modelo personalizada"
                       >
                         <span className="text-lg">+</span>
-                        <span className="text-[10px] font-semibold mt-1">Nova modelo</span>
-                        <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
+                        <span className="text-2xs font-semibold mt-1">Nova modelo</span>
+                        <span className="text-2xs mt-0.5" style={{ color: "var(--muted)" }}>{customModels.length}/{maxModels}</span>
                       </a>
                     ) : maxModels > 0 ? (
                       <a
@@ -1204,8 +1204,8 @@ export default function GerarCampanha() {
                         title="Faça upgrade para mais modelos"
                       >
                         <span className="text-lg">⬆️</span>
-                        <span className="text-[10px] font-semibold mt-1">+ Modelos</span>
-                        <span className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
+                        <span className="text-2xs font-semibold mt-1">+ Modelos</span>
+                        <span className="text-2xs mt-0.5" style={{ color: "var(--muted)" }}>Upgrade</span>
                       </a>
                     ) : null}
                   </div>
@@ -1275,13 +1275,13 @@ export default function GerarCampanha() {
                       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 via-black/30 to-transparent pointer-events-none" />
 
                       {/* Label overlay */}
-                      <span className="absolute inset-x-1.5 bottom-1.5 text-[11px] sm:text-xs font-semibold text-white tracking-tight leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+                      <span className="absolute inset-x-1.5 bottom-1.5 text-xs sm:text-xs font-semibold text-white tracking-tight leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                         {bg.label}
                       </span>
 
                       {/* Selected check */}
                       {selected && (
-                        <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px] font-bold shadow-md ring-2 ring-white/90">
+                        <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center text-2xs font-bold shadow-md ring-2 ring-white/90">
                           ✓
                         </span>
                       )}

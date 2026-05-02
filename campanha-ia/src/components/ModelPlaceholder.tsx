@@ -111,7 +111,7 @@ export default function ModelPlaceholder({
       <div className="absolute bottom-2 left-0 right-0 flex flex-col items-center gap-1">
         {name && (
           <span
-            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            className="text-2xs font-semibold px-2 py-0.5 rounded-full"
             style={{
               background: "rgba(255,255,255,0.85)",
               color: "#6B4226",
@@ -123,7 +123,7 @@ export default function ModelPlaceholder({
         )}
         {isGenerating && !showRetry && (
           <span
-            className="text-[9px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1"
+            className="text-2xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1"
             style={{
               background: "rgba(212,160,23,0.15)",
               color: "#8B6914",
@@ -143,7 +143,7 @@ export default function ModelPlaceholder({
         {showRetry && onRetry && (
           <button
             onClick={(e) => { e.stopPropagation(); onRetry(); }}
-            className="text-[9px] font-semibold px-2.5 py-1 rounded-full transition-all hover:scale-105 active:scale-95"
+            className="text-2xs font-semibold px-2.5 py-1 rounded-full transition-all hover:scale-105 active:scale-95"
             style={{
               background: "rgba(236,72,153,0.1)",
               color: "#DB2777",

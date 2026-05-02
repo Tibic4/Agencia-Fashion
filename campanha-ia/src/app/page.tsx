@@ -136,7 +136,7 @@ export default function Home() {
                 Sua peça vira <span className="gradient-text">campanha pronta</span> em 60s.
               </h1>
 
-              <p className="text-[13px] sm:text-[15px] leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
+              <p className="text-sm sm:text-base leading-relaxed mb-6 max-w-[280px] sm:max-w-md mx-auto" style={{ color: 'var(--muted)' }}>
                 Foto no manequim ou cabide → 1 foto com modelo virtual + legendas prontas.{" "}
                 <strong style={{ color: 'var(--foreground)' }}>Sem fotógrafo. Sem Photoshop.</strong>
               </p>
@@ -153,16 +153,16 @@ export default function Home() {
                     <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>
                       <IconSparkles />
                     </div>
-                    <span className="text-[11px] font-semibold">Legenda gerada pela IA</span>
-                    <span className="ml-auto text-[11px] font-black gradient-text">94/100</span>
+                    <span className="text-xs font-semibold">Legenda gerada pela IA</span>
+                    <span className="ml-auto text-xs font-black gradient-text">94/100</span>
                   </div>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
                     ✨ Vestido floral tropical — caimento fluido, estampa exclusiva e toque acetinado. Peça que vende sozinha. 🌺
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300">Alta Conversão</span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-accent-100 dark:bg-accent-700/30 text-accent-600 dark:text-accent-300">Copy Persuasivo</span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>Meta Aprovado</span>
+                    <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300">Alta Conversão</span>
+                    <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-full bg-accent-100 dark:bg-accent-700/30 text-accent-600 dark:text-accent-300">Copy Persuasivo</span>
+                    <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>Meta Aprovado</span>
                   </div>
                 </div>
               </div>
@@ -177,34 +177,34 @@ export default function Home() {
                   <IconZap className="shrink-0" />
                   <span>Pegar minha vaga grátis</span>
                 </Link>
-                <p className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
                   ✓ 1 campanha completa (1 foto) <strong>grátis</strong> · sem cartão
                 </p>
               </div>
 
               {/* O que está incluso na vaga grátis */}
               <div className="mt-5 mx-auto max-w-xs rounded-2xl p-4 text-left" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Incluso na vaga grátis</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--muted)' }}>Incluso na vaga grátis</p>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>1</span>
                     <div>
-                      <p className="text-[13px] font-bold">Foto com modelo virtual</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Cenário e pose escolhidos pela IA</p>
+                      <p className="text-sm font-bold">Foto com modelo virtual</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Cenário e pose escolhidos pela IA</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>✍️</span>
                     <div>
-                      <p className="text-[13px] font-bold">Legendas + hashtags</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Textos persuasivos prontos</p>
+                      <p className="text-sm font-bold">Legendas + hashtags</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Textos persuasivos prontos</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'var(--brand-100)', color: 'var(--brand-600)' }}>⚡</span>
                     <div>
-                      <p className="text-[13px] font-bold">Pronto em até 90s</p>
-                      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Use sua peça real (não exemplo)</p>
+                      <p className="text-sm font-bold">Pronto em até 90s</p>
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>Use sua peça real (não exemplo)</p>
                     </div>
                   </div>
                 </div>
@@ -378,7 +378,7 @@ export default function Home() {
                 }}>
                   <IconShirt />
                 </div>
-                <div className="text-[10px] font-bold uppercase tracking-widest mb-2 opacity-80">Feature principal</div>
+                <div className="text-2xs font-bold uppercase tracking-widest mb-2 opacity-80">Feature principal</div>
                 <h3 className="text-lg md:text-xl font-bold mb-2">Modelos Exclusivas</h3>
                 <p className="text-xs md:text-sm leading-relaxed opacity-90">
                   Crie o biotipo da sua cliente ideal (etnia, cabelo, corpo) e vista toda a sua coleção nela de forma padronizada.

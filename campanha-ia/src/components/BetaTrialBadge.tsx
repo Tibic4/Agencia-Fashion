@@ -46,7 +46,7 @@ export default function BetaTrialBadge({ variant = "hero" }: { variant?: "hero" 
   if (variant === "compact") {
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-[11px] font-semibold"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold"
         style={{ color: "var(--brand-300)" }}
       >
         <span className="relative flex h-2 w-2">

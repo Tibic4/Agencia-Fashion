@@ -269,14 +269,14 @@ export default async function AdminCustos() {
                 <div key={i} className="px-4 py-3">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br ${providerColors[String(log.provider || "")] || providerColors.unknown} text-white text-[9px] font-bold`}>
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center bg-gradient-to-br ${providerColors[String(log.provider || "")] || providerColors.unknown} text-white text-2xs font-bold`}>
                         {String(log.provider || "?").charAt(0).toUpperCase()}
                       </div>
                       <span className="text-xs text-white capitalize font-medium">{String(log.provider || "")}</span>
                     </div>
                     <span className="text-sm font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-gray-500">
+                  <div className="flex items-center justify-between text-2xs text-gray-500">
                     <span>{stepLabels[String(log.action || "")] || String(log.action || "—")}</span>
                     <span>{formatDateTimeBR(String(log.created_at))}</span>
                   </div>

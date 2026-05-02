@@ -617,7 +617,7 @@ export default function CreativeStoriesPreview({
           📱 Stories 1080×1920
         </span>
         <span
-          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+          className="text-2xs px-2 py-0.5 rounded-full font-medium"
           style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}
         >
           3 slides
@@ -659,7 +659,7 @@ export default function CreativeStoriesPreview({
               <button
                 key={s.id}
                 onClick={() => setActiveSlide(i)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{
                   background: activeSlide === i ? "var(--brand-100)" : "transparent",
                   color: activeSlide === i ? "var(--brand-700)" : "var(--muted)",
@@ -733,7 +733,7 @@ export default function CreativeStoriesPreview({
           className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto"
           style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)" }}
         >
-          <span className="text-[10px] font-medium mr-1" style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>
+          <span className="text-2xs font-medium mr-1" style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>
             👁️ Elementos:
           </span>
           {[
@@ -748,7 +748,7 @@ export default function CreativeStoriesPreview({
               <button
                 key={key}
                 onClick={() => toggleEl(key)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-2xs font-medium transition-all"
                 style={{
                   background: isHidden ? "var(--border)" : "var(--background)",
                   color: isHidden ? "var(--muted)" : "var(--foreground)",

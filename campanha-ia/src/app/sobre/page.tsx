@@ -181,7 +181,7 @@ export default function Sobre() {
                     <div className="sm:hidden absolute left-1/2 -translate-x-1/2 -bottom-3 w-px h-4" style={{ borderLeft: '2px dashed var(--brand-300)', opacity: 0.3 }} />
                   )}
                   {/* Step number */}
-                  <div className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "var(--brand-400)" }}>
+                  <div className="text-2xs font-black uppercase tracking-widest mb-3" style={{ color: "var(--brand-400)" }}>
                     Passo {i + 1}
                   </div>
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 transition-transform group-hover:scale-110" style={{
@@ -212,7 +212,7 @@ export default function Sobre() {
                   <IconPhone />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>WhatsApp</p>
+                  <p className="text-2xs font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>WhatsApp</p>
                   <p className="text-sm font-bold" style={{ color: "var(--success)" }}>(34) 9822-3001</p>
                 </div>
                 <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--muted)" }}>
@@ -227,7 +227,7 @@ export default function Sobre() {
                   <IconMail />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>E-mail</p>
+                  <p className="text-2xs font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>E-mail</p>
                   <p className="text-sm font-bold gradient-text">contato@crialook.com.br</p>
                 </div>
                 <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--muted)" }}>

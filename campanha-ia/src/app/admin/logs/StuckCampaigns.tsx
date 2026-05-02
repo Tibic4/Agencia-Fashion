@@ -47,7 +47,7 @@ export function StuckCampaignsSection({
           <h2 className="text-sm font-semibold text-amber-300">
             ⚠️ Campanhas presas ({items.length})
           </h2>
-          <span className="text-[10px] text-amber-500">
+          <span className="text-2xs text-amber-500">
             processing &gt; 5 min
           </span>
         </div>
@@ -76,17 +76,17 @@ export function StuckCampaignsSection({
                 <span className="text-sm text-amber-200">
                   {c.stores?.name || "Loja"}
                 </span>
-                <span className="text-[10px] text-amber-500 ml-2">
+                <span className="text-2xs text-amber-500 ml-2">
                   presa há {minutesStuck} min
                 </span>
-                <p className="text-[10px] text-gray-500 font-mono mt-0.5">
+                <p className="text-2xs text-gray-500 font-mono mt-0.5">
                   {c.id.slice(0, 8)}...
                 </p>
               </div>
               <button
                 onClick={() => handleFixOne(c.id)}
                 disabled={isPending}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/30 transition disabled:opacity-50"
+                className="px-2.5 py-1 rounded-lg text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/30 transition disabled:opacity-50"
               >
                 {isPending ? "..." : "🔧 Marcar falha"}
               </button>

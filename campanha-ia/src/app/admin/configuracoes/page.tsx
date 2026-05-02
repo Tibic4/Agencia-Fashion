@@ -241,7 +241,7 @@ export default function AdminConfiguracoes() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-medium text-white">{item.stage}</p>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 truncate max-w-full">
+                  <span className="px-2 py-0.5 rounded text-2xs font-mono bg-amber-500/10 text-amber-400 border border-amber-500/20 truncate max-w-full">
                     {item.model}
                   </span>
                 </div>
@@ -266,7 +266,7 @@ export default function AdminConfiguracoes() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-white font-medium text-sm">{plan.display_name}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  <span className={`px-2 py-0.5 rounded-full text-2xs font-medium ${
                     plan.is_active
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                       : "bg-gray-500/10 text-gray-400 border border-gray-500/20"

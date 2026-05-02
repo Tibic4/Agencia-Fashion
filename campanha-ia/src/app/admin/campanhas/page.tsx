@@ -90,7 +90,7 @@ export default async function AdminCampanhas() {
                   {Number(c.price) > 0 && <span>💰 R$ {Number(c.price).toFixed(2)}</span>}
                   {Number(c.pipeline_duration_ms) > 0 && <span>⏱ {(Number(c.pipeline_duration_ms) / 1000).toFixed(1)}s</span>}
                 </div>
-                <p className="text-[10px] text-gray-600 mt-2">
+                <p className="text-2xs text-gray-600 mt-2">
                   {formatDateTimeBR(c.created_at as string)}
                 </p>
               </div>

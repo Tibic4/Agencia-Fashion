@@ -50,7 +50,7 @@ export default function HeadlineABTest({
           🧪 A/B Testing — Headlines
         </span>
         <span
-          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+          className="text-2xs px-2 py-0.5 rounded-full font-medium"
           style={{ background: "var(--brand-100)", color: "var(--brand-600)" }}
         >
           {headlines.length} variações
@@ -96,24 +96,24 @@ export default function HeadlineABTest({
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-md text-white"
+                    className="text-2xs font-bold px-2 py-0.5 rounded-md text-white"
                     style={{ background: variantColors[i].tagBg }}
                   >
                     {variantColors[i].label}
                   </span>
-                  <span className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
+                  <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>
                     {h.angle}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {selectedVariant === i && (
-                    <span className="text-[10px] font-semibold" style={{ color: variantColors[i].tagBg }}>
+                    <span className="text-2xs font-semibold" style={{ color: variantColors[i].tagBg }}>
                       ✅ Selecionada
                     </span>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleCopy(h.text, i); }}
-                    className="text-[10px] px-2 py-1 rounded-md font-medium transition-all"
+                    className="text-2xs px-2 py-1 rounded-md font-medium transition-all"
                     style={{
                       background: copiedIdx === i ? "var(--success)" : "var(--brand-100)",
                       color: copiedIdx === i ? "white" : "var(--brand-700)",

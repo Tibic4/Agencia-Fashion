@@ -57,11 +57,11 @@ export default function CostComparisonTable() {
           {rows.map((row, i) => (
             <div key={i} className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-800 border-t border-gray-200 dark:border-gray-800">
               <div className="p-3 sm:p-4 md:p-6 text-center flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900/40">
-                <span className="text-[10px] sm:text-xs text-gray-400 font-medium uppercase tracking-wider mb-1 leading-tight">{row.feature}</span>
+                <span className="text-2xs sm:text-xs text-gray-400 font-medium uppercase tracking-wider mb-1 leading-tight">{row.feature}</span>
                 <span className="font-medium text-gray-600 dark:text-gray-300 text-xs sm:text-sm md:text-base leading-snug">{row.traditional}</span>
               </div>
               <div className="p-3 sm:p-4 md:p-6 text-center flex flex-col items-center justify-center bg-brand-50 dark:bg-brand-900/10">
-                <span className="text-[10px] sm:text-xs text-brand-400 dark:text-brand-300/70 font-medium uppercase tracking-wider mb-1 leading-tight">{row.feature}</span>
+                <span className="text-2xs sm:text-xs text-brand-400 dark:text-brand-300/70 font-medium uppercase tracking-wider mb-1 leading-tight">{row.feature}</span>
                 <span className="font-bold text-brand-700 dark:text-brand-300 text-xs sm:text-sm md:text-base leading-snug">{row.crialook}</span>
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function CostComparisonTable() {
               <div className="relative z-10 flex flex-col items-center justify-center h-full">
                 <span className="block text-xs sm:text-sm text-brand-100 mb-1">Custo de 1 campanha</span>
                 <span className="font-black text-white text-xl sm:text-2xl md:text-4xl animate-pulse-glow drop-shadow-md">Grátis</span>
-                <span className="block text-[10px] sm:text-xs text-brand-100 mt-1">1ª no Beta · depois a partir de R$ 5,93</span>
+                <span className="block text-2xs sm:text-xs text-brand-100 mt-1">1ª no Beta · depois a partir de R$ 5,93</span>
               </div>
             </div>
           </div>

@@ -245,13 +245,13 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
                       {hoveredColor && (
                         <div className="text-center">
                           <div className="w-10 h-10 rounded-lg" style={{ background: hoveredColor, border: "1px solid var(--border)" }} />
-                          <p className="text-[9px] mt-0.5" style={{ color: "var(--muted)" }}>hover</p>
+                          <p className="text-2xs mt-0.5" style={{ color: "var(--muted)" }}>hover</p>
                         </div>
                       )}
                       {pickedColor && (
                         <div className="text-center">
                           <div className="w-10 h-10 rounded-lg" style={{ background: pickedColor, border: "2px solid var(--brand-500)" }} />
-                          <p className="text-[9px] mt-0.5 font-bold" style={{ color: "var(--brand-500)" }}>escolhida</p>
+                          <p className="text-2xs mt-0.5 font-bold" style={{ color: "var(--brand-500)" }}>escolhida</p>
                         </div>
                       )}
                     </div>
@@ -323,7 +323,7 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
 
               {recentColors.length > 0 && (
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Cores recentes</p>
+                  <p className="text-2xs font-bold uppercase tracking-wide mb-2" style={{ color: "var(--muted)" }}>Cores recentes</p>
                   <div className="flex gap-2">
                     {recentColors.map((c) => (
                       <button

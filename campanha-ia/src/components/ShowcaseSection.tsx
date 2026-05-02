@@ -208,13 +208,13 @@ function BeforeAfterSlider({
 
         {/* Labels */}
         <span
-          className="absolute bottom-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
+          className="absolute bottom-3 left-3 text-xs font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
           style={{ background: "rgba(0,0,0,0.55)", color: "white", backdropFilter: "blur(12px)" }}
         >
           📷 Foto original
         </span>
         <span
-          className="absolute bottom-3 right-3 text-[11px] font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
+          className="absolute bottom-3 right-3 text-xs font-bold px-2.5 py-1 rounded-full z-20 pointer-events-none"
           style={{ background: "var(--gradient-brand, linear-gradient(135deg, #A855F7, #EC4899))", color: "white", backdropFilter: "blur(12px)" }}
         >
           ✨ Modelo IA
@@ -222,7 +222,7 @@ function BeforeAfterSlider({
 
         {/* Hint — only when untouched */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 text-[10px] font-medium px-3 py-1.5 rounded-full z-20 pointer-events-none transition-opacity duration-500"
+          className="absolute left-1/2 -translate-x-1/2 text-2xs font-medium px-3 py-1.5 rounded-full z-20 pointer-events-none transition-opacity duration-500"
           style={{
             top: "12px",
             background: "rgba(0,0,0,0.45)",
@@ -242,8 +242,8 @@ function BeforeAfterSlider({
             &ldquo;{item.caption}&rdquo;
           </p>
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>Virtual Try-On</span>
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>IA Generativa</span>
+            <span className="text-2xs font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>Virtual Try-On</span>
+            <span className="text-2xs font-bold px-2 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>IA Generativa</span>
           </div>
         </div>
       )}

@@ -54,7 +54,7 @@ export default function AdminLayout({
           </div>
           <span className="text-lg font-bold tracking-tight">
             Cria<span className="text-fuchsia-400">Look</span>
-            <span className="text-[10px] ml-1.5 uppercase tracking-widest text-muted-foreground font-semibold">Admin</span>
+            <span className="text-2xs ml-1.5 uppercase tracking-widest text-muted-foreground font-semibold">Admin</span>
           </span>
         </div>
 
@@ -67,7 +67,7 @@ export default function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-semibold transition-all min-h-[44px] ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
                   isActive
                     ? "text-white bg-white/5 shadow-[inset_0_1px_rgba(255,255,255,0.05)] border-l-[2px] border-fuchsia-400"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/[0.02] border-l-[2px] border-transparent"
@@ -84,7 +84,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-white/5 space-y-2">
           <Link
             href="/gerar"
-            className="flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition min-h-[44px]"
           >
             <span className="opacity-70"><IconArrowLeft /></span>
             Voltar ao painel cliente
@@ -92,8 +92,8 @@ export default function AdminLayout({
           <div className="flex items-center gap-3 px-4 py-2 mt-2">
             <UserButton />
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold truncate">Administrador</p>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground truncate">System</p>
+              <p className="text-sm font-semibold truncate">Administrador</p>
+              <p className="text-2xs uppercase tracking-widest text-muted-foreground truncate">System</p>
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function AdminLayout({
       {/* Mobile Header (Minimalist) */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-[#050505]/80 backdrop-blur-2xl h-14 flex items-center justify-between px-4 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded flex items-center justify-center bg-gradient-to-br from-pink-400 to-fuchsia-600 text-white text-[10px] font-black">
+          <div className="w-6 h-6 rounded flex items-center justify-center bg-gradient-to-br from-pink-400 to-fuchsia-600 text-white text-2xs font-black">
             A
           </div>
           <span className="text-sm font-bold tracking-tight">
@@ -133,7 +133,7 @@ export default function AdminLayout({
               }`}
             >
               <span className={isActive ? "text-fuchsia-400" : ""}>{item.icon}</span>
-              <span className={`text-[9px] font-bold tracking-wide truncate max-w-[60px] ${isActive ? "opacity-100" : "opacity-0 h-0 hidden"}`}>{item.label}</span>
+              <span className={`text-2xs font-bold tracking-wide truncate max-w-[60px] ${isActive ? "opacity-100" : "opacity-0 h-0 hidden"}`}>{item.label}</span>
             </Link>
           );
         })}

@@ -466,7 +466,7 @@ export default function ModeloVirtual() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); haptics.light(); setConfirmDeleteId(null); }}
-                          className="flex-1 text-[11px] font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center backdrop-blur-md"
+                          className="flex-1 text-xs font-bold py-2 rounded-lg transition-all active:scale-95 flex justify-center items-center backdrop-blur-md"
                           style={{ background: "rgba(255,255,255,0.15)", color: "white" }}
                         >
                           Não

@@ -113,7 +113,7 @@ function MobileTabBar({ navItems, pathname }: { navItems: NavItem[]; pathname: s
               {item.icon}
             </motion.div>
             <motion.span
-              className="block text-[10px] font-bold leading-none text-center"
+              className="block text-2xs font-bold leading-none text-center"
               animate={{
                 opacity: isActive ? 1 : 0.55,
                 scale: isActive ? 1 : 0.95,
@@ -237,7 +237,7 @@ export default function AuthChrome({
                     Comece a criar
                   </span>
                 </div>
-                <p className="text-[11px] mb-3 leading-relaxed" style={{ color: "var(--muted)" }}>
+                <p className="text-xs mb-3 leading-relaxed" style={{ color: "var(--muted)" }}>
                   Assine um plano e gere fotos profissionais com IA.
                 </p>
                 <Link
@@ -272,7 +272,7 @@ export default function AuthChrome({
                     }}
                   />
                 </div>
-                <p className="text-[10px] mt-2" style={{ color: "var(--muted)" }}>
+                <p className="text-2xs mt-2" style={{ color: "var(--muted)" }}>
                   Créditos disponíveis
                 </p>
               </>
@@ -330,13 +330,13 @@ export default function AuthChrome({
           {usage && campaignsLimit === 0 ? (
             <Link
               href="/plano"
-              className="text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 min-h-[32px] active:scale-95 transition-transform"
+              className="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 min-h-[32px] active:scale-95 transition-transform"
               style={{ background: "var(--gradient-brand)", color: "white", boxShadow: "0 2px 8px rgba(236,72,153,0.3)" }}
             >
               ⚡ Ativar plano
             </Link>
           ) : usage ? (
-            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: "var(--surface-2)", color: "var(--foreground)" }}>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: "var(--surface-2)", color: "var(--foreground)" }}>
               {`${campaignsUsed}/${campaignsLimit}`}
             </span>
           ) : null}

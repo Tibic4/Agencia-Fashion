@@ -81,7 +81,7 @@ export default function PricingTabs() {
             className={`relative z-10 px-3 md:px-6 py-3 rounded-full text-xs md:text-sm font-bold transition-colors text-center ${activeTab === "assinaturas" ? "text-brand-900" : "text-gray-500 hover:text-gray-900 dark:hover:text-white"}`}
           >
             <span className="block">Assinaturas Mensais</span>
-            <span className="mt-0.5 inline-block px-2 text-[9px] md:text-[10px] uppercase tracking-wider bg-brand-500/20 text-brand-700 dark:text-brand-400 rounded-full font-bold">
+            <span className="mt-0.5 inline-block px-2 text-2xs md:text-2xs uppercase tracking-wider bg-brand-500/20 text-brand-700 dark:text-brand-400 rounded-full font-bold">
               Recomendado
             </span>
           </button>
@@ -189,14 +189,14 @@ export default function PricingTabs() {
              </svg>
              {/* Mercado Pago wordmark */}
              <div className="flex flex-col items-start leading-none">
-               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Checkout oficial</span>
+               <span className="text-2xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Checkout oficial</span>
                <span className="text-xl font-black tracking-tight" style={{ color: '#00AAFF' }}>
                  mercado<span className="font-black">pago</span>
                </span>
              </div>
            </div>
            {/* Payment methods accepted */}
-           <div className="flex items-center gap-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+           <div className="flex items-center gap-3 text-2xs font-semibold text-muted-foreground uppercase tracking-wider">
              <span>PIX</span>
              <span className="w-1 h-1 rounded-full bg-current opacity-30" />
              <span>Cartão</span>

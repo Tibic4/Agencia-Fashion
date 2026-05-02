@@ -89,21 +89,21 @@ export default function KonvaToolbar({
           {/* Format toggle */}
           <button
             onClick={onFormatToggle}
-            className="text-[10px] px-2.5 py-1 rounded-lg font-semibold transition-all hover:opacity-80"
+            className="text-2xs px-2.5 py-1 rounded-lg font-semibold transition-all hover:opacity-80"
             style={{ background: "var(--brand-100)", color: "var(--brand-600)", border: "1px solid var(--brand-200, var(--border))" }}
             title={format === "feed" ? "Mudar para Story 1080×1920" : "Mudar para Feed 1080×1350"}
           >
             {format === "story" ? "📱 Story" : "📐 Feed"}
           </button>
           <span
-            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+            className="text-2xs px-2 py-0.5 rounded-full font-medium"
             style={{ background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)" }}
           >
             {template.label}
           </span>
           {hasModelImage && (
             <span
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+              className="text-2xs px-2 py-0.5 rounded-full font-medium"
               style={{ background: "#dcfce7", color: "#166534" }}
             >
               📸 Modelo IA
@@ -132,7 +132,7 @@ export default function KonvaToolbar({
             </button>
             <button
               onClick={onZoomReset}
-              className="px-2 py-1.5 text-[10px] font-semibold hover:opacity-70"
+              className="px-2 py-1.5 text-2xs font-semibold hover:opacity-70"
               style={{
                 color: "var(--muted)",
                 borderLeft: "1px solid var(--border)",
@@ -240,7 +240,7 @@ export default function KonvaToolbar({
         className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto"
         style={{ borderTop: "1px solid var(--border)", background: "var(--surface)" }}
       >
-        <span className="text-[10px] font-medium mr-1" style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>
+        <span className="text-2xs font-medium mr-1" style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>
           👁️ Elementos:
         </span>
         {TOGGLEABLE_ELEMENTS.map(({ key, label, icon }) => {
@@ -249,7 +249,7 @@ export default function KonvaToolbar({
             <button
               key={key}
               onClick={() => onToggleVisibility(key)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-2xs font-medium transition-all"
               style={{
                 background: isHidden ? "var(--border)" : "var(--background)",
                 color: isHidden ? "var(--muted)" : "var(--foreground)",
@@ -278,7 +278,7 @@ export default function KonvaToolbar({
         >
           {/* Element name */}
           <span
-            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+            className="text-xs font-semibold px-2 py-0.5 rounded-md"
             style={{
               background: "var(--brand-100)",
               color: "var(--brand-600)",
@@ -303,7 +303,7 @@ export default function KonvaToolbar({
                 A−
               </button>
               <span
-                className="px-2 py-1 text-[10px] font-medium"
+                className="px-2 py-1 text-2xs font-medium"
                 style={{
                   color: "var(--muted)",
                   borderLeft: "1px solid var(--border)",
@@ -353,7 +353,7 @@ export default function KonvaToolbar({
           {/* Delete (hide) */}
           <button
             onClick={() => onToggleVisibility(selectedId as ElementKey)}
-            className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80"
+            className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
             style={{
               background: "#fef2f2",
               color: "#dc2626",

@@ -212,15 +212,15 @@ export default async function AdminLogs() {
                     <span className="text-sm font-medium text-white">
                       {(c.stores as Record<string, string>)?.name || "Loja desconhecida"}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                    <span className="px-2 py-0.5 rounded-full text-2xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
                       failed
                     </span>
                   </div>
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-2xs text-gray-500">
                     {formatDateTimeBR(c.created_at as string)}
                   </span>
                 </div>
-                <pre className="text-[10px] md:text-xs text-red-300/80 bg-red-950/30 rounded-lg p-2 md:p-3 overflow-x-auto font-mono whitespace-pre-wrap break-all">
+                <pre className="text-2xs md:text-xs text-red-300/80 bg-red-950/30 rounded-lg p-2 md:p-3 overflow-x-auto font-mono whitespace-pre-wrap break-all">
                   {(c.error_message as string) || "Sem mensagem de erro"}
                 </pre>
               </div>
@@ -250,7 +250,7 @@ export default async function AdminLogs() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-white capitalize font-medium">{String(log.provider || "")}</span>
-                      <span className={`text-[10px] ${isError ? 'text-red-400' : 'text-gray-500'}`}>{stepLabel(String(log.action || ""))}</span>
+                      <span className={`text-2xs ${isError ? 'text-red-400' : 'text-gray-500'}`}>{stepLabel(String(log.action || ""))}</span>
                     </div>
                     {isError ? (
                       <span className="text-xs font-semibold text-red-400" title={String(meta.message || '')}>{String(meta.error_code || 'ERROR')}</span>
@@ -258,7 +258,7 @@ export default async function AdminLogs() {
                       <span className="text-xs font-semibold text-emerald-400">R$ {(Number(log.cost_brl) || 0).toFixed(4)}</span>
                     )}
                   </div>
-                  <span className="text-[10px] text-gray-600">{formatTimeBR(String(log.created_at))}</span>
+                  <span className="text-2xs text-gray-600">{formatTimeBR(String(log.created_at))}</span>
                 </div>
                 );
               })}

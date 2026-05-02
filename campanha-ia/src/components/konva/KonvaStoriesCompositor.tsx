@@ -413,7 +413,7 @@ export default function KonvaStoriesCompositor({
             Stories Interativo
           </span>
           <span
-            className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+            className="px-2 py-0.5 rounded-full text-2xs font-bold"
             style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}
           >
             3 slides · Konva
@@ -438,7 +438,7 @@ export default function KonvaStoriesCompositor({
               <button
                 key={s.type}
                 onClick={() => handleSlideSwitch(i)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
                 style={{
                   background: activeSlide === i ? "var(--brand-100)" : "transparent",
                   color: activeSlide === i ? "var(--brand-700)" : "var(--muted)",
@@ -485,7 +485,7 @@ export default function KonvaStoriesCompositor({
             <button
               onClick={handleSingleDownload}
               disabled={downloading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:opacity-90"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
               style={{
                 background: "var(--surface)",
                 color: "var(--foreground)",
@@ -512,7 +512,7 @@ export default function KonvaStoriesCompositor({
             <button
               onClick={downloadAllSlides}
               disabled={downloadingAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:opacity-90"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
               style={{
                 background: "var(--gradient-brand)",
                 color: "white",
@@ -537,7 +537,7 @@ export default function KonvaStoriesCompositor({
             </button>
             <button
               onClick={handleReset}
-              className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl text-[11px] font-medium transition-all hover:opacity-80 min-h-[44px] sm:min-h-0"
+              className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 min-h-[44px] sm:min-h-0"
               style={{
                 background: "var(--surface)",
                 color: "var(--muted)",
@@ -555,7 +555,7 @@ export default function KonvaStoriesCompositor({
           className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto"
           style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)", WebkitOverflowScrolling: "touch" }}
         >
-          <span className="text-[10px] font-medium mr-1 shrink-0" style={{ color: "var(--muted)" }}>
+          <span className="text-2xs font-medium mr-1 shrink-0" style={{ color: "var(--muted)" }}>
             👁️ Elementos:
           </span>
           {currentElements.map(({ key, label, icon }) => {
@@ -564,7 +564,7 @@ export default function KonvaStoriesCompositor({
               <button
                 key={key}
                 onClick={() => handleToggleVisibility(activeSlide, key)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all shrink-0 min-h-[36px]"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 min-h-[36px]"
                 style={{
                   background: isHidden ? "var(--border)" : "var(--background)",
                   color: isHidden ? "var(--muted)" : "var(--foreground)",
@@ -598,7 +598,7 @@ export default function KonvaStoriesCompositor({
             >
               {/* Element name */}
               <span
-                className="text-[11px] font-semibold px-2 py-0.5 rounded-md shrink-0"
+                className="text-xs font-semibold px-2 py-0.5 rounded-md shrink-0"
                 style={{
                   background: "var(--brand-100)",
                   color: "var(--brand-600)",
@@ -622,7 +622,7 @@ export default function KonvaStoriesCompositor({
                   A−
                 </button>
                 <span
-                  className="px-2 py-1 text-[10px] font-medium"
+                  className="px-2 py-1 text-2xs font-medium"
                   style={{
                     color: "var(--muted)",
                     borderLeft: "1px solid var(--border)",
@@ -646,7 +646,7 @@ export default function KonvaStoriesCompositor({
               {/* Delete (hide) */}
               <button
                 onClick={() => handleToggleVisibility(activeSlide, selId)}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all hover:opacity-80 shrink-0"
+                className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80 shrink-0"
                 style={{
                   background: "#fef2f2",
                   color: "#dc2626",
@@ -753,7 +753,7 @@ export default function KonvaStoriesCompositor({
 
         {/* Help text */}
         <div
-          className="px-3 py-2 text-center text-[10px]"
+          className="px-3 py-2 text-center text-2xs"
           style={{
             background: "var(--background)",
             borderTop: "1px solid var(--border)",
