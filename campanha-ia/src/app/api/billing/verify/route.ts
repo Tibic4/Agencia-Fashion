@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError, logger } from "@/lib/observability";
+import { getStoreByClerkId, updateStorePlan } from "@/lib/db";
 import {
   GooglePlayNotConfiguredError,
   PACKAGE_NAME,
@@ -114,11 +115,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Erro ao salvar assinatura" }, { status: 500 });
     }
 
-    // 4. Atualiza stores.plan (best-effort — endpoint /store/usage lê daqui)
-    await supabase
-      .from("stores")
-      .update({ plan })
-      .eq("clerk_user_id", userId);
+    // 4. Atualiza stores.plan_id pelo nome do plano. A versão antiga
+    // tentava setar uma coluna `plan` que não existe — update silencioso
+    // não falhava mas também não fazia nada, e /api/store/usage continuava
+    // lendo o plan_id antigo. updateStorePlan resolve plan_id pelo nome
+    // e também garante que store_usage esteja consistente com o novo plano.
+    const store = await getStoreByClerkId(userId);
+    if (store) {
+      try {
+        await updateStorePlan(store.id, plan);
+      } catch (e) {
+        // Não vamos derrubar o verify por causa do update de plano —
+        // a subscription já está gravada. Logamos pra Sentry e seguimos.
+        captureError(e, { route: "POST /api/billing/verify", phase: "updateStorePlan" });
+      }
+    }
 
     logger.info("subscription_verified", {
       user_id: userId,
