@@ -208,12 +208,12 @@ export default function Sobre() {
                 href="https://wa.me/553498223001"
                 className="surface-card surface-card-hover flex items-center gap-4 p-5 transition-all duration-300 hover:-translate-y-0.5 min-h-[72px] group"
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>
                   <IconPhone />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>WhatsApp</p>
-                  <p className="text-sm font-bold" style={{ color: "#16a34a" }}>(34) 9822-3001</p>
+                  <p className="text-sm font-bold" style={{ color: "var(--success)" }}>(34) 9822-3001</p>
                 </div>
                 <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--muted)" }}>
                   <IconArrowRight />

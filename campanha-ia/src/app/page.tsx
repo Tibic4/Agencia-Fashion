@@ -162,7 +162,7 @@ export default function Home() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300">Alta Conversão</span>
                     <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-accent-100 dark:bg-accent-700/30 text-accent-600 dark:text-accent-300">Copy Persuasivo</span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">Meta Aprovado</span>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>Meta Aprovado</span>
                   </div>
                 </div>
               </div>

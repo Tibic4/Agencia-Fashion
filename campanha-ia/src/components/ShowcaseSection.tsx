@@ -243,7 +243,7 @@ function BeforeAfterSlider({
           </p>
           <div className="flex items-center justify-center gap-1.5 flex-wrap">
             <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--brand-100)", color: "var(--brand-700)" }}>Virtual Try-On</span>
-            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#16a34a" }}>IA Generativa</span>
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" }}>IA Generativa</span>
           </div>
         </div>
       )}
