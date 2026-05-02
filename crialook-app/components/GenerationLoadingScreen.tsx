@@ -135,12 +135,15 @@ interface FactMeta {
 
 // 6-color category palette — same hues the site uses (data=cyan, tip=green,
 // trend=fucsia, psychology=amber, social=violet, curiosity=pink-purple).
+// Categorias que batem com a paleta de marca usam o token; as demais ficam
+// como literal pra preservar a variedade cromática do carousel (paridade com
+// o site — não há token equivalente pra cyan/violet-soft/pink-magenta).
 const CAT_COLOR = {
   curiosity: '#f472b6',
   data: '#06b6d4',
-  tip: '#10b981',
-  trend: '#d946ef',
-  psychology: '#f59e0b',
+  tip: Colors.brand.success,
+  trend: Colors.brand.primary,
+  psychology: Colors.brand.accent,
   social: '#8b5cf6',
 } as const;
 

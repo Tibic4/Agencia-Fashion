@@ -49,10 +49,12 @@ import { isTrialCampaign, type Campaign } from '@/types';
 type ObjectiveKey = 'venda_imediata' | 'lancamento' | 'promocao' | 'engajamento';
 
 const objectiveColors: Record<ObjectiveKey, string> = {
-  venda_imediata: '#10b981',
-  lancamento: '#3b82f6',
-  promocao: '#ef4444',
-  engajamento: '#a855f7',
+  venda_imediata: Colors.brand.success,
+  // No `brand.info` token exists; `#3b82f6` (cold blue) was off-palette.
+  // Fallback to brand violet — `lancamento` semantically maps to the brand.
+  lancamento: Colors.brand.violet,
+  promocao: Colors.brand.error,
+  engajamento: Colors.brand.violet,
 };
 
 const OBJECTIVE_EMOJI: Record<ObjectiveKey, string> = {
