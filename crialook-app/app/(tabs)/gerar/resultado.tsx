@@ -1101,7 +1101,7 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: tokens.spacing.sm },
   backText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.medium },
   photoBadge: {
-    backgroundColor: 'rgba(124,58,237,0.15)',
+    backgroundColor: 'rgba(168,85,247,0.15)',
     paddingHorizontal: 10,
     paddingVertical: tokens.spacing.xs,
     borderRadius: 12,
@@ -1206,7 +1206,7 @@ const styles = StyleSheet.create({
   formatCard: { gap: tokens.spacing.sm },
   formatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   formatHeaderText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
-  formatRatioBadge: { backgroundColor: 'rgba(124,58,237,0.12)', paddingHorizontal: tokens.spacing.sm, paddingVertical: 3, borderRadius: tokens.radii.sm },
+  formatRatioBadge: { backgroundColor: Colors.brand.violetGlass, paddingHorizontal: tokens.spacing.sm, paddingVertical: 3, borderRadius: tokens.radii.sm },
   formatRatioText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.bold },
   formatRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs },
   formatBtn: {
@@ -1232,7 +1232,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: tokens.spacing.xs,
     borderRadius: 12,
-    backgroundColor: 'rgba(124,58,237,0.12)',
+    backgroundColor: Colors.brand.violetGlass,
   },
   aiBadgeText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.black },
 
@@ -1245,7 +1245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabActive: { backgroundColor: 'rgba(124,58,237,0.06)' },
+  tabActive: { backgroundColor: 'rgba(168,85,247,0.06)' },
   tabText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold, color: '#999' },
   tabTextActive: { color: Colors.brand.primary },
   tabIndicator: {
@@ -1261,7 +1261,7 @@ const styles = StyleSheet.create({
 
   // Tips — gap 10 entre header/conteúdo e marginTop 12 entre cards (respiro tipo Linear/Stripe).
   tipCard: { gap: 10, marginTop: tokens.spacing.md },
-  tipCardAlt: { backgroundColor: 'rgba(124,58,237,0.04)' },
+  tipCardAlt: { backgroundColor: 'rgba(168,85,247,0.04)' },
   tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: tokens.spacing.md },
   tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm },
   tipLabel: { fontSize: 10, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.6 },
@@ -1273,12 +1273,12 @@ const styles = StyleSheet.create({
      Sem isso, visualmente parecia que o pill era um continuation do botão. */
   hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   hashtagPill: {
-    backgroundColor: 'rgba(124,58,237,0.08)',
+    backgroundColor: 'rgba(168,85,247,0.08)',
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(124,58,237,0.15)',
+    borderColor: 'rgba(168,85,247,0.15)',
   },
   hashtagText: { color: Colors.brand.primary, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, letterSpacing: 0.1 },
 
@@ -1290,7 +1290,7 @@ const styles = StyleSheet.create({
      mas mantemos área tocável >=44px via hitSlop no Pressable, atendendo
      guideline de acessibilidade (WCAG 2.5.5 / Material/HIG 44dp mínimo). */
   copyButton: {
-    backgroundColor: 'rgba(124,58,237,0.12)',
+    backgroundColor: Colors.brand.violetGlass,
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: 7,
     borderRadius: tokens.radii.sm,
@@ -1314,9 +1314,9 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 14,
     borderRadius: 14,
-    backgroundColor: 'rgba(124,58,237,0.06)',
+    backgroundColor: 'rgba(168,85,247,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(124,58,237,0.15)',
+    borderColor: 'rgba(168,85,247,0.15)',
     marginTop: tokens.spacing.md,
   },
   storyIcon: { fontSize: tokens.fontSize.xl, marginTop: 1 },
@@ -1331,9 +1331,9 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.sm,
     padding: tokens.spacing.md,
     borderRadius: 12,
-    backgroundColor: 'rgba(124,58,237,0.06)',
+    backgroundColor: 'rgba(168,85,247,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(124,58,237,0.15)',
+    borderColor: 'rgba(168,85,247,0.15)',
     marginTop: tokens.spacing.sm,
   },
   dicaExtraIcon: { fontSize: tokens.fontSize.base, marginTop: 2 },

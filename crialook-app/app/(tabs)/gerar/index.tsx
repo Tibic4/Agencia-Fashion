@@ -1124,7 +1124,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   floatingBtn: {
-    shadowColor: '#7C3AED',
+    shadowColor: Colors.brand.violet,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
