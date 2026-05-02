@@ -756,8 +756,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   emojiText: { fontSize: 32 },
-  timerInside: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '700', marginTop: 2, letterSpacing: 0.5 },
-  title: { color: '#fff', fontSize: tokens.fontSize.display, fontWeight: '800', textAlign: 'center', letterSpacing: -0.3 },
+  timerInside: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: tokens.fontWeight.bold, marginTop: 2, letterSpacing: 0.5 },
+  title: { color: '#fff', fontSize: tokens.fontSize.display, fontWeight: tokens.fontWeight.black, textAlign: 'center', letterSpacing: -0.3 },
   status: { color: 'rgba(255,255,255,0.55)', fontSize: 14, textAlign: 'center', minHeight: 20 },
   progressContainer: { width: '100%', gap: 10, marginTop: 4 },
   progressBarBg: {
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   },
   factHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   factEmoji: { fontSize: 18, lineHeight: 22 },
-  factCategory: { fontSize: tokens.fontSize.xs, fontWeight: '800', letterSpacing: 1.2 },
+  factCategory: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, letterSpacing: 1.2 },
   pauseBtn: {
     color: 'rgba(255,255,255,0.5)',
     fontSize: 13,
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
   completionTitle: {
     color: '#fff',
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: tokens.fontWeight.black,
     letterSpacing: -0.8,
     textAlign: 'center',
     marginBottom: 4,
@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.08)',
   },
   stat: { alignItems: 'center' },
-  statValue: { color: '#fff', fontSize: 20, fontWeight: '800' },
+  statValue: { color: '#fff', fontSize: 20, fontWeight: tokens.fontWeight.black },
   statLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2 },
   statDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.1)' },
 });

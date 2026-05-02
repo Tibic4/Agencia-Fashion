@@ -24,6 +24,7 @@ import { useSSO } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
 import { haptic } from '@/lib/haptics';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { toast } from '@/lib/toast';
@@ -72,7 +73,7 @@ function GoogleLogo({ size = 18 }: { size?: number }) {
           textAlignVertical: 'center',
           lineHeight: size,
           fontSize: size * 0.7,
-          fontWeight: '700',
+          fontWeight: tokens.fontWeight.bold,
           color: '#4285F4',
         }}
       >

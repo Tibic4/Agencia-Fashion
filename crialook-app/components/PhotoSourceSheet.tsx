@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: tokens.fontSize.xxl,
     fontFamily: 'Inter_700Bold',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
     letterSpacing: -0.3,
   },
   subtitle: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontSize: 15,
     fontFamily: 'Inter_700Bold',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
   },
   optionDesc: {
     fontSize: tokens.fontSize.md,
@@ -280,6 +280,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 15,
     fontFamily: 'Inter_700Bold',
-    fontWeight: '700',
+    fontWeight: tokens.fontWeight.bold,
   },
 });

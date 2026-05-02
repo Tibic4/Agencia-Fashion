@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 16,
   },
-  label: { fontSize: 15, fontWeight: '600', marginTop: 4 },
+  label: { fontSize: 15, fontWeight: tokens.fontWeight.semibold, marginTop: 4 },
   optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   optionBtn: {
     flexDirection: 'row',
@@ -420,6 +420,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 44,
   },
-  optionText: { fontSize: 13, fontWeight: '500' },
+  optionText: { fontSize: 13, fontWeight: tokens.fontWeight.medium },
   colorDot: { width: 20, height: 20, borderRadius: 10 },
 });

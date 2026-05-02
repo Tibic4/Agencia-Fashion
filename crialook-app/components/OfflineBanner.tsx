@@ -18,6 +18,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useT } from '@/lib/i18n';
 import { haptic } from '@/lib/haptics';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 
 const BACK_ONLINE_DURATION_MS = 2400;
 
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
   text: {
     color: '#fff',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: tokens.fontWeight.semibold,
     letterSpacing: -0.1,
   },
 });

@@ -48,6 +48,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import type { ModelItem } from '@/types';
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
   closeBtnText: {
     color: '#fff',
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: tokens.fontWeight.semibold,
     lineHeight: 24,
     marginTop: -2,
     includeFontPadding: false,

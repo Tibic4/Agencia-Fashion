@@ -920,7 +920,7 @@ function HistoricoScreenInner() {
                   <Text
                     style={{
                       color: Colors.brand.primary,
-                      fontWeight: '600',
+                      fontWeight: tokens.fontWeight.semibold,
                       marginTop: 8,
                     }}
                   >
@@ -945,7 +945,7 @@ function HistoricoScreenInner() {
                   hitSlop={16}
                   style={{ minHeight: 48, justifyContent: 'center' }}
                 >
-                  <Text style={{ color: Colors.brand.primary, fontWeight: '600', marginTop: 8 }}>
+                  <Text style={{ color: Colors.brand.primary, fontWeight: tokens.fontWeight.semibold, marginTop: 8 }}>
                     {t('history.filterAll', { n: campaigns.length })}
                   </Text>
                 </AnimatedPressable>

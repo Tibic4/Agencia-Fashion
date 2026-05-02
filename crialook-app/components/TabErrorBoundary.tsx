@@ -14,6 +14,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { Sentry } from '@/lib/sentry';
 
 interface State {
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emoji: { fontSize: 48 },
-  title: { fontSize: 18, fontWeight: '700', color: Colors.dark.text },
+  title: { fontSize: 18, fontWeight: tokens.fontWeight.bold, color: Colors.dark.text },
   desc: {
     fontSize: 14,
     textAlign: 'center',
@@ -122,5 +123,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  buttonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  buttonText: { color: '#fff', fontSize: 14, fontWeight: tokens.fontWeight.bold },
 });

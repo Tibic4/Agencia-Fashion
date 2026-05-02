@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   content: { alignItems: 'center', gap: 12 },
   emoji: { fontSize: 56 },
-  title: { color: '#fff', fontSize: tokens.fontSize.display, fontWeight: '700' },
+  title: { color: '#fff', fontSize: tokens.fontSize.display, fontWeight: tokens.fontWeight.bold },
   desc: { color: '#A1A1AA', fontSize: 14, textAlign: 'center', lineHeight: 20 },
   errorText: {
     color: '#EF4444',
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  buttonText: { color: '#fff', fontSize: 15, fontWeight: tokens.fontWeight.bold },
   reportBtn: {
     marginTop: 4,
     paddingVertical: tokens.spacing.md,
@@ -173,5 +173,5 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-  reportText: { color: '#A1A1AA', fontSize: 13, fontWeight: '600' },
+  reportText: { color: '#A1A1AA', fontSize: 13, fontWeight: tokens.fontWeight.semibold },
 });

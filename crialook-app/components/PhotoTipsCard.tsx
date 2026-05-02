@@ -18,6 +18,7 @@ import Animated, { FadeIn, FadeOut, FadeInDown } from 'react-native-reanimated';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AnimatedPressable } from '@/components/ui';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT, type TKey } from '@/lib/i18n';
 import { haptic } from '@/lib/haptics';
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerIcon: { fontSize: 16 },
-  headerText: { flex: 1, fontSize: 13, fontWeight: '700' },
+  headerText: { flex: 1, fontSize: 13, fontWeight: tokens.fontWeight.bold },
   body: { marginTop: 12, gap: 12 },
   tipSlot: {
     minHeight: 44,
