@@ -96,23 +96,166 @@ export interface PlaySubscriptionStatus {
   acknowledgementState: number;
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Implementação Google Play Developer API v3 (purchases.subscriptions)
+// ─────────────────────────────────────────────────────────────────────
+// O fluxo OAuth2 com Service Account funciona assim:
+//   1. Carregamos o JSON da SA (file ou inline) e extraímos o private_key
+//      (RSA PEM) e o client_email.
+//   2. Assinamos um JWT RS256 com claim `iss=client_email`,
+//      `aud=https://oauth2.googleapis.com/token`,
+//      `scope=https://www.googleapis.com/auth/androidpublisher`,
+//      `iat=now`, `exp=now+1h`.
+//   3. Trocamos esse JWT por um access_token no endpoint OAuth2 do Google.
+//   4. Cacheamos o access_token (TTL ~55min) e usamos pra chamar a Play
+//      Developer API. JWT lib (jose) já é dep do projeto pro RTDN.
+//
+// Endpoints v3 que usamos:
+//   GET ...purchases/subscriptions/{sku}/tokens/{token}           → status
+//   POST ...purchases/subscriptions/{sku}/tokens/{token}:acknowledge
+//   POST ...purchases/subscriptions/{sku}/tokens/{token}:cancel
+//
+// Refs: https://developers.google.com/android-publisher/api-ref/rest
+
+import { readFileSync } from "node:fs";
+import { SignJWT, importPKCS8 } from "jose";
+
+interface ServiceAccountKey {
+  client_email: string;
+  private_key: string;
+  token_uri?: string;
+}
+
+function loadServiceAccountKey(): ServiceAccountKey {
+  const inline = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
+  const path = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH;
+  let raw: string | null = null;
+  if (inline) raw = inline;
+  else if (path) raw = readFileSync(path, "utf-8");
+  if (!raw) throw new GooglePlayNotConfiguredError();
+  const parsed = JSON.parse(raw) as ServiceAccountKey;
+  if (!parsed.client_email || !parsed.private_key) {
+    throw new GooglePlayNotConfiguredError();
+  }
+  return parsed;
+}
+
+interface CachedToken {
+  token: string;
+  /** epoch ms quando o token vira expirado pro cache (5min antes do real). */
+  expiresAt: number;
+}
+let tokenCache: CachedToken | null = null;
+const TOKEN_TTL_MS = 55 * 60 * 1000; // 55min — Google emite com 1h
+
+async function getAccessToken(): Promise<string> {
+  if (tokenCache && tokenCache.expiresAt > Date.now()) {
+    return tokenCache.token;
+  }
+
+  const sa = loadServiceAccountKey();
+  const tokenUri = sa.token_uri ?? "https://oauth2.googleapis.com/token";
+
+  const privateKey = await importPKCS8(sa.private_key, "RS256");
+  const now = Math.floor(Date.now() / 1000);
+  const jwt = await new SignJWT({
+    scope: "https://www.googleapis.com/auth/androidpublisher",
+  })
+    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+    .setIssuer(sa.client_email)
+    .setSubject(sa.client_email)
+    .setAudience(tokenUri)
+    .setIssuedAt(now)
+    .setExpirationTime(now + 3600)
+    .sign(privateKey);
+
+  const body = new URLSearchParams({
+    grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+    assertion: jwt,
+  });
+
+  const res = await fetch(tokenUri, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Google OAuth2 token exchange failed: ${res.status} ${text}`);
+  }
+  const data = (await res.json()) as { access_token: string; expires_in: number };
+  tokenCache = {
+    token: data.access_token,
+    expiresAt: Date.now() + Math.min(data.expires_in * 1000 - 60_000, TOKEN_TTL_MS),
+  };
+  return data.access_token;
+}
+
+function playApiUrl(sku: ValidSku, token: string, action?: "acknowledge" | "cancel"): string {
+  const base = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptions/${encodeURIComponent(sku)}/tokens/${encodeURIComponent(token)}`;
+  return action ? `${base}:${action}` : base;
+}
+
 export async function verifySubscription(
-  _sku: ValidSku,
-  _purchaseToken: string,
+  sku: ValidSku,
+  purchaseToken: string,
 ): Promise<PlaySubscriptionStatus> {
-  throw new GooglePlayNotConfiguredError();
+  const accessToken = await getAccessToken();
+  const res = await fetch(playApiUrl(sku, purchaseToken), {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Play API verify failed: ${res.status} ${text}`);
+  }
+  // Resposta v3 (purchases.subscriptions.get):
+  //   { expiryTimeMillis, paymentState, autoRenewing, acknowledgementState,
+  //     linkedPurchaseToken, ... }
+  const raw = (await res.json()) as Record<string, unknown>;
+  return {
+    paymentState: typeof raw.paymentState === "number" ? raw.paymentState : null,
+    expiryTimeMillis: String(raw.expiryTimeMillis ?? "0"),
+    autoRenewing: Boolean(raw.autoRenewing),
+    linkedPurchaseToken:
+      typeof raw.linkedPurchaseToken === "string" ? raw.linkedPurchaseToken : undefined,
+    acknowledgementState:
+      typeof raw.acknowledgementState === "number" ? raw.acknowledgementState : 0,
+  };
 }
 
 export async function acknowledgeSubscription(
-  _sku: ValidSku,
-  _purchaseToken: string,
+  sku: ValidSku,
+  purchaseToken: string,
 ): Promise<void> {
-  throw new GooglePlayNotConfiguredError();
+  const accessToken = await getAccessToken();
+  const res = await fetch(playApiUrl(sku, purchaseToken, "acknowledge"), {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+  // 200 ou 204 são sucesso. 410 = "already acknowledged" (idempotente, não erra).
+  if (res.ok || res.status === 410) return;
+  const text = await res.text().catch(() => "");
+  throw new Error(`Play API acknowledge failed: ${res.status} ${text}`);
 }
 
 export async function cancelSubscription(
-  _sku: ValidSku,
-  _purchaseToken: string,
+  sku: ValidSku,
+  purchaseToken: string,
 ): Promise<void> {
-  throw new GooglePlayNotConfiguredError();
+  const accessToken = await getAccessToken();
+  const res = await fetch(playApiUrl(sku, purchaseToken, "cancel"), {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+  if (res.ok || res.status === 410) return;
+  const text = await res.text().catch(() => "");
+  throw new Error(`Play API cancel failed: ${res.status} ${text}`);
 }
