@@ -23,6 +23,13 @@ export const spacing = {
   sm: 8,
   /** 12 — gap confortável entre elementos dentro de card */
   md: 12,
+  /**
+   * 14 — passo intermediário entre `md (12)` e `lg (16)`.
+   * Justificado por 30+ usos legados (`padding: 14`) em telas hero
+   * (historico/plano/gerar) onde 12 fica aperto e 16 fica solto.
+   * Usar com parcimônia — preferir md/lg quando o ritmo permitir.
+   */
+  mdLg: 14,
   /** 16 — padding de card, padding de borda de tela */
   lg: 16,
   /** 20 — respiro de seção (paritário com /historico) */

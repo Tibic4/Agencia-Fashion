@@ -52,6 +52,11 @@ const brand = {
   glowStrong: 'rgba(217,70,239,0.28)',
   glowMid: 'rgba(217,70,239,0.18)',
   glowSoft: 'rgba(217,70,239,0.12)',
+  // Violet glass — translucent overlay using the canonical brand violet
+  // (#A855F7 = rgba(168,85,247,…)) at 12% alpha. Replaces ad-hoc
+  // rgba(124,58,237,…) (=#7C3AED) which was off-palette and read as a
+  // colder violet on the result screen vs the rest of the app.
+  violetGlass: 'rgba(168,85,247,0.12)',
 };
 
 export default {
