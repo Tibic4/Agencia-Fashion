@@ -610,7 +610,13 @@ function HistoricoScreenInner() {
                           { backgroundColor: colors.backgroundSecondary },
                         ]}
                       >
-                        <Text style={{ fontSize: 18 }}>{c.status === 'failed' ? '⚠️' : '⏳'}</Text>
+                        <Text
+                          style={{ fontSize: 18 }}
+                          accessibilityLabel={t(c.status === 'failed' ? 'history.statusFailed' : 'history.statusProcessing')}
+                          accessibilityRole="image"
+                        >
+                          {c.status === 'failed' ? '⚠️' : '⏳'}
+                        </Text>
                       </View>
                     )}
                     {extraCount > 0 && (
@@ -943,6 +949,8 @@ function HistoricoScreenInner() {
                   onPress={() => setSearchQuery('')}
                   haptic="tap"
                   hitSlop={16}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('history.searchClear')}
                   style={{ minHeight: 48, justifyContent: 'center' }}
                 >
                   <Text style={{ color: Colors.brand.primary, fontWeight: tokens.fontWeight.semibold, marginTop: 8 }}>
