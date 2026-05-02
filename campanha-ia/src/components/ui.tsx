@@ -12,7 +12,7 @@ export function PublicHeader({ showCta = true }: { showCta?: boolean }) {
             ✨
           </div>
           <span className="text-lg font-bold">
-            Campanha <span className="gradient-text">IA</span>
+            <span className="gradient-text">CriaLook</span>
           </span>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm" style={{ color: "var(--muted)" }}>
@@ -43,7 +43,7 @@ export function PublicFooter() {
             <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs" style={{ background: "var(--gradient-brand)", color: "white" }}>
               ✨
             </div>
-            <span className="text-sm font-bold">Campanha <span className="gradient-text">IA</span></span>
+            <span className="text-sm font-bold"><span className="gradient-text">CriaLook</span></span>
           </div>
           <nav className="flex items-center gap-6 text-xs" style={{ color: "var(--muted)" }}>
             <Link href="/sobre" className="hover:text-[var(--foreground)] transition">Sobre</Link>
