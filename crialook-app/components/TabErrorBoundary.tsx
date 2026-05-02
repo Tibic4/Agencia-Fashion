@@ -15,6 +15,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '@/constants/Colors';
 import { tokens } from '@/lib/theme/tokens';
+import { t } from '@/lib/i18n';
 import { Sentry } from '@/lib/sentry';
 
 interface State {
@@ -74,10 +75,10 @@ export class TabErrorBoundary extends React.Component<Props, State> {
           onPress={this.reset}
           style={({ pressed }) => [styles.button, pressed && { opacity: 0.85 }]}
           accessibilityRole="button"
-          accessibilityLabel="Tentar de novo"
+          accessibilityLabel={t('common.retry')}
           android_ripple={{ color: 'rgba(255,255,255,0.18)' }}
         >
-          <Text style={styles.buttonText}>Tentar de novo</Text>
+          <Text style={styles.buttonText}>{t('common.retry')}</Text>
         </Pressable>
       </View>
     );
