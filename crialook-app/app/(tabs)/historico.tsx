@@ -1118,7 +1118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  thumbCountText: { color: '#fff', fontSize: 9, fontWeight: tokens.fontWeight.black },
+  thumbCountText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black },
   starBtn: {
     width: 36,
     height: 36,
@@ -1149,7 +1149,7 @@ const styles = StyleSheet.create({
     borderRadius: tokens.radii.full,
     borderWidth: 1,
   },
-  statusPillText: { fontSize: 10, fontWeight: tokens.fontWeight.bold, letterSpacing: 0.2 },
+  statusPillText: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, letterSpacing: 0.2 },
   // ─── Objective / trial pill ─────────────────────────────
   objectivePill: {
     flexDirection: 'row',

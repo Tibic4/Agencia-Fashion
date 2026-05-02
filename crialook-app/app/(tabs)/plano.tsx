@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
   },
   trialTitle: { fontSize: tokens.fontSize.base, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
   trialDesc: {
-    fontSize: 12.5,
+    fontSize: tokens.fontSize.md,
     marginTop: 2,
     fontFamily: 'Inter_400Regular',
     lineHeight: tokens.spacing.lg,
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
   topTierEmoji: { fontSize: tokens.fontSize.displayLg },
   topTierTitle: { fontSize: tokens.fontSize.base, fontFamily: 'Inter_700Bold', letterSpacing: -0.1 },
   topTierDesc: {
-    fontSize: 12.5,
+    fontSize: tokens.fontSize.md,
     marginTop: 2,
     fontFamily: 'Inter_400Regular',
     lineHeight: tokens.spacing.lg,

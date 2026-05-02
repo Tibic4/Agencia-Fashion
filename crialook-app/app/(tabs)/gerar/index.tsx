@@ -1029,7 +1029,7 @@ const styles = StyleSheet.create({
   photoImage: { width: '100%', height: '100%' },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.sm },
   photoLabel: { fontSize: tokens.fontSize.md, fontFamily: 'Inter_600SemiBold' },
-  photoLabelSmall: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
+  photoLabelSmall: { fontSize: tokens.fontSize.xs, fontFamily: 'Inter_600SemiBold' },
   modelList: { gap: tokens.spacing.md, paddingVertical: tokens.spacing.xs },
   modelCard: { width: 100, alignItems: 'center', borderRadius: 14, borderWidth: 2, overflow: 'hidden' },
   modelCardSelected: { borderWidth: 2.5 },
@@ -1058,7 +1058,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: tokens.spacing.sm,
     paddingVertical: tokens.spacing.xxs,
   },
-  customBadgeText: { fontSize: 9, fontWeight: tokens.fontWeight.black, color: '#fff' },
+  customBadgeText: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, color: '#fff' },
   // paddingHorizontal:4 (era só paddingRight:4) garante que o ring de
   // seleção rosa do PRIMEIRO item não fique cortado contra a borda esquerda
   // da ScrollView. paddingVertical:6 dá folga pro shadow não clipar em cima/

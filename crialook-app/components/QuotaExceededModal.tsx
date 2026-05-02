@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_700Bold',
   },
   pkgRow: {

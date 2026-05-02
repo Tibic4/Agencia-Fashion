@@ -18,6 +18,7 @@
  */
 import { Stack } from 'expo-router';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export default function LegalLayout() {
@@ -31,7 +32,7 @@ export default function LegalLayout() {
         headerShadowVisible: false,
         headerTitleStyle: {
           fontFamily: 'Inter_700Bold',
-          fontSize: 17,
+          fontSize: tokens.fontSize.xl,
           color: colors.text,
         },
         headerLargeTitle: true,

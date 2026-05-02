@@ -43,6 +43,7 @@ import {
 } from '@/components/ui';
 import { haptic } from '@/lib/haptics';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 
@@ -390,7 +391,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   titleHero: {
-    fontSize: 22,
+    fontSize: tokens.fontSize.display,
     fontFamily: 'Inter_700Bold',
     letterSpacing: -0.5,
   },

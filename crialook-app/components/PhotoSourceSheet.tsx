@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 19,
+    fontSize: tokens.fontSize.xxl,
     fontFamily: 'Inter_700Bold',
     fontWeight: '700',
     letterSpacing: -0.3,
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   optionDesc: {
-    fontSize: 12.5,
+    fontSize: tokens.fontSize.md,
     fontFamily: 'Inter_400Regular',
     marginTop: 2,
     lineHeight: 16,

@@ -243,7 +243,7 @@ const trialBannerStyles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.md },
   title: { color: '#fff', fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.black, letterSpacing: -0.2 },
-  desc: { color: 'rgba(255,255,255,0.92)', fontSize: 12.5, lineHeight: 17 },
+  desc: { color: 'rgba(255,255,255,0.92)', fontSize: tokens.fontSize.md, lineHeight: 17 },
   cta: {
     backgroundColor: 'rgba(255,255,255,0.18)',
     paddingVertical: tokens.spacing.sm,
@@ -1164,7 +1164,7 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.spacing.xxs,
     borderRadius: tokens.radii.sm,
   },
-  thumbNumberText: { color: '#fff', fontSize: 9, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
+  thumbNumberText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
   /* Trial-only: lock thumb (slots 1 + 3 da tira) tem moldura sutil pra parecer
      irmã das outras mas com ar "bloqueado". O overlay+badge é o que faz a
      leitura visual clara. */
@@ -1207,7 +1207,7 @@ const styles = StyleSheet.create({
   formatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   formatHeaderText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
   formatRatioBadge: { backgroundColor: Colors.brand.violetGlass, paddingHorizontal: tokens.spacing.sm, paddingVertical: tokens.spacing.xs, borderRadius: tokens.radii.sm },
-  formatRatioText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.bold },
+  formatRatioText: { color: Colors.brand.primary, fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold },
   formatRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs },
   formatBtn: {
     flexDirection: 'row',
@@ -1234,7 +1234,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: Colors.brand.violetGlass,
   },
-  aiBadgeText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.black },
+  aiBadgeText: { color: Colors.brand.primary, fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black },
 
   // Tabs
   tabsCard: { padding: 0, overflow: 'hidden' },
@@ -1264,7 +1264,7 @@ const styles = StyleSheet.create({
   tipCardAlt: { backgroundColor: 'rgba(168,85,247,0.04)' },
   tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: tokens.spacing.md },
   tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm },
-  tipLabel: { fontSize: 10, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.6 },
+  tipLabel: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.6 },
   tipText: { fontSize: tokens.fontSize.base, lineHeight: 21 },
   tipValue: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.semibold },
   tipHint: { fontSize: tokens.fontSize.sm, fontStyle: 'italic' },
@@ -1284,7 +1284,7 @@ const styles = StyleSheet.create({
 
   // Char badge
   charBadge: { paddingHorizontal: tokens.spacing.sm, paddingVertical: tokens.spacing.xxs, borderRadius: tokens.radii.sm },
-  charBadgeText: { fontSize: 10, fontWeight: tokens.fontWeight.black, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
+  charBadgeText: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
 
   /* Copy button — visualmente compacto (não rouba peso visual da label do card),
      mas mantemos área tocável >=44px via hitSlop no Pressable, atendendo
@@ -1298,7 +1298,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   copyButtonCopied: { backgroundColor: Colors.brand.primary },
-  copyButtonText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.black, letterSpacing: 0.4 },
+  copyButtonText: { color: Colors.brand.primary, fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, letterSpacing: 0.4 },
   copyButtonTextCopied: { color: '#fff' },
 
   // Info grid
@@ -1321,7 +1321,7 @@ const styles = StyleSheet.create({
   },
   storyIcon: { fontSize: tokens.fontSize.xl, marginTop: 1 },
   storyContent: { flex: 1, gap: tokens.spacing.xs },
-  storyLabel: { fontSize: 10, fontWeight: tokens.fontWeight.black, color: Colors.brand.primary, letterSpacing: 0.6, textTransform: 'uppercase' },
+  storyLabel: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, color: Colors.brand.primary, letterSpacing: 0.6, textTransform: 'uppercase' },
   storyText: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.medium, color: Colors.brand.primary, lineHeight: 19 },
 
   // Dica extra
@@ -1368,6 +1368,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: tokens.spacing.xxs,
   },
-  analysisItemLabel: { fontSize: 9, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  analysisItemLabel: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   analysisItemValue: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold },
 });

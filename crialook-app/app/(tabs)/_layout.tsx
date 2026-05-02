@@ -42,6 +42,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { useNavigationLocked } from '@/lib/navigationLock';
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   label: {
-    fontSize: 10,
+    fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_700Bold',
     lineHeight: 12,
     letterSpacing: -0.1,
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: '#fff',
-    fontSize: 9,
+    fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_700Bold',
     lineHeight: 11,
   },

@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   },
   content: { alignItems: 'center', gap: 12 },
   emoji: { fontSize: 56 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '700' },
+  title: { color: '#fff', fontSize: tokens.fontSize.display, fontWeight: '700' },
   desc: { color: '#A1A1AA', fontSize: 14, textAlign: 'center', lineHeight: 20 },
   errorText: {
     color: '#EF4444',

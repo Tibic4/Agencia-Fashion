@@ -44,6 +44,7 @@ import * as Haptics from 'expo-haptics';
 import { Image as ExpoImage } from 'expo-image';
 import { Button } from '@/components/ui';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT, type TKey } from '@/lib/i18n';
 import { setNavigationLocked } from '@/lib/navigationLock';
@@ -756,7 +757,7 @@ const styles = StyleSheet.create({
   },
   emojiText: { fontSize: 32 },
   timerInside: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '700', marginTop: 2, letterSpacing: 0.5 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '800', textAlign: 'center', letterSpacing: -0.3 },
+  title: { color: '#fff', fontSize: tokens.fontSize.display, fontWeight: '800', textAlign: 'center', letterSpacing: -0.3 },
   status: { color: 'rgba(255,255,255,0.55)', fontSize: 14, textAlign: 'center', minHeight: 20 },
   progressContainer: { width: '100%', gap: 10, marginTop: 4 },
   progressBarBg: {
@@ -792,7 +793,7 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     color: 'rgba(255,255,255,0.3)',
-    fontSize: 10,
+    fontSize: tokens.fontSize.xs,
     textAlign: 'center',
   },
   hint: { color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center' },
@@ -816,7 +817,7 @@ const styles = StyleSheet.create({
   },
   factHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   factEmoji: { fontSize: 18, lineHeight: 22 },
-  factCategory: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
+  factCategory: { fontSize: tokens.fontSize.xs, fontWeight: '800', letterSpacing: 1.2 },
   pauseBtn: {
     color: 'rgba(255,255,255,0.5)',
     fontSize: 13,

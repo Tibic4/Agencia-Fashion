@@ -90,7 +90,7 @@ const prefRowStyles = StyleSheet.create({
     minHeight: 56,
   },
   label: { fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.semibold },
-  desc: { fontSize: 12.5, lineHeight: 17 },
+  desc: { fontSize: tokens.fontSize.md, lineHeight: 17 },
 });
 
 function ConfiguracoesScreenInner() {

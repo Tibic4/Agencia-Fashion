@@ -1006,7 +1006,7 @@ const styles = StyleSheet.create({
     paddingVertical: tokens.spacing.xs,
     borderRadius: 10,
   },
-  activeBadgeText: { color: '#fff', fontSize: 10, fontWeight: tokens.fontWeight.black },
+  activeBadgeText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black },
   // Pareado com infoBadge/infoBadgeInner do /gerar pra paridade visual:
   // mesmo formato redondo, glow fucsia, ring branco. Antes ficava
   // visualmente "hexagonal" porque o inner não tinha borderRadius e o

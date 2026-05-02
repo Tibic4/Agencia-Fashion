@@ -15,6 +15,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dismissCurrentToast, useCurrentToast, type ToastKind } from '@/lib/toast';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { haptic } from '@/lib/haptics';
 
 const ICONS: Record<ToastKind, React.ComponentProps<typeof FontAwesome>['name']> = {
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
-    fontSize: 13.5,
+    fontSize: tokens.fontSize.base,
     flex: 1,
     fontFamily: 'Inter_500Medium',
     lineHeight: 18,
