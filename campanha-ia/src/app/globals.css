@@ -211,6 +211,13 @@
   --color-info: var(--info);
   --font-sans: var(--font-body);
   --font-mono: var(--font-body);
+
+  /* Promoted micro size — used 119× across the codebase */
+  --text-2xs: 10px;
+  --text-2xs--line-height: 1rem;
+
+  /* Tap-target minimum (WCAG 2.5.5) — exposes `min-h-tap` utility */
+  --min-height-tap: 44px;
 }
 
 /* ═══════════════════════════════════════
