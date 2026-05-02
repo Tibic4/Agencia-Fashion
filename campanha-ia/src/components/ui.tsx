@@ -71,9 +71,9 @@ export function Badge({
 }) {
   const styles: Record<string, { bg: string; color: string }> = {
     brand: { bg: "var(--brand-50)", color: "var(--brand-600)" },
-    success: { bg: "#ECFDF5", color: "#059669" },
-    warning: { bg: "#FFFBEB", color: "#D97706" },
-    danger: { bg: "#FEF2F2", color: "#DC2626" },
+    success: { bg: "color-mix(in srgb, var(--success) 12%, transparent)", color: "var(--success)" },
+    warning: { bg: "color-mix(in srgb, var(--warning) 12%, transparent)", color: "var(--warning)" },
+    danger: { bg: "color-mix(in srgb, var(--error) 12%, transparent)", color: "var(--error)" },
   };
   const s = styles[variant] || styles.brand;
   return (
