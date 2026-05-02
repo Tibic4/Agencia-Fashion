@@ -14,42 +14,22 @@ export default function AuthError({
   }, [error]);
 
   return (
-    <div
-      style={{
-        minHeight: "60vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "1rem",
-        padding: "2rem",
-        textAlign: "center",
-      }}
-    >
-      <p style={{ fontSize: "2rem" }}>⚠️</p>
-      <h2 style={{ fontSize: "1.25rem", fontWeight: 600 }}>
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-8 text-center">
+      <p className="text-3xl">⚠️</p>
+      <h2 className="text-xl font-semibold">
         Algo deu errado
       </h2>
-      <p style={{ color: "#888", maxWidth: 360 }}>
+      <p className="max-w-sm text-muted-foreground">
         {error.message || "Ocorreu um erro inesperado. Tente novamente."}
       </p>
       {error.digest && (
-        <p style={{ color: "#555", fontSize: "0.75rem" }}>
+        <p className="text-xs text-muted-foreground">
           Código: {error.digest}
         </p>
       )}
       <button
         onClick={reset}
-        style={{
-          marginTop: "0.5rem",
-          padding: "0.5rem 1.5rem",
-          borderRadius: "0.5rem",
-          background: "#7c3aed",
-          color: "#fff",
-          border: "none",
-          cursor: "pointer",
-          fontWeight: 600,
-        }}
+        className="btn-primary mt-2"
       >
         Tentar novamente
       </button>
