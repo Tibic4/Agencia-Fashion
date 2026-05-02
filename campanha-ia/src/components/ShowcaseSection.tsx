@@ -199,7 +199,7 @@ function BeforeAfterSlider({
               backdropFilter: "blur(8px)",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-label="Arraste para comparar antes e depois" role="img">
               <path d="m8 6-6 6 6 6" />
               <path d="m16 6 6 6-6 6" />
             </svg>

@@ -299,6 +299,7 @@ export default function KonvaToolbar({
                 className="px-2.5 py-1 text-sm font-bold hover:opacity-70 transition-opacity"
                 style={{ color: "var(--foreground)" }}
                 title="Diminuir fonte"
+                aria-label="Diminuir tamanho da fonte"
               >
                 A−
               </button>
@@ -319,6 +320,7 @@ export default function KonvaToolbar({
                 className="px-2.5 py-1 text-sm font-bold hover:opacity-70 transition-opacity"
                 style={{ color: "var(--foreground)" }}
                 title="Aumentar fonte"
+                aria-label="Aumentar tamanho da fonte"
               >
                 A+
               </button>
@@ -336,6 +338,7 @@ export default function KonvaToolbar({
               className="px-2 py-1 text-xs hover:opacity-70 transition-opacity disabled:opacity-30"
               style={{ color: "var(--foreground)" }}
               title="Mover para trás"
+              aria-label="Mover elemento para trás"
             >
               ⬇
             </button>
@@ -345,6 +348,7 @@ export default function KonvaToolbar({
               className="px-2 py-1 text-xs hover:opacity-70 transition-opacity disabled:opacity-30"
               style={{ color: "var(--foreground)", borderLeft: "1px solid var(--border)" }}
               title="Mover para frente"
+              aria-label="Mover elemento para frente"
             >
               ⬆
             </button>
