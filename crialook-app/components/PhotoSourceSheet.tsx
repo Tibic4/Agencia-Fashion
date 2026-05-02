@@ -30,6 +30,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 
@@ -205,13 +206,13 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   sheet: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: tokens.spacing.xl,
+    paddingTop: tokens.spacing.md,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: 0,
-    gap: 10,
+    gap: tokens.spacing.md,
     shadowColor: '#0F0519',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12,
@@ -240,12 +241,12 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    gap: tokens.spacing.mdLg,
+    paddingVertical: tokens.spacing.mdLg,
+    paddingHorizontal: tokens.spacing.mdLg,
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    marginTop: 4,
+    marginTop: tokens.spacing.xs,
   },
   optionIcon: {
     width: 44,
@@ -271,8 +272,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   cancel: {
-    marginTop: 6,
-    paddingVertical: 14,
+    marginTop: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.mdLg,
     borderRadius: 14,
     alignItems: 'center',
   },

@@ -246,7 +246,7 @@ const trialBannerStyles = StyleSheet.create({
   desc: { color: 'rgba(255,255,255,0.92)', fontSize: 12.5, lineHeight: 17 },
   cta: {
     backgroundColor: 'rgba(255,255,255,0.18)',
-    paddingVertical: 9,
+    paddingVertical: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.md,
     borderRadius: 10,
     borderCurve: 'continuous',
@@ -1092,17 +1092,17 @@ export default function ResultadoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: tokens.spacing.xl, gap: tokens.spacing.md, paddingBottom: 60 },
+  scrollContent: { padding: tokens.spacing.xl, gap: tokens.spacing.md, paddingBottom: tokens.spacing.huge },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: tokens.spacing.md, padding: tokens.spacing.xl },
   loadingText: { fontSize: tokens.fontSize.base, marginTop: tokens.spacing.sm },
   emptyTitle: { fontSize: tokens.fontSize.xl, fontWeight: tokens.fontWeight.semibold },
 
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: tokens.spacing.sm },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm, paddingVertical: tokens.spacing.sm },
   backText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.medium },
   photoBadge: {
     backgroundColor: 'rgba(168,85,247,0.15)',
-    paddingHorizontal: 10,
+    paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.xs,
     borderRadius: 12,
   },
@@ -1146,13 +1146,13 @@ const styles = StyleSheet.create({
     top: tokens.spacing.md,
     left: tokens.spacing.md,
     backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 10,
+    paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.xs,
     borderRadius: 10,
   },
   heroBadgeText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
 
-  thumbRow: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
+  thumbRow: { flexDirection: 'row', justifyContent: 'center', gap: tokens.spacing.md },
   thumb: { width: 72, height: 96, borderRadius: 12, overflow: 'hidden', backgroundColor: '#0d0a14' },
   thumbImage: { width: '100%', height: '100%' },
   thumbNumber: {
@@ -1160,8 +1160,8 @@ const styles = StyleSheet.create({
     bottom: tokens.spacing.xs,
     alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xxs,
     borderRadius: tokens.radii.sm,
   },
   thumbNumberText: { color: '#fff', fontSize: 9, fontWeight: tokens.fontWeight.bold, fontVariant: ['tabular-nums'] },
@@ -1206,15 +1206,15 @@ const styles = StyleSheet.create({
   formatCard: { gap: tokens.spacing.sm },
   formatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   formatHeaderText: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.bold },
-  formatRatioBadge: { backgroundColor: Colors.brand.violetGlass, paddingHorizontal: tokens.spacing.sm, paddingVertical: 3, borderRadius: tokens.radii.sm },
+  formatRatioBadge: { backgroundColor: Colors.brand.violetGlass, paddingHorizontal: tokens.spacing.sm, paddingVertical: tokens.spacing.xs, borderRadius: tokens.radii.sm },
   formatRatioText: { color: Colors.brand.primary, fontSize: 10, fontWeight: tokens.fontWeight.bold },
   formatRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs },
   formatBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: tokens.spacing.sm,
+    paddingHorizontal: tokens.spacing.mdLg,
+    paddingVertical: tokens.spacing.md,
     borderRadius: 12,
     borderWidth: 1,
   },
@@ -1224,12 +1224,12 @@ const styles = StyleSheet.create({
   formatLabelActive: { color: '#fff' },
   formatDesc: { fontSize: tokens.fontSize.xs },
 
-  actions: { gap: 10 },
+  actions: { gap: tokens.spacing.md },
 
   // AI badge
   aiBadgeRow: { flexDirection: 'row', marginTop: tokens.spacing.lg, marginBottom: tokens.spacing.xs },
   aiBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.xs,
     borderRadius: 12,
     backgroundColor: Colors.brand.violetGlass,
@@ -1241,7 +1241,7 @@ const styles = StyleSheet.create({
   tabBar: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.08)' },
   tab: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1260,7 +1260,7 @@ const styles = StyleSheet.create({
   tabContent: { padding: tokens.spacing.lg, gap: tokens.spacing.sm },
 
   // Tips — gap 10 entre header/conteúdo e marginTop 12 entre cards (respiro tipo Linear/Stripe).
-  tipCard: { gap: 10, marginTop: tokens.spacing.md },
+  tipCard: { gap: tokens.spacing.md, marginTop: tokens.spacing.md },
   tipCardAlt: { backgroundColor: 'rgba(168,85,247,0.04)' },
   tipHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: tokens.spacing.md },
   tipHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm },
@@ -1271,19 +1271,19 @@ const styles = StyleSheet.create({
   /* marginTop extra: o botão "Copiar" do header alinha à direita e o
      primeiro pill de hashtag ficava praticamente colado embaixo dele.
      Sem isso, visualmente parecia que o pill era um continuation do botão. */
-  hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  hashtagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing.sm, marginTop: tokens.spacing.sm },
   hashtagPill: {
     backgroundColor: 'rgba(168,85,247,0.08)',
     paddingHorizontal: tokens.spacing.md,
-    paddingVertical: 6,
-    borderRadius: 999,
+    paddingVertical: tokens.spacing.sm,
+    borderRadius: tokens.radii.full,
     borderWidth: 1,
     borderColor: 'rgba(168,85,247,0.15)',
   },
   hashtagText: { color: Colors.brand.primary, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, letterSpacing: 0.1 },
 
   // Char badge
-  charBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  charBadge: { paddingHorizontal: tokens.spacing.sm, paddingVertical: tokens.spacing.xxs, borderRadius: tokens.radii.sm },
   charBadgeText: { fontSize: 10, fontWeight: tokens.fontWeight.black, letterSpacing: 0.2, fontVariant: ['tabular-nums'] },
 
   /* Copy button — visualmente compacto (não rouba peso visual da label do card),
@@ -1292,7 +1292,7 @@ const styles = StyleSheet.create({
   copyButton: {
     backgroundColor: Colors.brand.violetGlass,
     paddingHorizontal: tokens.spacing.md,
-    paddingVertical: 7,
+    paddingVertical: tokens.spacing.sm,
     borderRadius: tokens.radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1302,18 +1302,18 @@ const styles = StyleSheet.create({
   copyButtonTextCopied: { color: '#fff' },
 
   // Info grid
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: tokens.spacing.md },
-  infoCard: { flex: 1, minWidth: '45%', gap: 6 },
-  infoCardFull: { width: '100%', gap: 6 },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: tokens.spacing.md, marginTop: tokens.spacing.md },
+  infoCard: { flex: 1, minWidth: '45%', gap: tokens.spacing.sm },
+  infoCardFull: { width: '100%', gap: tokens.spacing.sm },
   infoValue: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold, lineHeight: 18 },
 
   // Story card — agora 2 colunas (sem o copiar). Padding e gap maior pra parecer card ativo.
   storyCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
-    padding: 14,
-    borderRadius: 14,
+    gap: tokens.spacing.md,
+    padding: tokens.spacing.mdLg,
+    borderRadius: tokens.radii.lg,
     backgroundColor: 'rgba(168,85,247,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(168,85,247,0.15)',
@@ -1363,10 +1363,10 @@ const styles = StyleSheet.create({
   analysisItem: {
     minWidth: '45%',
     flex: 1,
-    padding: 10,
+    padding: tokens.spacing.md,
     borderRadius: 10,
     borderWidth: 1,
-    gap: 2,
+    gap: tokens.spacing.xxs,
   },
   analysisItemLabel: { fontSize: 9, fontWeight: tokens.fontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   analysisItemValue: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold },

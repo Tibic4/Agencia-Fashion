@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { apiGet, apiPost } from '@/lib/api';
 import { qk } from '@/lib/query-client';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import { haptic } from '@/lib/haptics';
@@ -149,12 +150,12 @@ export function ClaimMiniTrialBanner() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 12,
-    padding: 14,
+    gap: tokens.spacing.md,
+    padding: tokens.spacing.mdLg,
     borderRadius: 16,
     borderCurve: 'continuous',
     borderWidth: 1.5,
-    marginBottom: 16,
+    marginBottom: tokens.spacing.lg,
   },
   iconBox: {
     width: 48,
@@ -176,8 +177,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontFamily: 'Inter_700Bold', lineHeight: 20 },
   desc: { fontSize: 13, lineHeight: 18, fontFamily: 'Inter_400Regular' },
   cta: {
-    marginTop: 10,
-    paddingVertical: 11,
+    marginTop: tokens.spacing.md,
+    paddingVertical: tokens.spacing.md,
     paddingHorizontal: 18,
     borderRadius: 10,
     borderCurve: 'continuous',

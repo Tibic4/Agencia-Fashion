@@ -608,7 +608,7 @@ export default function ConfiguracoesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: tokens.spacing.xl, gap: 14 },
+  content: { padding: tokens.spacing.xl, gap: tokens.spacing.mdLg },
   title: { fontSize: tokens.fontSize.displayLg, fontWeight: tokens.fontWeight.bold },
   // Why marginTop:-4 instead of -12: -12 made the subtitle visually attached
   // to the title's descenders (g, p) on Inter; -4 keeps the duo tight without
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
   segmentBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.md,
     borderRadius: tokens.radii.md,
@@ -646,14 +646,14 @@ const styles = StyleSheet.create({
   signOutTitle: { fontSize: tokens.fontSize.xxl, fontWeight: tokens.fontWeight.semibold },
   signOutDesc: { fontSize: tokens.fontSize.base, marginBottom: tokens.spacing.sm },
   versionText: { fontSize: tokens.fontSize.sm, marginTop: tokens.spacing.xs },
-  langRow: { flexDirection: 'row', gap: 10 },
+  langRow: { flexDirection: 'row', gap: tokens.spacing.md },
   langBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: tokens.spacing.sm,
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     borderRadius: tokens.radii.md,
     borderWidth: 1,
     minHeight: 48,
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     minHeight: 48,
   },
   legalLinkLabel: { fontSize: tokens.fontSize.lg, fontFamily: 'Inter_500Medium' },
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   dangerInput: {
     borderWidth: 1.5,
     borderRadius: tokens.radii.md,
-    paddingHorizontal: 14,
+    paddingHorizontal: tokens.spacing.mdLg,
     paddingVertical: tokens.spacing.md,
     fontSize: tokens.fontSize.xl,
     fontWeight: tokens.fontWeight.bold,

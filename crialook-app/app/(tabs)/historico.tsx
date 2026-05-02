@@ -1059,8 +1059,8 @@ const styles = StyleSheet.create({
   list: { padding: tokens.spacing.lg },
   // ─── Section headers (FlashList interleaved) ─────────────
   sectionHeader: {
-    paddingTop: 14,
-    paddingBottom: 6,
+    paddingTop: tokens.spacing.mdLg,
+    paddingBottom: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.xs,
   },
   sectionHeaderText: {
@@ -1071,7 +1071,7 @@ const styles = StyleSheet.create({
   // ─── Card ─────────────────────────────────────────────────
   card: {
     padding: tokens.spacing.md,
-    marginBottom: 10,
+    marginBottom: tokens.spacing.md,
     position: 'relative',
     overflow: 'hidden',
     borderRadius: tokens.radii.lg,
@@ -1110,8 +1110,8 @@ const styles = StyleSheet.create({
     bottom: -2,
     right: -2,
     backgroundColor: Colors.brand.primary,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    paddingHorizontal: tokens.spacing.xs,
+    paddingVertical: tokens.spacing.xxs,
     borderRadius: tokens.radii.full,
     borderWidth: 2,
     borderColor: '#fff',
@@ -1137,15 +1137,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(120,120,120,0.25)',
     backgroundColor: 'rgba(120,120,120,0.08)',
   },
-  info: { flex: 1, gap: 6, justifyContent: 'center' },
+  info: { flex: 1, gap: tokens.spacing.sm, justifyContent: 'center' },
   headline: { fontSize: tokens.fontSize.lg, fontWeight: tokens.fontWeight.bold, lineHeight: tokens.spacing.xl },
   // ─── Status pill (substitui o statusDot 7px) ─────────────
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.spacing.xs,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xxs,
     borderRadius: tokens.radii.full,
     borderWidth: 1,
   },
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: tokens.spacing.xs,
     paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: tokens.spacing.xs,
     borderRadius: tokens.radii.full,
     borderWidth: 1,
   },
@@ -1165,7 +1165,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: tokens.spacing.sm, flexWrap: 'wrap' },
   metaText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium },
   // ─── Empty / error states ───────────────────────────────
-  empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: tokens.spacing.xxl, gap: tokens.spacing.sm },
+  empty: { alignItems: 'center', paddingTop: tokens.spacing.huge, paddingHorizontal: tokens.spacing.xxl, gap: tokens.spacing.sm },
   emptyTitle: { fontSize: tokens.fontSize.xxl, fontWeight: tokens.fontWeight.semibold, textAlign: 'center' },
   emptyDesc: { fontSize: tokens.fontSize.base, textAlign: 'center', lineHeight: tokens.spacing.xl },
   emptyCtaButton: {
@@ -1176,7 +1176,7 @@ const styles = StyleSheet.create({
   },
   emptyCtaInner: {
     paddingHorizontal: tokens.spacing.xxl,
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1208,7 +1208,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.spacing.md,
-    paddingHorizontal: 14,
+    paddingHorizontal: tokens.spacing.mdLg,
     paddingVertical: tokens.spacing.md,
     minHeight: 44,
   },
@@ -1218,7 +1218,7 @@ const styles = StyleSheet.create({
     width: 80,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: tokens.spacing.md,
     ...rounded(tokens.radii.lg),
   },
 });

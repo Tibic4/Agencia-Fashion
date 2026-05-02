@@ -592,7 +592,7 @@ function GerarScreenInner() {
                 ]}
               >
                 <Skeleton width="100%" height={100} borderRadius={12} />
-                <View style={{ paddingVertical: 6, width: '100%', alignItems: 'center' }}>
+                <View style={{ paddingVertical: tokens.spacing.sm, width: '100%', alignItems: 'center' }}>
                   <Skeleton width={60} height={10} borderRadius={4} />
                 </View>
               </View>
@@ -1007,7 +1007,7 @@ const styles = StyleSheet.create({
   errorReassurance: {
     backgroundColor: 'rgba(34,197,94,0.1)',
     borderRadius: 10,
-    padding: 10,
+    padding: tokens.spacing.md,
     marginTop: tokens.spacing.sm,
   },
   errorReassuranceText: { color: '#16A34A', fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold },
@@ -1021,16 +1021,16 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.md,
     minHeight: 48,
   },
-  photoRow: { flexDirection: 'row', gap: 10 },
+  photoRow: { flexDirection: 'row', gap: tokens.spacing.md },
   photoMain: { flex: 2, aspectRatio: 3 / 4, ...rounded(tokens.radii.xl) },
-  photoSecondary: { flex: 1, gap: 10 },
+  photoSecondary: { flex: 1, gap: tokens.spacing.md },
   photoSmall: { flex: 1, borderRadius: 12 },
   photoSlot: { borderWidth: 2, borderStyle: 'dashed', overflow: 'hidden' },
   photoImage: { width: '100%', height: '100%' },
-  photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
+  photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: tokens.spacing.sm },
   photoLabel: { fontSize: tokens.fontSize.md, fontFamily: 'Inter_600SemiBold' },
   photoLabelSmall: { fontSize: 10, fontFamily: 'Inter_600SemiBold' },
-  modelList: { gap: 10, paddingVertical: tokens.spacing.xs },
+  modelList: { gap: tokens.spacing.md, paddingVertical: tokens.spacing.xs },
   modelCard: { width: 100, alignItems: 'center', borderRadius: 14, borderWidth: 2, overflow: 'hidden' },
   modelCardSelected: { borderWidth: 2.5 },
   modelThumb: { width: '100%', aspectRatio: 3 / 4 },
@@ -1046,7 +1046,7 @@ const styles = StyleSheet.create({
     fontSize: tokens.fontSize.xs,
     fontFamily: 'Inter_700Bold',
     textAlign: 'center',
-    paddingVertical: 6,
+    paddingVertical: tokens.spacing.sm,
     paddingHorizontal: tokens.spacing.xs,
   },
   customBadge: {
@@ -1055,16 +1055,16 @@ const styles = StyleSheet.create({
     right: tokens.spacing.xs,
     backgroundColor: '#F59E0B',
     borderRadius: tokens.radii.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing.xxs,
   },
   customBadgeText: { fontSize: 9, fontWeight: tokens.fontWeight.black, color: '#fff' },
   // paddingHorizontal:4 (era só paddingRight:4) garante que o ring de
   // seleção rosa do PRIMEIRO item não fique cortado contra a borda esquerda
   // da ScrollView. paddingVertical:6 dá folga pro shadow não clipar em cima/
   // baixo também.
-  bgList: { gap: BG_CARD_GAP, paddingVertical: 6, paddingHorizontal: tokens.spacing.xs },
-  bgCard: { width: BG_CARD_WIDTH, alignItems: 'center', gap: 6 },
+  bgList: { gap: BG_CARD_GAP, paddingVertical: tokens.spacing.sm, paddingHorizontal: tokens.spacing.xs },
+  bgCard: { width: BG_CARD_WIDTH, alignItems: 'center', gap: tokens.spacing.sm },
   bgImageWrapper: {
     width: BG_CARD_WIDTH,
     height: BG_CARD_HEIGHT,
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
   advancedToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: tokens.spacing.sm,
     paddingVertical: tokens.spacing.md,
     minHeight: 48,
   },
@@ -1107,14 +1107,14 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: tokens.spacing.mdLg,
     paddingVertical: tokens.spacing.md,
     fontSize: tokens.fontSize.base,
     fontFamily: 'Inter_400Regular',
     minHeight: 48,
   },
   fieldLabel: { fontSize: tokens.fontSize.sm, fontFamily: 'Inter_600SemiBold', marginTop: tokens.spacing.xs },
-  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, minHeight: 40 },
+  chip: { paddingHorizontal: tokens.spacing.mdLg, paddingVertical: tokens.spacing.md, borderRadius: 20, borderWidth: 1, minHeight: 40 },
   chipRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs },
   floatingBtnContainer: {
     position: 'absolute',
@@ -1131,8 +1131,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   quotaBanner: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: tokens.spacing.mdLg,
+    paddingVertical: tokens.spacing.md,
     borderRadius: 12,
     marginBottom: tokens.spacing.sm,
     minHeight: 40,
@@ -1140,8 +1140,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   quotaBannerText: { color: '#fff', fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.bold, letterSpacing: 0.2 },
-  filterRow: { gap: 6, paddingVertical: tokens.spacing.xs, marginBottom: tokens.spacing.xs },
-  filterTab: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, minHeight: 40 },
+  filterRow: { gap: tokens.spacing.sm, paddingVertical: tokens.spacing.xs, marginBottom: tokens.spacing.xs },
+  filterTab: { paddingHorizontal: tokens.spacing.mdLg, paddingVertical: tokens.spacing.md, borderRadius: 20, borderWidth: 1, minHeight: 40 },
   filterTabText: { fontSize: tokens.fontSize.sm, fontFamily: 'Inter_600SemiBold' },
   infoBadge: {
     position: 'absolute',

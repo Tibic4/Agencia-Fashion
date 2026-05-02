@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: tokens.fontSize.base, marginTop: 2, fontVariant: ['tabular-nums'] },
   counterPill: {
     paddingHorizontal: tokens.spacing.md,
-    paddingVertical: 6,
+    paddingVertical: tokens.spacing.sm,
     borderRadius: tokens.radii.full,
     borderWidth: 1,
     minHeight: 32,
@@ -967,7 +967,7 @@ const styles = StyleSheet.create({
   },
   viewAllBtn: {
     alignSelf: 'center',
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     paddingHorizontal: tokens.spacing.lg,
     minHeight: 48,
     justifyContent: 'center',
@@ -985,7 +985,7 @@ const styles = StyleSheet.create({
   },
   portraitCard: {
     // width injetado dinamicamente via useCardWidth() pra responder a rotação / split-view.
-    gap: 6,
+    gap: tokens.spacing.sm,
   },
   portraitImageWrap: {
     width: '100%',
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
     right: tokens.spacing.sm,
     backgroundColor: Colors.brand.success,
     paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: tokens.spacing.xs,
     borderRadius: 10,
   },
   activeBadgeText: { color: '#fff', fontSize: 10, fontWeight: tokens.fontWeight.black },
@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
   },
   modelName: { fontSize: tokens.fontSize.base, fontWeight: tokens.fontWeight.semibold },
   modelSubtitle: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium, marginTop: -2 },
-  empty: { alignItems: 'center', paddingTop: 60, gap: tokens.spacing.lg },
+  empty: { alignItems: 'center', paddingTop: tokens.spacing.huge, gap: tokens.spacing.lg },
   emptyIconWrap: {
     width: 88,
     height: 88,

@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
   planName: { fontSize: tokens.fontSize.xxxl, fontWeight: tokens.fontWeight.bold },
   creditsText: { fontSize: tokens.fontSize.sm, marginTop: 2, fontVariant: ['tabular-nums'] },
   bars: { gap: tokens.spacing.md },
-  barLabel: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  barLabel: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: tokens.spacing.sm },
   // tabular-nums on the bar label too — pairs with barValue so labels like
   // "Campanhas" and the numeric value share the same baseline rhythm.
   barText: { fontSize: tokens.fontSize.sm, fontVariant: ['tabular-nums'] },
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.spacing.md,
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     paddingHorizontal: tokens.spacing.lg,
     ...rounded(tokens.radii.xl),
     borderWidth: 1,
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
      Não faz sentido oferecer downgrade pelo botão, então também desabilitamos
      o tap (logic acima) e mudamos o título do botão. */
   planCardDim: { opacity: 0.5 },
-  currentBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: tokens.spacing.xs, borderRadius: tokens.radii.md },
+  currentBadge: { alignSelf: 'flex-start', paddingHorizontal: tokens.spacing.md, paddingVertical: tokens.spacing.xs, borderRadius: tokens.radii.md },
   currentBadgeText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.bold },
   planCardName: { fontSize: tokens.fontSize.xxxl, fontWeight: tokens.fontWeight.bold },
   planCardPrice: { fontSize: tokens.fontSize.display, fontWeight: tokens.fontWeight.black, fontVariant: ['tabular-nums'] },
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: tokens.spacing.md,
-    padding: 14,
+    padding: tokens.spacing.mdLg,
     ...rounded(tokens.radii.lg),
     borderWidth: 1,
     marginTop: tokens.spacing.sm,
@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: tokens.spacing.sm,
     paddingTop: tokens.spacing.sm,
   },
   securityText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium },

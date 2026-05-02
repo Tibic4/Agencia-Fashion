@@ -14,6 +14,7 @@ import { Pressable, StyleSheet, Text, View, Linking } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { t } from '@/lib/i18n';
 import { Sentry } from '@/lib/sentry';
 
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     backgroundColor: Colors.brand.primary,
-    paddingVertical: 14,
+    paddingVertical: tokens.spacing.mdLg,
     paddingHorizontal: 28,
     borderRadius: 14,
     borderCurve: 'continuous',
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   reportBtn: {
     marginTop: 4,
-    paddingVertical: 10,
+    paddingVertical: tokens.spacing.md,
     paddingHorizontal: 20,
     minHeight: 44,
     justifyContent: 'center',
