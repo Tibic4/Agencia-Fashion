@@ -67,7 +67,7 @@ export default function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all min-h-tap ${
                   isActive
                     ? "text-white bg-white/5 shadow-[inset_0_1px_rgba(255,255,255,0.05)] border-l-[2px] border-fuchsia-400"
                     : "text-muted-foreground hover:text-foreground hover:bg-white/[0.02] border-l-[2px] border-transparent"
@@ -84,7 +84,7 @@ export default function AdminLayout({
         <div className="p-4 border-t border-white/5 space-y-2">
           <Link
             href="/gerar"
-            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition min-h-tap"
           >
             <span className="opacity-70"><IconArrowLeft /></span>
             Voltar ao painel cliente
@@ -126,7 +126,7 @@ export default function AdminLayout({
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] min-h-[48px] justify-center shrink-0 ${
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] min-h-tap justify-center shrink-0 ${
                 isActive 
                   ? "bg-white/10 text-white shadow-[inset_0_1px_rgba(255,255,255,0.05)]" 
                   : "text-muted-foreground hover:text-white"

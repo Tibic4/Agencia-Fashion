@@ -65,9 +65,9 @@ export default function Sobre() {
             <Link href="/#precos" className="text-sm font-medium" style={{ color: "var(--muted)" }}>Preços</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/sign-in" className="text-sm font-medium min-h-[44px] flex items-center px-3" style={{ color: "var(--muted)" }}>Entrar</Link>
+            <Link href="/sign-in" className="text-sm font-medium min-h-tap flex items-center px-3" style={{ color: "var(--muted)" }}>Entrar</Link>
             <ThemeToggle />
-            <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-3 sm:!py-2.5 sm:!px-5 min-h-[44px] flex items-center">
+            <Link href="/sign-up" className="btn-primary text-sm !py-2.5 !px-3 sm:!py-2.5 sm:!px-5 min-h-tap flex items-center">
               <span className="sm:hidden">Começar</span>
               <span className="hidden sm:inline">Testar na prática</span>
             </Link>
@@ -247,7 +247,7 @@ export default function Sobre() {
               <p className="text-sm md:text-base mb-6 max-w-md mx-auto" style={{ color: "var(--muted)" }}>
                 Comece grátis: 1 campanha completa pelo Beta, sem cartão. Modelo virtual, legendas e score — tudo incluso.
               </p>
-              <Link href="/sign-up" className="btn-primary text-sm md:text-base !py-3.5 !px-8 hover:animate-pulse-glow inline-flex min-h-[48px] items-center" aria-label="Criar minha primeira campanha com IA">
+              <Link href="/sign-up" className="btn-primary text-sm md:text-base !py-3.5 !px-8 hover:animate-pulse-glow inline-flex min-h-tap items-center" aria-label="Criar minha primeira campanha com IA">
                 <IconZap />
                 Criar minha primeira campanha
                 <IconArrowRight />

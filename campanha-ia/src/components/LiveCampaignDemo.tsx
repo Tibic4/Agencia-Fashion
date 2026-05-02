@@ -303,32 +303,32 @@ export default function LiveCampaignDemo() {
                     <p>{demo.jsx}</p>
                     <button 
                       onClick={handleCopy}
-                      className="absolute top-3 right-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      className="absolute top-3 right-3 p-2 bg-white dark:bg-gray-800 rounded-lg shadow opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center min-w-[44px] min-h-tap"
                     >
                       {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
                     </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
-                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors min-h-[44px] text-xs sm:text-sm">
+                    <button onClick={handleDownloadDemo} className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 font-bold hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors min-h-tap text-xs sm:text-sm">
                       <Download className="w-4 h-4 shrink-0" />
                       Baixar Foto
                     </button>
-                    <button onClick={handleCopy} className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold hover:bg-black dark:hover:bg-white transition-colors min-h-[44px] text-xs sm:text-sm">
+                    <button onClick={handleCopy} className="flex items-center justify-center gap-1.5 sm:gap-2 py-3 px-2 sm:px-4 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-bold hover:bg-black dark:hover:bg-white transition-colors min-h-tap text-xs sm:text-sm">
                       {copied ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <Copy className="w-4 h-4 shrink-0" />}
                       {copied ? "Copiado!" : "Copiar Texto"}
                     </button>
                   </div>
 
                   {/* CTA de conversão pós-demo */}
-                  <a href="/sign-up" className="btn-primary w-full text-sm !py-3 min-h-[44px] hover:animate-pulse-glow">
+                  <a href="/sign-up" className="btn-primary w-full text-sm !py-3 min-h-tap hover:animate-pulse-glow">
                     ✨ Quero criar a minha — grátis
                   </a>
                 </div>
 
                 <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-auto flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Tempo real: ~60s</span>
-                  <button onClick={resetDemo} className="text-xs font-bold flex items-center gap-1 text-gray-500 hover:text-brand-600 transition-colors min-h-[44px] px-3">
+                  <button onClick={resetDemo} className="text-xs font-bold flex items-center gap-1 text-gray-500 hover:text-brand-600 transition-colors min-h-tap px-3">
                     <RefreshCw className="w-3.5 h-3.5" /> Gerar Outra
                   </button>
                 </div>

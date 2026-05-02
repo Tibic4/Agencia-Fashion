@@ -134,7 +134,7 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={() => setCustomizing(true)}
-                className="text-sm font-medium rounded-lg px-4 py-2.5 min-h-[40px] transition-colors hover:opacity-80"
+                className="text-sm font-medium rounded-lg px-4 py-2.5 min-h-tap transition-colors hover:opacity-80"
                 style={{
                   background: "transparent",
                   border: "1px solid var(--border)",
@@ -146,7 +146,7 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={rejectOptional}
-                className="text-sm font-medium rounded-lg px-4 py-2.5 min-h-[40px] transition-colors hover:opacity-80"
+                className="text-sm font-medium rounded-lg px-4 py-2.5 min-h-tap transition-colors hover:opacity-80"
                 style={{
                   background: "transparent",
                   border: "1px solid var(--border)",
@@ -158,7 +158,7 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={acceptAll}
-                className="btn-primary text-sm !py-2.5 !px-4 min-h-[40px] flex items-center justify-center"
+                className="btn-primary text-sm !py-2.5 !px-4 min-h-tap flex items-center justify-center"
               >
                 Aceitar todos
               </button>
@@ -209,7 +209,7 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={() => setCustomizing(false)}
-                className="text-sm font-medium rounded-lg px-4 py-2.5 min-h-[40px] transition-colors hover:opacity-80"
+                className="text-sm font-medium rounded-lg px-4 py-2.5 min-h-tap transition-colors hover:opacity-80"
                 style={{
                   background: "transparent",
                   border: "1px solid var(--border)",
@@ -221,7 +221,7 @@ export default function CookieBanner() {
               <button
                 type="button"
                 onClick={savePreferences}
-                className="btn-primary text-sm !py-2.5 !px-4 min-h-[40px] flex items-center justify-center"
+                className="btn-primary text-sm !py-2.5 !px-4 min-h-tap flex items-center justify-center"
               >
                 Salvar preferências
               </button>

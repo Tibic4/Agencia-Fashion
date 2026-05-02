@@ -171,7 +171,7 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
               </div>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 rounded-lg flex items-center justify-center min-h-[44px] min-w-[44px]"
+                className="w-8 h-8 rounded-lg flex items-center justify-center min-h-tap min-w-[44px]"
                 style={{ color: "var(--muted)" }}
               >
                 ✕
@@ -346,7 +346,7 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
             <div className="flex gap-3 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]" style={{ borderTop: "1px solid var(--border)" }}>
               <button
                 onClick={handleClose}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold min-h-[44px]"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold min-h-tap"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
               >
                 Cancelar
@@ -354,7 +354,7 @@ export default function BrandColorPicker({ currentColor, onColorSelected, onClos
               <button
                 onClick={() => { saveRecentColor(pickedColor); handleConfirm(); }}
                 disabled={!pickedColor}
-                className="flex-1 py-3 rounded-xl text-sm font-bold min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="flex-1 py-3 rounded-xl text-sm font-bold min-h-tap disabled:opacity-40 disabled:cursor-not-allowed transition"
                 style={{ background: "var(--gradient-brand)", color: "white" }}
               >
                 ✓ Usar esta cor

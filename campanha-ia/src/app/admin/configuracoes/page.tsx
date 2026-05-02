@@ -155,7 +155,7 @@ export default function AdminConfiguracoes() {
                 <button
                   onClick={() => handleToggle(key)}
                   disabled={isSaving}
-                  className={`relative w-14 h-7 rounded-full transition-all duration-300 shrink-0 min-h-[44px] flex items-center ${
+                  className={`relative w-14 h-7 rounded-full transition-all duration-300 shrink-0 min-h-tap flex items-center ${
                     isActive ? "bg-emerald-500" : "bg-gray-700"
                   } ${isSaving ? "opacity-50" : ""}`}
                 >

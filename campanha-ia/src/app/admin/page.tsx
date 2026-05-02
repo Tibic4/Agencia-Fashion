@@ -286,7 +286,7 @@ export default async function AdminDashboard() {
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
             <h2 className="text-xs font-bold text-foreground uppercase tracking-widest">Activity Feed</h2>
-            <a href="/admin/campanhas" className="text-xs font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Ver Full Log →</a>
+            <a href="/admin/campanhas" className="text-xs font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-tap flex items-center">Ver Full Log →</a>
           </div>
           <div className="divide-y divide-white/5 border-t-0">
             {m.recentCampaigns.length === 0 ? (
@@ -295,7 +295,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               m.recentCampaigns.map((campaign: Record<string, unknown>) => (
-                <div key={campaign.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[48px] sm:min-h-[56px]">
+                <div key={campaign.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-tap sm:min-h-[56px]">
                   <div>
                     <p className="text-sm font-semibold text-[#E4E4E7]">{(campaign.stores as Record<string, string>)?.name || "Store desativada"}</p>
                     <p className="text-xs text-muted-foreground font-medium mt-0.5">
@@ -313,7 +313,7 @@ export default async function AdminDashboard() {
         <div className="bg-[#0A0A0A] border border-white/5 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
             <h2 className="text-xs font-bold text-foreground uppercase tracking-widest">Latest Client Onboards</h2>
-            <a href="/admin/clientes" className="text-xs font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-[44px] flex items-center">Database →</a>
+            <a href="/admin/clientes" className="text-xs font-bold uppercase tracking-wider text-[#FBBF24] hover:text-[#D97706] transition min-h-tap flex items-center">Database →</a>
           </div>
           <div className="divide-y divide-white/5 border-t-0">
             {m.recentStores.length === 0 ? (
@@ -322,7 +322,7 @@ export default async function AdminDashboard() {
               </div>
             ) : (
               m.recentStores.map((store: Record<string, unknown>) => (
-                <div key={store.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-[48px] sm:min-h-[56px]">
+                <div key={store.id as string} className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-white/[0.02] transition min-h-tap sm:min-h-[56px]">
                   <div className="flex items-center gap-4">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#D946EF] to-[#8B5CF6] flex items-center justify-center text-white text-sm font-black shadow-[0_0_12px_rgba(217,70,239,0.3)]">
                       {(store.name as string)?.charAt(0)?.toUpperCase()}

@@ -855,7 +855,7 @@ function Toggle({ value, options, onChange }: { value: string; options: [string,
     <div className="flex bg-[#121212] rounded-xl border border-white/10 p-0.5 gap-0.5">
       {options.map(([v, label]) => (
         <button key={v} onClick={() => onChange(v)}
-          className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${value === v ? "bg-white/10 text-white" : "text-muted-foreground active:text-white"}`}>{label}</button>
+          className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all min-h-tap flex items-center justify-center ${value === v ? "bg-white/10 text-white" : "text-muted-foreground active:text-white"}`}>{label}</button>
       ))}
     </div>
   );
@@ -865,7 +865,7 @@ function Btn({ children, onClick, disabled, accent, gradient, danger, title }: {
   children: React.ReactNode; onClick: () => void; disabled?: boolean;
   accent?: boolean; gradient?: boolean; danger?: boolean; title?: string;
 }) {
-  const base = "px-4 py-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center";
+  const base = "px-4 py-3 rounded-xl text-xs font-bold transition-all min-h-tap flex items-center justify-center";
   const cls = gradient
     ? `${base} text-white disabled:opacity-40`
     : accent

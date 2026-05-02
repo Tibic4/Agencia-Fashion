@@ -399,7 +399,7 @@ export default function AdminVitrine() {
                   <button
                     onClick={() => handleMove(index, "up")}
                     disabled={index === 0}
-                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30 min-h-tap min-w-[44px] flex items-center justify-center"
                     title="Mover para cima"
                   >
                     ↑
@@ -407,7 +407,7 @@ export default function AdminVitrine() {
                   <button
                     onClick={() => handleMove(index, "down")}
                     disabled={index === items.length - 1}
-                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="text-sm px-2 py-1 rounded-lg transition-all hover:bg-[var(--background)] disabled:opacity-30 min-h-tap min-w-[44px] flex items-center justify-center"
                     title="Mover para baixo"
                   >
                     ↓
@@ -419,7 +419,7 @@ export default function AdminVitrine() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => handleToggle(item.id, item.use_in_tips, "use_in_tips")}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-all min-h-[44px]"
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all min-h-tap"
                     style={{
                       background: item.use_in_tips ? "var(--brand-500)" : "var(--background)",
                       color: item.use_in_tips ? "white" : "var(--muted)",
@@ -431,7 +431,7 @@ export default function AdminVitrine() {
                   </button>
                   <button
                     onClick={() => handleToggle(item.id, item.is_active, "is_active")}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-all min-h-[44px]"
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all min-h-tap"
                     style={{
                       background: item.is_active ? "var(--background)" : "var(--success)",
                       color: item.is_active ? "var(--muted)" : "white",
@@ -442,7 +442,7 @@ export default function AdminVitrine() {
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-red-500/10 min-h-[44px]"
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all hover:bg-red-500/10 min-h-tap"
                     style={{ color: "var(--error)" }}
                   >
                     🗑️ Excluir

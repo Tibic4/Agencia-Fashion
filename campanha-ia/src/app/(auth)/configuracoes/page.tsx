@@ -199,7 +199,7 @@ export default function Configuracoes() {
           </p>
           <button
             onClick={() => setError(null)}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition hover:opacity-70"
+            className="min-w-[44px] min-h-tap flex items-center justify-center rounded-lg transition hover:opacity-70"
             style={{ color: "var(--error, #EF4444)" }}
           >
             ✕
@@ -253,7 +253,7 @@ export default function Configuracoes() {
                 />
                 <button
                   onClick={() => logoInputRef.current?.click()}
-                  className="text-xs font-semibold px-4 py-2.5 rounded-lg min-h-[44px] transition w-full sm:w-auto"
+                  className="text-xs font-semibold px-4 py-2.5 rounded-lg min-h-tap transition w-full sm:w-auto"
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
                 >
                   {logoUrl ? "Trocar logo" : "Fazer upload"}
@@ -346,7 +346,7 @@ export default function Configuracoes() {
             {segments.map((seg) => (
               <button key={seg.value}
                 onClick={() => setSegment(seg.value)}
-                className="p-2.5 sm:p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all min-h-[44px] flex items-center justify-center gap-2 truncate min-w-0"
+                className="p-2.5 sm:p-3 rounded-xl text-xs sm:text-sm font-medium text-center transition-all min-h-tap flex items-center justify-center gap-2 truncate min-w-0"
                 style={{
                   background: segment === seg.value ? "var(--gradient-brand)" : "var(--surface)",
                   color: segment === seg.value ? "white" : "var(--muted)",

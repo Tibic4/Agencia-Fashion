@@ -537,7 +537,7 @@ export default function KonvaStoriesCompositor({
             </button>
             <button
               onClick={handleReset}
-              className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 min-h-[44px] sm:min-h-0"
+              className="flex items-center gap-1 px-3 py-2 sm:py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80 min-h-tap sm:min-h-0"
               style={{
                 background: "var(--surface)",
                 color: "var(--muted)",

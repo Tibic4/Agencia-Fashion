@@ -137,7 +137,7 @@ export default function ConsentimentoBiometricoPage() {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-4 min-h-[40px] flex items-center">
+            <Link href="/sign-up" className="btn-primary text-sm !py-2 !px-4 min-h-tap flex items-center">
               Começar
             </Link>
           </div>

@@ -333,7 +333,7 @@ export default function ResultadoCampanha() {
       <div className="sticky top-0 z-40 -mx-4 px-4 py-3 flex items-center gap-3 glass">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70 min-h-[44px]"
+          className="flex items-center gap-1.5 text-sm font-medium transition hover:opacity-70 min-h-tap"
           style={{ color: "var(--muted)" }}
         >
           <IconBack />
@@ -662,7 +662,7 @@ export default function ResultadoCampanha() {
                     <button
                       key={i}
                       onClick={() => { setCopyTab(i); haptics.light(); }}
-                      className="flex-1 py-3 text-xs font-bold transition-all relative min-h-[48px] active:scale-[0.97] inline-flex items-center justify-center gap-1.5"
+                      className="flex-1 py-3 text-xs font-bold transition-all relative min-h-tap active:scale-[0.97] inline-flex items-center justify-center gap-1.5"
                       style={{
                         color: copyTab === i ? "var(--brand-700)" : "var(--muted)",
                         background: copyTab === i ? "var(--brand-50)" : "transparent",
@@ -710,7 +710,7 @@ export default function ResultadoCampanha() {
                               setCopiedTip(`tab${copyTab}`);
                               setTimeout(() => setCopiedTip(null), 2000);
                             }}
-                            className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] flex-shrink-0 active:scale-[0.95] flex items-center gap-1"
+                            className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-tap flex-shrink-0 active:scale-[0.95] flex items-center gap-1"
                             style={{ background: copiedTip === `tab${copyTab}` ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === `tab${copyTab}` ? "white" : "var(--brand-700)" }}
                           >
                             {copiedTip === `tab${copyTab}` ? "✓ Copiado!" : "📋 Copiar"}
@@ -753,7 +753,7 @@ export default function ResultadoCampanha() {
                         setCopiedTip("caption");
                         setTimeout(() => setCopiedTip(null), 2000);
                       }}
-                      className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                      className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-tap active:scale-[0.95] flex items-center gap-1"
                       style={{ background: copiedTip === "caption" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "caption" ? "white" : "var(--brand-700)" }}
                     >
                       {copiedTip === "caption" ? "✓ Copiado!" : "📋 Copiar"}
@@ -777,7 +777,7 @@ export default function ResultadoCampanha() {
                       setCopiedTip("hashtags");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                    className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-tap active:scale-[0.95] flex items-center gap-1"
                     style={{ background: copiedTip === "hashtags" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "hashtags" ? "white" : "var(--brand-700)" }}
                   >
                     {copiedTip === "hashtags" ? "✓ Copiado!" : "📋 Copiar"}
@@ -820,7 +820,7 @@ export default function ResultadoCampanha() {
                       setCopiedTip("alt");
                       setTimeout(() => setCopiedTip(null), 2000);
                     }}
-                    className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-[44px] active:scale-[0.95] flex items-center gap-1"
+                    className="text-2xs font-bold px-3 py-1.5 rounded-lg transition-all min-h-tap active:scale-[0.95] flex items-center gap-1"
                     style={{ background: copiedTip === "alt" ? "var(--brand-500)" : "var(--brand-100)", color: copiedTip === "alt" ? "white" : "var(--brand-700)" }}
                   >
                     {copiedTip === "alt" ? "✓ Copiado!" : "📋 Copiar"}

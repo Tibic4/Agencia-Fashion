@@ -40,7 +40,7 @@ export default function MobilePreview({
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setActiveFormat("feed")}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px]"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium transition-all min-h-tap"
           style={{
             background: activeFormat === "feed" ? "var(--gradient-brand)" : "var(--surface)",
             color: activeFormat === "feed" ? "white" : "var(--muted)",
@@ -51,7 +51,7 @@ export default function MobilePreview({
         </button>
         <button
           onClick={() => setActiveFormat("stories")}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px]"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium transition-all min-h-tap"
           style={{
             background: activeFormat === "stories" ? "var(--gradient-brand)" : "var(--surface)",
             color: activeFormat === "stories" ? "white" : "var(--muted)",

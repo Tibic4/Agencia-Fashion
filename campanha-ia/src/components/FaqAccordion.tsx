@@ -103,7 +103,7 @@ export default function FaqAccordion() {
                 onClick={() => toggle(index)}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 min-h-[44px]"
+                className="w-full flex items-center justify-between p-4 sm:p-5 md:p-6 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 min-h-tap"
               >
                 <span className={`font-medium text-sm sm:text-base md:text-lg transition-colors ${isOpen ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>
                   {faq.q}

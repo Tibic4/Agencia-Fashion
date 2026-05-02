@@ -332,7 +332,7 @@ export default function Plano() {
             <button
               onClick={handleCancelSubscription}
               disabled={cancelLoading}
-              className="text-xs px-4 py-3 rounded-full transition-all hover:opacity-80 disabled:opacity-50 min-h-[44px]"
+              className="text-xs px-4 py-3 rounded-full transition-all hover:opacity-80 disabled:opacity-50 min-h-tap"
               style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--muted)" }}
             >
               {cancelLoading ? "Cancelando..." : "Cancelar assinatura"}
@@ -425,7 +425,7 @@ export default function Plano() {
             <button
               onClick={() => !isCurrentPlan && !isLowerPlan && handleCheckout(plan.id)}
               disabled={loading === plan.id || isCurrentPlan || isLowerPlan}
-              className="w-full mt-4 py-3 px-2 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-[44px] truncate"
+              className="w-full mt-4 py-3 px-2 rounded-full text-sm font-semibold transition-all disabled:opacity-60 min-h-tap truncate"
               style={{
                 background: isCurrentPlan ? "var(--brand-500)" : isLowerPlan ? "var(--border)" : plan.highlight ? "white" : "var(--gradient-brand)",
                 color: isCurrentPlan ? "white" : isLowerPlan ? "var(--muted)" : plan.highlight ? "var(--brand-600)" : "white",

@@ -206,7 +206,7 @@ export default function Historico() {
           </div>
           <Link
             href="/gerar"
-            className="btn-primary text-sm !py-3 !px-5 min-h-[44px] flex items-center justify-center flex-shrink-0"
+            className="btn-primary text-sm !py-3 !px-5 min-h-tap flex items-center justify-center flex-shrink-0"
           >
             + Nova
           </Link>
@@ -218,7 +218,7 @@ export default function Historico() {
         <div className="flex gap-2 mb-5 overflow-x-auto pb-2 snap-x hide-scrollbar scroll-touch">
           <button
             onClick={() => setFilter("all")}
-            className="text-sm font-semibold px-5 py-3 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
+            className="text-sm font-semibold px-5 py-3 rounded-full transition-all min-h-tap whitespace-nowrap snap-start"
             style={{
               background: filter === "all" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "all" ? "white" : "var(--muted)",
@@ -229,7 +229,7 @@ export default function Historico() {
           </button>
           <button
             onClick={() => setFilter("favorites")}
-            className="text-sm font-semibold px-5 py-3 rounded-full transition-all min-h-[44px] whitespace-nowrap snap-start"
+            className="text-sm font-semibold px-5 py-3 rounded-full transition-all min-h-tap whitespace-nowrap snap-start"
             style={{
               background: filter === "favorites" ? "var(--brand-500)" : "var(--surface)",
               color: filter === "favorites" ? "white" : "var(--muted)",
@@ -274,7 +274,7 @@ export default function Historico() {
           <p className="text-sm mb-6 max-w-xs mx-auto leading-relaxed" style={{ color: "var(--muted)" }}>
             Suas campanhas geradas aparecerão aqui.
           </p>
-          <Link href="/gerar" className="btn-primary inline-flex min-h-[48px] items-center">
+          <Link href="/gerar" className="btn-primary inline-flex min-h-tap items-center">
             ⚡ Criar primeira campanha
           </Link>
         </div>
@@ -413,7 +413,7 @@ export default function Historico() {
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage <= 1}
-                className="flex items-center gap-1 text-sm font-semibold px-3 py-3 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 text-sm font-semibold px-3 py-3 rounded-xl transition-all min-h-tap disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -452,7 +452,7 @@ export default function Historico() {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage >= totalPages}
-                className="flex items-center gap-1 text-sm font-semibold px-3 py-3 rounded-xl transition-all min-h-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 text-sm font-semibold px-3 py-3 rounded-xl transition-all min-h-tap disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
               >
                 <span className="hidden sm:inline">Próxima</span>

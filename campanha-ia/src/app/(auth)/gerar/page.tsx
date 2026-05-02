@@ -570,7 +570,7 @@ export default function GerarCampanha() {
             <div className="p-6 flex flex-col gap-3">
               <button
                 onClick={() => { setError(null); setErrorCode(null); setErrorRetryable(true); if (errorRetryable) handleGenerate(); }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[48px]"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] min-h-tap"
                 style={{ background: "var(--gradient-brand)", color: "white", boxShadow: "0 4px 16px rgba(236,72,153,0.3)" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -580,7 +580,7 @@ export default function GerarCampanha() {
               </button>
               <button
                 onClick={() => { setError(null); setErrorCode(null); setErrorRetryable(true); }}
-                className="w-full py-3 rounded-xl text-sm font-medium transition-all min-h-[48px]"
+                className="w-full py-3 rounded-xl text-sm font-medium transition-all min-h-tap"
                 style={{ color: "var(--muted)" }}
               >
                 Fechar
@@ -741,7 +741,7 @@ export default function GerarCampanha() {
             <div className="flex gap-2 w-full sm:w-auto">
               <Link
                 href="/plano"
-                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold text-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px] flex items-center justify-center"
+                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs font-bold text-center transition-all hover:scale-[1.02] active:scale-[0.98] min-h-tap flex items-center justify-center"
                 style={{
                   background: "var(--gradient-brand)",
                   color: "white",
@@ -864,7 +864,7 @@ export default function GerarCampanha() {
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setCloseUpFile(null); setCloseUpPreview(null); }}
-                      className="absolute top-0 right-0 w-8 h-8 p-1.5 rounded-full flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      className="absolute top-0 right-0 w-8 h-8 p-1.5 rounded-full flex items-center justify-center min-w-[44px] min-h-tap"
                       style={{ background: "rgba(0,0,0,0.6)" }}
                       aria-label="Remover close-up"
                     >
@@ -925,7 +925,7 @@ export default function GerarCampanha() {
                     </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); setSecondFile(null); setSecondPreview(null); }}
-                      className="absolute top-0 right-0 w-8 h-8 p-1.5 rounded-full flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      className="absolute top-0 right-0 w-8 h-8 p-1.5 rounded-full flex items-center justify-center min-w-[44px] min-h-tap"
                       style={{ background: "rgba(0,0,0,0.6)" }}
                       aria-label="Remover segunda peça"
                     >
@@ -990,7 +990,7 @@ export default function GerarCampanha() {
                       if (tab.body) setBodyType(tab.body);
                       setShowAllModels(false);
                     }}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all snap-start min-h-[40px]"
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all snap-start min-h-tap"
                     style={{
                       background: modelFilter === tab.filter ? "var(--brand-100)" : "var(--surface)",
                       color: modelFilter === tab.filter ? "var(--brand-700)" : "var(--muted)",
@@ -1119,14 +1119,14 @@ export default function GerarCampanha() {
                                     setConfirmDeleteId(null);
                                   }}
                                   disabled={deletingModelId === model.id}
-                                  className="px-4 py-2 rounded-lg text-xs font-bold transition-all min-h-[44px]"
+                                  className="px-4 py-2 rounded-lg text-xs font-bold transition-all min-h-tap"
                                   style={{ background: "#DC2626", color: "white", opacity: deletingModelId === model.id ? 0.6 : 1 }}
                                 >
                                   {deletingModelId === model.id ? "..." : "Sim"}
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                                  className="px-4 py-2 rounded-lg text-xs font-bold min-h-[44px]"
+                                  className="px-4 py-2 rounded-lg text-xs font-bold min-h-tap"
                                   style={{ background: "rgba(255,255,255,0.2)", color: "white" }}
                                 >
                                   Não
@@ -1214,7 +1214,7 @@ export default function GerarCampanha() {
                   {hasMore && (
                     <button
                       onClick={() => setShowAllModels(!showAllModels)}
-                      className="mt-2 w-full py-2.5 rounded-xl text-xs font-medium transition-all min-h-[44px] flex items-center justify-center gap-1.5"
+                      className="mt-2 w-full py-2.5 rounded-xl text-xs font-medium transition-all min-h-tap flex items-center justify-center gap-1.5"
                       style={{
                         background: "var(--surface)",
                         border: "1px solid var(--border)",
@@ -1302,7 +1302,7 @@ export default function GerarCampanha() {
           <div>
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2 text-sm font-medium transition min-h-[44px]"
+              className="flex items-center gap-2 text-sm font-medium transition min-h-tap"
               style={{ color: "var(--muted)" }}
             >
               Personalizar mais
@@ -1387,7 +1387,7 @@ export default function GerarCampanha() {
                       <button
                         key={t.value}
                         onClick={() => { haptics.light(); setTone(tone === t.value ? "" : t.value); }}
-                        className="px-4 py-2 rounded-full text-xs font-medium transition-all min-h-[44px]"
+                        className="px-4 py-2 rounded-full text-xs font-medium transition-all min-h-tap"
                         style={{
                           background: tone === t.value ? "var(--brand-100)" : "var(--surface)",
                           color: tone === t.value ? "var(--brand-700)" : "var(--muted)",

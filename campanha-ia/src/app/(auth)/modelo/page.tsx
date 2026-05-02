@@ -312,7 +312,7 @@ export default function ModeloVirtual() {
         </div>
         {canCreate ? (
           <button
-            className="btn-primary !py-2.5 text-sm min-h-[44px]"
+            className="btn-primary !py-2.5 text-sm min-h-tap"
             onClick={() => setShowCreateForm(true)}
           >
             + Nova modelo
@@ -357,7 +357,7 @@ export default function ModeloVirtual() {
             }
           </p>
           {maxModels === 0 ? (
-            <Link href="/plano" className="btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all min-h-[48px] flex items-center justify-center">
+            <Link href="/plano" className="btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all min-h-tap flex items-center justify-center">
               ⚡ Ativar plano
             </Link>
           ) : (
@@ -525,7 +525,7 @@ export default function ModeloVirtual() {
       <div className="mb-8">
         <button
           onClick={() => { setShowCreateForm(false); resetForm(); }}
-          className="flex items-center gap-1 text-sm font-medium mb-4 transition hover:opacity-70 cursor-pointer min-h-[44px]"
+          className="flex items-center gap-1 text-sm font-medium mb-4 transition hover:opacity-70 cursor-pointer min-h-tap"
           style={{ color: "var(--muted)" }}
         >
           ← Voltar para modelos
@@ -553,7 +553,7 @@ export default function ModeloVirtual() {
                   setBody("media");
                   setHairLength("medio");
                 }}
-                className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
+                className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-tap"
                 style={{
                   background: gender === "feminino" ? "var(--gradient-brand)" : "var(--surface)",
                   color: gender === "feminino" ? "white" : "var(--muted)",
@@ -569,7 +569,7 @@ export default function ModeloVirtual() {
                   setBody("medio");
                   setHairLength("curto");
                 }}
-                className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
+                className="flex items-center justify-center gap-2 p-3 rounded-xl text-sm font-semibold transition-all min-h-tap"
                 style={{
                   background: gender === "masculino" ? "var(--gradient-brand)" : "var(--surface)",
                   color: gender === "masculino" ? "white" : "var(--muted)",
@@ -589,7 +589,7 @@ export default function ModeloVirtual() {
                 <button
                   key={s.value}
                   onClick={() => { haptics.light(); setSkin(s.value); }}
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-h-[44px]"
+                  className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all min-h-tap"
                   style={{
                     border: skin === s.value ? "2px solid var(--brand-500)" : "1px solid var(--border)",
                     background: skin === s.value ? "var(--gradient-card)" : "var(--surface)",
@@ -614,7 +614,7 @@ export default function ModeloVirtual() {
                 <button
                   key={h.value}
                   onClick={() => { haptics.light(); setHairTexture(h.value); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-tap"
                   style={{
                     background: hairTexture === h.value ? "var(--brand-100)" : "var(--surface)",
                     color: hairTexture === h.value ? "var(--brand-700)" : "var(--muted)",
@@ -633,7 +633,7 @@ export default function ModeloVirtual() {
                 <button
                   key={h.value}
                   onClick={() => { haptics.light(); setHairLength(h.value); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-tap"
                   style={{
                     background: hairLength === h.value ? "var(--brand-100)" : "var(--surface)",
                     color: hairLength === h.value ? "var(--brand-700)" : "var(--muted)",
@@ -652,7 +652,7 @@ export default function ModeloVirtual() {
                 <button
                   key={h.value}
                   onClick={() => { haptics.light(); setHairColor(h.value); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-[44px]"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap min-h-tap"
                   style={{
                     background: hairColor === h.value ? "var(--brand-100)" : "var(--surface)",
                     color: hairColor === h.value ? "var(--brand-700)" : "var(--muted)",

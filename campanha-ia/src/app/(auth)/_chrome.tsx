@@ -98,7 +98,7 @@ function MobileTabBar({ navItems, pathname }: { navItems: NavItem[]; pathname: s
           <Link
             key={item.href}
             href={item.href}
-            className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl min-h-[48px] justify-center relative"
+            className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl min-h-tap justify-center relative"
             aria-label={item.label}
           >
             <motion.div
@@ -186,7 +186,7 @@ export default function AuthChrome({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px]"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all min-h-tap"
                 style={{
                   background: isActive ? "var(--gradient-card)" : "transparent",
                   color: isActive ? "var(--brand-600)" : "var(--muted)",
@@ -298,7 +298,7 @@ export default function AuthChrome({
             <ThemeToggle />
             <button
               onClick={() => signOut()}
-              className="p-2 rounded-xl transition-all duration-300 min-h-[44px] flex items-center justify-center hover:scale-105 active:scale-95"
+              className="p-2 rounded-xl transition-all duration-300 min-h-tap flex items-center justify-center hover:scale-105 active:scale-95"
               style={{
                 color: "var(--foreground)",
                 background: "var(--surface)",
