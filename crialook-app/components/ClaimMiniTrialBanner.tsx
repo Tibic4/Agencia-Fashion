@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.md,
     paddingVertical: tokens.spacing.md,
     paddingHorizontal: 18,
-    borderRadius: 10,
+    borderRadius: tokens.radii.md,
     borderCurve: 'continuous',
     alignSelf: 'flex-start',
     overflow: 'hidden',

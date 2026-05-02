@@ -24,6 +24,7 @@ import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-conte
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring, withSequence } from 'react-native-reanimated';
 
 import Colors from '@/constants/Colors';
+import { tokens } from '@/lib/theme/tokens';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAppTheme, type ThemeMode } from '@/lib/theme';
 import { useT } from '@/lib/i18n';
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: tokens.radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -372,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
   },
   creditsText: {
     fontSize: 12,

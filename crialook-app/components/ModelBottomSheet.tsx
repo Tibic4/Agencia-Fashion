@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
+    borderRadius: tokens.radii.full,
   },
   chipText: {
     fontSize: 12,

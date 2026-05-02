@@ -1004,7 +1004,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.success,
     paddingHorizontal: tokens.spacing.sm,
     paddingVertical: tokens.spacing.xs,
-    borderRadius: 10,
+    borderRadius: tokens.radii.md,
   },
   activeBadgeText: { color: '#fff', fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black },
   // Pareado com infoBadge/infoBadgeInner do /gerar pra paridade visual:
