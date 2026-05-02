@@ -161,30 +161,30 @@ export default function QuotaExceededModal({
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="relative w-full md:max-w-lg md:mx-4 overflow-hidden"
             style={{
-              background: "linear-gradient(145deg, #1a1a2e 0%, #16162a 50%, #0f0f23 100%)",
+              background: "linear-gradient(145deg, var(--surface) 0%, var(--surface-2) 50%, var(--background) 100%)",
               borderRadius: "24px 24px 0 0",
               maxHeight: "92vh",
               overflowY: "auto",
-              boxShadow: "0 -8px 60px rgba(139, 92, 246, 0.15), 0 0 0 1px rgba(255,255,255,0.06)",
+              boxShadow: "0 -8px 60px rgba(217, 70, 239, 0.15), 0 0 0 1px var(--border)",
             }}
           >
         {/* Drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 md:hidden">
           <div
             className="w-10 h-1 rounded-full"
-            style={{ background: "rgba(255,255,255,0.15)" }}
+            style={{ background: "var(--border)" }}
           />
         </div>
 
-        {/* Close button — contraste AA (0.9 em vez de 0.5) + focus ring */}
+        {/* Close button — contraste AA + focus ring */}
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="absolute top-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           style={{
-            background: "rgba(255,255,255,0.12)",
-            color: "rgba(255,255,255,0.9)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "var(--surface-hover)",
+            color: "var(--foreground)",
+            border: "1px solid var(--border)",
           }}
           aria-label="Fechar modal de quota"
         >
@@ -194,57 +194,57 @@ export default function QuotaExceededModal({
         </button>
 
         {/* ═══ Header — Positive framing ═══ */}
-        <div className="px-6 pt-5 md:pt-6 pb-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="px-6 pt-5 md:pt-6 pb-5" style={{ borderBottom: "1px solid var(--border)" }}>
           <div className="flex items-start gap-3.5 mb-4">
             {/* Animated rocket icon */}
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: "linear-gradient(135deg, #8B5CF6, #EC4899)",
-                boxShadow: "0 4px 20px rgba(139, 92, 246, 0.4)",
+                background: "var(--gradient-brand)",
+                boxShadow: "0 4px 20px rgba(217, 70, 239, 0.4)",
                 animation: "pulseGlow 2s ease-in-out infinite",
               }}
             >
               <span className="text-xl">🚀</span>
             </div>
             <div>
-              <h2 id="quota-modal-title" className="text-lg md:text-xl font-bold text-white leading-tight">
+              <h2 id="quota-modal-title" className="text-lg md:text-xl font-bold leading-tight" style={{ color: "var(--foreground)" }}>
                 Continue criando!
               </h2>
-              <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+              <p className="text-sm mt-0.5" style={{ color: "var(--muted)" }}>
                 Desbloqueie mais campanhas para sua loja
               </p>
             </div>
           </div>
 
           {/* Progress bar visual */}
-          <div className="rounded-xl p-3.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="rounded-xl p-3.5" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-medium text-white">
+              <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
                 {used} de {limit} campanhas usadas
               </span>
               <span
                 className="text-xs font-semibold px-2 py-0.5 rounded-full"
                 style={{
-                  background: "rgba(239, 68, 68, 0.15)",
-                  color: "#F87171",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  background: "color-mix(in srgb, var(--error) 15%, transparent)",
+                  color: "var(--error)",
+                  border: "1px solid color-mix(in srgb, var(--error) 25%, transparent)",
                 }}
               >
                 100%
               </span>
             </div>
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.08)" }}>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-hover)" }}>
               <div
                 className="h-full rounded-full"
                 style={{
                   width: `${usagePercent}%`,
-                  background: "linear-gradient(90deg, #F59E0B, #EF4444)",
+                  background: "linear-gradient(90deg, var(--warning), var(--error))",
                   transition: "width 0.8s ease-in-out",
                 }}
               />
             </div>
-            <div className="flex justify-between mt-2 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+            <div className="flex justify-between mt-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
               <span className="flex items-center gap-1">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -252,7 +252,7 @@ export default function QuotaExceededModal({
                 Renova em {daysLeft} dia{daysLeft > 1 ? "s" : ""}
               </span>
               {credits > 0 && (
-                <span className="flex items-center gap-1" style={{ color: "#34D399" }}>
+                <span className="flex items-center gap-1" style={{ color: "var(--success)" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
                   </svg>
@@ -264,17 +264,17 @@ export default function QuotaExceededModal({
         </div>
 
         {/* ═══ Tabs ═══ */}
-        <div className="flex mx-6 mt-4 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
+        <div className="flex mx-6 mt-4 p-1 rounded-xl" style={{ background: "var(--surface-2)" }}>
           <button
             onClick={() => { setTab("credits"); haptics.light(); }}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-tap"
             style={{
               background: tab === "credits"
-                ? "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15))"
+                ? "color-mix(in srgb, var(--success) 18%, transparent)"
                 : "transparent",
-              color: tab === "credits" ? "#34D399" : "rgba(255,255,255,0.4)",
-              border: tab === "credits" ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid transparent",
-              boxShadow: tab === "credits" ? "0 2px 12px rgba(16, 185, 129, 0.15)" : "none",
+              color: tab === "credits" ? "var(--success)" : "var(--muted)",
+              border: tab === "credits" ? "1px solid color-mix(in srgb, var(--success) 25%, transparent)" : "1px solid transparent",
+              boxShadow: tab === "credits" ? "0 2px 12px color-mix(in srgb, var(--success) 15%, transparent)" : "none",
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -284,14 +284,14 @@ export default function QuotaExceededModal({
           </button>
           <button
             onClick={() => { setTab("upgrade"); haptics.light(); }}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-1.5 min-h-tap"
             style={{
               background: tab === "upgrade"
-                ? "linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.15))"
+                ? "color-mix(in srgb, var(--brand-500) 18%, transparent)"
                 : "transparent",
-              color: tab === "upgrade" ? "#A78BFA" : "rgba(255,255,255,0.4)",
-              border: tab === "upgrade" ? "1px solid rgba(139, 92, 246, 0.25)" : "1px solid transparent",
-              boxShadow: tab === "upgrade" ? "0 2px 12px rgba(139, 92, 246, 0.15)" : "none",
+              color: tab === "upgrade" ? "var(--brand-500)" : "var(--muted)",
+              border: tab === "upgrade" ? "1px solid color-mix(in srgb, var(--brand-500) 25%, transparent)" : "1px solid transparent",
+              boxShadow: tab === "upgrade" ? "0 2px 12px color-mix(in srgb, var(--brand-500) 15%, transparent)" : "none",
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -305,7 +305,7 @@ export default function QuotaExceededModal({
         <div className="p-6 pb-8">
           {tab === "credits" ? (
             <div className="space-y-3">
-              <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--muted)" }}>
                 Compre campanhas avulsas sem mudar de plano:
               </p>
 
@@ -318,13 +318,13 @@ export default function QuotaExceededModal({
                   className="w-full text-left rounded-2xl transition-all group relative overflow-hidden"
                   style={{
                     background: pkg.popular
-                      ? "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.06))"
-                      : "rgba(255,255,255,0.03)",
+                      ? "color-mix(in srgb, var(--success) 8%, transparent)"
+                      : "var(--surface-2)",
                     border: pkg.popular
-                      ? "1.5px solid rgba(16, 185, 129, 0.3)"
+                      ? "1.5px solid color-mix(in srgb, var(--success) 30%, transparent)"
                       : pkg.best
-                      ? "1.5px solid rgba(139, 92, 246, 0.25)"
-                      : "1px solid rgba(255,255,255,0.08)",
+                      ? "1.5px solid color-mix(in srgb, var(--brand-500) 25%, transparent)"
+                      : "1px solid var(--border)",
                     padding: pkg.popular ? "16px 18px" : "14px 18px",
                     opacity: loadingPkg !== null && loadingPkg !== pkg.qty ? 0.5 : 1,
                     transform: pkg.popular ? "scale(1)" : "scale(1)",
@@ -333,9 +333,9 @@ export default function QuotaExceededModal({
                   {/* Badge */}
                   {pkg.popular && (
                     <span
-                      className="absolute top-0 right-0 text-[10px] font-bold px-3 py-1 rounded-bl-xl"
+                      className="absolute top-0 right-0 text-2xs font-bold px-3 py-1 rounded-bl-xl"
                       style={{
-                        background: "linear-gradient(135deg, #10B981, #06B6D4)",
+                        background: "var(--success)",
                         color: "white",
                         letterSpacing: "0.05em",
                       }}
@@ -345,9 +345,9 @@ export default function QuotaExceededModal({
                   )}
                   {pkg.best && (
                     <span
-                      className="absolute top-0 right-0 text-[10px] font-bold px-3 py-1 rounded-bl-xl"
+                      className="absolute top-0 right-0 text-2xs font-bold px-3 py-1 rounded-bl-xl"
                       style={{
-                        background: "linear-gradient(135deg, #8B5CF6, #A855F7)",
+                        background: "var(--gradient-brand)",
                         color: "white",
                         letterSpacing: "0.05em",
                       }}
@@ -363,25 +363,25 @@ export default function QuotaExceededModal({
                         className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
                         style={{
                           background: pkg.popular
-                            ? "linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2))"
+                            ? "color-mix(in srgb, var(--success) 20%, transparent)"
                             : pkg.best
-                            ? "linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2))"
-                            : "rgba(255,255,255,0.06)",
-                          color: pkg.popular ? "#34D399" : pkg.best ? "#A78BFA" : "rgba(255,255,255,0.6)",
+                            ? "color-mix(in srgb, var(--brand-500) 20%, transparent)"
+                            : "var(--surface-hover)",
+                          color: pkg.popular ? "var(--success)" : pkg.best ? "var(--brand-500)" : "var(--muted)",
                           border: pkg.popular
-                            ? "1px solid rgba(16, 185, 129, 0.2)"
+                            ? "1px solid color-mix(in srgb, var(--success) 25%, transparent)"
                             : pkg.best
-                            ? "1px solid rgba(139, 92, 246, 0.2)"
-                            : "1px solid rgba(255,255,255,0.06)",
+                            ? "1px solid color-mix(in srgb, var(--brand-500) 25%, transparent)"
+                            : "1px solid var(--border)",
                         }}
                       >
                         +{pkg.qty}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
                           {pkg.qty === 1 ? "1 campanha" : `${pkg.qty} campanhas`}
                         </p>
-                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                        <p className="text-xs" style={{ color: "var(--muted)" }}>
                           R$ {pkg.perUnit}/campanha
                         </p>
                       </div>
@@ -391,11 +391,11 @@ export default function QuotaExceededModal({
                       {/* Savings badge */}
                       {pkg.savings > 0 && (
                         <span
-                          className="text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
+                          className="text-2xs font-bold px-2 py-1 rounded-full whitespace-nowrap"
                           style={{
-                            background: "rgba(16, 185, 129, 0.12)",
-                            color: "#34D399",
-                            border: "1px solid rgba(16, 185, 129, 0.2)",
+                            background: "color-mix(in srgb, var(--success) 12%, transparent)",
+                            color: "var(--success)",
+                            border: "1px solid color-mix(in srgb, var(--success) 25%, transparent)",
                           }}
                         >
                           -{pkg.savings}%
@@ -405,12 +405,12 @@ export default function QuotaExceededModal({
                         <p
                           className="text-base font-bold"
                           style={{
-                            color: pkg.popular ? "#34D399" : pkg.best ? "#A78BFA" : "white",
+                            color: pkg.popular ? "var(--success)" : pkg.best ? "var(--brand-500)" : "var(--foreground)",
                           }}
                         >
                           R$ {pkg.price}
                         </p>
-                        <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                        <p className="text-2xs" style={{ color: "var(--muted-foreground)" }}>
                           pagamento único
                         </p>
                       </div>
@@ -420,11 +420,11 @@ export default function QuotaExceededModal({
                   {/* CTA button for popular */}
                   {pkg.popular && (
                     <div
-                      className="mt-3 py-3 rounded-xl text-center text-sm font-bold transition-all min-h-[44px]"
+                      className="mt-3 py-3 rounded-xl text-center text-sm font-bold transition-all min-h-tap"
                       style={{
-                        background: "linear-gradient(135deg, #10B981, #06B6D4)",
+                        background: "var(--success)",
                         color: "white",
-                        boxShadow: "0 4px 16px rgba(16, 185, 129, 0.3)",
+                        boxShadow: "0 4px 16px color-mix(in srgb, var(--success) 30%, transparent)",
                       }}
                     >
                       {loadingPkg === pkg.qty ? (
@@ -446,35 +446,35 @@ export default function QuotaExceededModal({
               <div
                 className="mt-4 p-3.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all hover:scale-[1.01]"
                 style={{
-                  background: "linear-gradient(135deg, rgba(139, 92, 246, 0.06), rgba(168, 85, 247, 0.04))",
-                  border: "1px solid rgba(139, 92, 246, 0.12)",
+                  background: "color-mix(in srgb, var(--brand-500) 6%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--brand-500) 12%, transparent)",
                 }}
                 onClick={() => { setTab("upgrade"); haptics.light(); }}
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(139, 92, 246, 0.15)", color: "#A78BFA" }}
+                  style={{ background: "color-mix(in srgb, var(--brand-500) 15%, transparent)", color: "var(--brand-500)" }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m6 9 6-6 6 6" /><path d="M12 3v14" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold" style={{ color: "#A78BFA" }}>
+                  <p className="text-xs font-semibold" style={{ color: "var(--brand-500)" }}>
                     💡 Dica: Faça upgrade e nunca fique sem campanhas
                   </p>
-                  <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
                     Planos a partir de R$ 69/mês — pague menos por campanha
                   </p>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted-foreground)", flexShrink: 0 }}>
                   <path d="m9 18 6-6-6-6" />
                 </svg>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--muted)" }}>
                 📈 Nunca mais fique sem campanhas:
               </p>
 
@@ -486,19 +486,19 @@ export default function QuotaExceededModal({
                     className="w-full text-left rounded-2xl transition-all group relative overflow-hidden"
                     style={{
                       background: plan.recommended
-                        ? "linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(168, 85, 247, 0.06))"
-                        : "rgba(255,255,255,0.03)",
+                        ? "color-mix(in srgb, var(--brand-500) 8%, transparent)"
+                        : "var(--surface-2)",
                       border: plan.recommended
-                        ? "1.5px solid rgba(139, 92, 246, 0.3)"
-                        : "1px solid rgba(255,255,255,0.08)",
+                        ? "1.5px solid color-mix(in srgb, var(--brand-500) 30%, transparent)"
+                        : "1px solid var(--border)",
                       padding: plan.recommended ? "16px 18px" : "14px 18px",
                     }}
                   >
                     {plan.recommended && (
                       <span
-                        className="absolute top-0 right-0 text-[10px] font-bold px-3 py-1 rounded-bl-xl"
+                        className="absolute top-0 right-0 text-2xs font-bold px-3 py-1 rounded-bl-xl"
                         style={{
-                          background: "linear-gradient(135deg, #8B5CF6, #EC4899)",
+                          background: "var(--gradient-brand)",
                           color: "white",
                           letterSpacing: "0.05em",
                         }}
@@ -513,12 +513,12 @@ export default function QuotaExceededModal({
                           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{
                             background: plan.recommended
-                              ? "linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2))"
-                              : "rgba(255,255,255,0.06)",
-                            color: plan.recommended ? "#A78BFA" : "rgba(255,255,255,0.6)",
+                              ? "color-mix(in srgb, var(--brand-500) 20%, transparent)"
+                              : "var(--surface-hover)",
+                            color: plan.recommended ? "var(--brand-500)" : "var(--muted)",
                             border: plan.recommended
-                              ? "1px solid rgba(139, 92, 246, 0.2)"
-                              : "1px solid rgba(255,255,255,0.06)",
+                              ? "1px solid color-mix(in srgb, var(--brand-500) 25%, transparent)"
+                              : "1px solid var(--border)",
                           }}
                         >
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -526,12 +526,12 @@ export default function QuotaExceededModal({
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
                             {plan.name}
                           </p>
-                          <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+                          <p className="text-xs" style={{ color: "var(--muted)" }}>
                             {plan.campaigns} campanhas/mês
-                            <span className="ml-1.5" style={{ color: "#34D399" }}>
+                            <span className="ml-1.5" style={{ color: "var(--success)" }}>
                               R$ {(plan.price / plan.campaigns).toFixed(2)}/camp
                             </span>
                           </p>
@@ -541,10 +541,10 @@ export default function QuotaExceededModal({
                       <div className="text-right">
                         <p
                           className="text-base font-bold"
-                          style={{ color: plan.recommended ? "#A78BFA" : "white" }}
+                          style={{ color: plan.recommended ? "var(--brand-500)" : "var(--foreground)" }}
                         >
                           R$ {plan.price}
-                          <span className="text-xs font-normal" style={{ color: "rgba(255,255,255,0.3)" }}>
+                          <span className="text-xs font-normal" style={{ color: "var(--muted-foreground)" }}>
                             /mês
                           </span>
                         </p>
@@ -556,9 +556,9 @@ export default function QuotaExceededModal({
                       <div
                         className="mt-3 py-2.5 rounded-xl text-center text-sm font-bold transition-all"
                         style={{
-                          background: "linear-gradient(135deg, #8B5CF6, #EC4899)",
+                          background: "var(--gradient-brand)",
                           color: "white",
-                          boxShadow: "0 4px 16px rgba(139, 92, 246, 0.3)",
+                          boxShadow: "0 4px 16px rgba(217, 70, 239, 0.3)",
                         }}
                       >
                         Assinar Pro
@@ -570,27 +570,27 @@ export default function QuotaExceededModal({
                 <div
                   className="rounded-2xl p-5 text-center"
                   style={{
-                    background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(234, 179, 8, 0.05))",
-                    border: "1px solid rgba(245, 158, 11, 0.15)",
+                    background: "color-mix(in srgb, var(--warning) 8%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--warning) 18%, transparent)",
                   }}
                 >
                   <span className="text-2xl mb-2 block">🏆</span>
-                  <p className="text-sm font-semibold text-white">Você já está no plano mais alto!</p>
-                  <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Você já está no plano mais alto!</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--muted)" }}>
                     Compre créditos avulsos para campanhas extras
                   </p>
                 </div>
               )}
 
               {/* Features list */}
-              <div className="mt-2 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <p className="text-[11px] font-semibold mb-2" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <div className="mt-2 p-3 rounded-xl" style={{ background: "var(--surface-2)" }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: "var(--muted-foreground)" }}>
                   INCLUÍDO EM TODOS OS PLANOS:
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {["Virtual Try-On com IA", "4 canais prontos", "Score de qualidade", "Sem marca d'água"].map((f) => (
-                    <div key={f} className="flex items-center gap-1.5 text-[11px]" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <div key={f} className="flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       {f}
@@ -605,8 +605,8 @@ export default function QuotaExceededModal({
         {/* ═══ Safe CSS for animations ═══ */}
         <style jsx>{`
           @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); }
-            50% { box-shadow: 0 4px 30px rgba(236, 72, 153, 0.5), 0 0 40px rgba(139, 92, 246, 0.2); }
+            0%, 100% { box-shadow: 0 4px 20px rgba(217, 70, 239, 0.4); }
+            50% { box-shadow: 0 4px 30px rgba(236, 72, 153, 0.5), 0 0 40px rgba(217, 70, 239, 0.2); }
           }
 
           @media (min-width: 768px) {
