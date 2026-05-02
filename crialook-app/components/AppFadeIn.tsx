@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 import { type PropsWithChildren } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import Animated, { FadeIn, Easing } from 'react-native-reanimated';
+import Colors from '@/constants/Colors';
 
 interface Props extends PropsWithChildren {
   /** Falso → não renderiza nada (splash fica). True → fade-in no children. */
@@ -41,7 +42,7 @@ export function AppFadeIn({ ready, children }: Props) {
       // baixo do conteúdo é fucsia em vez de branco. Combinado com o bg
       // do GestureHandlerRootView e o backgroundColor do app.config.ts,
       // elimina o flash branco no cold start.
-      style={{ flex: 1, backgroundColor: '#D946EF' }}
+      style={{ flex: 1, backgroundColor: Colors.brand.primary }}
       entering={FadeIn.duration(280).easing(Easing.out(Easing.cubic))}
     >
       {children}

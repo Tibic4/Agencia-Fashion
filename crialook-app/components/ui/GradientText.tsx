@@ -16,6 +16,7 @@ import { type ReactNode } from 'react';
 import { StyleSheet, Text, type TextStyle, type StyleProp } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
+import Colors from '@/constants/Colors';
 
 type GradientTuple = readonly [string, string, ...string[]];
 
@@ -34,7 +35,7 @@ export interface GradientTextProps {
 
 export function GradientText({
   children,
-  colors = ['#EC4899', '#D946EF', '#A855F7'] as const,
+  colors = Colors.brand.gradientPrimary,
   style,
   accessibilityLabel,
   start = { x: 0, y: 0 },

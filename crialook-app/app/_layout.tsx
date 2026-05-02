@@ -291,7 +291,7 @@ function RootLayout() {
           sumir e o conteúdo do AppFadeIn pintar — em vez de flash branco,
           usuário vê fucsia contínuo até o app aparecer. Pareado com
           `backgroundColor` no app.config.ts (camada nativa). */}
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#D946EF' }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.brand.primary }}>
         <SafeAreaProvider>
           <QueryClientProvider client={getQueryClient()}>
             <ThemeProvider>

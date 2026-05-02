@@ -1188,7 +1188,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(217,70,239,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#D946EF',
+    shadowColor: Colors.brand.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 8,

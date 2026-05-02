@@ -68,8 +68,8 @@ function getPhase(elapsed: number, isComplete: boolean): Phase {
 const PHASE_CONFIG: Record<Phase, { icon: string; titleKey: TKey; color: string }> = {
   analyzing: { icon: '\u{1F50D}', titleKey: 'loading.phaseAnalyzingTitle', color: '#818cf8' },
   editorial: { icon: '✍️', titleKey: 'loading.phaseEditorialTitle', color: '#f472b6' },
-  shooting: { icon: '\u{1F4F8}', titleKey: 'loading.phaseShootingTitle', color: '#a855f7' },
-  polishing: { icon: '✨', titleKey: 'loading.phasePolishingTitle', color: '#d946ef' },
+  shooting: { icon: '\u{1F4F8}', titleKey: 'loading.phaseShootingTitle', color: Colors.brand.violet },
+  polishing: { icon: '✨', titleKey: 'loading.phasePolishingTitle', color: Colors.brand.primary },
   almostDone: { icon: '\u{1F3AF}', titleKey: 'loading.phaseAlmostDoneTitle', color: '#10b981' },
 };
 
@@ -513,7 +513,7 @@ export function GenerationLoadingScreen({ isComplete, onViewResults, campaignId 
       {/* Animated gradient blobs — site parity. Kept as the base layer because
           the existing implementation pulses the *current phase color* (which
           we still want — the screen visibly changes hue per phase). */}
-      <GradientBlobs color1={config.color} color2="#a855f7" />
+      <GradientBlobs color1={config.color} color2={Colors.brand.violet} />
 
       {/* MeshGradient adds a slow-drifting brand wash on top of the blobs.
           This brings the same Skia-driven atmosphere we use on auth/onboarding
