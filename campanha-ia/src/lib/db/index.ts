@@ -986,3 +986,83 @@ export async function savePipelineResultV3(input: SavePipelineResultV3Input) {
     `[DB] ✅ savePipelineResultV3 | campaign=${input.campaignId} | ${input.successCount} imagem(ns) | ${input.durationMs}ms`
   );
 }
+
+// ═══════════════════════════════════════════════════════════
+// CAMPAIGN SCORES — D-06 (Phase 02 Quality Loop)
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * D-06 (Phase 02 quality-loop): persist judge output to campaign_scores.
+ *
+ * Idempotent — UPSERT on campaign_id (judge may re-run if Inngest retries
+ * after a transient failure; only the most recent score row should exist).
+ * Clamps every numeric dimension to [1, 5] before insert (defense in depth
+ * against schema drift if the judge ever returns out-of-range integers
+ * that slip past Zod somehow — e.g., a future tool-input change).
+ *
+ * The 6 PT-BR justificativa_* strings land in the `melhorias` JSONB column
+ * (existing schema; reusing the slot since the column was unused after
+ * Phase 0). The lojista-facing /admin/quality page (Plan 02-04) will read
+ * these strings to surface "why" alongside the numeric scores.
+ *
+ * D-02 sentinel: when called with nivel_risco='falha_judge', the numeric
+ * columns are still required NOT NULL by the baseline schema — caller
+ * passes 1 (post-clamp) to satisfy the constraint; downstream queries
+ * treat falha_judge as "ignore numerics, judge job failed".
+ *
+ * Schema dependency: this function relies on a UNIQUE constraint on
+ * campaign_scores.campaign_id for the .upsert(... onConflict). If the
+ * constraint is missing in the live DB, the upsert raises
+ * "no unique or exclusion constraint matching the ON CONFLICT
+ * specification" — apply the migration:
+ *
+ *   ALTER TABLE campaign_scores
+ *     ADD CONSTRAINT campaign_scores_campaign_id_key
+ *     UNIQUE (campaign_id);
+ *
+ * (Documented in 02-03-SUMMARY.md so the user can apply at canary time.)
+ */
+export interface CampaignScoresInput {
+  campaignId: string;
+  naturalidade: number;
+  conversao: number;
+  clareza: number;
+  aprovacao_meta: number;
+  nota_geral: number;
+  nivel_risco: "baixo" | "medio" | "alto" | "falha_judge";
+  justificativas: {
+    naturalidade: string;
+    conversao: string;
+    clareza: string;
+    aprovacao_meta: string;
+    nota_geral: string;
+    nivel_risco: string;
+  };
+}
+
+export async function setCampaignScores(input: CampaignScoresInput): Promise<void> {
+  const supabase = createAdminClient();
+  const clamp = (n: number) => Math.max(1, Math.min(5, Math.round(n)));
+  const { error } = await supabase
+    .from("campaign_scores")
+    .upsert(
+      {
+        campaign_id: input.campaignId,
+        naturalidade:   clamp(input.naturalidade),
+        conversao:      clamp(input.conversao),
+        clareza:        clamp(input.clareza),
+        aprovacao_meta: clamp(input.aprovacao_meta),
+        nota_geral:     clamp(input.nota_geral),
+        // Legacy column from Phase 0 baseline schema; not in AI-SPEC §5.1
+        // dimensions table. Set to neutral midpoint (3) until a follow-up
+        // migration drops the column.
+        urgencia:       3,
+        nivel_risco:    input.nivel_risco,
+        // 6 PT-BR justificativa strings as keyed object (reuses unused
+        // melhorias JSONB column from Phase 0).
+        melhorias:      input.justificativas,
+      },
+      { onConflict: "campaign_id" },
+    );
+  if (error) throw new Error(`setCampaignScores failed: ${error.message}`);
+}
