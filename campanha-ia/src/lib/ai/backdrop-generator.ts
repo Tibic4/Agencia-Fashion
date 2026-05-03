@@ -13,7 +13,7 @@
  * 4. Atualiza stores (backdrop_ref_url, backdrop_color, backdrop_updated_at)
  */
 
-import { GoogleGenAI } from "@google/genai";
+import { getGoogleGenAI } from "./clients";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callGeminiSafe } from "./gemini-error-handler";
 
@@ -23,20 +23,6 @@ import { callGeminiSafe } from "./gemini-error-handler";
 
 const MODEL = "gemini-3-pro-image-preview";
 const IMAGE_SIZE = "2K";
-
-// ═══════════════════════════════════════
-// Singleton GoogleGenAI (shared with VTO)
-// ═══════════════════════════════════════
-
-let _ai: GoogleGenAI | null = null;
-function getAI(): GoogleGenAI {
-  if (!_ai) {
-    const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("GOOGLE_AI_API_KEY (ou GEMINI_API_KEY) não configurada");
-    _ai = new GoogleGenAI({ apiKey });
-  }
-  return _ai;
-}
 
 // ═══════════════════════════════════════
 // Season types & Prompt builder
@@ -102,7 +88,7 @@ export async function generateBackdrop(
 
   console.log(`[Backdrop] 🎨 Generating studio backdrop for store ${storeId} (${hex}) [${season}]...`);
 
-  const ai = getAI();
+  const ai = getGoogleGenAI();
   const prompt = buildBackdropPrompt(hex, season);
 
   // ── Generate image ──
