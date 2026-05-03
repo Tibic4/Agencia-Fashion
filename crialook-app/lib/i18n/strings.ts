@@ -389,6 +389,8 @@ export const ptBR = {
     menuFavorite: 'Favoritar',
     menuUnfavorite: 'Desfavoritar',
     menuDelete: 'Excluir',
+    /** Phase 02 D-13: opens RegenerateReasonPicker with 5 PT-BR options. */
+    menuRegenerate: 'Regerar',
     /** Swipe action labels (não aparecem visíveis em swipe rápido, mas a11y lê). */
     swipeFavorite: 'Favoritar',
     swipeDelete: 'Excluir',
@@ -1049,6 +1051,7 @@ export const en: StringTree = {
     menuFavorite: 'Favorite',
     menuUnfavorite: 'Unfavorite',
     menuDelete: 'Delete',
+    menuRegenerate: 'Regenerate',
     swipeFavorite: 'Favorite',
     swipeDelete: 'Delete',
     deleteConfirmTitle: 'Delete campaign?',

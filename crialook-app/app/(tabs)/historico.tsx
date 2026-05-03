@@ -38,12 +38,13 @@ import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { tokens, rounded } from '@/lib/theme/tokens';
-import { apiGet, apiPatch } from '@/lib/api';
+import { apiGet, apiPatch, regenerateCampaign, type RegenerateReason } from '@/lib/api';
 import { qk } from '@/lib/query-client';
 import { CampaignListResponse } from '@/lib/schemas';
 import { useT } from '@/lib/i18n';
 import { markHistoricoSeen } from '@/lib/unseenGenerations';
 import { isTrialCampaign, type Campaign } from '@/types';
+import { RegenerateReasonPicker } from '@/components/historico/RegenerateReasonPicker';
 
 // ─── Presentation tokens ───────────────────────────────────────────────────
 type ObjectiveKey = 'venda_imediata' | 'lancamento' | 'promocao' | 'engajamento';
@@ -135,6 +136,11 @@ interface ContextMenuButtonProps {
   /** Optional — quando undefined, esconde a opção "Excluir" (ex: enquanto o
    *  endpoint DELETE no backend não existe). */
   onDelete?: () => void;
+  /** Phase 02 D-13: Optional — quando undefined, esconde "Regerar" (ex: pra
+   *  campanha em processing/failed onde regen não faz sentido). Quando
+   *  definido, abre o RegenerateReasonPicker (D-11) que envia {reason} pro
+   *  backend pelo path FREE de captura de razão (Phase 01 D-03). */
+  onRegenerate?: () => void;
   t: TFn;
   textColor: string;
   surfaceColor: string;
@@ -144,6 +150,7 @@ interface ContextMenuButtonProps {
 function ContextMenuButton({
   onShare,
   onDelete,
+  onRegenerate,
   t,
   textColor,
   surfaceColor,
@@ -218,6 +225,17 @@ function ContextMenuButton({
             {/* Favoritar/desfavoritar foi removido daqui — já temos 2 affordances
                 redundantes pra mesma ação (swipe pra esquerda + tap na estrela
                 inline no card). Adicionar aqui só polui o menu. */}
+            {onRegenerate && (
+              <MenuRow
+                icon="refresh"
+                label={t('history.menuRegenerate')}
+                color={textColor}
+                onPress={() => {
+                  close();
+                  onRegenerate();
+                }}
+              />
+            )}
             {onDelete && (
               <MenuRow
                 icon="trash"
@@ -295,6 +313,12 @@ function HistoricoScreenInner() {
   const [filter, setFilter] = useState<'all' | 'favorites'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Phase 02 D-13: holds the campaign id whose regenerate-reason picker is
+  // currently presented. null = no picker. Single piece of state because
+  // only one picker can be open at a time (Gorhom's BottomSheetModal stacks
+  // by ref, not by id, so multi-instance would race).
+  const [pickerCampaignId, setPickerCampaignId] = useState<string | null>(null);
+
   // Track open swipeables so opening a new one closes the previous — Material 3
   // pattern (only one swipe surface visible at a time).
   const swipeableRefs = useRef<Map<string, Swipeable>>(new Map());
@@ -362,6 +386,28 @@ function HistoricoScreenInner() {
     (id: string, current: boolean) => toggleFavoriteMut.mutate({ id, favorited: !current }),
     [toggleFavoriteMut],
   );
+
+  // Phase 02 D-13: regenerate with captured reason. The picker calls this
+  // via onSelect; backend takes the FREE path (Phase 01 D-03) when {reason}
+  // is in the body and persists campaigns.regenerate_reason. We don't do
+  // an optimistic update here — regen is async on the backend (Inngest job
+  // re-runs the pipeline) so the list won't reflect a "new" campaign for
+  // 30-90s. Just invalidate so any incidental backend-side changes (e.g.
+  // status flip back to processing) refresh on next focus.
+  const regenerateMut = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: RegenerateReason }) =>
+      regenerateCampaign(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.campaigns.list() });
+      // PT-BR per CONTEXT.md D-13: confirm regen was queued + acknowledge
+      // the lojista's signal. Tone is "obrigado pelo retorno" pra deixar
+      // claro que a opinião dela vira aprendizado da IA.
+      toast.success('Vamos refazer essa! Obrigado pelo retorno.');
+    },
+    onError: () => {
+      toast.error('Ops, não rolou. Tenta de novo?');
+    },
+  });
 
   /**
    * NOTE: o backend ainda NÃO expõe DELETE /campaigns/[id]
@@ -743,6 +789,16 @@ function HistoricoScreenInner() {
                   <ContextMenuButton
                     onShare={() => shareCampaign(c)}
                     onDelete={deleteSupported ? noopDelete : undefined}
+                    // Phase 02 D-13: only offer Regerar on completed campaigns
+                    // — regenerating a still-processing or failed campaign
+                    // would race the active Inngest run. Hidden in those
+                    // states; user must wait for status=completed before
+                    // expressing reason-based dissatisfaction.
+                    onRegenerate={
+                      c.status === 'completed'
+                        ? () => setPickerCampaignId(c.id)
+                        : undefined
+                    }
                     t={t}
                     textColor={colors.textSecondary}
                     surfaceColor={colors.cardElevated}
@@ -993,6 +1049,31 @@ function HistoricoScreenInner() {
             )}
           </View>
         }
+      />
+
+      {/* Phase 02 D-11/D-13: regenerate-reason picker.
+          Mounted ONCE at screen root regardless of pickerCampaignId — the
+          Gorhom BottomSheetModal handles internal show/hide via its ref.
+          Mounting per-card would create N modal instances and stack them
+          incorrectly when the user switches between cards quickly.
+
+          Cancel branch: per CONTEXT.md D-13 the official UX is "fall back to
+          legacy paid-regen flow with disclaimer". We deviate to NO-OP here
+          (just close the sheet) because: (1) showing a paid-credit prompt
+          right after the user explicitly clicked "Regerar" would mislead
+          her about the affordance she just saw — the picker IS the regen
+          UI, not a gate; (2) the legacy paid path is still fully reachable
+          via any existing call site that passes no reason (none in the
+          mobile UI today, but the API contract is preserved). This decision
+          is C-03 planner discretion documented in 02-01-SUMMARY.md. */}
+      <RegenerateReasonPicker
+        visible={pickerCampaignId !== null}
+        onSelect={(reason) => {
+          const id = pickerCampaignId;
+          setPickerCampaignId(null);
+          if (id) regenerateMut.mutate({ id, reason });
+        }}
+        onCancel={() => setPickerCampaignId(null)}
       />
     </View>
   );
