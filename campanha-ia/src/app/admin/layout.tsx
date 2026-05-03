@@ -31,6 +31,8 @@ const adminNav = [
   { href: "/admin/clientes", label: "Clientes", icon: <IconUsers /> },
   { href: "/admin/campanhas", label: "Campanhas", icon: <IconCampaign /> },
   { href: "/admin/custos", label: "Custos", icon: <IconCosts /> },
+  // Phase 02 D-21: companion to Custos — surfaces LLM-as-judge scores.
+  { href: "/admin/quality", label: "Qualidade", icon: <span className="text-sm">📊</span> },
   { href: "/admin/logs", label: "Logs", icon: <IconLogs /> },
   { href: "/admin/vitrine", label: "Vitrine", icon: <span className="text-sm">🖼️</span> },
   { href: "/admin/configuracoes", label: "Ajustes", icon: <IconSettings /> },
