@@ -53,6 +53,20 @@ export interface GeminiVTOInput {
   /** Store ID para tracking de custos */
   storeId?: string;
   campaignId?: string;
+  /**
+   * D-18 (Phase 02 quality-loop) follow-up from Plan 02-03: when true,
+   * skip the logModelCost call at the end of generateWithGeminiVTO so
+   * evals/run.ts doesn't pollute api_cost_logs with eval traffic. The
+   * VTO call itself still runs (the eval needs the generated image to
+   * score the pipeline against golden-set entries) — only the cost-log
+   * side effect is gated. Defaults to false: every existing call site
+   * preserves Phase 01 behavior.
+   *
+   * Coherent dryRun semantics: pipeline.ts threads input.dryRun into
+   * generateWithGeminiVTO via this field, matching the analyzer +
+   * sonnet + pose-history + judge.requested gates already in place.
+   */
+  dryRun?: boolean;
   /** Callback chamado quando a imagem termina */
   onImageComplete?: (success: boolean) => void | Promise<void>;
 }
@@ -433,7 +447,10 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
   const hasRealTokens = realInputTokens > 0 && realOutputTokens > 0;
 
   // Log de custos (fire-and-forget — D-18 helper)
-  if (input.storeId) {
+  // D-18 (Phase 02) follow-up from Plan 02-03: gated behind !input.dryRun
+  // so evals/run.ts doesn't pollute api_cost_logs with golden-set runs
+  // (mirrors the analyzer + sonnet gates in pipeline.ts).
+  if (!input.dryRun && input.storeId) {
     logModelCost({
       storeId: input.storeId,
       campaignId: input.campaignId,

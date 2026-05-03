@@ -293,6 +293,10 @@ export async function runCampaignPipeline(
     modelInfo: input.modelInfo,
     storeId: input.storeId,
     campaignId: input.campaignId,
+    // D-18 (Phase 02) follow-up from Plan 02-03: thread dryRun so the
+    // VTO cost-log write is gated identically to analyzer + sonnet.
+    // Coherent dryRun semantics across all 4 cost-log sites.
+    dryRun: input.dryRun,
     onImageComplete: async (success) => {
       const emoji = success ? "✅" : "⚠️";
       const label = `Foto ${emoji} — finalizando!`;
