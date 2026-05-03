@@ -28,8 +28,29 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 vi.mock('react-native', () => {
   const React = require('react');
 
+  // RN accepts `style={[a, b, false && c]}` arrays. react-dom does not.
+  // Flatten + filter falsy + drop unknown DOM props to avoid noise.
+  function flattenStyle(s: any): Record<string, any> {
+    if (!s) return {};
+    if (Array.isArray(s)) {
+      return s.reduce<Record<string, any>>((acc, item) => Object.assign(acc, flattenStyle(item)), {});
+    }
+    if (typeof s === 'object') return s;
+    return {};
+  }
+
   function makeComp(tag: string) {
-    return ({ children, onPress, accessibilityRole, accessibilityLabel, testID, ...rest }: any) => {
+    return ({
+      children,
+      onPress,
+      accessibilityRole,
+      accessibilityLabel,
+      testID,
+      style,
+      // RN-only props that DOM doesn't grok — drop them.
+      android_ripple: _ripple,
+      ...rest
+    }: any) => {
       const handler = onPress ? { onClick: (e: any) => onPress(e) } : {};
       return React.createElement(
         tag,
@@ -37,6 +58,8 @@ vi.mock('react-native', () => {
           'data-testid': testID,
           'data-role': accessibilityRole,
           'aria-label': accessibilityLabel,
+          // Render style as data-* so jsdom doesn't try to parse RN units.
+          'data-style': JSON.stringify(flattenStyle(style)),
           ...handler,
           ...rest,
         },
