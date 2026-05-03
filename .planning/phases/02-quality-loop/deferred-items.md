@@ -56,3 +56,42 @@ current plan but need follow-up.
   are a separate phase, possibly bundled with the labeler engagement
   per CONTEXT.md `<deferred>`.
 - **Status:** noted, NOT fixed in Plan 02-03 per D-23.
+
+---
+
+## From Plan 02-04 (admin quality dashboard)
+
+### `/admin/quality` correlation matrix — heatmap UI polish
+
+- **Where:** `campanha-ia/src/app/admin/quality/page.tsx` Section 4
+  "Correlação prompt × motivo de regeneração".
+- **What:** The correlation matrix currently renders as a plain HTML
+  table where columns are derived from the first row's keys at render
+  time. A proper heatmap (cells colored by count or correlation
+  strength) is the desired final UX but requires inspecting Plan 02-05's
+  actual view columns + range against real data before designing the
+  color scale.
+- **Impact:** functional — admins see the raw join output. Just less
+  scannable than a heatmap would be.
+- **Fix path:** after Plan 02-05 SUMMARY lands and the view is
+  populated with at least a week of real data, redesign Section 4 with
+  a `<div className="grid grid-cols-N gap-1">` heatmap where each cell
+  is a `bg-red-500/{opacity}` based on count. Reuse the existing
+  `alertStyles` color scale convention from `/admin/custos`.
+- **Phase scope:** polish item. Land it as part of Phase 03 dashboard
+  pass OR a small follow-up plan in Phase 02 once 02-05's view is in
+  production for a week.
+- **Status:** plain table shipped; heatmap deferred.
+
+### Shared `<MeanTile>` component between `/admin/custos` and `/admin/quality`
+
+- **Where:** both pages have near-identical "label / big number / delta
+  arrow / caption" tile shapes.
+- **What:** A shared `<MeanTile label cur prev format />` would
+  collapse ~40 lines of JSX duplication. Held off because (a) the
+  budget tiles in `/admin/custos` each have unique sub-content (progress
+  bar in Budget Mensal, no delta in Custo/Campanha) so the shared
+  component would be 4-of-8 props and lose readability; (b) Phase 03
+  dashboard polish is the right home for cross-page component
+  consolidation.
+- **Status:** deferred to Phase 03.
