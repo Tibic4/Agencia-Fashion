@@ -19,6 +19,7 @@ import { getGoogleGenAI } from "./clients";
 import { callGeminiSafe } from "./gemini-error-handler";
 import { type ModelInfo, buildIdentityLock } from "./identity-translations";
 import { computePromptVersion } from "./prompt-version";
+import { logModelCost } from "./log-model-cost";
 
 // ═══════════════════════════════════════
 // Tipos
@@ -431,16 +432,20 @@ export async function generateWithGeminiVTO(input: GeminiVTOInput): Promise<Gemi
   const realOutputTokens = image?.tokenUsage?.candidatesTokenCount ?? 0;
   const hasRealTokens = realInputTokens > 0 && realOutputTokens > 0;
 
-  // Log de custos (fire-and-forget)
+  // Log de custos (fire-and-forget — D-18 helper)
   if (input.storeId) {
-    logGeminiVTOCosts(
-      input.storeId,
-      input.campaignId,
-      successCount,
-      totalDurationMs,
-      hasRealTokens ? realInputTokens : undefined,
-      hasRealTokens ? realOutputTokens : undefined,
-    ).catch((e) => console.warn("[Gemini VTO] Erro ao salvar custo:", e));
+    logModelCost({
+      storeId: input.storeId,
+      campaignId: input.campaignId,
+      provider: "google",
+      model: MODEL,
+      action: "gemini_vto_v6",
+      usage: hasRealTokens
+        ? { inputTokens: realInputTokens, outputTokens: realOutputTokens }
+        : undefined,
+      durationMs: totalDurationMs,
+      promptVersion: VTO_PROMPT_VERSION,
+    }).catch((e) => console.warn("[Gemini VTO] cost-log failed:", e?.message ?? e));
   }
 
   return { images, successCount, totalDurationMs };
@@ -568,72 +573,16 @@ function mapAspectRatio(ratio: string): string {
 }
 
 // ═══════════════════════════════════════
-// Log de custos
-// Gemini 3 Pro Image: usa tokens REAIS do usageMetadata
-// Fallback estimado só se API não retornar metadata
+// Cost logging — D-18: consolidated into lib/ai/log-model-cost.ts
 // ═══════════════════════════════════════
-
-async function logGeminiVTOCosts(
-  storeId: string,
-  campaignId: string | undefined,
-  successCount: number,
-  totalMs: number,
-  realInputTokens?: number,
-  realOutputTokens?: number
-) {
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
-
-  let exchangeRate = 5.8;
-  let modelPrice = { inputPerMTok: 2.00, outputPerMTok: 120.00 };
-
-  try {
-    const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
-    exchangeRate = await getExchangeRate();
-    const pricing = await getModelPricing();
-    if (pricing[MODEL]) {
-      modelPrice = pricing[MODEL];
-    }
-  } catch {
-    // fallback
-  }
-
-  // Usar tokens REAIS da API quando disponíveis
-  // Fallback: estimativa conservadora por imagem
-  const FALLBACK_INPUT_PER_IMG = 4600;
-  const FALLBACK_OUTPUT_PER_IMG = 4000;
-  const totalInputTokens = realInputTokens || (FALLBACK_INPUT_PER_IMG * successCount);
-  const totalOutputTokens = realOutputTokens || (FALLBACK_OUTPUT_PER_IMG * successCount);
-  const source = realInputTokens ? "real" : "estimated";
-
-  const costUsd =
-    (totalInputTokens * modelPrice.inputPerMTok) / 1_000_000 +
-    (totalOutputTokens * modelPrice.outputPerMTok) / 1_000_000;
-
-  console.log(
-    `[Gemini VTO] 💰 Custo (${source}): $${costUsd.toFixed(4)} / R$ ${(costUsd * exchangeRate).toFixed(4)}` +
-    ` | tokens: ${totalInputTokens} in + ${totalOutputTokens} out` +
-    ` | pricing: $${modelPrice.inputPerMTok}/MTok in, $${modelPrice.outputPerMTok}/MTok out`
-  );
-
-  const { error } = await supabase.from("api_cost_logs").insert({
-    store_id: storeId,
-    campaign_id: campaignId || null,
-    provider: "google",
-    model_used: MODEL,
-    action: "gemini_vto_v6",
-    cost_usd: costUsd,
-    cost_brl: costUsd * exchangeRate,
-    exchange_rate: exchangeRate,
-    input_tokens: totalInputTokens,
-    output_tokens: totalOutputTokens,
-    tokens_used: totalInputTokens + totalOutputTokens,
-    response_time_ms: totalMs,
-    metadata: { prompt_version: VTO_PROMPT_VERSION },
-  });
-
-  if (error) {
-    console.warn("[Gemini VTO] ⚠️ Falha ao logar custo:", error.message);
-  }
-}
+// `logGeminiVTOCosts` previously lived here. Replaced by a direct
+// `logModelCost({...})` call at the fire-and-forget site above. See
+// `lib/ai/log-model-cost.ts` for the consolidated helper and
+// `lib/pricing/fallbacks.ts` for the per-image fallback constants
+// (FALLBACK_TOKENS["gemini_vto_v6"]) that used to be inline here.
+//
+// NOTE: pipeline v7 generates exactly one image per campaign (foto única
+// universal), so the per-image fallback values from the deleted function
+// (4600 in / 4000 out) translate directly to the per-call fallback in
+// FALLBACK_TOKENS without a successCount multiplier.
 
