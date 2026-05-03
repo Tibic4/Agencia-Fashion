@@ -19,10 +19,30 @@ async function getCosts() {
   const dayOfMonth = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
-  const [{ data: thisMonthCosts }, { data: lastMonthCosts }, { data: budgetSetting }] = await Promise.all([
+  const [
+    { data: thisMonthCosts },
+    { data: lastMonthCosts },
+    { data: budgetSetting },
+    { data: thisMonthReasons },
+    { data: lastMonthReasons },
+  ] = await Promise.all([
     supabase.from("api_cost_logs").select("provider, model_used, action, cost_brl, cost_usd, tokens_used, created_at").gte("created_at", thisMonth).order("created_at", { ascending: false }).limit(500),
     supabase.from("api_cost_logs").select("provider, cost_brl").gte("created_at", lastMonth).lte("created_at", lastMonthEnd),
     supabase.from("admin_settings").select("value").eq("key", "api_budget_monthly_brl").single(),
+    // D-04: aggregate regenerate_reason for current month — production signal MVP.
+    // Partial index `idx_campaigns_regenerate_reason_created_at` covers this query path.
+    supabase
+      .from("campaigns")
+      .select("regenerate_reason")
+      .gte("created_at", thisMonth)
+      .not("regenerate_reason", "is", null),
+    // D-04: same shape for previous month, used to compute deltas.
+    supabase
+      .from("campaigns")
+      .select("regenerate_reason")
+      .gte("created_at", lastMonth)
+      .lte("created_at", lastMonthEnd)
+      .not("regenerate_reason", "is", null),
   ]);
 
   const budget = parseFloat(budgetSetting?.value || process.env.API_BUDGET_MONTHLY_BRL || "2000");
@@ -93,6 +113,24 @@ async function getCosts() {
     .reduce((s, [, v]) => Math.max(s, v.calls), 0);
   const avgCostPerCampaign = totalCampaignCalls > 0 ? totalThisMonth / totalCampaignCalls : 0;
 
+  // D-04: aggregate regenerate_reason counts for the new "Sinais de regeneração" tile.
+  const reasonCountsThisMonth: Record<string, number> = {};
+  (thisMonthReasons ?? []).forEach((row) => {
+    const r = row.regenerate_reason as string | null;
+    if (!r) return;
+    reasonCountsThisMonth[r] = (reasonCountsThisMonth[r] ?? 0) + 1;
+  });
+
+  const reasonCountsLastMonth: Record<string, number> = {};
+  (lastMonthReasons ?? []).forEach((row) => {
+    const r = row.regenerate_reason as string | null;
+    if (!r) return;
+    reasonCountsLastMonth[r] = (reasonCountsLastMonth[r] ?? 0) + 1;
+  });
+
+  const totalReasonsThisMonth = Object.values(reasonCountsThisMonth).reduce((s, n) => s + n, 0);
+  const totalReasonsLastMonth = Object.values(reasonCountsLastMonth).reduce((s, n) => s + n, 0);
+
   return {
     byProvider,
     byStep,
@@ -109,8 +147,22 @@ async function getCosts() {
     dayOfMonth,
     daysInMonth,
     logs: filteredThisMonth,
+    reasonCountsThisMonth,
+    reasonCountsLastMonth,
+    totalReasonsThisMonth,
+    totalReasonsLastMonth,
   };
 }
+
+// D-04: PT-BR labels for the 5 enum values. Order-of-display also fixed.
+const REGEN_REASON_ORDER = ["face_wrong", "garment_wrong", "copy_wrong", "pose_wrong", "other"] as const;
+const REGEN_REASON_LABELS: Record<string, string> = {
+  face_wrong: "Rosto errado",
+  garment_wrong: "Peça errada",
+  copy_wrong: "Copy errado",
+  pose_wrong: "Pose errada",
+  other: "Outro",
+};
 
 const providerColors: Record<string, string> = {
   google: "from-blue-500 to-indigo-500",
@@ -138,7 +190,26 @@ const alertStyles: Record<string, { bg: string; border: string; text: string }> 
 
 export default async function AdminCustos() {
   const data = await getCosts();
-  const { byProvider, byStep, totalThisMonth, totalLastMonth, budget, projection, budgetUsedPct, projectionPct, alertLevel, alertMessage, avgCostPerCampaign, dayOfMonth, daysInMonth, logs } = data;
+  const {
+    byProvider,
+    byStep,
+    totalThisMonth,
+    totalLastMonth,
+    budget,
+    projection,
+    budgetUsedPct,
+    projectionPct,
+    alertLevel,
+    alertMessage,
+    avgCostPerCampaign,
+    dayOfMonth,
+    daysInMonth,
+    logs,
+    reasonCountsThisMonth,
+    reasonCountsLastMonth,
+    totalReasonsThisMonth,
+    totalReasonsLastMonth,
+  } = data;
   const diffPct = totalLastMonth > 0 ? (((totalThisMonth - totalLastMonth) / totalLastMonth) * 100).toFixed(0) : "—";
   const alert = alertStyles[alertLevel];
 
@@ -195,6 +266,41 @@ export default async function AdminCustos() {
           <p className="text-xs text-gray-500 mt-1">média por geração</p>
         </div>
       </div>
+
+      {/* Sinais de regeneração — D-04 production signal MVP (Fase 01).
+          Capture-and-surface only: zero alerts / zero LLM judging / zero rollback automation.
+          Phase 02 owns acting on signals. */}
+      <section className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold text-white mb-1">Sinais de regeneração — este mês</h2>
+        <p className="text-xs text-gray-400 mb-4">
+          Quantas vezes lojistas regeneraram uma campanha e qual foi o motivo. Use para investigar tendências de qualidade.
+          Captura e exibição apenas — Fase 02 trata alertas.
+        </p>
+        <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {REGEN_REASON_ORDER.map((reason) => {
+            const count = reasonCountsThisMonth[reason] ?? 0;
+            const lastCount = reasonCountsLastMonth[reason] ?? 0;
+            const delta = count - lastCount;
+            const deltaText = delta === 0
+              ? "= mês anterior"
+              : delta > 0
+                ? `+${delta} vs mês anterior`
+                : `${delta} vs mês anterior`;
+            return (
+              <div key={reason} className="bg-gray-950/50 border border-gray-800 rounded-xl p-3">
+                <dt className="text-2xs uppercase tracking-wide text-gray-500">{REGEN_REASON_LABELS[reason]}</dt>
+                <dd className="text-2xl font-bold text-white mt-1">{count}</dd>
+                <dd className="text-2xs text-gray-500 mt-1">{deltaText}</dd>
+              </div>
+            );
+          })}
+        </dl>
+        <p className="text-xs text-gray-500 mt-3">
+          Total este mês: <span className="text-white font-semibold">{totalReasonsThisMonth}</span>
+          {" · "}
+          mês anterior: <span className="text-white font-semibold">{totalReasonsLastMonth}</span>
+        </p>
+      </section>
 
       {/* By Provider + By Step */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
