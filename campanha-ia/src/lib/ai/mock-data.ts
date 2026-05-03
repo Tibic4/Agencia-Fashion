@@ -1,4 +1,9 @@
 /**
+ * MOCK PIPELINE — used by /api/campaign/generate when MOCK=1 env flag is set.
+ * Kept in repo because route.ts:4 imports runMockPipeline for local dev / E2E.
+ * If you change the real pipeline shape (pipeline.ts), keep this in sync OR
+ * delete + remove the route.ts:4 import together (D-09 audit, Phase 01-03).
+ *
  * Dados mock para funcionar sem API key.
  * Usado quando ANTHROPIC_API_KEY não está configurada.
  */
