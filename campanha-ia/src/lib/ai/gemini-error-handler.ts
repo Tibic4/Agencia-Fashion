@@ -11,6 +11,8 @@
  * Usado pelo Analyzer e VTO Generator via callGeminiSafe().
  */
 
+import { withTimeout } from "./with-timeout";
+
 // ═══════════════════════════════════════
 // Error Classification
 // ═══════════════════════════════════════
@@ -179,6 +181,8 @@ interface CallGeminiOptions {
   backoffMs?: number;
   /** Label para logs (ex: "Analyzer", "VTO #1") */
   label?: string;
+  /** Timeout em ms; default = 90_000 se label inclui "VTO", senão 30_000 (D-17). */
+  timeoutMs?: number;
 }
 
 /**
@@ -191,13 +195,25 @@ export async function callGeminiSafe<T>(
   fn: () => Promise<T>,
   options: CallGeminiOptions = {}
 ): Promise<T> {
-  const { maxRetries = 2, backoffMs = 2000, label = "Gemini" } = options;
+  const {
+    maxRetries = 2,
+    backoffMs = 2000,
+    label = "Gemini",
+    // D-17: VTO calls (image generation) are slower than analyzer/text calls.
+    // Label-based default keeps zero call-site changes — every existing caller
+    // already passes a meaningful label like "Analyzer", "VTO #1", "Backdrop".
+    timeoutMs = label.includes("VTO") ? 90_000 : 30_000,
+  } = options;
 
   let lastError: GeminiClassifiedError | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      return await fn();
+      // withTimeout rejects with AITimeoutError (retryable=true) on deadline
+      // exceeded → flows through the existing classify/retry loop below
+      // without special-casing (msg.includes("timeout") branch in
+      // classifyGeminiError already handles it).
+      return await withTimeout(fn(), timeoutMs, label);
     } catch (error) {
       const classified = classifyGeminiError(error);
       lastError = classified;
