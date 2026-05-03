@@ -32,7 +32,14 @@ const AuthContext = createContext<AuthState | null>(null);
    Client Trust OFF forçando round-trip), libera `loading: false` mesmo
    assim. App segue pra /sign-in se !isSignedIn, em vez de splash eterna.
    Quando Clerk hidratar depois (rede voltou), `isSignedIn` atualiza
-   normalmente e o AuthGate recoloca a rota. */
+   normalmente e o AuthGate recoloca a rota.
+
+   ▶ Reativar Client Trust: Quando o app for aprovado no Play Store,
+     re-habilitar Client Trust no Clerk Dashboard (Sessions → Token settings).
+     Isso reduz round-trips de getToken() e melhora latência de boot.
+     Após reativar, `INIT_TIMEOUT_MS` provavelmente não será mais atingido em
+     cenários normais — manter o fallback mesmo assim, mas considerar reduzir
+     pra 3000ms. Atualizar a memória de projeto `project_clerk_client_trust`. */
 const INIT_TIMEOUT_MS = 6_000;
 
 function AuthInner({ children }: PropsWithChildren) {

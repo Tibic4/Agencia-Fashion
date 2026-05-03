@@ -20,9 +20,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // jose: precisa retornar coisas plausíveis pra fluxo seguir, mas não precisa
 // assinar JWT real — o token-exchange é mockado via fetch.
-vi.mock("jose", () => ({
-  importPKCS8: vi.fn(async () => ({} as never)),
-  SignJWT: vi.fn().mockImplementation(() => {
+//
+// SignJWT é instanciada via `new SignJWT(...)`. Vitest 4.x exige que a
+// implementação do mock seja "construtível" (tem [[Construct]]). Arrow
+// functions não têm [[Construct]] → throw "is not a constructor" quando
+// new-eada. Usamos `function` declaration pra preservar construct semantics.
+vi.mock("jose", () => {
+  function FakeSignJWT(this: any) {
     const builder: any = {
       setProtectedHeader: vi.fn(() => builder),
       setIssuer: vi.fn(() => builder),
@@ -33,8 +37,12 @@ vi.mock("jose", () => ({
       sign: vi.fn(async () => "FAKE.JWT.SIGNED"),
     };
     return builder;
-  }),
-}));
+  }
+  return {
+    importPKCS8: vi.fn(async () => ({} as never)),
+    SignJWT: FakeSignJWT,
+  };
+});
 
 vi.mock("node:fs", () => ({
   readFileSync: vi.fn(() =>

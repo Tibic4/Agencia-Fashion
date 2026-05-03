@@ -2,7 +2,9 @@
   "name": "crialook-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "_lock_warning": "EAS build espera lockfile no formato npm@10. NUNCA rode `npm install` puro neste app — sempre `npm run lock:fix` (ou `npm ci --legacy-peer-deps` em CI). npm 11+ regenera lockfile com sintaxe nova que quebra o EAS build.",
   "scripts": {
+    "preinstall": "node scripts/preinstall-guard.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",

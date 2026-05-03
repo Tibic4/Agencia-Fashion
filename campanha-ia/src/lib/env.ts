@@ -89,6 +89,16 @@ const EnvSchema = z.object({
   MINI_TRIAL_KILLSWITCH: z.string().optional(),
   MINI_TRIAL_TOTAL_SLOTS: z.coerce.number().int().positive().optional(),
 
+  // ── Feature flags ──
+  // FEATURE_REGENERATE_CAMPAIGN: gateia a rota /api/campaign/[id]/regenerate
+  // E a função canRegenerate em src/lib/db/index.ts. Default = off. Quando
+  // off, a rota responde 404 (não 403) — 403 dava a impressão errada de
+  // "limite atingido" e a UI tentava interpretar como "compre mais créditos".
+  // 404 deixa claro: feature ainda não disponível.
+  // Para reabilitar: setar FEATURE_REGENERATE_CAMPAIGN=1 e preencher o
+  // lookup real de plano em canRegenerate (src/lib/db/index.ts).
+  FEATURE_REGENERATE_CAMPAIGN: z.string().optional(),
+
   // ── Misc ──
   USD_BRL_EXCHANGE_RATE: z.coerce.number().positive().optional(),
   API_BUDGET_MONTHLY_BRL: z.coerce.number().positive().optional(),

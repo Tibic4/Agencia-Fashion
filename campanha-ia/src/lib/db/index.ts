@@ -302,26 +302,35 @@ export async function incrementRegenCount(campaignId: string, storeId?: string):
 
 /**
  * Verifica se a campanha pode regenerar.
- * NOTA: Regeneração está INTENCIONALMENTE desabilitada em todos os planos (BUG 7 audit).
- * A rota /api/campaign/[id]/regenerate ainda existe mas sempre retorna 403.
- * Quando for reabilitada, implementar lógica de limite por plano aqui.
+ *
+ * Gateada por `FEATURE_REGENERATE_CAMPAIGN=1`. Default = OFF (mantém comportamento
+ * histórico onde a rota /api/campaign/[id]/regenerate sempre retornava 403).
+ *
+ * Pra reativar: setar env var → preencher `limitForPlan` abaixo com limites reais
+ * por plano (gratis/basico/pro/ultra) → cobrir com testes de quota.
  */
 export async function canRegenerate(campaignId: string, _storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const supabase = createAdminClient();
-  
+
   const { data: campaign } = await supabase
     .from("campaigns")
     .select("regen_count")
     .eq("id", campaignId)
     .single();
-  
+
   const used = campaign?.regen_count || 0;
-  
-  return {
-    allowed: false, // Desabilitado intencionalmente
-    used,
-    limit: 0,
-  };
+
+  // Feature flag: default off. Quando for ligar, implementar `limitForPlan(storeId)`
+  // (lookup do plano da loja → limite mensal de regen) antes de remover esse early return.
+  const featureEnabled = process.env.FEATURE_REGENERATE_CAMPAIGN === "1";
+  if (!featureEnabled) {
+    return { allowed: false, used, limit: 0 };
+  }
+
+  // TODO(regenerate-launch): substituir por lookup real de plano antes de habilitar em prod.
+  // Limite placeholder de 3 regens/campanha enquanto a feature está em testes.
+  const limit = 3;
+  return { allowed: used < limit, used, limit };
 }
 
 /** Gera um token de prévia para uma campanha */
@@ -459,27 +468,42 @@ export async function getOrCreateCurrentUsage(storeId: string) {
   const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const { data: created, error } = await supabase
-    .from("store_usage")
-    .insert({
-      store_id: storeId,
-      period_start: periodStart.toISOString().split("T")[0],
-      period_end: periodEnd.toISOString().split("T")[0],
-      campaigns_generated: 0,
-      campaigns_limit: campaignsLimit,
-    })
-    .select()
-    .single();
+  // upsert com ignoreDuplicates → INSERT ... ON CONFLICT DO NOTHING.
+  // Race condition: 2 requests concorrentes hit getCurrentUsage()=null e
+  // tentam inserir. Antes a 2ª request falhava com unique-constraint e a
+  // gente caía num re-read silencioso (que funcionava, mas misturava
+  // "race" com "erro real" no mesmo path).
+  // Agora: a 2ª inserção é no-op no DB, e a gente lê via select() abaixo —
+  // mesmo período, mesma loja → retorna a linha que a 1ª request criou.
+  // Requer unique constraint em (store_id, period_start) na tabela.
+  const periodStartStr = periodStart.toISOString().split("T")[0];
+  const periodEndStr = periodEnd.toISOString().split("T")[0];
 
-  if (error) {
-    // Race condition: outra request criou a linha entre o check e o insert.
-    // Refaz o read pra retornar a versão correta em vez de propagar o erro.
-    console.warn(`[DB] store_usage insert falhou (provavelmente race), refazendo read: ${error.message}`);
+  const { error: upsertErr } = await supabase
+    .from("store_usage")
+    .upsert(
+      {
+        store_id: storeId,
+        period_start: periodStartStr,
+        period_end: periodEndStr,
+        campaigns_generated: 0,
+        campaigns_limit: campaignsLimit,
+      },
+      { onConflict: "store_id,period_start", ignoreDuplicates: true }
+    );
+
+  if (upsertErr) {
+    // Erro real (não race): log e propaga via re-read pra não travar o caller.
+    console.warn(`[DB] store_usage upsert falhou: ${upsertErr.message}`);
     return await getCurrentUsage(storeId);
   }
 
-  console.log(`[DB] 📋 store_usage auto-criado pra loja ${storeId} (limite=${campaignsLimit})`);
-  return created;
+  // Le o que ficou — pode ser a linha que ESTA request criou OU a que a outra criou.
+  const persisted = await getCurrentUsage(storeId);
+  if (persisted) {
+    console.log(`[DB] 📋 store_usage garantido pra loja ${storeId} (limite=${campaignsLimit})`);
+  }
+  return persisted;
 }
 
 /** Incrementa o contador de campanhas geradas (ATÔMICO via RPC) */
