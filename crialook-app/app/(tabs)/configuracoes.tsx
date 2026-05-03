@@ -15,6 +15,7 @@ import * as Application from 'expo-application';
 import * as MailComposer from 'expo-mail-composer';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { AnimatedPressable, Button, Card, GradientText, Input, Skeleton } from '@/components/ui';
 import { AppHeader, useHeaderHeight } from '@/components/AppHeader';
 import { useTabContentPaddingBottom } from '@/components/tabBarLayout';
@@ -317,7 +318,7 @@ function ConfiguracoesScreenInner() {
                    quadrado inteiro; retangulares cabem sem crop. */
                 <Image source={{ uri: logoUrl }} style={styles.logoImg} contentFit="contain" />
               ) : (
-                <Text style={{ fontSize: 32 }}>📷</Text>
+                <FontAwesome name="camera" size={32} color={colors.textSecondary} />
               )}
             </AnimatedPressable>
             {/* Why View flex:1: Button defaults to width:100%, which on a row

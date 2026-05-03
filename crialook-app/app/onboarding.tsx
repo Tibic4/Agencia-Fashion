@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '@/lib/haptics';
 import Animated, { FadeInRight, FadeOutLeft, FadeInDown } from 'react-native-reanimated';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Button, Input } from '@/components/ui';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -116,9 +117,9 @@ export default function OnboardingScreen() {
     // title → description → each feature row. Reads as "the app is
     // unfolding for you" instead of one slab fading in.
     <Animated.View key={0} entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContent}>
-      <Animated.Text entering={FadeInDown.delay(80).duration(420).springify()} style={styles.emoji}>
-        {t('onboarding.welcomeEmoji')}
-      </Animated.Text>
+      <Animated.View entering={FadeInDown.delay(80).duration(420).springify()}>
+        <FontAwesome name="magic" size={48} color={Colors.brand.primary} />
+      </Animated.View>
       <Animated.Text
         entering={FadeInDown.delay(160).duration(420).springify()}
         style={[styles.title, { color: colors.text }]}
@@ -149,7 +150,7 @@ export default function OnboardingScreen() {
     </Animated.View>,
 
     <Animated.View key={1} entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContent}>
-      <Text style={styles.emoji}>🏪</Text>
+      <FontAwesome name="shopping-bag" size={48} color={Colors.brand.primary} />
       <Text style={[styles.title, { color: colors.text }]}>{t('onboarding.storeNameTitle')}</Text>
       <Text style={[styles.description, { color: colors.textSecondary }]}>
         {t('onboarding.storeNameDesc')}
@@ -167,7 +168,7 @@ export default function OnboardingScreen() {
     </Animated.View>,
 
     <Animated.View key={2} entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContent}>
-      <Text style={styles.emoji}>👗</Text>
+      <FontAwesome name="th-large" size={48} color={Colors.brand.primary} />
       <Text style={[styles.title, { color: colors.text }]}>{t('onboarding.segmentTitle')}</Text>
       <Text style={[styles.description, { color: colors.textSecondary }]}>
         {t('onboarding.segmentDesc')}
@@ -191,7 +192,7 @@ export default function OnboardingScreen() {
     </Animated.View>,
 
     <Animated.View key={3} entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContent}>
-      <Text style={styles.emoji}>📍</Text>
+      <FontAwesome name="map-marker" size={48} color={Colors.brand.primary} />
       <Text style={[styles.title, { color: colors.text }]}>{t('onboarding.finalTitle')}</Text>
       <Text style={[styles.description, { color: colors.textSecondary }]}>
         {t('onboarding.finalDesc')}

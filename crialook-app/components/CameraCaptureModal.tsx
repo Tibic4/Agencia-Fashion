@@ -202,7 +202,7 @@ export function CameraCaptureModal({
     if (showTour) {
       return (
         <View style={styles.tour}>
-          <Text style={styles.tourEmoji}>📸</Text>
+          <FontAwesome name="camera" size={56} color="#fff" />
           <Text style={styles.tourTitle}>{t('camera.permissionTitle')}</Text>
           <View style={styles.tourList}>
             <Text style={styles.tourItem}>💡 {hint || t('camera.hintMain')}</Text>

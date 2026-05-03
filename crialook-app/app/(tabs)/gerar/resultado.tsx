@@ -555,7 +555,7 @@ export default function ResultadoScreen() {
   if (!result || !result.data) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ fontSize: 40 }}>📷</Text>
+        <FontAwesome name="picture-o" size={40} color={colors.textSecondary} />
         <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('result.notFoundTitle')}</Text>
         {/* Descrição + 2 CTAs (criar nova OU escapar pro histórico) — antes
             só "Criar mais fotos" travava o usuário num caminho. */}

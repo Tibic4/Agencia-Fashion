@@ -610,13 +610,12 @@ function HistoricoScreenInner() {
                           { backgroundColor: colors.backgroundSecondary },
                         ]}
                       >
-                        <Text
-                          style={{ fontSize: 18 }}
+                        <FontAwesome
+                          name={c.status === 'failed' ? 'exclamation-triangle' : 'clock-o'}
+                          size={18}
+                          color={colors.textSecondary}
                           accessibilityLabel={t(c.status === 'failed' ? 'history.statusFailed' : 'history.statusProcessing')}
-                          accessibilityRole="image"
-                        >
-                          {c.status === 'failed' ? '⚠️' : '⏳'}
-                        </Text>
+                        />
                       </View>
                     )}
                     {extraCount > 0 && (
@@ -908,7 +907,7 @@ function HistoricoScreenInner() {
           <View style={styles.empty}>
             {loadError ? (
               <>
-                <Text style={{ fontSize: 40 }}>⚠️</Text>
+                <FontAwesome name="exclamation-triangle" size={40} color={colors.textSecondary} />
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
                   {t('history.loadErrorTitle')}
                 </Text>
@@ -938,7 +937,7 @@ function HistoricoScreenInner() {
               // Distinguish "no search results" from "empty history" — tells
               // the user the data is there, just not matching.
               <>
-                <Text style={{ fontSize: 40 }}>🔎</Text>
+                <FontAwesome name="search" size={40} color={colors.textSecondary} />
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
                   {t('history.searchEmptyTitle')}
                 </Text>
@@ -960,7 +959,7 @@ function HistoricoScreenInner() {
               </>
             ) : (
               <>
-                <Text style={{ fontSize: 40 }}>{'\u{1F4CB}'}</Text>
+                <FontAwesome name="inbox" size={40} color={colors.textSecondary} />
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
                   {filter === 'favorites'
                     ? t('history.emptyFavoritesTitle')

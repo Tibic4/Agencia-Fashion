@@ -579,7 +579,11 @@ function ModelsListBody({
       {models.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIconWrap}>
-            <Text style={{ fontSize: 48 }}>👗</Text>
+            <FontAwesome
+              name={modelLimit === 0 ? 'user-plus' : 'cube'}
+              size={48}
+              color={colors.textSecondary}
+            />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             {t('model.emptyTitle')}
@@ -860,9 +864,11 @@ function ModelGridCard({
                 ]}
               />
             )}
-            <Text style={{ fontSize: 32 }}>
-              {model.preview_failed ? '⚠️' : '⏳'}
-            </Text>
+            <FontAwesome
+              name={model.preview_failed ? 'exclamation-triangle' : 'clock-o'}
+              size={32}
+              color={model.preview_failed ? Colors.brand.error : colors.textSecondary}
+            />
             {!model.preview_failed && (
               <Text style={styles.generatingText}>
                 {t('model.statusGenerating')}

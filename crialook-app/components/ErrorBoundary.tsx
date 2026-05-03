@@ -13,6 +13,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View, Linking } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { tokens } from '@/lib/theme/tokens';
 import { t } from '@/lib/i18n';
@@ -76,7 +77,7 @@ export class AppErrorBoundary extends React.Component<React.PropsWithChildren, S
         </View>
 
         <Animated.View entering={FadeInDown.duration(360).springify()} style={styles.content}>
-          <Text style={styles.emoji}>{'\u{1FAE3}'}{/* 🫣 face peeking — friendlier than 😵 */}</Text>
+          <FontAwesome name="exclamation-triangle" size={56} color={Colors.brand.error} />
           <Text style={styles.title}>{t('errorBoundary.title')}</Text>
           <Text style={styles.desc} selectable>
             {t('errorBoundary.description')}
