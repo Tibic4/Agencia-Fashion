@@ -31,6 +31,23 @@ export const FALLBACK_TOKENS: Record<string, { inputTokens: number; outputTokens
   // see PipelineInput.photoCount @deprecated note), so the per-image
   // values become the per-call fallback directly.
   gemini_vto_v6:      { inputTokens: 4600, outputTokens: 4000 },
+  // Phase 02 D-04: LLM-as-judge (claude-sonnet-4-6 via lib/ai/judge.ts).
+  //   Input estimate (~1200 tokens):
+  //     - JUDGE_SYSTEM_PROMPT body ≈ 800 tokens (PT-BR rubric + Forbidden List
+  //       + 5-trigger taxonomy verbatim citations from DOMAIN-RUBRIC.md).
+  //     - User text (3 image URLs + copyText caption_sugerida ~250 chars +
+  //       prompt_version SHA + prefix labels) ≈ 350 tokens. Round to 1200.
+  //   Output estimate (~800 tokens):
+  //     - 6 numeric dims + 1 enum + 6 PT-BR justificativas (each capped at
+  //       500 chars by Zod, but the model usually emits ~80-100 tokens each).
+  //     - 6 × 100 = 600 + JSON wrapping + tool_use envelope ≈ 800.
+  //   Cost target: ~R$0.02/campaign at FALLBACK_PRICES["claude-sonnet-4-6"]
+  //     = (1200 × 3.0 + 800 × 15.0) / 1M × 5.8 BRL/USD
+  //     = ($0.0036 + $0.0120) × 5.8 ≈ R$0.0905. Above the CONTEXT.md hand-wave
+  //     of R$0.02 because the rubric prompt is denser than the back-of-envelope
+  //     assumed. Real usage from the SDK overrides this fallback once the
+  //     judge is live (logModelCost prefers args.usage.* when present).
+  judge_quality:      { inputTokens: 1200, outputTokens: 800 },
 };
 
 /** Per-model fallback price (USD per 1M tokens) when `getModelPricing()`
