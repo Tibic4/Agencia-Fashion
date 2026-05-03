@@ -12,6 +12,11 @@ export default defineConfig({
     include: [
       'lib/__tests__/**/*.{test,spec}.{ts,tsx}',
       'hooks/__tests__/**/*.{test,spec}.{ts,tsx}',
+      // Phase 02 D-11: components/historico/ holds the regenerate-reason
+      // picker (Gorhom Bottom Sheet). Tests live next to the component so
+      // co-location stays even though we only ship Vitest for one folder
+      // today; expand here when more components/* dirs grow tests.
+      'components/historico/__tests__/**/*.{test,spec}.{ts,tsx}',
     ],
     exclude: ['**/node_modules/**'],
     environment: 'jsdom',
