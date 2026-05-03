@@ -4,6 +4,9 @@ import {
   storageGarbageCollectorCron,
   storageGarbageCollectorManual,
 } from "./storage-gc";
+import { scoreCampaignQuality, JUDGE_PROMPT_VERSION } from "@/lib/ai/judge";
+import { setCampaignScores } from "@/lib/db";
+import { logModelCost } from "@/lib/ai/log-model-cost";
 
 // NOTE: `generateCampaignJob` (event "campaign/generate.requested") was deleted
 // in Phase 01-03 (D-09). Zero producers ever sent that event — generation is
@@ -295,12 +298,153 @@ export const generateBackdropJob = inngest.createFunction(
   }
 );
 
+// ═══════════════════════════════════════════════════════════
+// JUDGE — LLM-as-judge for campaign quality (Phase 02 D-01..D-06)
+// ═══════════════════════════════════════════════════════════
+
+interface JudgeRequestEvent {
+  campaignId: string;
+  storeId: string;
+  /** SonnetDicasPostagem.caption_sugerida (or stringified full JSON) */
+  copyText: string;
+  productImageUrl: string;
+  modelImageUrl: string;
+  generatedImageUrl: string;
+  /** SHA from sonnet-copywriter prompt — for traceability of which copy
+   *  the score belongs to (correlates with api_cost_logs.metadata). */
+  prompt_version: string;
+}
+
+/**
+ * Job: score every successful campaign with the LLM-as-judge.
+ * Triggered by event campaign/judge.requested emitted from pipeline.ts.
+ * Provider: Anthropic (claude-sonnet-4-6) — same model as copywriter for
+ * cost-forecast symmetry. Cost target: ~R$0.09/campaign per D-04 fallback.
+ * Retries: 2 with exponential backoff (matches generateModelPreviewJob).
+ * Terminal failure: writes nivel_risco='falha_judge' sentinel per D-02 so
+ * /admin/quality (Plan 02-04) can distinguish judge-failure from low-quality.
+ */
+export const judgeCampaignJob = inngest.createFunction(
+  {
+    id: "judge-campaign",
+    retries: 2,
+    triggers: [{ event: "campaign/judge.requested" }],
+    onFailure: async ({ event, error }) => {
+      // D-02 sentinel: persist nivel_risco='falha_judge' so dashboards
+      // can distinguish "judge failed" (transport / Anthropic 5xx after
+      // retries / Zod boundary error after final retry) from "low quality".
+      // captureError is already invoked inside scoreCampaignQuality on
+      // JudgeInvalidOutputError; this branch handles transport failures.
+      try {
+        const data =
+          (event.data as unknown as { event?: { data?: JudgeRequestEvent } })?.event?.data ??
+          (event.data as unknown as JudgeRequestEvent);
+        if (data?.campaignId) {
+          await setCampaignScores({
+            campaignId: data.campaignId,
+            // Numeric dims clamped to 1 (post-clamp lower bound) so the
+            // NOT NULL columns are satisfied. Downstream queries treat
+            // falha_judge as "ignore numerics".
+            naturalidade: 1,
+            conversao: 1,
+            clareza: 1,
+            aprovacao_meta: 1,
+            nota_geral: 1,
+            nivel_risco: "falha_judge",
+            justificativas: {
+              naturalidade: "judge falhou — score não confiável",
+              conversao: "judge falhou — score não confiável",
+              clareza: "judge falhou — score não confiável",
+              aprovacao_meta: "judge falhou — score não confiável",
+              nota_geral: "judge falhou — score não confiável",
+              nivel_risco: `judge falhou após retries: ${
+                error?.message?.slice(0, 200) ?? "unknown"
+              }`,
+            },
+          });
+          console.error(
+            `[Inngest:Judge] ❌ Falhou p/ campaign ${data.campaignId} — sentinel falha_judge gravado`,
+          );
+        } else {
+          console.error("[Inngest:Judge] onFailure: campaignId ausente no evento");
+        }
+      } catch (e) {
+        console.error("[Inngest:Judge] Erro no onFailure handler:", e);
+      }
+    },
+  },
+  async ({ event, step }) => {
+    const data = event.data as JudgeRequestEvent;
+
+    // Step 1: call the judge (Anthropic tool_use + Zod boundary inside
+    // scoreCampaignQuality; throws JudgeInvalidOutputError on schema drift
+    // — non-retryable but Inngest's retry: 2 still catches transport flakes).
+    const judgeResult = await step.run("score-campaign", async () => {
+      return await scoreCampaignQuality({
+        campaignId: data.campaignId,
+        storeId: data.storeId,
+        copyText: data.copyText,
+        productImageUrl: data.productImageUrl,
+        modelImageUrl: data.modelImageUrl,
+        generatedImageUrl: data.generatedImageUrl,
+        prompt_version: data.prompt_version,
+      });
+    });
+
+    // Step 2: persist scores (idempotent UPSERT on campaign_id per D-06).
+    // If event re-fires for same campaignId (Inngest retry, manual replay),
+    // only one row exists in campaign_scores.
+    await step.run("persist-scores", async () => {
+      await setCampaignScores({
+        campaignId: data.campaignId,
+        naturalidade:   judgeResult.output.naturalidade,
+        conversao:      judgeResult.output.conversao,
+        clareza:        judgeResult.output.clareza,
+        aprovacao_meta: judgeResult.output.aprovacao_meta,
+        nota_geral:     judgeResult.output.nota_geral,
+        nivel_risco:    judgeResult.output.nivel_risco,
+        justificativas: {
+          naturalidade:   judgeResult.output.justificativa_naturalidade,
+          conversao:      judgeResult.output.justificativa_conversao,
+          clareza:        judgeResult.output.justificativa_clareza,
+          aprovacao_meta: judgeResult.output.justificativa_aprovacao_meta,
+          nota_geral:     judgeResult.output.justificativa_nota_geral,
+          nivel_risco:    judgeResult.output.justificativa_nivel_risco,
+        },
+      });
+    });
+
+    // Step 3: log cost (D-05 — JUDGE_PROMPT_VERSION lands in
+    // api_cost_logs.metadata.prompt_version so judge-prompt edits are
+    // themselves correlatable to score shifts).
+    await step.run("log-cost", async () => {
+      await logModelCost({
+        storeId: data.storeId,
+        campaignId: data.campaignId,
+        provider: "anthropic",
+        model: "claude-sonnet-4-6",
+        action: "judge_quality",
+        usage: judgeResult._usageMetadata,
+        durationMs: judgeResult.durationMs,
+        promptVersion: JUDGE_PROMPT_VERSION,
+      });
+    });
+
+    return {
+      campaignId: data.campaignId,
+      nota_geral: judgeResult.output.nota_geral,
+      nivel_risco: judgeResult.output.nivel_risco,
+    };
+  },
+);
+
 /**
  * Lista de todas as functions Inngest para registrar no handler.
  */
 export const inngestFunctions = [
   generateModelPreviewJob,
   generateBackdropJob,
+  judgeCampaignJob,                      // Phase 02 D-01 — LLM-as-judge async
   storageGarbageCollectorCron,
   storageGarbageCollectorManual,
 ];
