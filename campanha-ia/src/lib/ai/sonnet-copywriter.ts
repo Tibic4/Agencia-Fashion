@@ -13,7 +13,8 @@
  *     gatilhos mentais e exemplos corretos/errados.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
+import { getAnthropic } from "./clients";
 import { computePromptVersion } from "./prompt-version";
 
 // ═══════════════════════════════════════
@@ -48,20 +49,6 @@ export interface SonnetCopyResult {
     inputTokens: number;
     outputTokens: number;
   };
-}
-
-// ═══════════════════════════════════════
-// Singleton Anthropic client
-// ═══════════════════════════════════════
-
-let _client: Anthropic | null = null;
-function getClient(): Anthropic {
-  if (!_client) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada");
-    _client = new Anthropic({ apiKey });
-  }
-  return _client;
 }
 
 // ═══════════════════════════════════════
@@ -118,7 +105,7 @@ export interface CopywriterInput {
 // ═══════════════════════════════════════
 
 export async function generateCopyWithSonnet(input: CopywriterInput): Promise<SonnetCopyResult> {
-  const client = getClient();
+  const client = getAnthropic();
   const startTime = Date.now();
 
   const locale: "pt-BR" | "en" = input.targetLocale ?? "pt-BR";
