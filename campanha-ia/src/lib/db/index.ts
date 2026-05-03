@@ -261,6 +261,56 @@ export async function getStorePlanName(storeId: string): Promise<string> {
 /* getModelLimitForPlan and getHistoryDaysForPlan are imported from @/lib/plans */
 
 /**
+ * D-01: production-signal capture.
+ *
+ * Closed enum of regeneration reasons. Stored as text + CHECK on the
+ * `campaigns.regenerate_reason` column (NOT a Postgres ENUM, per
+ * CONTEXT.md — easier to extend without ENUM migration ceremony).
+ *
+ * Migration: 20260503_120100_add_campaign_regenerate_reason.sql
+ */
+export const VALID_REGENERATE_REASONS = [
+  "face_wrong",
+  "garment_wrong",
+  "copy_wrong",
+  "pose_wrong",
+  "other",
+] as const;
+export type RegenerateReason = (typeof VALID_REGENERATE_REASONS)[number];
+
+export function isValidRegenerateReason(value: unknown): value is RegenerateReason {
+  return (
+    typeof value === "string" &&
+    (VALID_REGENERATE_REASONS as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * D-01: persist the lojista's regeneration reason on the campaign row.
+ *
+ * Idempotent — overwrite is fine (lojista may regenerate multiple times;
+ * latest reason wins). Does NOT touch is_favorited (D-02 — favorite stays
+ * a separate signal). Does NOT increment regen_count (D-03 — reason
+ * capture is free this phase, the route skips the credit branch entirely).
+ *
+ * The store_id filter is anti-IDOR: even if a campaignId leaks across stores,
+ * the WHERE store_id = $2 ensures only the owner's row updates.
+ */
+export async function setRegenerateReason(
+  campaignId: string,
+  storeId: string,
+  reason: RegenerateReason,
+): Promise<void> {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("campaigns")
+    .update({ regenerate_reason: reason })
+    .eq("id", campaignId)
+    .eq("store_id", storeId);
+  if (error) throw new Error(`setRegenerateReason failed: ${error.message}`);
+}
+
+/**
  * Incrementa o contador de regenerações de uma campanha (ATÔMICO via RPC).
  * Usa a assinatura com storeId (anti-IDOR).
  * Se storeId for omitido, cai no fallback legado (compat).

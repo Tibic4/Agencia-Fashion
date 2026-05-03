@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getStoreByClerkId, canRegenerate, incrementRegenCount } from "@/lib/db";
+import {
+  getStoreByClerkId,
+  canRegenerate,
+  incrementRegenCount,
+  setRegenerateReason,
+  isValidRegenerateReason,
+  VALID_REGENERATE_REASONS,
+  type RegenerateReason,
+} from "@/lib/db";
 import { env } from "@/lib/env";
 
 /**
  * POST /api/campaign/[id]/regenerate
  *
- * Verifica se a campanha pode ser regenerada (limite por plano).
- * Retorna { allowed, used, limit } e incrementa o contador se permitido.
+ * Two operating modes:
+ *   1. Reason-capture (D-01 + D-03): body = { "reason": "<one of 5 enum values>" }
+ *      → persists campaigns.regenerate_reason, returns { success, data: { reason, free: true } }
+ *      → does NOT consume a regeneration credit (FREE this phase to maximize feedback density).
+ *   2. Legacy regenerate (no body): consumes a credit via canRegenerate / incrementRegenCount.
+ *
+ * The favorite-flag column is intentionally NOT touched here (D-02 — favorite stays a separate signal).
  *
  * Feature gate: FEATURE_REGENERATE_CAMPAIGN=1 destrava a rota. Default = off.
  * Quando off, devolve 404 (Not Found) em vez de 403 — pra qualquer cliente
@@ -24,7 +37,7 @@ function regenerateEnabled(): boolean {
 }
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!regenerateEnabled()) {
@@ -49,6 +62,44 @@ export async function POST(
     }
 
     const { id } = await params;
+
+    // Parse optional reason body. Body absent or unparseable → legacy path.
+    // Body present with `reason` key → must be a valid enum value (else 400).
+    let reason: RegenerateReason | null = null;
+    let body: unknown = null;
+    try {
+      body = await req.json();
+    } catch {
+      // No body / invalid JSON — treat as legacy no-reason regenerate.
+      body = null;
+    }
+
+    if (body && typeof body === "object" && "reason" in body) {
+      const candidate = (body as Record<string, unknown>).reason;
+      if (!isValidRegenerateReason(candidate)) {
+        return NextResponse.json(
+          {
+            error: "reason inválido",
+            code: "INVALID_REASON",
+            validReasons: [...VALID_REGENERATE_REASONS],
+          },
+          { status: 400 }
+        );
+      }
+      reason = candidate;
+    }
+
+    if (reason) {
+      // D-03: free regenerate when reason is captured. Skip canRegenerate +
+      // incrementRegenCount entirely. Persist the reason and return success.
+      await setRegenerateReason(id, store.id, reason);
+      return NextResponse.json({
+        success: true,
+        data: { reason, free: true },
+      });
+    }
+
+    // Legacy path (no reason): consume a regeneration credit.
     const regen = await canRegenerate(id, store.id);
 
     if (!regen.allowed) {
@@ -63,7 +114,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      data: { used: newCount, limit: regen.limit },
+      data: { used: newCount, limit: regen.limit, free: false },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
