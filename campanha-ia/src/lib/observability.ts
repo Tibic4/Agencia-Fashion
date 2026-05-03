@@ -72,3 +72,42 @@ export function identifyForSentry(userId: string | null, storeId?: string | null
     /* noop */
   }
 }
+
+/**
+ * Phase 02 D-10 — emit a synthetic Sentry warning with a STABLE fingerprint.
+ *
+ * Use case: scheduled crons that detect threshold breaches (face_wrong rate
+ * spike, nivel_risco='alto' rate spike). Unlike captureError, there is no
+ * thrown exception — we synthesize a warning so Sentry's existing alert
+ * routing fires.
+ *
+ * Why fingerprint and not setExtra alone: setExtra creates a NEW Sentry issue
+ * per call. Fingerprint groups identical values into ONE issue across calls.
+ * A weekly cron that re-detects the same spike must dedup to one issue per
+ * spike-window, not 7 issues in a week.
+ *
+ * Date-bucketed fingerprints (caller's responsibility — see lib/quality/alerts.ts):
+ *   face_wrong_spike_<YYYYMMDD>      — bucket by Monday-of-week (D-07)
+ *   nivel_risco_alto_spike_<YYYYMMDD> — bucket daily (D-08)
+ *   promptfoo_regression_pr_<PR_NUMBER> — emitted from GitHub Action (Plan 02-02), not here (D-09)
+ *
+ * Never throws — observability must not break the cron.
+ */
+export function captureSyntheticAlert(
+  message: string,
+  fingerprint: string,
+  breadcrumbs: Ctx = {},
+): void {
+  try {
+    Sentry.withScope((scope) => {
+      scope.setLevel("warning");
+      scope.setFingerprint([fingerprint]);
+      scope.setExtra("breadcrumbs", breadcrumbs);
+      scope.setExtra("alert_kind", "synthetic_threshold_breach");
+      Sentry.captureMessage(message, "warning");
+    });
+  } catch {
+    // Never let observability break the cron.
+  }
+  logger.warn(`[synthetic_alert] ${message}`, { fingerprint, ...breadcrumbs });
+}
