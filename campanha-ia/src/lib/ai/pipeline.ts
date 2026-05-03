@@ -71,6 +71,23 @@ export interface PipelineInput {
   signal?: AbortSignal;
 
   /**
+   * D-18 (Phase 02 quality-loop): when true, runCampaignPipeline
+   *   (a) skips the post-VTO pose-history Supabase update,
+   *   (b) skips every logModelCost call (no api_cost_logs row), and
+   *   (c) skips the Inngest judge.requested emit (added by Plan 02-03).
+   *
+   * Used by evals/run.ts to exercise the production pipeline against
+   * golden-set entries without polluting production data (cost-log rows,
+   * pose-history mutation, or judge-job enqueue). Defaults to false so
+   * every existing call site behaves exactly as it did in Phase 01.
+   *
+   * NOTE: the pre-VTO pose-history READ at the top of the function still
+   * runs under dryRun (it's a SELECT — no mutation, useful for the eval
+   * to exercise the same pose-blocking logic as production).
+   */
+  dryRun?: boolean;
+
+  /**
    * @deprecated Foto única é universal — sempre 1 imagem.
    *
    * Param mantido só por compat com chamadas legadas do route.ts (até o
@@ -166,7 +183,9 @@ export async function runCampaignPipeline(
   }
 
   // Log de custo do Gemini Analyzer (fire-and-forget — D-18 helper)
-  if (input.storeId) {
+  // D-18 (Phase 02): gated behind !input.dryRun so evals/run.ts doesn't
+  // pollute api_cost_logs with golden-set runs.
+  if (!input.dryRun && input.storeId) {
     logModelCost({
       storeId: input.storeId,
       campaignId: input.campaignId,
@@ -208,7 +227,9 @@ export async function runCampaignPipeline(
     targetLocale: sonnetLocale,
   }).then((copyResult) => {
     // Log custo Sonnet (fire-and-forget — D-18 helper)
-    if (input.storeId) {
+    // D-18 (Phase 02): gated behind !input.dryRun so evals/run.ts doesn't
+    // pollute api_cost_logs with golden-set runs.
+    if (!input.dryRun && input.storeId) {
       logModelCost({
         storeId: input.storeId,
         campaignId: input.campaignId,
@@ -284,7 +305,10 @@ export async function runCampaignPipeline(
   // Atualiza histórico de poses se VTO produziu a imagem com sucesso.
   // Fire-and-forget — falhar aqui não derruba a campanha (na próxima geração
   // o histórico se auto-corrige).
-  if (input.storeId && imageResult.successCount > 0) {
+  // D-18 (Phase 02): gated behind !input.dryRun so evals/run.ts doesn't
+  // mutate stores.recent_pose_indices when exercising the pipeline against
+  // golden-set entries.
+  if (!input.dryRun && input.storeId && imageResult.successCount > 0) {
     void (async () => {
       try {
         const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -300,6 +324,18 @@ export async function runCampaignPipeline(
       }
     })();
   }
+
+  // ── D-01 (Plan 02-03): Inngest judge.requested emit lands here ──────
+  // Plan 02-03's executor adds, inside this guard:
+  //   if (!input.dryRun && imageResult.successCount > 0) {
+  //     await inngest.send({
+  //       name: "campaign/judge.requested",
+  //       data: { campaignId, storeId, copyText, productImageUrl,
+  //               modelImageUrl, generatedImageUrl, prompt_version },
+  //     });
+  //   }
+  // The dryRun guard convention is already in scope; the emit itself is
+  // owned by 02-03. Until 02-03 lands, this is a no-op comment block.
 
   await onProgress?.("saving", "Salvando resultados...", 92);
   await onProgress?.("done", "Pronto!", 100);
