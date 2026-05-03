@@ -18,6 +18,7 @@ import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 import type { SonnetDicasPostagem } from "./sonnet-copywriter";
 import { generateCopyWithSonnet, sonnetPromptVersionFor } from "./sonnet-copywriter";
+import { logModelCost } from "./log-model-cost";
 import {
   getStreakBlockedPose,
   updatePoseHistory,
@@ -164,17 +165,22 @@ export async function runCampaignPipeline(
     );
   }
 
-  // Log de custo do Gemini Analyzer (fire-and-forget)
+  // Log de custo do Gemini Analyzer (fire-and-forget — D-18 helper)
   if (input.storeId) {
-    logAnalyzerCost(
-      input.storeId,
-      input.campaignId,
-      analyzerDurationMs,
-      analyzerResult._usageMetadata?.promptTokenCount,
-      analyzerResult._usageMetadata?.candidatesTokenCount,
-      ANALYZER_PROMPT_VERSION,
-    ).catch((e) =>
-      console.warn("[Pipeline] Erro ao salvar custo Analyzer:", e)
+    logModelCost({
+      storeId: input.storeId,
+      campaignId: input.campaignId,
+      provider: "google",
+      model: "gemini-3.1-pro-preview",
+      action: "gemini_analyzer",
+      usage: {
+        inputTokens: analyzerResult._usageMetadata?.promptTokenCount,
+        outputTokens: analyzerResult._usageMetadata?.candidatesTokenCount,
+      },
+      durationMs: analyzerDurationMs,
+      promptVersion: ANALYZER_PROMPT_VERSION,
+    }).catch((e) =>
+      console.warn("[Pipeline] cost-log failed (analyzer):", e?.message ?? e),
     );
   }
 
@@ -201,17 +207,22 @@ export async function runCampaignPipeline(
     toneOverride: input.toneOverride,
     targetLocale: sonnetLocale,
   }).then((copyResult) => {
-    // Log custo Sonnet (fire-and-forget)
+    // Log custo Sonnet (fire-and-forget — D-18 helper)
     if (input.storeId) {
-      logSonnetCost(
-        input.storeId,
-        input.campaignId,
-        Date.now() - startTime,
-        copyResult._usageMetadata?.inputTokens,
-        copyResult._usageMetadata?.outputTokens,
-        sonnetPromptVersionFor(sonnetLocale),
-      ).catch((e) =>
-        console.warn("[Pipeline] Erro ao salvar custo Sonnet:", e)
+      logModelCost({
+        storeId: input.storeId,
+        campaignId: input.campaignId,
+        provider: "anthropic",
+        model: "claude-sonnet-4-6",
+        action: "sonnet_copywriter",
+        usage: {
+          inputTokens: copyResult._usageMetadata?.inputTokens,
+          outputTokens: copyResult._usageMetadata?.outputTokens,
+        },
+        durationMs: Date.now() - startTime,
+        promptVersion: sonnetPromptVersionFor(sonnetLocale),
+      }).catch((e) =>
+        console.warn("[Pipeline] cost-log failed (sonnet):", e?.message ?? e),
       );
     }
     return copyResult;
@@ -309,132 +320,10 @@ export async function runCampaignPipeline(
 }
 
 // ═══════════════════════════════════════
-// Log de custo do Gemini Analyzer
+// Cost logging — D-18: consolidated into lib/ai/log-model-cost.ts
 // ═══════════════════════════════════════
-
-async function logAnalyzerCost(
-  storeId: string,
-  campaignId: string | undefined,
-  responseTimeMs: number,
-  realInputTokens: number | undefined,
-  realOutputTokens: number | undefined,
-  promptVersion: string,
-) {
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
-
-  let exchangeRate = 5.8;
-  let modelPrice = { inputPerMTok: 2.00, outputPerMTok: 12.00 }; // Gemini 3.1 Pro fallback
-
-  try {
-    const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
-    exchangeRate = await getExchangeRate();
-    const pricing = await getModelPricing();
-    if (pricing["gemini-3.1-pro-preview"]) {
-      modelPrice = pricing["gemini-3.1-pro-preview"];
-    }
-  } catch {
-    // fallback
-  }
-
-  // Usar tokens REAIS da API quando disponíveis
-  const FALLBACK_INPUT = 4000; // menor sem copy
-  const FALLBACK_OUTPUT = 2000; // menor sem copy
-  const inputTokens = realInputTokens || FALLBACK_INPUT;
-  const outputTokens = realOutputTokens || FALLBACK_OUTPUT;
-  const source = realInputTokens ? "real" : "estimated";
-
-  const costUsd =
-    (inputTokens * modelPrice.inputPerMTok) / 1_000_000 +
-    (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
-
-  console.log(
-    `[Pipeline] 💰 Analyzer (${source}): $${costUsd.toFixed(4)} / R$ ${(costUsd * exchangeRate).toFixed(4)}` +
-    ` | tokens: ${inputTokens} in + ${outputTokens} out`
-  );
-
-  const { error } = await supabase.from("api_cost_logs").insert({
-    store_id: storeId,
-    campaign_id: campaignId || null,
-    provider: "google",
-    model_used: "gemini-3.1-pro-preview",
-    action: "gemini_analyzer",
-    cost_usd: costUsd,
-    cost_brl: costUsd * exchangeRate,
-    exchange_rate: exchangeRate,
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    tokens_used: inputTokens + outputTokens,
-    response_time_ms: responseTimeMs,
-    metadata: { prompt_version: promptVersion },
-  });
-
-  if (error) {
-    console.warn("[Pipeline] ⚠️ Falha ao logar custo Analyzer:", error.message);
-  }
-}
-
-// ═══════════════════════════════════════
-// Log de custo do Sonnet Copywriter
-// ═══════════════════════════════════════
-
-async function logSonnetCost(
-  storeId: string,
-  campaignId: string | undefined,
-  responseTimeMs: number,
-  realInputTokens: number | undefined,
-  realOutputTokens: number | undefined,
-  promptVersion: string,
-) {
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createAdminClient();
-
-  let exchangeRate = 5.8;
-  let modelPrice = { inputPerMTok: 3.00, outputPerMTok: 15.00 }; // Sonnet 4.6
-
-  try {
-    const { getExchangeRate, getModelPricing } = await import("@/lib/pricing");
-    exchangeRate = await getExchangeRate();
-    const pricing = await getModelPricing();
-    if (pricing["claude-sonnet-4-6"]) {
-      modelPrice = pricing["claude-sonnet-4-6"];
-    }
-  } catch {
-    // fallback
-  }
-
-  const FALLBACK_INPUT = 2500;
-  const FALLBACK_OUTPUT = 800;
-  const inputTokens = realInputTokens || FALLBACK_INPUT;
-  const outputTokens = realOutputTokens || FALLBACK_OUTPUT;
-  const source = realInputTokens ? "real" : "estimated";
-
-  const costUsd =
-    (inputTokens * modelPrice.inputPerMTok) / 1_000_000 +
-    (outputTokens * modelPrice.outputPerMTok) / 1_000_000;
-
-  console.log(
-    `[Pipeline] 💰 Sonnet Copy (${source}): $${costUsd.toFixed(4)} / R$ ${(costUsd * exchangeRate).toFixed(4)}` +
-    ` | tokens: ${inputTokens} in + ${outputTokens} out`
-  );
-
-  const { error } = await supabase.from("api_cost_logs").insert({
-    store_id: storeId,
-    campaign_id: campaignId || null,
-    provider: "anthropic",
-    model_used: "claude-sonnet-4-6",
-    action: "sonnet_copywriter",
-    cost_usd: costUsd,
-    cost_brl: costUsd * exchangeRate,
-    exchange_rate: exchangeRate,
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    tokens_used: inputTokens + outputTokens,
-    response_time_ms: responseTimeMs,
-    metadata: { prompt_version: promptVersion },
-  });
-
-  if (error) {
-    console.warn("[Pipeline] ⚠️ Falha ao logar custo Sonnet:", error.message);
-  }
-}
+// `logAnalyzerCost` + `logSonnetCost` previously lived here. Both have been
+// replaced by direct `logModelCost({...})` calls at the analyzer + Sonnet
+// fire-and-forget sites above. See `lib/ai/log-model-cost.ts` for the
+// consolidated helper and `lib/pricing/fallbacks.ts` for the fallback
+// constants that used to be inline in those functions.
