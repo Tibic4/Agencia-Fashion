@@ -1,47 +1,15 @@
 import { inngest } from "./client";
-import { savePipelineResultV3, incrementCampaignsUsed } from "@/lib/db";
-import { runCampaignPipeline } from "@/lib/ai/pipeline";
+import { getGoogleGenAI } from "@/lib/ai/clients";
 import {
   storageGarbageCollectorCron,
   storageGarbageCollectorManual,
 } from "./storage-gc";
 
-interface CampaignGenerateEvent {
-  campaignId: string;
-  storeId: string;
-  imageBase64: string;
-  mediaType: string;
-  price: string;
-  storeName: string;
-}
-
-/**
- * Job: Gerar campanha de IA de forma assíncrona.
- * Inngest v4: createFunction recebe 2 args (config, handler).
- */
-/**
- * DEPRECATED — nenhum caller em produção envia
- * `campaign/generate.requested`. A geração real acontece síncrona
- * via SSE em `/api/campaign/generate` (route.ts), não via Inngest.
- *
- * Mantido apenas como stub no-op para não quebrar o schema de eventos
- * em instalações já registradas. Pode ser removido após confirmar que
- * nenhum cliente legado envia esse evento.
- */
-export const generateCampaignJob = inngest.createFunction(
-  {
-    id: "generate-campaign",
-    retries: 0,
-    triggers: [{ event: "campaign/generate.requested" }],
-  },
-  async ({ event }) => {
-    console.warn(
-      "[Inngest] ⚠️ generateCampaignJob acionado mas é DEPRECATED — evento ignorado",
-      { eventId: (event as { id?: string })?.id },
-    );
-    return { deprecated: true };
-  }
-);
+// NOTE: `generateCampaignJob` (event "campaign/generate.requested") was deleted
+// in Phase 01-03 (D-09). Zero producers ever sent that event — generation is
+// synchronous via SSE in /api/campaign/generate. The historical pipeline-import
+// surface here is intentionally smaller now: the only remaining campaign-side
+// import was for that deprecated job.
 
 // ═══════════════════════════════════════════════════════════
 // MODEL PREVIEW — Gemini 3.1 Flash Image (provider único)
@@ -75,15 +43,19 @@ interface ModelPreviewEvent {
  */
 async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<string | null> {
   try {
-    const { GoogleGenAI } = await import("@google/genai");
     const { buildGeminiParts } = await import("@/lib/model-prompts");
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) {
-      console.warn("[Gemini:Preview] GOOGLE_AI_API_KEY não configurada");
+
+    // getGoogleGenAI throws MissingAIKeyError if neither env var is set.
+    // Catch and return null so the Inngest job can mark the preview failed
+    // without bubbling a hard exception (preserves the original behavior
+    // where missing key was a soft warn-and-skip, not a job-killer).
+    let ai;
+    try {
+      ai = getGoogleGenAI();
+    } catch (e) {
+      console.warn("[Gemini:Preview] GoogleGenAI client unavailable:", e instanceof Error ? e.message : e);
       return null;
     }
-
-    const ai = new GoogleGenAI({ apiKey });
 
     // ── Baixar foto facial se tiver URL ──
     let faceBase64: string | null = null;
@@ -327,7 +299,6 @@ export const generateBackdropJob = inngest.createFunction(
  * Lista de todas as functions Inngest para registrar no handler.
  */
 export const inngestFunctions = [
-  generateCampaignJob,
   generateModelPreviewJob,
   generateBackdropJob,
   storageGarbageCollectorCron,
