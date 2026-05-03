@@ -95,3 +95,36 @@ current plan but need follow-up.
   dashboard polish is the right home for cross-page component
   consolidation.
 - **Status:** deferred to Phase 03.
+
+---
+
+## Project-level decision: Phase 2.5 (Labeling) deferred indefinitely
+
+**Decided:** 2026-05-03 by product owner.
+
+**What was deferred:**
+1. Curating + labeling the first 30-50 golden-set entries (PT-BR fashion copywriter onboarding NOT pursued)
+2. Calibrating LLM-judge against human ground truth (≥0.7 correlation gate from AI-SPEC §5.1)
+3. Activating Promptfoo CI PR-blocking gate (stays observability-only indefinitely)
+
+**What still works without 2.5:**
+- LLM-as-judge keeps writing scores to `campaign_scores` for every successful generation (the data accumulates uncalibrated)
+- `/admin/quality` dashboard renders judge scores as-is — useful for spotting absolute drift even without absolute trust
+- Sentry alerts on `nivel_risco='alto'` rate spikes still fire (a relative measure, doesn't need calibration)
+- `regenerate_reason` user signal is independent — keeps capturing
+- Promptfoo CI runs on every PR but reports "0 entries" (zero false positives, zero gate)
+- `prompt_version × regenerate_reason` correlation view is fully functional
+
+**Implications for downstream agents:**
+- Do NOT propose a Phase 2.5 implementation plan unless the user explicitly asks
+- Treat LLM-judge scores in `campaign_scores` as **directional signal, not ground truth** — compare drift over time, don't claim absolute quality
+- Phase 03 (Phoenix tracing) is technically unblocked — Phase 02's signal density is sufficient even without Phase 2.5 calibration. Whether to actually do Phase 03 is a separate cost-benefit question; current default is also deferred
+- Promptfoo CI PR comments are informational only — never block a PR on Promptfoo
+
+**Revisit triggers** (any of these = re-evaluate Phase 2.5):
+- Production-volume judge scores show systematic bias the team can't interpret without ground truth
+- A CONAR/legal incident traces back to copy that judge scored as `nivel_risco='baixo'` (false-negative on compliance)
+- The team contracts a PT-BR fashion copywriter for adjacent reasons (e.g., editorial work)
+- Phase 03 Phoenix tracing surfaces dimension-vs-prompt_version regressions that need a "what's the truth" arbiter
+
+**Status:** Phase 2.5 entry in any future ROADMAP/CONTEXT should reference this decision and not re-propose the labeling work without explicit re-authorization.
