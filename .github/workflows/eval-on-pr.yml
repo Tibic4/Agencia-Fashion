@@ -1,0 +1,90 @@
+name: AI Pipeline Evals (observability-only)
+
+# Phase 02 (D-19 + D-24): runs on PRs that touch the AI pipeline source
+# or the eval scaffold. Surfaces Promptfoo results as a PR comment but
+# DOES NOT block merge. Phase 2.5 removes `continue-on-error` and adds
+# the rubric gate once labels exist (golden-set is empty today).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'campanha-ia/src/lib/ai/**'
+      - 'campanha-ia/evals/**'
+      - 'campanha-ia/promptfoo.config.yaml'
+      - '.github/workflows/eval-on-pr.yml'
+
+# Concurrency: cancel superseded eval runs on the same PR — saves CI
+# minutes when a contributor pushes follow-up commits quickly. The latest
+# push wins; older in-flight evals are cancelled.
+concurrency:
+  group: eval-on-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Permissions: comment on PRs (issues:write) + read repo + read PR metadata.
+# No `contents: write`, no secrets exposure — eval is sandboxed.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  eval:
+    name: Promptfoo eval (Phase 02 — observability-only, never blocks PR)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: campanha-ia
+    # NEVER fail the PR. Per D-24, Phase 02 records pass-rates only.
+    # Phase 2.5 will remove `continue-on-error` and add the rubric gate
+    # that fails on Critical-dimension regression >5pp.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: campanha-ia/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run eval driver (dry-run pipeline against golden-set)
+        # The driver itself uses dryRun:true (D-18) — no live API calls
+        # hit production secrets. If golden-set is empty, exits 0 with
+        # "no entries to evaluate" message (D-24 pass-by-default).
+        # Phase 2.5 will pass real ANTHROPIC_API_KEY + GOOGLE_API_KEY here
+        # so the dry-run actually exercises the live pipeline against
+        # labeled fixtures. Today no keys are needed because run.ts
+        # short-circuits on the empty golden-set.
+        run: npx --yes tsx evals/run.ts
+        continue-on-error: true
+
+      - name: Run promptfoo (observability-only, no PR gate)
+        run: npx promptfoo eval --config evals/promptfoo.config.yaml --output evals/results/promptfoo-${{ github.event.pull_request.number }}.json
+        continue-on-error: true
+
+      - name: Comment results on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = `campanha-ia/evals/results/promptfoo-${context.issue.number}.json`;
+            let body = '## AI Pipeline Eval (Phase 02 — observability-only)\n\n';
+            if (!fs.existsSync(path)) {
+              body += '_No results file produced — likely empty golden-set (Phase 2.5 will populate)._';
+            } else {
+              const data = JSON.parse(fs.readFileSync(path, 'utf-8'));
+              const stats = data?.results?.stats ?? data?.stats ?? data;
+              body += '```json\n' + JSON.stringify(stats, null, 2).slice(0, 4000) + '\n```';
+            }
+            body += '\n\n_This check NEVER fails the PR (D-24). Phase 2.5 activates the gate._';
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
