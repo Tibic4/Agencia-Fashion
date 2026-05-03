@@ -298,4 +298,36 @@ export async function apiFetchRaw(path: string, init: RequestInit = {}): Promise
   return fetch(`${BASE_URL}${path}`, { ...init, headers });
 }
 
+// ─── Regenerate (Phase 02 D-12) ──────────────────────────────────────
+/**
+ * Mirror of campanha-ia VALID_REGENERATE_REASONS. Keep this union in sync
+ * by hand — backend is the source of truth (see
+ * campanha-ia/src/lib/db/index.ts:272-286). A future codegen step is
+ * possible but not in Phase 02 scope.
+ */
+export type RegenerateReason =
+  | 'face_wrong'
+  | 'garment_wrong'
+  | 'copy_wrong'
+  | 'pose_wrong'
+  | 'other';
+
+export interface RegenerateResponse {
+  success: boolean;
+  data: { reason?: RegenerateReason; free: boolean; used?: number; limit?: number };
+}
+
+/**
+ * D-12 (Phase 02 quality-loop): POST regenerate with optional reason.
+ * - reason supplied → backend takes the FREE reason-capture path (D-03 Phase 01)
+ *   and persists campaigns.regenerate_reason. Used by the 5-option picker.
+ * - reason undefined → legacy paid path (consumes a regen credit). Kept for
+ *   backwards-compat with any existing call site that hasn't been migrated yet.
+ */
+export const regenerateCampaign = (id: string, reason?: RegenerateReason) =>
+  apiPost<RegenerateResponse>(
+    `/campaign/${id}/regenerate`,
+    reason !== undefined ? { reason } : undefined,
+  );
+
 export { ApiError } from '@/types';
