@@ -1,0 +1,58 @@
+# Phase 02 Quality Loop — Deferred Items
+
+Items identified during Phase 02 execution that are out of scope for the
+current plan but need follow-up.
+
+---
+
+## From Plan 02-03 (judge wiring)
+
+### productImageUrl + modelImageUrl gap in pipeline.ts emit
+
+- **Where:** `campanha-ia/src/lib/ai/pipeline.ts` line ~352 — the
+  `inngest.send({ name: "campaign/judge.requested", data: {...} })` call.
+- **What:** `productImageUrl` and `modelImageUrl` are passed as empty
+  strings because `pipeline.ts` operates on base64 inputs, not on public
+  Supabase URLs. The judge prompt is robust to missing URLs (scores
+  text + the VTO `generatedImageUrl` primarily).
+- **Impact:** judge dimension `naturalidade` + `nivel_risco` quality is
+  preserved (text-driven); VTO-fidelity-style scoring against the input
+  photos cannot be done by this judge call alone. Phase 03 dimension 6
+  (`VTO identity & garment fidelity` per AI-SPEC §5.1) is the long-term
+  home for image-vs-image comparison via perceptual hashes — judging
+  textual identity drift was never the design intent of this judge.
+- **Fix path (candidates):**
+  1. **Move emit to `route.ts`** after `savePipelineResultV3` where the
+     three `imageUrls` ARE available. Requires re-interpreting CONTEXT
+     D-01 ("from pipeline.ts") — minor; the emit is still
+     pipeline-level, just on the orchestration layer above.
+  2. **Thread URLs into pipeline.ts** by adding a post-VTO
+     `uploadToStorage` step. More invasive — the pipeline becomes
+     storage-aware where today it's just AI orchestration.
+  3. **Accept** (current state): document as a known gap, defer to
+     Phase 03.
+- **Decision deferred to:** canary review checkpoint (Plan 02-03 Task 4).
+  Default = (3) Accept. User can override.
+- **Tracked in:** `02-03-SUMMARY.md` Decision section.
+
+---
+
+### sonnet-copywriter.ts:289 "afina a cintura na hora" example (pre-existing — D-23)
+
+- **Where:** `campanha-ia/src/lib/ai/sonnet-copywriter.ts` line 289 in
+  `buildSystemPrompt("pt-BR")` Stage 3 strategic-trigger examples.
+- **What:** The prompt cites "afina a cintura na hora" as an example
+  of the Transformação trigger. That phrase is itself blacklisted by
+  the DOMAIN-RUBRIC.md Forbidden List (body-transformation claim,
+  CONAR-risk per CBARP Arts. 17 + 27).
+- **Impact:** the judge will likely score campaigns that pick up this
+  example as `nivel_risco='alto'`. This is the SIGNAL WORKING AS
+  INTENDED — the judge correctly flags a prompt-content gap.
+- **Fix path:** edit the example to a LOOK-only transformation (e.g.,
+  "wide leg que alonga as pernas no espelho" — a visual-effect claim
+  about how the garment looks on, not about body change). Bundle with
+  the next prompt-content audit (per D-23 phase boundary).
+- **Phase scope:** Phase 02 is INFRASTRUCTURE — prompt-content edits
+  are a separate phase, possibly bundled with the labeler engagement
+  per CONTEXT.md `<deferred>`.
+- **Status:** noted, NOT fixed in Plan 02-03 per D-23.
