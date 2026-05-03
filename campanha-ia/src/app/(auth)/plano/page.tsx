@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { friendlyError } from "@/lib/friendly-error";
 import { PLANS, CREDIT_PACKAGES_CAMPAIGNS, CREDIT_PACKAGES_MODELS } from "@/lib/plans";
 import { useStoreUsage } from "@/lib/hooks/useStoreUsage";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const IconCheck = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -64,6 +65,7 @@ export default function Plano() {
   const [loading, setLoading] = useState<string | null>(null);
   const [creditLoading, setCreditLoading] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [store, setStore] = useState<StoreData | null>(null);
   /* usage agora vem do StoreUsageProvider compartilhado com o layout autenticado.
@@ -222,8 +224,11 @@ export default function Plano() {
     }
   };
 
-  const handleCancelSubscription = async () => {
-    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Seu plano permanecerá ativo até o fim do período pago.")) return;
+  const handleCancelSubscription = () => {
+    setConfirmCancelOpen(true);
+  };
+
+  const confirmCancelSubscription = async () => {
     setCancelLoading(true);
     try {
       const response = await fetch("/api/subscription/cancel", { method: "POST" });
@@ -238,6 +243,7 @@ export default function Plano() {
       setStatusMsg("Erro de conexão. Tente novamente.");
     } finally {
       setCancelLoading(false);
+      setConfirmCancelOpen(false);
     }
   };
 
@@ -497,6 +503,17 @@ export default function Plano() {
           <span>Boleto</span>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmCancelOpen}
+        title="Cancelar assinatura?"
+        description="Seu plano permanecerá ativo até o fim do período pago."
+        confirmLabel="Sim, cancelar"
+        cancelLabel="Manter assinatura"
+        variant="danger"
+        onConfirm={confirmCancelSubscription}
+        onCancel={() => setConfirmCancelOpen(false)}
+      />
     </div>
   );
 }
