@@ -28,6 +28,7 @@ const mockGenerateWithGeminiVTO = vi.fn<(...args: unknown[]) => Promise<unknown>
 const mockGenerateCopyWithSonnet = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 const mockLogModelCost = vi.fn<(...args: unknown[]) => Promise<void>>();
 const mockCreateAdminClient = vi.fn<() => unknown>();
+const mockInngestSend = vi.fn<(...args: unknown[]) => Promise<unknown>>();
 
 vi.mock("./gemini-analyzer", () => ({
   analyzeWithGemini: (...args: unknown[]) => mockAnalyzeWithGemini(...args),
@@ -49,6 +50,14 @@ vi.mock("./log-model-cost", () => ({
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => mockCreateAdminClient(),
+}));
+
+// Phase 02 D-01: pipeline emits campaign/judge.requested via inngest.send.
+// Mock the singleton so we can spy on the call without bringing up Inngest.
+vi.mock("@/lib/inngest/client", () => ({
+  inngest: {
+    send: (...args: unknown[]) => mockInngestSend(...args),
+  },
 }));
 
 // ── Stub fixtures shared across cases ───────────────────────────────────
@@ -76,7 +85,16 @@ function makeAnalyzerResult() {
 
 function makeVTOResult() {
   return {
-    images: [{ base64: "img-bytes", mimeType: "image/png", durationMs: 4200 }],
+    // imageUrl is the field pipeline.ts:319 reads to build the
+    // judge.requested event payload. base64 is the original byte slot.
+    images: [
+      {
+        base64: "img-bytes",
+        imageUrl: "https://supabase.test/vto-output.png",
+        mimeType: "image/png",
+        durationMs: 4200,
+      },
+    ],
     successCount: 1,
     totalDurationMs: 4200,
   };
@@ -121,11 +139,13 @@ beforeEach(() => {
   mockGenerateCopyWithSonnet.mockReset();
   mockLogModelCost.mockReset();
   mockCreateAdminClient.mockReset();
+  mockInngestSend.mockReset();
 
   mockAnalyzeWithGemini.mockResolvedValue(makeAnalyzerResult());
   mockGenerateWithGeminiVTO.mockResolvedValue(makeVTOResult());
   mockGenerateCopyWithSonnet.mockResolvedValue(makeCopyResult());
   mockLogModelCost.mockResolvedValue(undefined);
+  mockInngestSend.mockResolvedValue({ ids: ["evt-test"] });
 
   // Supabase admin chain: ".from(...).select(...).eq(...).single()" returns
   // null pose history; ".from(...).update(...).eq(...)" resolves silently.
@@ -210,5 +230,62 @@ describe("runCampaignPipeline — dryRun: false / omitted (Phase 01 behavior)", 
     await runCampaignPipeline({ ...validInput, dryRun: false });
     await flushMicrotasks();
     expect(mockCreateAdminClient).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// Phase 02 D-01: campaign/judge.requested Inngest emit
+// ─────────────────────────────────────────────────────────────────────
+
+describe("runCampaignPipeline — campaign/judge.requested Inngest emit (D-01)", () => {
+  it("does NOT emit when dryRun:true (eval traffic stays off Inngest)", async () => {
+    const { runCampaignPipeline } = await import("./pipeline");
+    await runCampaignPipeline({ ...validInput, dryRun: true });
+    await flushMicrotasks();
+    expect(mockInngestSend).not.toHaveBeenCalled();
+  });
+
+  it("emits ONCE with the locked event name + minimal payload when dryRun:false + successCount > 0", async () => {
+    const { runCampaignPipeline } = await import("./pipeline");
+    await runCampaignPipeline({ ...validInput, dryRun: false });
+    await flushMicrotasks();
+
+    expect(mockInngestSend).toHaveBeenCalledTimes(1);
+    const sent = mockInngestSend.mock.calls[0][0] as {
+      name: string;
+      data: Record<string, unknown>;
+    };
+    expect(sent.name).toBe("campaign/judge.requested");
+    expect(sent.data).toMatchObject({
+      campaignId: "camp-test-456",
+      storeId: "store-test-123",
+      copyText: "Olha que peça maravilhosa!",
+      generatedImageUrl: "https://supabase.test/vto-output.png",
+      prompt_version: "test_sonnet_pt-BR",
+      // Known limitation per D-01 SUMMARY: pipeline.ts doesn't have
+      // public Supabase URLs for product/model at emit time.
+      productImageUrl: "",
+      modelImageUrl: "",
+    });
+  });
+
+  it("does NOT emit when successCount=0 (judge has nothing to score)", async () => {
+    mockGenerateWithGeminiVTO.mockResolvedValueOnce({
+      images: [null],
+      successCount: 0,
+      totalDurationMs: 4200,
+    });
+    const { runCampaignPipeline } = await import("./pipeline");
+    await runCampaignPipeline({ ...validInput, dryRun: false });
+    await flushMicrotasks();
+    expect(mockInngestSend).not.toHaveBeenCalled();
+  });
+
+  it("does NOT emit when storeId is missing (anonymous test invocations)", async () => {
+    const { runCampaignPipeline } = await import("./pipeline");
+    const { storeId: _drop, ...noStore } = validInput;
+    await runCampaignPipeline({ ...noStore, dryRun: false });
+    await flushMicrotasks();
+    expect(mockInngestSend).not.toHaveBeenCalled();
   });
 });

@@ -24,6 +24,7 @@ import {
   updatePoseHistory,
   validatePoseIndex,
 } from "./identity-translations";
+import { inngest } from "@/lib/inngest/client";
 
 // ═══════════════════════════════════════
 // Tipos públicos
@@ -325,17 +326,48 @@ export async function runCampaignPipeline(
     })();
   }
 
-  // ── D-01 (Plan 02-03): Inngest judge.requested emit lands here ──────
-  // Plan 02-03's executor adds, inside this guard:
-  //   if (!input.dryRun && imageResult.successCount > 0) {
-  //     await inngest.send({
-  //       name: "campaign/judge.requested",
-  //       data: { campaignId, storeId, copyText, productImageUrl,
-  //               modelImageUrl, generatedImageUrl, prompt_version },
-  //     });
-  //   }
-  // The dryRun guard convention is already in scope; the emit itself is
-  // owned by 02-03. Until 02-03 lands, this is a no-op comment block.
+  // ── D-01 (Phase 02): emit Inngest event so judgeCampaignJob scores this campaign. ──
+  // Fire-and-forget — judge runs durably in Inngest with retries: 2 (D-02). Pipeline
+  // never awaits or surfaces judge failures to the user. dryRun gate per D-18:
+  // evals/run.ts uses dryRun=true to drive the pipeline against golden-set entries
+  // without polluting Inngest with eval traffic.
+  //
+  // Known limitation (Phase 02 scope): productImageUrl + modelImageUrl are empty
+  // strings here because pipeline.ts doesn't have public Supabase URLs for those
+  // at emit time (it has them as base64 inputs). The judge prompt is robust to
+  // missing URLs and scores the text + the VTO generated URL primarily.
+  // Phase 03 candidate: move emit to route.ts after savePipelineResultV3 where
+  // imageUrls ARE known. Logged in deferred-items.md.
+  if (
+    !input.dryRun &&
+    imageResult.successCount > 0 &&
+    input.storeId &&
+    input.campaignId
+  ) {
+    const generatedImageUrl = imageResult.images[0]?.imageUrl;
+    if (generatedImageUrl) {
+      const sonnetVersion = sonnetPromptVersionFor(input.targetLocale ?? "pt-BR");
+      void inngest
+        .send({
+          name: "campaign/judge.requested",
+          data: {
+            campaignId: input.campaignId,
+            storeId: input.storeId,
+            copyText: copyResult.dicas_postagem.caption_sugerida,
+            productImageUrl: "",
+            modelImageUrl: "",
+            generatedImageUrl,
+            prompt_version: sonnetVersion,
+          },
+        })
+        .catch((e) =>
+          console.warn(
+            "[Pipeline] inngest.send judge.requested failed:",
+            e instanceof Error ? e.message : e,
+          ),
+        );
+    }
+  }
 
   await onProgress?.("saving", "Salvando resultados...", 92);
   await onProgress?.("done", "Pronto!", 100);
