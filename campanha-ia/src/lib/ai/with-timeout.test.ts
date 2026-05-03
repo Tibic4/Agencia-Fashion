@@ -46,18 +46,23 @@ describe("withTimeout", () => {
       setTimeout(() => resolve(1), 50_000);
     });
 
-    const racePromise = withTimeout(slow, 10, "slow");
+    // Anexa o .catch() pra prevenir unhandled-rejection warning entre o
+    // primeiro reject e o expect — vitest reclama se o intervalo entre
+    // a rejeição e o await tiver microtasks intermediárias (que é o caso
+    // sob fake timers).
+    const racePromise = withTimeout(slow, 10, "slow").catch((e) => e);
 
     // Avança 10ms de wall clock virtual → timeout dispara.
     await vi.advanceTimersByTimeAsync(10);
 
-    await expect(racePromise).rejects.toMatchObject({
+    const err = await racePromise;
+    expect(err).toBeInstanceOf(AITimeoutError);
+    expect(err).toMatchObject({
       code: "AI_TIMEOUT",
       retryable: true,
       label: "slow",
       timeoutMs: 10,
     });
-    await expect(racePromise).rejects.toBeInstanceOf(AITimeoutError);
   });
 
   it("limpa o timer via clearTimeout quando a promise resolve antes", async () => {
