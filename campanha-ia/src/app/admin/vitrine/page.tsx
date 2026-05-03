@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface ShowcaseItem {
   id: string;
@@ -25,6 +26,7 @@ export default function AdminVitrine() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCaption, setEditCaption] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchItems = useCallback(async () => {
     try {
@@ -114,8 +116,13 @@ export default function AdminVitrine() {
   };
 
   // ── Delete (com limpeza de storage) ──
-  const handleDelete = async (id: string) => {
-    if (!confirm("Remover este item da vitrine? As imagens serão excluídas permanentemente.")) return;
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    const id = confirmDeleteId;
+    if (!id) return;
     try {
       const res = await fetch(`/api/admin/showcase?id=${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -127,6 +134,8 @@ export default function AdminVitrine() {
       }
     } catch {
       setStatusMsg("❌ Erro ao remover");
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -453,6 +462,17 @@ export default function AdminVitrine() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Remover item da vitrine?"
+        description="As imagens serão excluídas permanentemente do storage."
+        confirmLabel="Sim, excluir"
+        cancelLabel="Manter"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

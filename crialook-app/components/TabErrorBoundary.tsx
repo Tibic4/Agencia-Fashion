@@ -13,6 +13,7 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { tokens } from '@/lib/theme/tokens';
 import { t } from '@/lib/i18n';
@@ -57,7 +58,7 @@ export class TabErrorBoundary extends React.Component<Props, State> {
 
     return (
       <View style={styles.container}>
-        <Text style={styles.emoji}>{'\u{1F614}'}{/* 😔 */}</Text>
+        <FontAwesome name="exclamation-circle" size={48} color={Colors.brand.error} />
         <Text style={styles.title}>Esta tela travou</Text>
         <Text style={styles.desc} selectable>
           Toca em "Tentar de novo" — as outras abas continuam funcionando

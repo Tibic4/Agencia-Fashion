@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-export default function AuthError({
+export default function HistoricoError({
   error,
   reset,
 }: {
@@ -11,23 +11,18 @@ export default function AuthError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[AuthError]", error);
+    console.error("[HistoricoError]", error);
   }, [error]);
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-8 text-center">
       <p className="text-3xl">⚠️</p>
       <h2 className="text-xl font-semibold">
-        Travou aqui — não é problema seu
+        Não consegui carregar seu histórico
       </h2>
       <p className="max-w-sm text-muted-foreground">
-        Tive um pequeno problema ao carregar essa tela. Suas campanhas, créditos e dados estão a salvo. Quer tentar de novo?
+        Suas campanhas estão salvas — só o carregamento dessa tela falhou.
       </p>
-      {error.message && (
-        <p className="max-w-sm text-sm text-muted-foreground italic">
-          O servidor disse: «{error.message}»
-        </p>
-      )}
       {error.digest && (
         <p className="text-xs text-muted-foreground">
           Código: {error.digest}
@@ -41,7 +36,7 @@ export default function AuthError({
           Tentar de novo
         </button>
         <Link
-          href="/historico"
+          href="/"
           className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground transition-colors min-h-tap"
         >
           Voltar pra Home

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-export default function AuthError({
+export default function GerarError({
   error,
   reset,
 }: {
@@ -11,23 +11,18 @@ export default function AuthError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[AuthError]", error);
+    console.error("[GerarError]", error);
   }, [error]);
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 p-8 text-center">
       <p className="text-3xl">⚠️</p>
       <h2 className="text-xl font-semibold">
-        Travou aqui — não é problema seu
+        A IA travou no meio da geração
       </h2>
       <p className="max-w-sm text-muted-foreground">
-        Tive um pequeno problema ao carregar essa tela. Suas campanhas, créditos e dados estão a salvo. Quer tentar de novo?
+        Não foi você. Seus créditos estão intactos — nenhum crédito foi descontado dessa tentativa. Quer tentar de novo?
       </p>
-      {error.message && (
-        <p className="max-w-sm text-sm text-muted-foreground italic">
-          O servidor disse: «{error.message}»
-        </p>
-      )}
       {error.digest && (
         <p className="text-xs text-muted-foreground">
           Código: {error.digest}
@@ -38,7 +33,7 @@ export default function AuthError({
           onClick={reset}
           className="btn-primary min-h-tap"
         >
-          Tentar de novo
+          Gerar de novo
         </button>
         <Link
           href="/historico"

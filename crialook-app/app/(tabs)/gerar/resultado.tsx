@@ -555,7 +555,7 @@ export default function ResultadoScreen() {
   if (!result || !result.data) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ fontSize: 40 }}>📷</Text>
+        <FontAwesome name="picture-o" size={40} color={colors.textSecondary} />
         <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('result.notFoundTitle')}</Text>
         {/* Descrição + 2 CTAs (criar nova OU escapar pro histórico) — antes
             só "Criar mais fotos" travava o usuário num caminho. */}
@@ -955,7 +955,7 @@ export default function ResultadoScreen() {
               <View style={styles.hashtagsWrap}>
                 {dicas.hashtags.slice(0, 8).map((tag, i) => (
                   <View key={i} style={styles.hashtagPill}>
-                    <Text style={styles.hashtagText}>{tag.startsWith('#') ? tag : `#${tag}`}</Text>
+                    <Text style={[styles.hashtagText, { color: colors.text }]}>{tag.startsWith('#') ? tag : `#${tag}`}</Text>
                   </View>
                 ))}
               </View>
@@ -1017,8 +1017,8 @@ export default function ResultadoScreen() {
             <View style={styles.storyCard}>
               <Text style={styles.storyIcon}>📱</Text>
               <View style={styles.storyContent}>
-                <Text style={styles.storyLabel}>{t('result.sectionStory')}</Text>
-                <Text style={styles.storyText}>{dicas.story_idea}</Text>
+                <Text style={[styles.storyLabel, { color: colors.textSecondary }]}>{t('result.sectionStory')}</Text>
+                <Text style={[styles.storyText, { color: colors.text }]}>{dicas.story_idea}</Text>
               </View>
             </View>
           )}
@@ -1027,7 +1027,7 @@ export default function ResultadoScreen() {
           {dicas.dica_extra && (
             <View style={styles.dicaExtraCard}>
               <Text style={styles.dicaExtraIcon}>💡</Text>
-              <Text style={styles.dicaExtraText}>{dicas.dica_extra}</Text>
+              <Text style={[styles.dicaExtraText, { color: colors.text }]}>{dicas.dica_extra}</Text>
             </View>
           )}
         </Animated.View>
@@ -1280,7 +1280,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(168,85,247,0.15)',
   },
-  hashtagText: { color: Colors.brand.primary, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, letterSpacing: 0.1 },
+  hashtagText: { fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.semibold, letterSpacing: 0.1 },
 
   // Char badge
   charBadge: { paddingHorizontal: tokens.spacing.sm, paddingVertical: tokens.spacing.xxs, borderRadius: tokens.radii.sm },
@@ -1321,8 +1321,8 @@ const styles = StyleSheet.create({
   },
   storyIcon: { fontSize: tokens.fontSize.xl, marginTop: 1 },
   storyContent: { flex: 1, gap: tokens.spacing.xs },
-  storyLabel: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, color: Colors.brand.primary, letterSpacing: 0.6, textTransform: 'uppercase' },
-  storyText: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.medium, color: Colors.brand.primary, lineHeight: 19 },
+  storyLabel: { fontSize: tokens.fontSize.xs, fontWeight: tokens.fontWeight.black, letterSpacing: 0.6, textTransform: 'uppercase' },
+  storyText: { fontSize: tokens.fontSize.md, fontWeight: tokens.fontWeight.medium, lineHeight: 19 },
 
   // Dica extra
   dicaExtraCard: {
@@ -1337,7 +1337,7 @@ const styles = StyleSheet.create({
     marginTop: tokens.spacing.sm,
   },
   dicaExtraIcon: { fontSize: tokens.fontSize.base, marginTop: 2 },
-  dicaExtraText: { flex: 1, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium, color: Colors.brand.primary, lineHeight: 17 },
+  dicaExtraText: { flex: 1, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.medium, lineHeight: 17 },
 
   // Analysis
   analysisHeader: {
