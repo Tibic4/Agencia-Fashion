@@ -1,0 +1,44 @@
+# Phase 02 — Promptfoo config (observability-only).
+#
+# Per CONTEXT.md D-24: rubric pass-rates are recorded but DO NOT fail PRs.
+# Phase 2.5 will replace these placeholder asserts with the real rubrics
+# from DOMAIN-RUBRIC.md (Forbidden List, 5-trigger taxonomy, etc.) AND
+# remove `continue-on-error` from .github/workflows/eval-on-pr.yml so a
+# rubric regression actually blocks merge.
+#
+# Today this config is intentionally minimal: a single trivial assert
+# (is-valid-json on the literal "{}" string) so the Promptfoo CLI exits 0
+# regardless of golden-set state. When Phase 2.5 lands, replace `tests`
+# with per-dimension assertions sourced from DOMAIN-RUBRIC.md and uncomment
+# the file:// provider that consumes evals/results/last-run.jsonl produced
+# by evals/run.ts.
+
+description: "CriaLook AI pipeline evals (Phase 02 — observability)"
+
+# Phase 02: no live LLM provider — we only assert against placeholder
+# strings so the CLI always exits 0. Phase 2.5 wires the real provider
+# below by reading the JSONL produced by evals/run.ts:
+#
+#   providers:
+#     - id: file://./results/last-run.jsonl
+#       label: pipeline_v7
+providers:
+  - id: "echo"
+    label: placeholder
+
+prompts:
+  - "{{payload}}"
+
+tests:
+  - description: "Phase 02 placeholder — pass-by-default per D-24"
+    vars:
+      payload: "{}"
+    assert:
+      - type: is-json
+
+sharing: false
+# Path is relative to the cwd where `npx promptfoo eval` is invoked,
+# NOT the config file. The GitHub Action runs from `campanha-ia/`, so
+# this lands at `campanha-ia/evals/results/promptfoo-output.json`. Local
+# devs invoking from anywhere else should pass `--output <path>` explicitly.
+outputPath: evals/results/promptfoo-output.json

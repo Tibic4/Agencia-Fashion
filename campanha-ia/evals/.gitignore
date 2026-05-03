@@ -1,0 +1,11 @@
+# Per D-15: gitignore large fixtures (>100KB) + per-PR result outputs.
+# The directory itself is tracked via .gitkeep; only generated artifacts
+# are excluded. Phase 2.5 may revisit if labelers need versioned fixtures.
+fixtures/*.jpg
+fixtures/*.jpeg
+fixtures/*.png
+fixtures/*.webp
+results/*.json
+results/*.html
+results/*.jsonl
+!.gitkeep
