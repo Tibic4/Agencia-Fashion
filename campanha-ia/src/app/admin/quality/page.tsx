@@ -35,6 +35,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
 import { redirect } from "next/navigation";
+import { MeanTile } from "./MeanTile";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -239,27 +240,81 @@ export async function getQualityData(): Promise<QualityData> {
   };
 }
 
-// ── Formatting helpers (mirror /admin/custos delta-color convention) ───
-function formatScore(v: number | null): string {
-  return v === null ? "—" : v.toFixed(2);
+// Tile formatting helpers moved into ./MeanTile.tsx — local component
+// extracted to DRY the 5 near-identical tile invocations below.
+
+// ── Heatmap helpers (Section 4) ────────────────────────────────────────
+const REGEN_REASONS = ["face_wrong", "garment_wrong", "copy_wrong", "pose_wrong", "other"] as const;
+type RegenReason = typeof REGEN_REASONS[number];
+const REASON_LABELS: Record<RegenReason, string> = {
+  face_wrong: "Rosto",
+  garment_wrong: "Peça",
+  copy_wrong: "Copy",
+  pose_wrong: "Pose",
+  other: "Outro",
+};
+
+interface HeatmapCell {
+  prompt_version: string;
+  rows: Record<RegenReason, number>;
+  total: number;
 }
 
-function formatDelta(v: number | null): { text: string; color: string } {
-  if (v === null) return { text: "— sem comparação", color: "text-gray-500" };
-  // Threshold ±0.05 mirrors the visual signal threshold used implicitly
-  // by /admin/custos (small deltas are noise, render in neutral gray).
-  if (v > 0.05) return { text: `↑ +${v.toFixed(2)}`, color: "text-emerald-400" };
-  if (v < -0.05) return { text: `↓ ${v.toFixed(2)}`, color: "text-red-400" };
-  return { text: `→ ${v.toFixed(2)}`, color: "text-gray-400" };
+/**
+ * Aggregate per-row correlation (one row per campaign) into a matrix where
+ * each cell counts campaigns that share (prompt_version, regenerate_reason).
+ * Returns top-N prompt_versions by total count + the global max so the
+ * caller can normalize cell colors.
+ */
+function buildHeatmap(
+  correlation: Array<Record<string, unknown>>,
+  topN = 8,
+): { cells: HeatmapCell[]; max: number } {
+  const byPrompt = new Map<string, HeatmapCell>();
+  for (const row of correlation) {
+    const pv = (row.prompt_version as string | null) ?? "(sem versão)";
+    const reason = row.regenerate_reason as RegenReason | null;
+    if (!reason || !(REGEN_REASONS as readonly string[]).includes(reason)) continue;
+    let entry = byPrompt.get(pv);
+    if (!entry) {
+      entry = {
+        prompt_version: pv,
+        rows: { face_wrong: 0, garment_wrong: 0, copy_wrong: 0, pose_wrong: 0, other: 0 },
+        total: 0,
+      };
+      byPrompt.set(pv, entry);
+    }
+    entry.rows[reason] += 1;
+    entry.total += 1;
+  }
+  const cells = Array.from(byPrompt.values())
+    .sort((a, b) => b.total - a.total)
+    .slice(0, topN);
+  const max = cells.reduce(
+    (m, c) => Math.max(m, ...REGEN_REASONS.map((r) => c.rows[r])),
+    0,
+  );
+  return { cells, max };
+}
+
+function heatColor(count: number, max: number): string {
+  if (count === 0 || max === 0) return "bg-gray-900 text-gray-600";
+  const ratio = count / max;
+  // 5-step ramp on bg-red — readable on the dark dashboard palette.
+  if (ratio > 0.8) return "bg-red-500/80 text-white";
+  if (ratio > 0.6) return "bg-red-500/60 text-white";
+  if (ratio > 0.4) return "bg-red-500/40 text-red-50";
+  if (ratio > 0.2) return "bg-red-500/25 text-red-100";
+  return "bg-red-500/10 text-red-200";
 }
 
 // ── Page component ─────────────────────────────────────────────────────
 export default async function AdminQualityPage() {
   const data = await getQualityData();
-  const correlationKeys =
+  const heatmap =
     data.correlation && data.correlation.length > 0
-      ? Object.keys(data.correlation[0])
-      : [];
+      ? buildHeatmap(data.correlation)
+      : null;
 
   return (
     <div className="space-y-6">
@@ -291,37 +346,30 @@ export default async function AdminQualityPage() {
       )}
 
       {/* SECTION 1 — Means tile grid + WoW deltas (mirrors /admin/custos
-          4-card budget grid) */}
+          4-card budget grid). Tile JSX extracted to <MeanTile /> for DRY. */}
       <section>
         <h2 className="text-sm font-semibold text-white mb-4">Médias 7 dias</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {TILE_DIMS.map((dim) => {
-            const delta = formatDelta(data.wowDelta[dim]);
-            return (
-              <div
-                key={dim}
-                className="bg-gray-900 border border-gray-800 rounded-2xl p-5"
-              >
-                <p className="text-xs text-gray-400 mb-1">{DIM_LABELS[dim]}</p>
-                <p className="text-2xl font-bold text-white">{formatScore(data.means7d[dim])}</p>
-                <p className={`text-xs mt-1 ${delta.color}`}>{delta.text} vs semana anterior</p>
-              </div>
-            );
-          })}
+          {TILE_DIMS.map((dim) => (
+            <MeanTile
+              key={dim}
+              label={DIM_LABELS[dim]}
+              value={data.means7d[dim]}
+              delta={data.wowDelta[dim]}
+            />
+          ))}
         </div>
 
-        {/* Bonus: nota_geral as a wider full-width tile (the "headline"
-            number — the judge computes this with its own weighting per
-            Plan 02-03 D-04, NOT a server-side average) */}
-        <div className="mt-4 bg-gray-900 border border-gray-800 rounded-2xl p-5">
-          <p className="text-xs text-gray-400 mb-1">{DIM_LABELS.nota_geral}</p>
-          <p className="text-3xl font-bold text-white">{formatScore(data.means7d.nota_geral)}</p>
-          <p className={`text-xs mt-1 ${formatDelta(data.wowDelta.nota_geral).color}`}>
-            {formatDelta(data.wowDelta.nota_geral).text} vs semana anterior
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            {data.validCount} campanha(s) válida(s) · {data.failureCount} rejeitada(s)
-          </p>
+        {/* nota_geral as the "headline" tile — the judge computes this with
+            its own weighting per Plan 02-03 D-04, NOT a server-side average */}
+        <div className="mt-4">
+          <MeanTile
+            label={DIM_LABELS.nota_geral}
+            value={data.means7d.nota_geral}
+            delta={data.wowDelta.nota_geral}
+            headline
+            caption={`${data.validCount} campanha(s) válida(s) · ${data.failureCount} rejeitada(s)`}
+          />
         </div>
       </section>
 
@@ -465,39 +513,67 @@ export default async function AdminQualityPage() {
             (<span className="font-mono">vw_prompt_version_regen_correlation</span>) para
             popular esta seção.
           </p>
-        ) : data.correlation.length === 0 ? (
+        ) : !heatmap || heatmap.cells.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">
-            View existe mas sem dados ainda.
+            View existe mas sem regenerações registradas ainda.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  {correlationKeys.map((k) => (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-separate border-spacing-1">
+                <thead>
+                  <tr>
                     <th
-                      key={k}
                       scope="col"
-                      className="text-left px-3 py-2 text-xs font-semibold text-gray-400 uppercase"
+                      className="text-left px-2 py-2 text-xs font-semibold text-gray-400 uppercase"
                     >
-                      {k}
+                      Prompt SHA
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {data.correlation.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-800/30 transition">
-                    {correlationKeys.map((k) => (
-                      <td key={k} className="px-3 py-2 text-xs text-gray-300 font-mono">
-                        {row[k] === null || row[k] === undefined ? "—" : String(row[k])}
-                      </td>
+                    {REGEN_REASONS.map((r) => (
+                      <th
+                        key={r}
+                        scope="col"
+                        className="text-center px-2 py-2 text-xs font-semibold text-gray-400 uppercase"
+                      >
+                        {REASON_LABELS[r]}
+                      </th>
                     ))}
+                    <th
+                      scope="col"
+                      className="text-right px-2 py-2 text-xs font-semibold text-gray-400 uppercase"
+                    >
+                      Total
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {heatmap.cells.map((cell) => (
+                    <tr key={cell.prompt_version}>
+                      <td className="px-2 py-2 font-mono text-xs text-gray-200">
+                        {cell.prompt_version}
+                      </td>
+                      {REGEN_REASONS.map((r) => (
+                        <td
+                          key={r}
+                          className={`text-center text-xs font-medium tabular-nums rounded-md ${heatColor(cell.rows[r], heatmap.max)}`}
+                          aria-label={`${REASON_LABELS[r]}: ${cell.rows[r]} regeneração(ões)`}
+                        >
+                          {cell.rows[r]}
+                        </td>
+                      ))}
+                      <td className="px-2 py-2 text-right text-gray-400 tabular-nums">
+                        {cell.total}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-gray-500 mt-3">
+              Intensidade do vermelho = contagem relativa ao máximo da matriz ({heatmap.max}).
+              Top 8 versões por total de regenerações.
+            </p>
+          </>
         )}
       </section>
     </div>
