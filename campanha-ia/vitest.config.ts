@@ -10,7 +10,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "tests/**/*.test.ts"],
+    include: [
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "tests/**/*.test.ts",
+      // Phase 02 D-17: evals/run.ts driver tests live alongside the script.
+      "evals/**/*.test.ts",
+    ],
     exclude: ["node_modules", ".next", "scripts"],
     coverage: {
       provider: "v8",
