@@ -14,34 +14,46 @@
  */
 
 import type Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
 import { getAnthropic } from "./clients";
+import { withTimeout } from "./with-timeout";
 import { computePromptVersion } from "./prompt-version";
+import { captureError } from "@/lib/observability";
 
 // ═══════════════════════════════════════
 // Tipos de retorno
 // ═══════════════════════════════════════
+//
+// D-16: schema é a fonte única de verdade. As interfaces `SonnetDicaLegenda` e
+// `SonnetDicasPostagem` são derivadas via `z.infer` para garantir que prompt,
+// tool_choice e tipo TS nunca dessincronizem (drift de schema vira erro de
+// compilação na hora). O `SonnetInvalidOutputError` paraleliza o shape do
+// `gemini-error-handler` para que `route.ts` possa tratá-los uniformemente.
 
-export interface SonnetDicaLegenda {
-  foto: number;
-  plataforma: string;
-  legenda: string;
-  hashtags?: string[];
-  dica?: string;
-}
+const SonnetDicaLegendaSchema = z.object({
+  foto: z.number().int().positive(),
+  plataforma: z.string().min(1),
+  legenda: z.string().min(1),
+  hashtags: z.array(z.string()).optional(),
+  dica: z.string().optional(),
+});
 
-export interface SonnetDicasPostagem {
-  melhor_dia: string;
-  melhor_horario: string;
-  sequencia_sugerida: string;
-  caption_sugerida: string;
-  caption_alternativa: string;
-  tom_legenda: string;
-  cta: string;
-  dica_extra: string;
-  story_idea: string;
-  hashtags: string[];
-  legendas: SonnetDicaLegenda[];
-}
+export const SonnetDicasPostagemSchema = z.object({
+  melhor_dia: z.string(),
+  melhor_horario: z.string(),
+  sequencia_sugerida: z.string(),
+  caption_sugerida: z.string().min(1),
+  caption_alternativa: z.string(),
+  tom_legenda: z.string(),
+  cta: z.string(),
+  dica_extra: z.string(),
+  story_idea: z.string(),
+  hashtags: z.array(z.string()),
+  legendas: z.array(SonnetDicaLegendaSchema).min(3),
+});
+
+export type SonnetDicaLegenda = z.infer<typeof SonnetDicaLegendaSchema>;
+export type SonnetDicasPostagem = z.infer<typeof SonnetDicasPostagemSchema>;
 
 export interface SonnetCopyResult {
   dicas_postagem: SonnetDicasPostagem;
@@ -49,6 +61,91 @@ export interface SonnetCopyResult {
     inputTokens: number;
     outputTokens: number;
   };
+}
+
+// ═══════════════════════════════════════
+// D-16: Tool definition + classified error
+// ═══════════════════════════════════════
+//
+// O nome `generate_dicas_postagem` é travado pelo CONTEXT.md (D-16) — não
+// renomear sem coordenar. `tool_choice: { type: "tool", name: "..." }` força
+// o Sonnet a emitir só blocos `tool_use`, sem texto natural antes; o JSON
+// schema abaixo espelha `SonnetDicasPostagemSchema` (mesmos campos + mesmo
+// `min`/required), porém em snake-case JSON Schema porque é o que a
+// Anthropic API consome.
+const generateDicasPostagemTool: Anthropic.Tool = {
+  name: "generate_dicas_postagem",
+  description:
+    "Emit the structured marketing-copy package for one fashion product photo. " +
+    "Use the loja's tone, the requested locale, and only attributes visible in the image. " +
+    "Never invent sizes, fabrics or colors that are not visually verifiable.",
+  input_schema: {
+    type: "object",
+    properties: {
+      melhor_dia: { type: "string" },
+      melhor_horario: { type: "string" },
+      sequencia_sugerida: { type: "string" },
+      caption_sugerida: { type: "string" },
+      caption_alternativa: { type: "string" },
+      tom_legenda: { type: "string" },
+      cta: { type: "string" },
+      dica_extra: { type: "string" },
+      story_idea: { type: "string" },
+      hashtags: { type: "array", items: { type: "string" } },
+      legendas: {
+        type: "array",
+        minItems: 3,
+        items: {
+          type: "object",
+          properties: {
+            foto: { type: "integer" },
+            plataforma: { type: "string" },
+            legenda: { type: "string" },
+            hashtags: { type: "array", items: { type: "string" } },
+            dica: { type: "string" },
+          },
+          required: ["foto", "plataforma", "legenda"],
+        },
+      },
+    },
+    required: [
+      "melhor_dia",
+      "melhor_horario",
+      "sequencia_sugerida",
+      "caption_sugerida",
+      "caption_alternativa",
+      "tom_legenda",
+      "cta",
+      "dica_extra",
+      "story_idea",
+      "hashtags",
+      "legendas",
+    ],
+  },
+};
+
+/**
+ * Classified error — paralela a `GeminiBlockedError`/`GeminiServerError` em
+ * `gemini-error-handler.ts` para o `route.ts` mapear status uniforme. NÃO é
+ * retryable (D-16 / T-05-04: drift de schema não cura sozinho com retry; só
+ * queima dinheiro). O `pipeline.ts:218-237` catch-all já fornece dicas
+ * default quando esta exception sobe.
+ */
+export class SonnetInvalidOutputError extends Error {
+  readonly code = "SONNET_INVALID_OUTPUT" as const;
+  readonly retryable = false;
+  readonly userMessage = "A IA retornou copy em formato inesperado. Tente novamente.";
+  constructor(
+    public readonly technicalMessage: string,
+    cause?: unknown,
+  ) {
+    // Forward `cause` through the standard ES2022 Error options bag so it
+    // lands on `this.cause` (the lib.es2022 base property) — using a
+    // parameter property here would require `override` and create a
+    // shadow field that diverges from `Error.cause` consumers (Sentry).
+    super(technicalMessage, cause !== undefined ? { cause } : undefined);
+    this.name = "SonnetInvalidOutputError";
+  }
 }
 
 // ═══════════════════════════════════════
