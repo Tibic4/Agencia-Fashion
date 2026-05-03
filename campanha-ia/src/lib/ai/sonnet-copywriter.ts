@@ -225,104 +225,81 @@ export async function generateCopyWithSonnet(input: CopywriterInput): Promise<So
 
   contentParts.push({ type: "text", text: userPrompt });
 
-  // callSonnetSafe — retry com backoff exponencial (2 tentativas)
-  const callSonnet = () => client.messages.create({
-    model: MODEL,
-    max_tokens: 1500,
-    temperature: 0.7,
-    system: systemPrompt,
-    messages: [
-      {
-        role: "user",
-        content: contentParts,
-      },
-    ],
-  });
-
-  async function callWithTimeout(timeoutMs: number): Promise<Anthropic.Message> {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Sonnet timeout (${timeoutMs}ms)`)), timeoutMs),
-    );
-    return Promise.race([callSonnet(), timeoutPromise]);
-  }
-
-  function isRetryable(err: unknown): boolean {
-    const msg = err instanceof Error ? err.message : String(err);
-    return /timeout|rate.?limit|429|503|504|overloaded|ECONNRESET/i.test(msg);
-  }
-
-  let response: Anthropic.Message;
-  try {
-    response = await callWithTimeout(30_000);
-  } catch (firstErr) {
-    if (!isRetryable(firstErr)) {
-      console.error(`[Sonnet Copy] ❌ Erro não-retryable:`, firstErr);
-      throw firstErr;
-    }
-    console.warn(`[Sonnet Copy] ⚠️ Tentativa 1 falhou: ${firstErr instanceof Error ? firstErr.message : firstErr}. Backoff 1s + retry...`);
-    await new Promise((r) => setTimeout(r, 1000));
-    try {
-      response = await callWithTimeout(45_000);
-    } catch (retryErr) {
-      console.error(`[Sonnet Copy] ❌ Retry também falhou:`, retryErr);
-      throw retryErr;
-    }
-  }
+  // ── D-16: tool_use + withTimeout (replaces inline timeout/retry/regex) ──
+  //
+  // Por que mudou:
+  //   * `tool_choice: { type: "tool", name: "..." }` força o Sonnet a emitir
+  //     APENAS um bloco `tool_use` com `input` na forma do schema — fim do
+  //     parser regex que extraía JSON do meio do texto e morria silencioso.
+  //   * `withTimeout(..., 30_000, "Sonnet Copy")` é o único liveness gate
+  //     (T-05-03): a SDK Anthropic tem timeout interno de 10min, muito acima
+  //     do `maxDuration = 300s` da rota Vercel. Sem ele, uma chamada
+  //     pendurada come o budget inteiro.
+  //   * Retry de transporte (408/409/429/5xx) já é feito pela SDK via
+  //     `maxRetries: 2` em `clients.ts:getAnthropic` (Plan 03 / D-10). O
+  //     loop manual com backoff foi DELETADO — duplicava esse comportamento
+  //     com classificação ad-hoc de erro por regex em `.message`, o que
+  //     nunca foi confiável.
+  //   * Fallback de campos (caption padrão / legendas placeholder) também
+  //     DELETADO. Per D-16 / T-05-04: drift de schema deve ser RUIDOSO
+  //     (Sentry alert via SonnetInvalidOutputError), não silencioso. O
+  //     orquestrador em `pipeline.ts:218-237` já tem o catch-all com
+  //     `dicas` default — esse é o lugar certo pra fallback (orquestrador,
+  //     não call-site).
+  const response = await withTimeout(
+    client.messages.create({
+      model: MODEL,
+      max_tokens: 1500,
+      temperature: 0.7,
+      system: systemPrompt,
+      tools: [generateDicasPostagemTool],
+      tool_choice: { type: "tool", name: "generate_dicas_postagem" },
+      messages: [{ role: "user", content: contentParts }],
+    }),
+    30_000,
+    "Sonnet Copy",
+  );
 
   const durationMs = Date.now() - startTime;
 
-  // Extrair texto da resposta
-  const textBlock = response.content.find((b) => b.type === "text");
-  const text = textBlock && "text" in textBlock ? textBlock.text : "";
-
-  if (!text) {
-    throw new Error("Sonnet não retornou resposta de copy");
+  // Selecionar o bloco tool_use pelo nome — a SDK pode (em teoria) intercalar
+  // text blocks; o parser antigo de regex falhava nesses casos. Com
+  // tool_choice forçado isso é raro, mas o `find` por `name` é defensivo.
+  const toolBlock = response.content.find(
+    (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === "generate_dicas_postagem",
+  );
+  if (!toolBlock) {
+    const err = new SonnetInvalidOutputError("Sonnet did not emit the expected tool_use block");
+    captureError(err, { extra: { stop_reason: response.stop_reason } });
+    throw err;
   }
 
-  // Parse JSON
-  let result: SonnetDicasPostagem;
-  try {
-    // Limpar markdown code blocks se houver
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const first = cleaned.indexOf("{");
-    const last = cleaned.lastIndexOf("}");
-    if (first !== -1 && last > first) {
-      result = JSON.parse(cleaned.slice(first, last + 1));
-    } else {
-      result = JSON.parse(cleaned);
-    }
-  } catch {
-    console.error("[Sonnet Copy] ❌ JSON inválido:", text.slice(0, 500));
-    throw new Error("Sonnet retornou copy inválido — tente novamente");
+  // Boundary Zod: `tool_use.input` é `unknown` no nível de tipo — NUNCA
+  // `as SonnetDicasPostagem`, sempre `safeParse`. Drift de schema (campo
+  // novo/faltando) explode aqui em vez de corromper downstream.
+  const parsed = SonnetDicasPostagemSchema.safeParse(toolBlock.input);
+  if (!parsed.success) {
+    const err = new SonnetInvalidOutputError(
+      `Zod boundary validation failed: ${parsed.error.issues
+        .map((i) => i.path.join("."))
+        .join(", ")}`,
+      parsed.error,
+    );
+    captureError(err, { extra: { input: toolBlock.input } });
+    throw err;
   }
 
-  // Validar campos obrigatórios
-  if (!result.caption_sugerida || !result.legendas || result.legendas.length < 3) {
-    console.warn("[Sonnet Copy] ⚠️ Resposta incompleta, preenchendo fallbacks...");
-    result.caption_sugerida = result.caption_sugerida || "✨ Novidade que vai te surpreender! Confira 💕";
-    result.caption_alternativa = result.caption_alternativa || "Elegância e atitude em cada detalhe ✨";
-    result.legendas = result.legendas || [
-      { foto: 1, plataforma: "Instagram Feed", legenda: result.caption_sugerida },
-      { foto: 2, plataforma: "WhatsApp", legenda: "Chegou novidade! Manda um oi que eu te conto 😍" },
-      { foto: 3, plataforma: "Stories", legenda: "Qual é a sua vibe? Vote aqui! 🔥" },
-    ];
-  }
-
-  // Nota: Sonnet agora PODE mencionar peça/cor/tecido.
-  // A validação de "forbidden" foi removida — Sonnet identifica visualmente.
-
-  // Token usage
   const usage = {
     inputTokens: response.usage?.input_tokens || 0,
     outputTokens: response.usage?.output_tokens || 0,
   };
 
   console.log(
-    `[Sonnet Copy] ✅ Copy em ${durationMs}ms | in=${usage.inputTokens} out=${usage.outputTokens} tokens`
+    `[Sonnet Copy] ✅ Copy em ${durationMs}ms | in=${usage.inputTokens} out=${usage.outputTokens} tokens`,
   );
 
   return {
-    dicas_postagem: result,
+    dicas_postagem: parsed.data,
     _usageMetadata: usage,
   };
 }
