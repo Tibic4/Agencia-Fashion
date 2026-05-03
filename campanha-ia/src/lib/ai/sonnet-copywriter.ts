@@ -14,6 +14,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { computePromptVersion } from "./prompt-version";
 
 // ═══════════════════════════════════════
 // Tipos de retorno
@@ -68,6 +69,24 @@ function getClient(): Anthropic {
 // ═══════════════════════════════════════
 
 const MODEL = "claude-sonnet-4-6";
+
+// ═══════════════════════════════════════
+// D-15: prompt_version (cached at module load)
+// ═══════════════════════════════════════
+// Computed once at import — every cost-log row carries the SHA prefix of the
+// system prompt that produced it, so prompt edits become correlatable to
+// quality/cost shifts in api_cost_logs.metadata.prompt_version.
+//
+// Locale split because buildSystemPrompt branches on locale and the two
+// prompts are materially different documents (PT-BR vs EN); a single hash
+// would silently flip whenever traffic changed locale mix.
+export const SONNET_PROMPT_VERSION_PT = computePromptVersion(buildSystemPrompt("pt-BR"));
+export const SONNET_PROMPT_VERSION_EN = computePromptVersion(buildSystemPrompt("en"));
+
+/** Returns the cached prompt_version for the locale used in the call. */
+export function sonnetPromptVersionFor(locale: "pt-BR" | "en"): string {
+  return locale === "en" ? SONNET_PROMPT_VERSION_EN : SONNET_PROMPT_VERSION_PT;
+}
 
 // ═══════════════════════════════════════
 // Input

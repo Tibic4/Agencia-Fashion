@@ -31,6 +31,7 @@ import {
   SKIN_TONE_MAP,
   isMaleGender,
 } from "./identity-translations";
+import { computePromptVersion } from "./prompt-version";
 
 // ═══════════════════════════════════════
 // Exported helpers (used by pipeline for backdrop injection)
@@ -480,6 +481,19 @@ EXEMPLO RUIM ❌ (descreve pose — pose vem do pose_index):
 
 IMPORTANTE: NÃO gere dicas de postagem, legendas ou copy. O copy é gerado por outro módulo. Foque APENAS na análise visual + pose_index + scene_prompts.`;
 }
+
+// ═══════════════════════════════════════
+// D-15: prompt_version (cached at module load)
+// ═══════════════════════════════════════
+// buildSystemPrompt is per-call (interpolates modelInfo + blockedPoseIndex)
+// but its CHANGE-DETECTABLE surface — the static template text — is what we
+// want to fingerprint. We hash the canonical "no model context, no block
+// rule" rendering: the SHA flips iff someone edits the template, and stays
+// stable across the dynamic per-call substitutions.
+const ANALYZER_TEMPLATE_PROMPT = buildSystemPrompt({
+  productImageBase64: "",
+});
+export const ANALYZER_PROMPT_VERSION = computePromptVersion(ANALYZER_TEMPLATE_PROMPT);
 
 // ═══════════════════════════════════════
 // User Prompt builder

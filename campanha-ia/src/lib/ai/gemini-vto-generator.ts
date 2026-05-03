@@ -18,6 +18,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { callGeminiSafe } from "./gemini-error-handler";
 import { type ModelInfo, buildIdentityLock } from "./identity-translations";
+import { computePromptVersion } from "./prompt-version";
 
 // ═══════════════════════════════════════
 // Tipos
@@ -383,6 +384,24 @@ SECTION 9: NEGATIVE PROMPT — DO NOT GENERATE ANY OF THESE
 
 
 // ═══════════════════════════════════════
+// D-15: prompt_version (cached at module load)
+// ═══════════════════════════════════════
+// buildVTOPrompt is per-call (interpolates stylingPrompt, bodyType, gender,
+// modelInfo) but the change-detectable surface is the static template. We
+// hash a canonical "no styling, normal body, no model info, no backdrop"
+// rendering so the SHA flips when the template text is edited and stays
+// stable across per-call substitutions. Sentinel scene token chosen to be
+// short + unambiguous so the hash isn't dominated by user input.
+const VTO_TEMPLATE_PROMPT = buildVTOPrompt(
+  "__SCENE__",
+  "normal",
+  undefined,
+  false,
+  undefined,
+);
+export const VTO_PROMPT_VERSION = computePromptVersion(VTO_TEMPLATE_PROMPT);
+
+// ═══════════════════════════════════════
 // Função principal — chamada única (foto única universal)
 // ═══════════════════════════════════════
 
@@ -624,6 +643,7 @@ async function logGeminiVTOCosts(
     output_tokens: totalOutputTokens,
     tokens_used: totalInputTokens + totalOutputTokens,
     response_time_ms: totalMs,
+    metadata: { prompt_version: VTO_PROMPT_VERSION },
   });
 
   if (error) {

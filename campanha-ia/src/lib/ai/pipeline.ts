@@ -13,11 +13,11 @@
  */
 
 import type { GeminiAnalise } from "./gemini-analyzer";
-import { analyzeWithGemini } from "./gemini-analyzer";
+import { analyzeWithGemini, ANALYZER_PROMPT_VERSION } from "./gemini-analyzer";
 import type { GeneratedImage } from "./gemini-vto-generator";
 import { generateWithGeminiVTO } from "./gemini-vto-generator";
 import type { SonnetDicasPostagem } from "./sonnet-copywriter";
-import { generateCopyWithSonnet } from "./sonnet-copywriter";
+import { generateCopyWithSonnet, sonnetPromptVersionFor } from "./sonnet-copywriter";
 import {
   getStreakBlockedPose,
   updatePoseHistory,
@@ -171,7 +171,8 @@ export async function runCampaignPipeline(
       input.campaignId,
       analyzerDurationMs,
       analyzerResult._usageMetadata?.promptTokenCount,
-      analyzerResult._usageMetadata?.candidatesTokenCount
+      analyzerResult._usageMetadata?.candidatesTokenCount,
+      ANALYZER_PROMPT_VERSION,
     ).catch((e) =>
       console.warn("[Pipeline] Erro ao salvar custo Analyzer:", e)
     );
@@ -190,6 +191,7 @@ export async function runCampaignPipeline(
   const isMale = input.modelInfo?.gender === 'masculino' || input.modelInfo?.gender === 'male' || input.modelInfo?.gender === 'm';
 
   // Sonnet Copy — roda em paralelo com VTO (análise visual autônoma da foto)
+  const sonnetLocale: "pt-BR" | "en" = input.targetLocale ?? "pt-BR";
   const copyPromise = generateCopyWithSonnet({
     price: input.price,
     storeName: input.storeName,
@@ -197,7 +199,7 @@ export async function runCampaignPipeline(
     productMediaType: input.mediaType,
     targetAudience: input.targetAudience,
     toneOverride: input.toneOverride,
-    targetLocale: input.targetLocale ?? "pt-BR",
+    targetLocale: sonnetLocale,
   }).then((copyResult) => {
     // Log custo Sonnet (fire-and-forget)
     if (input.storeId) {
@@ -207,6 +209,7 @@ export async function runCampaignPipeline(
         Date.now() - startTime,
         copyResult._usageMetadata?.inputTokens,
         copyResult._usageMetadata?.outputTokens,
+        sonnetPromptVersionFor(sonnetLocale),
       ).catch((e) =>
         console.warn("[Pipeline] Erro ao salvar custo Sonnet:", e)
       );
@@ -313,8 +316,9 @@ async function logAnalyzerCost(
   storeId: string,
   campaignId: string | undefined,
   responseTimeMs: number,
-  realInputTokens?: number,
-  realOutputTokens?: number,
+  realInputTokens: number | undefined,
+  realOutputTokens: number | undefined,
+  promptVersion: string,
 ) {
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
@@ -362,6 +366,7 @@ async function logAnalyzerCost(
     output_tokens: outputTokens,
     tokens_used: inputTokens + outputTokens,
     response_time_ms: responseTimeMs,
+    metadata: { prompt_version: promptVersion },
   });
 
   if (error) {
@@ -377,8 +382,9 @@ async function logSonnetCost(
   storeId: string,
   campaignId: string | undefined,
   responseTimeMs: number,
-  realInputTokens?: number,
-  realOutputTokens?: number,
+  realInputTokens: number | undefined,
+  realOutputTokens: number | undefined,
+  promptVersion: string,
 ) {
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const supabase = createAdminClient();
@@ -425,6 +431,7 @@ async function logSonnetCost(
     output_tokens: outputTokens,
     tokens_used: inputTokens + outputTokens,
     response_time_ms: responseTimeMs,
+    metadata: { prompt_version: promptVersion },
   });
 
   if (error) {
