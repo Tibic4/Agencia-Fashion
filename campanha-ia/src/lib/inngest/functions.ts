@@ -7,6 +7,16 @@ import {
 import { scoreCampaignQuality, JUDGE_PROMPT_VERSION } from "@/lib/ai/judge";
 import { setCampaignScores } from "@/lib/db";
 import { logModelCost } from "@/lib/ai/log-model-cost";
+import {
+  FACE_WRONG_THRESHOLD_PCT,
+  FACE_WRONG_WOW_DELTA_PP,
+  NIVEL_RISCO_ALTO_THRESHOLD_PCT,
+  queryFaceWrongRate,
+  queryNivelRiscoAltoRate,
+  buildFaceWrongFingerprint,
+  buildNivelRiscoAltoFingerprint,
+} from "@/lib/quality/alerts";
+import { captureSyntheticAlert } from "@/lib/observability";
 
 // NOTE: `generateCampaignJob` (event "campaign/generate.requested") was deleted
 // in Phase 01-03 (D-09). Zero producers ever sent that event — generation is
@@ -438,6 +448,91 @@ export const judgeCampaignJob = inngest.createFunction(
   },
 );
 
+// ═══════════════════════════════════════════════════════════
+// QUALITY ALERTS — Daily 7am UTC cron (Phase 02 D-07/D-08/D-10)
+// ═══════════════════════════════════════════════════════════
+//
+// Single cron runs 2 checks against production data:
+//   (a) face_wrong WoW spike (D-07) — bucket-by-Monday fingerprint
+//   (b) nivel_risco='alto' rolling 7-day spike (D-08) — daily-bucket fingerprint
+//
+// D-09 (Promptfoo PR regression Sentry issue) is NOT here — it is emitted by
+// the GitHub Action .github/workflows/eval-on-pr.yml (Plan 02-02) at PR-level.
+// Different cadence (per-PR vs daily); intentional separation.
+//
+// Per Plan 02-05 SUMMARY: vw_prompt_version_regen_correlation was created as a
+// regular VIEW (not MATERIALIZED), so this cron does NOT need a REFRESH step.
+// If the view is later swapped to MATERIALIZED (when api_cost_logs > 100K rows),
+// add `await supabase.rpc('refresh_prompt_version_regen_correlation')` as Step 0
+// of qualityAlertsCron below.
+
+export const qualityAlertsCron = inngest.createFunction(
+  {
+    id: "quality-alerts-daily",
+    retries: 2,
+    triggers: [{ cron: "0 7 * * *" }], // daily 7am UTC
+  },
+  async ({ step }) => {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createAdminClient();
+    const now = new Date();
+
+    // Step 1: face_wrong WoW spike (D-07)
+    const faceWrongResult = await step.run("check-face-wrong-spike", async () => {
+      const r = await queryFaceWrongRate(supabase, now);
+      const breached =
+        r.thisWeekPct > FACE_WRONG_THRESHOLD_PCT &&
+        r.deltaPp     > FACE_WRONG_WOW_DELTA_PP;
+
+      if (breached) {
+        captureSyntheticAlert(
+          `face_wrong rate spike: ${r.thisWeekPct.toFixed(1)}% this week ` +
+            `(Δ +${r.deltaPp.toFixed(1)}pp WoW)`,
+          buildFaceWrongFingerprint(now),
+          {
+            this_week_pct: r.thisWeekPct,
+            last_week_pct: r.lastWeekPct,
+            delta_pp: r.deltaPp,
+            sample_size: r.sampleSize,
+            top_prompt_versions: r.topPromptVersions, // PII-safe: SHA strings only
+            threshold_pct: FACE_WRONG_THRESHOLD_PCT,
+            threshold_delta_pp: FACE_WRONG_WOW_DELTA_PP,
+          },
+        );
+      }
+      return { fired: breached, kind: "face_wrong_spike", ...r };
+    });
+
+    // Step 2: nivel_risco='alto' rolling 7-day spike (D-08)
+    const nivelRiscoResult = await step.run("check-nivel-risco-alto-spike", async () => {
+      const r = await queryNivelRiscoAltoRate(supabase, now);
+      const breached = r.pct > NIVEL_RISCO_ALTO_THRESHOLD_PCT;
+
+      if (breached) {
+        captureSyntheticAlert(
+          `nivel_risco='alto' rate spike: ${r.pct.toFixed(2)}% ` +
+            `(${r.altoCount}/${r.validTotal} last 7 days)`,
+          buildNivelRiscoAltoFingerprint(now),
+          {
+            pct: r.pct,
+            alto_count: r.altoCount,
+            valid_total: r.validTotal,
+            sample_campaign_ids: r.sampleCampaignIds, // PII-safe: opaque UUIDs only
+            threshold_pct: NIVEL_RISCO_ALTO_THRESHOLD_PCT,
+          },
+        );
+      }
+      return { fired: breached, kind: "nivel_risco_alto_spike", ...r };
+    });
+
+    return {
+      ranAt: now.toISOString(),
+      faceWrong: { fired: faceWrongResult.fired, thisWeekPct: faceWrongResult.thisWeekPct },
+      nivelRiscoAlto: { fired: nivelRiscoResult.fired, pct: nivelRiscoResult.pct },
+    };
+  },
+);
+
 /**
  * Lista de todas as functions Inngest para registrar no handler.
  */
@@ -445,6 +540,7 @@ export const inngestFunctions = [
   generateModelPreviewJob,
   generateBackdropJob,
   judgeCampaignJob,                      // Phase 02 D-01 — LLM-as-judge async
+  qualityAlertsCron,                     // Phase 02 D-07/D-08 — daily 7am UTC alerts
   storageGarbageCollectorCron,
   storageGarbageCollectorManual,
 ];
