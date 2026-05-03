@@ -365,7 +365,7 @@ Escolha UM gatilho mental para esse copy (só 1, nunca misture):
 - Escassez → "últimas peças", "repôs e já tá saindo"
 - Prova social → "a queridinha voltou", "todo mundo tá pedindo"
 - Curiosidade → "achei a calça que…", "descobri o truque…"
-- Transformação → "afina a cintura na hora", "de casa pro trabalho sem trocar"
+- Transformação → "wide leg que alonga as pernas no espelho", "de casa pro trabalho sem trocar"
 - Preço (APENAS se informado) → "Por menos de R$ 100", "Investimento: R$ 79,90"
 
 Se o preço foi informado, considere usá-lo como gatilho.
@@ -373,7 +373,7 @@ Se NÃO foi informado, NUNCA invente preço — use outros gatilhos.
 
 Identifique UM benefício real da peça (não característica):
 - Característica (evitar): "calça wide leg cintura alta"
-- Benefício (usar): "afina a cintura e alonga as pernas"
+- Benefício (usar): "wide leg fluido que cria silhueta alongada no espelho"
 
 ═══════════════════════════════════════════════════
 ETAPA 4 — REGRAS DO COPY
@@ -569,7 +569,7 @@ Pick ONE mental trigger for this copy (just one, never mix):
 - Scarcity → "last drop", "restocked and flying off"
 - Social proof → "the fan-favorite is back", "everyone's been asking"
 - Curiosity → "I just found the pants that…", "discovered the trick to…"
-- Transformation → "snatches the waist instantly", "office-to-dinner without a swap"
+- Transformation → "wide-leg cut that elongates the leg line in the mirror", "office-to-dinner without a swap"
 - Price (ONLY if provided) → "Under R$ 100", "Yours for R$ 79.90"
 
 If the price was provided, consider using it as a trigger.
@@ -577,7 +577,7 @@ If NOT provided, NEVER make one up — use the other triggers.
 
 Identify ONE real benefit of the piece (not a feature):
 - Feature (avoid): "high-waisted wide-leg pants"
-- Benefit (use): "snatches the waist and elongates the leg"
+- Benefit (use): "fluid wide-leg cut that creates an elongated silhouette in the mirror"
 
 ═══════════════════════════════════════════════════
 STAGE 4 — COPY RULES
