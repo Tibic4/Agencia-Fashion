@@ -85,3 +85,7 @@ curriculo/
 
 # ─── Notas locais de tarefas (não vai pro repo público) ───────
 TASKS.md
+
+
+# Local-only backup of pre-M1 planning artifacts (kept out of repo)
+.planning-old/
