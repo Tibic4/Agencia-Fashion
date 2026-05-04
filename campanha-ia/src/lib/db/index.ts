@@ -343,12 +343,30 @@ export async function incrementRegenCount(campaignId: string, storeId?: string):
 
   if (error) {
     console.warn(`[DB] ⚠️ incrementRegenCount RPC falhou, usando fallback: ${error.message}`);
-    const { data: campaign } = await supabase
+    // H-9 fix: close IDOR — fallback SELECT was leaking cross-store reads.
+    // If storeId is provided (which it is in the production code path — only
+    // the legacy compat call sites pass undefined), require it on the SELECT
+    // so a leaked campaignId can't be used to read another store's regen_count.
+    let campaignQuery = supabase
       .from("campaigns")
       .select("regen_count")
-      .eq("id", campaignId)
-      .single();
-    const newCount = (campaign?.regen_count || 0) + 1;
+      .eq("id", campaignId);
+    if (storeId) {
+      campaignQuery = campaignQuery.eq("store_id", storeId);
+    }
+    const { data: campaign } = await campaignQuery.single();
+    if (!campaign) {
+      // Fallback SELECT returned no row — either the campaign doesn't exist OR
+      // the storeId filter blocked it (IDOR attempt). Either way, fail loud.
+      captureError(
+        new Error(
+          `incrementRegenCount fallback: campaign not found or cross-store access blocked (campaign=${campaignId}, store=${storeId ?? "n/a"})`,
+        ),
+        { function: "incrementRegenCount", campaignId, storeId },
+      );
+      throw new Error(`Campaign not found: ${campaignId}`);
+    }
+    const newCount = (campaign.regen_count || 0) + 1;
     const q = supabase.from("campaigns").update({ regen_count: newCount }).eq("id", campaignId);
     if (storeId) q.eq("store_id", storeId);
     await q;
