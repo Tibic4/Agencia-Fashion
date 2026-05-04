@@ -234,3 +234,74 @@ describe("MP webhook route — Phase 1 regressions", () => {
     expect(warnCalls).toContain("mp_subscription_status_unhandled");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Phase 02 / Plan 02-05 Task 4 — additional handler-level coverage
+// (QUALITY priority #3). Phase 1's 5 cases are above; these extend.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("MP webhook full handler — Plan 02-05 / QUALITY #3 additional cases", () => {
+  it("invalid signature → 401, no business logic invoked", async () => {
+    m.mockValidateSig.mockReturnValueOnce(false);
+    const req = makeRequest({
+      body: { type: "payment", data: { id: "pay-bad-sig" } },
+      xRequestId: "req-bad-sig-1",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(401);
+    expect(m.mockGetPaymentStatus).not.toHaveBeenCalled();
+    expect(m.mockGetSubscriptionStatus).not.toHaveBeenCalled();
+    expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
+    expect(m.mockAddCreditsToStore).not.toHaveBeenCalled();
+  });
+
+  it("invalid JSON body → 400, signature/dedup not invoked", async () => {
+    const req = {
+      headers: {
+        get(name: string) {
+          if (name.toLowerCase() === "x-request-id") return "req-bad-json-1";
+          if (name.toLowerCase() === "x-signature") return "ts=1,v1=deadbeef";
+          return null;
+        },
+      },
+      json: async () => {
+        throw new Error("invalid json");
+      },
+    } as unknown as NextRequest;
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect(m.mockValidateSig).not.toHaveBeenCalled();
+    expect(m.mockDedupWebhook).not.toHaveBeenCalled();
+  });
+
+  it("dedup throws → returns 200 with error flag (fail-closed for retry-loop avoidance)", async () => {
+    m.mockDedupWebhook.mockRejectedValueOnce(new Error("dedup transport down"));
+    const req = makeRequest({
+      body: { type: "payment", data: { id: "pay-dedup-fail" } },
+      xRequestId: "req-dedup-fail-1",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ received: true, error: "dedup_failed" });
+    // captureError invoked for ops visibility
+    expect(m.mockCaptureError).toHaveBeenCalled();
+    // Business logic NOT invoked
+    expect(m.mockGetPaymentStatus).not.toHaveBeenCalled();
+  });
+
+  it("getPaymentStatus throws → outer catch returns 200 + error flag (no retry storm)", async () => {
+    m.mockGetPaymentStatus.mockRejectedValueOnce(new Error("MP API 503"));
+    const req = makeRequest({
+      body: { type: "payment", data: { id: "pay-mp-down" } },
+      xRequestId: "req-mp-down-1",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ received: true, error: true });
+    expect(m.mockCaptureError).toHaveBeenCalled();
+    // markWebhookProcessed must NOT be called -- row stays for ops reconcile
+    expect(m.mockMarkWebhookProcessed).not.toHaveBeenCalled();
+  });
+});

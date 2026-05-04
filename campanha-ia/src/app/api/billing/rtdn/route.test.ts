@@ -178,3 +178,76 @@ describe("RTDN webhook — Phase 1 regressions", () => {
     expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Phase 02 / Plan 02-05 Task 6 — additional handler-level coverage (QUALITY #3)
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("RTDN webhook — Plan 02-05 / QUALITY #3 additional cases", () => {
+  it("invalid Pub/Sub JWT → 401, no business logic invoked", async () => {
+    m.mockVerifyJwt.mockResolvedValueOnce({ ok: false } as never);
+    const res = await POST(makeRtdn({ notificationType: 2 }));
+    expect(res.status).toBe(401);
+    expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
+  });
+
+  it("dedup duplicate messageId → 200 + duplicate flag, no plan change", async () => {
+    m.mockDedupWebhook.mockResolvedValueOnce({ duplicate: true });
+    const res = await POST(makeRtdn({ notificationType: 2, messageId: "msg-dup-1" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.duplicate).toBe(true);
+    expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
+  });
+
+  it("packageName mismatch in inner payload → 400", async () => {
+    const innerPayload = {
+      version: "1.0",
+      packageName: "com.different.app", // mismatch
+      eventTimeMillis: String(Date.now()),
+      subscriptionNotification: {
+        version: "1.0",
+        notificationType: 2,
+        purchaseToken: "tok-bad",
+        subscriptionId: "pro_mensal",
+      },
+    };
+    const envelope = {
+      message: {
+        data: Buffer.from(JSON.stringify(innerPayload)).toString("base64"),
+        messageId: "msg-bad-pkg",
+      },
+    };
+    const req = {
+      headers: { get: () => "Bearer fake-jwt" },
+      json: async () => envelope,
+    } as unknown as NextRequest;
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
+  });
+
+  it("test notification (testNotification key in payload) → 200 kind='test', no plan change", async () => {
+    const innerPayload = {
+      version: "1.0",
+      packageName: "com.crialook.app",
+      eventTimeMillis: String(Date.now()),
+      testNotification: { version: "1.0" },
+    };
+    const envelope = {
+      message: {
+        data: Buffer.from(JSON.stringify(innerPayload)).toString("base64"),
+        messageId: "msg-test-1",
+      },
+    };
+    const req = {
+      headers: { get: () => "Bearer fake-jwt" },
+      json: async () => envelope,
+    } as unknown as NextRequest;
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.kind).toBe("test");
+    expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
+  });
+});
