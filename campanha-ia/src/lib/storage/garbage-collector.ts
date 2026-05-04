@@ -5,7 +5,17 @@
  *   Exclui imagens (product-photos, campaign-outputs, model-previews)
  *   de campanhas com mais de 25 dias que NÃO foram favoritadas pelo lojista.
  *
- * Execução: CronJob via Inngest — roda 1x/dia às 03:00 UTC (00:00 BRT)
+ * Execução: CronJob via Inngest — roda 1x/dia às 03:00 UTC (00:00 BRT).
+ *   Function:  storageGarbageCollectorCron
+ *   File:      src/lib/inngest/storage-gc.ts
+ *   Cron:      `triggers: [{ cron: "0 3 * * *" }]`
+ *   Registry:  src/lib/inngest/functions.ts → inngestFunctions[]
+ *   Endpoint:  src/app/api/inngest/route.ts (Inngest serve handler)
+ *   Manual:    storageGarbageCollectorManual responde a evento
+ *              "storage/gc.requested" (dryRun por default = true) — usado
+ *              pelo painel admin via /api/admin/storage-gc.
+ *   Lock:      concurrency.key="storage-gc-global" garante que cron + manual
+ *              nunca rodam em paralelo (evita double-delete).
  *
  * Buckets varridos:
  *   - product-photos   → fotos originais do produto (upload do lojista)
