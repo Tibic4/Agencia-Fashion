@@ -35,13 +35,23 @@ export default defineConfig({
         // (35/35/30/35) eram aspiracionais — `npm test --coverage` mostrou
         // cobertura real em ~24% lines / ~19% branches / ~15% functions porque
         // muitos hooks de tela ainda não têm teste (camera, biometric, push).
-        // Pisos ajustados pra atual - 2pp como ratchet honesto: bloqueia
-        // regressão sem mentir sobre cobertura. Phase 6 sobe de volta ao
-        // adicionar os testes faltantes.
-        lines: 22,
-        functions: 13,
-        branches: 17,
-        statements: 21,
+        // Pisos ajustados pra atual - 2pp como ratchet honesto.
+        //
+        // Phase 6 (2026-05-04): testes novos (billing, auth, deep-link UUID
+        // via vitest; ErrorBoundary + TabErrorBoundary via jest — não contam
+        // pra esse pool) subiram cobertura. Medidas reais pós-Phase 6:
+        // Stmts 27.67 / Branches 23.46 / Funcs 18.56 / Lines 29.18. Pisos
+        // elevados pro floor das medidas (round-down) — bloqueia regressão
+        // dos novos testes sem ficar acima da cobertura real (que quebraria
+        // o CI no commit que sobe os pisos). D-10 spec target era 30/35
+        // (lines/funcs); lines está perto (29 vs 30) mas funcs ainda longe
+        // (18 vs 35) — manter o ratchet honesto agora, subir mais quando
+        // hooks de tela (camera, biometric, push) ganharem cobertura.
+        // Valores anteriores: 22 / 13 / 17 / 21 (lines/funcs/branches/stmts).
+        lines: 29,
+        functions: 18,
+        branches: 23,
+        statements: 27,
       },
     },
   },

@@ -94,6 +94,7 @@
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "@vitest/coverage-v8": "^4.1.5",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~55.0.0",
