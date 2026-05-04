@@ -14,7 +14,8 @@
       "env": {
         "APP_VARIANT": "development",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuY3JpYWxvb2suY29tLmJyJA",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_PLACEHOLDER_DEV_REPLACE_BEFORE_BUILD",
+        "EXPO_PUBLIC_SENTRY_DSN": "PLACEHOLDER_DSN_REPLACE_BEFORE_BUILD",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -27,7 +28,8 @@
       "env": {
         "APP_VARIANT": "preview",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuY3JpYWxvb2suY29tLmJyJA",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_PLACEHOLDER_PREVIEW_REPLACE_BEFORE_BUILD",
+        "EXPO_PUBLIC_SENTRY_DSN": "PLACEHOLDER_DSN_REPLACE_BEFORE_BUILD",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -40,8 +42,9 @@
       "env": {
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuY3JpYWxvb2suY29tLmJyJA",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_PLACEHOLDER_PROD_REPLACE_BEFORE_BUILD",
+        "EXPO_PUBLIC_SENTRY_DSN": "PLACEHOLDER_DSN_REPLACE_BEFORE_BUILD",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "false"
       }
     }
   },
