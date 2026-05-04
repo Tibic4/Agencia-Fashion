@@ -12,10 +12,10 @@
  *   APP_VARIANT=preview     → CriaLook (Preview), com.crialook.app.preview, scheme crialook-preview
  *   (default) production    → CriaLook, com.crialook.app, scheme crialook
  *
- * Seção iOS agora presente (estava sumida no app.json antigo, o que teria
- * bloqueado qualquer build iOS e desligado Universal Links em Apple
- * silenciosamente). Strings NS*UsageDescription moram aqui pro prebuild
- * regenerar Info.plist determinístico.
+ * **Android-only product** — não temos seção `ios` aqui de propósito (M2 P7).
+ * O app é distribuído exclusivamente via Play Store (eas.json só tem build
+ * targets `android.buildType`). Strings NS*UsageDescription / associatedDomains
+ * / supportsTablet vivem na história do git se algum dia voltarmos pra iOS.
  */
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import * as fs from 'node:fs';
@@ -103,28 +103,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#D946EF',
     },
   },
-  ios: {
-    bundleIdentifier: bundleId,
-    supportsTablet: true,
-    // HTTPS-only e não shipamos primitivas criptográficas além de TLS,
-    // então pulamos a pergunta de export-compliance que a Apple faz toda release.
-    config: { usesNonExemptEncryption: false },
-    infoPlist: {
-      ITSAppUsesNonExemptEncryption: false,
-      NSCameraUsageDescription:
-        'Permitir que o CriaLook acesse sua câmera para fotografar peças de roupa.',
-      NSPhotoLibraryUsageDescription:
-        'Permitir que o CriaLook acesse suas fotos para selecionar imagens de produtos.',
-      NSPhotoLibraryAddUsageDescription:
-        'Permitir que o CriaLook salve as campanhas geradas na sua galeria.',
-    },
-    // Universal Links: servido de https://crialook.com.br/.well-known/apple-app-site-association.
-    // O arquivo AASA tem que listar o bundle id com prefixo do team e um
-    // path component `/campaign/*` casando com o intent filter do Android.
-    // Sem isso, deep link de email / SMS / Safari abre o site no browser
-    // em vez do app no iOS.
-    associatedDomains: ['applinks:crialook.com.br'],
-  },
+  // (sem seção `ios`) — Android-only product per M2 P7. Se algum dia
+  // voltarmos a buildar iOS, o histórico do git tem o último snapshot
+  // funcional (bundleIdentifier por variant, NS*UsageDescription pt-BR,
+  // associatedDomains pra Universal Links).
   android: {
     adaptiveIcon: {
       foregroundImage: adaptiveIconPath,
@@ -235,10 +217,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           // não habilitam parecem velhos.
           enablePredictiveBackGesture: true,
         },
-        ios: {
-          // Bate com o default do SDK 54; bumpar exige checar compat de pods.
-          deploymentTarget: '15.1',
-        },
+        // (sem bloco `ios`) — Android-only product per M2 P7.
       },
     ],
     // Skia 2.x não exporta mais subpath `/plugin` — autolinking do Expo cuida
