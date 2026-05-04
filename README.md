@@ -18,7 +18,7 @@ Monorepo: **web Next.js** ([`campanha-ia/`](./campanha-ia/)) + **app mobile Expo
 ![Tailwind](https://img.shields.io/badge/Tailwind-4-38B2AC?style=flat-square&logo=tailwind-css)
 
 ![Status](https://img.shields.io/badge/status-em%20produção-success?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-33%20passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square)
 ![License](https://img.shields.io/badge/license-proprietary-lightgrey?style=flat-square)
 
 </div>
@@ -166,7 +166,7 @@ Tudo via **pipeline de IA multi-modelo** orquestrado em paralelo (~50-60s end-to
 - **Brotli + Nginx `proxy_cache`** em rotas estáticas (com bypass automático para usuários logados) — landing serve em ~14ms internos, throughput 693 req/s
 
 ### Qualidade de código
-- **33 testes unitários** web (Vitest) — HMAC validator, rate-limiter, editor sessions, validation
+- **184 testes unitários** web (Vitest) — HMAC validator, rate-limiter, editor sessions, validation, judge pipeline, payments webhooks
 - **Component tests** mobile (jest + jest-expo) — pulsing badge, hooks de geração, image picker
 - **TypeScript strict** com `noFallthroughCasesInSwitch` + `noImplicitOverride`
 - **CI verde** em cada PR (lint + typecheck + build + tests)

@@ -56,8 +56,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: campanha-ia/package-lock.json
       - run: npm ci
-      - name: Run vitest
-        run: npm test --if-present -- --run
+      - name: Run vitest with coverage
+        run: npm test --if-present -- --run --coverage
 
   mobile-typecheck-test:
     name: Type-check + Unit tests (crialook-app)
@@ -82,5 +82,8 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      - name: Run vitest (lib utils)
-        run: npm test
+      - name: Lint
+        run: npm run lint
+
+      - name: Run vitest (lib utils) with coverage
+        run: npm test -- --coverage

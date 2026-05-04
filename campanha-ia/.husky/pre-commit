@@ -1,12 +1,21 @@
 #!/usr/bin/env sh
-# Bloqueia commit com lint/type errors.
+# Phase 3 D-01: pre-commit gate — typecheck + lint-staged on staged TS/TSX files.
 #
-# Why no lint-staged: a versão 16 tem um bug com Node v24 onde a tentativa de
-# checkpoint via `git` interno falha com ENOENT mesmo com git no PATH.
-# Trade-off: o tsc varre o projeto inteiro (não só staged) — fica ~3s mais
-# lento, mas zero risco de commit com erro de tipo.
+# History: lint-staged 16 + Node v24 had an ENOENT git-checkpoint bug.
+# Sidestepped here with --no-stash, which skips the internal git stash
+# checkpoint that caused the failure. Trade-off: if the hook fails,
+# auto-fixes from `eslint --fix` may leave the working tree dirty —
+# reviewer must `git checkout` to revert. Acceptable since hook failures
+# block the commit anyway.
+#
+# tsc --noEmit varre o projeto inteiro (~3s) — caro mas garante zero risco
+# de commit com erro de tipo. lint-staged só toca arquivos em stage (~ms).
 cd campanha-ia || exit 1
 npx tsc --noEmit || {
   echo "✗ TypeScript errors — commit abortado"
+  exit 1
+}
+npx --no-install lint-staged --no-stash || {
+  echo "✗ lint-staged failed — commit abortado"
   exit 1
 }

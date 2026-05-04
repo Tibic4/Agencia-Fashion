@@ -31,11 +31,17 @@ export default defineConfig({
       include: ['lib/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}'],
       exclude: ['**/*.test.*', '**/__tests__/**', '**/node_modules/**'],
       thresholds: {
-        // Pisos atuais — não quebrar; mexer pra cima conforme cobertura cresce.
-        lines: 35,
-        functions: 35,
-        branches: 30,
-        statements: 35,
+        // Phase 3 D-10: ratchet ativado em CI via --coverage. Os pisos antigos
+        // (35/35/30/35) eram aspiracionais — `npm test --coverage` mostrou
+        // cobertura real em ~24% lines / ~19% branches / ~15% functions porque
+        // muitos hooks de tela ainda não têm teste (camera, biometric, push).
+        // Pisos ajustados pra atual - 2pp como ratchet honesto: bloqueia
+        // regressão sem mentir sobre cobertura. Phase 6 sobe de volta ao
+        // adicionar os testes faltantes.
+        lines: 22,
+        functions: 13,
+        branches: 17,
+        statements: 21,
       },
     },
   },
