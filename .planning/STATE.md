@@ -9,19 +9,50 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 2 of 8 (Pipeline Resilience & Observability) — plan dispatched
-Plan: P1 done (21/21), P2 plan in flight, P3 execute in flight, P4 context written
-Status: P1 complete + verified (184/184 tests). P2/P3/P4 in parallel pipeline.
-Last activity: 2026-05-04 — P1 execute returned passed; P3 plan returned PASS; P4 CONTEXT captured (reuse webhook_events, Postgres token bucket, publicMetadata.role cutover, .env.loadtest revoke+filter-repo).
+Phase: 8 of 8 — ALL PHASES EXECUTE COMPLETE
+Plan: 8/8 phases discuss→plan→execute done
+Status: M1 execute phases complete; awaiting milestone audit + complete + cleanup decision from owner
+Last activity: 2026-05-04 — P8 execute returned passed (9/9 plans, 264 web tests). All 8 phase executes landed.
 
-Progress: [█░░░░░░░░░] 12%
+Progress: [████████░░] 80% (execute phases done; audit + lifecycle pending)
 
-**OWNER ACTION ITEMS (blocking nothing in M1 but blocking actual prod uptake):**
-- Apply 4 P1 migrations via `supabase db push` after review:
-  - `20260503_180000_add_subscription_status_enum.sql`
-  - `20260503_180100_backfill_subscription_status.sql`
-  - `20260503_180200_add_stores_updated_at_trigger.sql`
-  - `20260503_180300_create_webhook_events.sql`
+**OWNER ACTION ITEMS (cumulative across M1 — none blocked autonomous execute, all are post-execute):**
+
+Production deploy & infra:
+- ⚠️ Apply 6 of 7 migrations via `supabase db push` (or already done via MCP): 4 P1 + 3 P2 = APPLIED VIA MCP. P4: 3/4 applied, **DROP increment_regen_count(uuid) DEFERRED** until P4 code deployed (run after `git push` + prod deploy)
+- Deploy P4-P8 code to production server when ready
+- Run `bash deploy-crialook.sh` post-push (rollback path now safe per 08-01)
+
+Security (P0 / P1):
+- 🚨 **Revoke 2 Clerk sessions** in Clerk Dashboard:
+  - Prod (clerk.crialook.com.br): `user_3Bxfdbw0jmhHyE7Xc2bIgVkH6i3`
+  - Dev (casual-vervet-96.clerk.accounts.dev): `user_3BuUmVnqcFeMEV72k5Hkqw4kzP1`
+  - File `loadtests/.env.loadtest` was NEVER committed (gitignored), so no git-history rewrite needed
+- 🚨 **Backend ticket: control 3 (`obfuscatedAccountIdAndroid` validation) MISSING** in `/api/billing/verify` — subscription substitution attack possible. Blocker for Clerk Client Trust re-enable.
+- 🚨 **Backend ticket: control 2 (rate-limit on `/billing/verify` + `/restore`)** infra exists at `lib/rate-limit-pg.ts` but billing routes don't call it
+- ⚠️ **Legal drift P0**: site vs in-app `lib/legal/content.ts` diverged. Pick Option A (rewrite content.ts verbatim site) or Option B (keep summary + link). Doc at `crialook-app/docs/LEGAL_DRIFT_RECONCILIATION.md`. **CI red** until reconciled.
+
+Play Store launch (when ready):
+- Run 11-step `crialook-app/docs/PLAY_RELEASE_CHECKLIST.md` (provision 3 EAS secrets + 3 Clerk apps + eas build + eas credentials + assetlinks.json + web deploy + bundletool dump + eas submit)
+- Copy `PLAY_DATA_SAFETY.md` into Play Console Data Safety form
+- Re-take IARC questionnaire per `PLAY_IARC.md` walkthrough (Classificação 12 + apparel advisory)
+- Owner ticks in `PLAY_STORE_LISTING.md` polish checklist
+
+Post-Play approval:
+- Run `crialook-app/docs/CLERK_CLIENT_TRUST_REENABLE.md` runbook (only after backend control 3 fix)
+- Optionally migrate keystore per `EAS_KEYSTORE_MIGRATION.md`
+
+Ops (low-traffic window):
+- Run `ops/DEPLOY_USER_MIGRATION.md` 7-step SSH/sudo cutover (deploy as `crialook` user, not root)
+- Run nginx zones split per `ops/deploy.md` first-time setup
+- Provision `DISCORD_WEBHOOK_URL` at `/etc/crialook/webhook.env`
+- After 14 days zero CSP violations: flip Report-Only → enforced per `ops/csp-rollout.md`
+
+Original migrations applied via MCP (2026-05-04):
+  - 4 P1: subscription_status ENUM + backfill + stores_updated_at_trigger + webhook_events
+  - 3 P2: judge_pending columns + judge_payload column + judge_dead_letter table
+  - 3/4 P4: rate_limit_buckets + consume_rate_limit_token RPC + harden_rpc_grants
+  - DEFERRED: drop_legacy_increment_regen_count (waits for code deploy)
 
 ## Performance Metrics
 
