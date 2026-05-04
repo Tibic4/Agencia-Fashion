@@ -9,12 +9,13 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 8 of 8 — ALL PHASES EXECUTE COMPLETE
-Plan: 8/8 phases discuss→plan→execute done
-Status: M1 execute phases complete; awaiting milestone audit + complete + cleanup decision from owner
-Last activity: 2026-05-04 — P8 execute returned passed (9/9 plans, 264 web tests). All 8 phase executes landed.
+Phase: M2 P1 (Backend security gaps) — starting; M1 phases complete
+Plan: M1 8/8 done; M2 has 8 phases per .planning/M2-NOTES.md
+Status: M1 audit done (35/45 success criteria PASS, 2 real gaps targeted by M2). M2 starting per "consertar absolutamente tudo" + 3 owner decisions: 1=B (legal link), 2=A (Expo SDK 55 full), 3=A (DROP applied via MCP).
+Last activity: 2026-05-04 — DROP `increment_regen_count(uuid)` migration applied via MCP (8 schema_migrations rows added by M1+M2 so far).
 
-Progress: [████████░░] 80% (execute phases done; audit + lifecycle pending)
+Progress M1: [██████████] 100% executed (audit done, owner-actions backlogged)
+Progress M2: [░░░░░░░░░░] 0% (8 phases ahead)
 
 **OWNER ACTION ITEMS (cumulative across M1 — none blocked autonomous execute, all are post-execute):**
 
