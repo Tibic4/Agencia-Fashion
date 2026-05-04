@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError, logger } from "@/lib/observability";
+import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import {
   GooglePlayNotConfiguredError,
   acknowledgeSubscription,
@@ -42,6 +43,25 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    // M2 Phase 1 — compensating control 2: per-user rate limit. Same budget
+    // as /billing/verify (30 reqs / 5min) — restore is only triggered by an
+    // explicit user button, so brute-forcing it would be very visible UI-wise.
+    {
+      const bucket = await consumeTokenBucket(
+        `billing.restore:${userId}`,
+        30,
+        30,
+        300,
+      );
+      if (!bucket.allowed) {
+        const retryAfterSec = Math.max(1, Math.ceil(bucket.retryAfterMs / 1000));
+        return NextResponse.json(
+          { error: "Muitas tentativas. Aguarde alguns minutos.", code: "RATE_LIMITED" },
+          { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+        );
+      }
     }
 
     if (!isGooglePlayConfigured()) {
