@@ -6,7 +6,7 @@
  * (replayed svix-id short-circuits via dedupWebhook).
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { NextRequest } from "next/server";
 
 const m = vi.hoisted(() => ({
@@ -52,8 +52,8 @@ const SECRET_RAW = "supersecretkeyforhash";
 const SECRET_B64 = Buffer.from(SECRET_RAW).toString("base64");
 process.env.CLERK_WEBHOOK_SECRET = `whsec_${SECRET_B64}`;
 
-function buildSvixHeaders(svixId: string, payload: string) {
-  const ts = String(Math.floor(Date.now() / 1000));
+function buildSvixHeaders(svixId: string, payload: string, tsOverride?: string) {
+  const ts = tsOverride ?? String(Math.floor(Date.now() / 1000));
   const signedPayload = `${svixId}.${ts}.${payload}`;
   const sig = createHmac("sha256", Buffer.from(SECRET_RAW)).update(signedPayload).digest("base64");
   return {
@@ -65,9 +65,9 @@ function buildSvixHeaders(svixId: string, payload: string) {
 
 import { POST } from "./route";
 
-function makeRequest(body: Record<string, unknown>, svixId: string): NextRequest {
+function makeRequest(body: Record<string, unknown>, svixId: string, tsOverride?: string): NextRequest {
   const payload = JSON.stringify(body);
-  const headers = buildSvixHeaders(svixId, payload);
+  const headers = buildSvixHeaders(svixId, payload, tsOverride);
   const headerMap = new Map(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v]));
   return {
     headers: {
@@ -131,5 +131,50 @@ describe("Clerk webhook — Phase 1 regressions", () => {
     await POST(makeRequest(body, "msg_existed_1"));
     expect(m.mockCreateStore).not.toHaveBeenCalled();
     expect(m.mockMarkWebhookProcessed).toHaveBeenCalled();
+  });
+});
+
+describe("Clerk webhook — Phase 4 D-24 timestamp skew", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-04T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("rejects timestamp older than 5 minutes (returns 401)", async () => {
+    const oldTs = String(Math.floor(Date.now() / 1000) - 301);
+    const body = { type: "user.created", data: { id: "user_skew_old" } };
+    const res = await POST(makeRequest(body, "msg_skew_old", oldTs));
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toMatch(/Timestamp out of range/);
+    expect(m.mockCreateStore).not.toHaveBeenCalled();
+  });
+
+  it("rejects timestamp more than 30s in the future (returns 401)", async () => {
+    const futureTs = String(Math.floor(Date.now() / 1000) + 31);
+    const body = { type: "user.created", data: { id: "user_skew_future" } };
+    const res = await POST(makeRequest(body, "msg_skew_future", futureTs));
+    expect(res.status).toBe(401);
+    expect(m.mockCreateStore).not.toHaveBeenCalled();
+  });
+
+  it("accepts timestamp at the boundary (5min past, allowed)", async () => {
+    const boundaryTs = String(Math.floor(Date.now() / 1000) - 299);
+    const body = { type: "user.created", data: { id: "user_boundary" } };
+    const res = await POST(makeRequest(body, "msg_boundary", boundaryTs));
+    expect(res.status).toBe(200);
+    expect(m.mockCreateStore).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects non-numeric timestamp (returns 400)", async () => {
+    const body = { type: "user.created", data: { id: "user_nan" } };
+    const res = await POST(makeRequest(body, "msg_nan", "not-a-number"));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/Invalid timestamp/);
   });
 });
