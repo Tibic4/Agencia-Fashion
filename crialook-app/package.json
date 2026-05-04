@@ -21,6 +21,7 @@
     "test:rn": "jest",
     "test:rn:watch": "jest --watch",
     "check:legal-drift": "node scripts/check-legal-drift.js",
+    "play:prep": "bash ../scripts/play-release-prep.sh",
     "storybook:dev": "storybook dev -p 6006",
     "storybook:build": "storybook build -o storybook-static"
   },
