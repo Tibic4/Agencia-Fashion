@@ -703,7 +703,7 @@ export async function logApiCost(input: LogApiCostInput) {
 // ═══════════════════════════════════════════════════════════
 
 /** Atualiza o plano da loja (webhook do Mercado Pago) */
-export async function updateStorePlan(storeId: string, planName: string, mpSubscriptionId?: string) {
+export async function updateStorePlan(storeId: string, planName: string, mpSubscriptionId?: string | null) {
   const supabase = createAdminClient();
 
   // Buscar ID do plano
@@ -723,12 +723,21 @@ export async function updateStorePlan(storeId: string, planName: string, mpSubsc
     .single();
   const planChanged = storeData?.plan_id !== plan.id;
 
+  // Phase 1 / C-2: only mutate mercadopago_subscription_id when caller EXPLICITLY
+  // passes one. `undefined` = preserve existing (renewal payment path); `null` = clear
+  // (legacy callers, or explicit clear); `string` = set.
+  const subUpdate =
+    mpSubscriptionId === undefined ? {} : { mercadopago_subscription_id: mpSubscriptionId };
+
   // Atualizar loja
   await supabase
     .from("stores")
     .update({
       plan_id: plan.id,
-      mercadopago_subscription_id: mpSubscriptionId || null,
+      ...subUpdate,
+      // updated_at is auto-set by the BEFORE UPDATE trigger from 20260503_180200.
+      // Keeping the explicit set here is harmless (trigger overrides) but redundant —
+      // we leave it for backward-compat readability.
       updated_at: new Date().toISOString(),
     })
     .eq("id", storeId);
