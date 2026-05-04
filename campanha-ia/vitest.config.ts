@@ -31,10 +31,14 @@ export default defineConfig({
         // ajustados pra atual - 2pp como ratchet honesto: bloqueia regressão
         // sem mentir sobre cobertura. Phase 6 sobe de volta pra 30+ ao adicionar
         // os testes faltantes (auth/billing/webhooks).
-        lines: 15,
-        functions: 20,
-        branches: 10,
-        statements: 15,
+        //
+        // Phase 02 (Plan 02-05): +40 testes (224/224 pass) elevaram a cobertura
+        // pra ~21% lines, ~14% branches, ~27% functions, ~21% statements.
+        // Pisos elevados pra current-2pp como ratchet honesto.
+        lines: 19,
+        functions: 24,
+        branches: 11,
+        statements: 18,
       },
     },
   },
