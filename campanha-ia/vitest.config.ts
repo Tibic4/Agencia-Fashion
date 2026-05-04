@@ -35,10 +35,14 @@ export default defineConfig({
         // Phase 02 (Plan 02-05): +40 testes (224/224 pass) elevaram a cobertura
         // pra ~21% lines, ~14% branches, ~27% functions, ~21% statements.
         // Pisos elevados pra current-2pp como ratchet honesto.
-        lines: 19,
-        functions: 24,
-        branches: 11,
-        statements: 18,
+        //
+        // Phase 04 (Plans 04-01..04-05): +35 testes (259/259 pass) elevaram pra
+        // ~22.7% lines, ~15.7% branches, ~29.5% functions, ~22.5% statements.
+        // Pisos atualizados pra current-2pp.
+        lines: 20,
+        functions: 27,
+        branches: 13,
+        statements: 20,
       },
     },
   },
