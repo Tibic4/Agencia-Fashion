@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, createStoreModel, listStoreModels, getStorePlanName, getModelLimitForPlan, consumeCredit, getStoreCredits } from "@/lib/db";
@@ -103,7 +104,6 @@ export async function POST(request: NextRequest) {
 
       // Sharp resize para reduzir tokens
       try {
-        const sharp = (await import("sharp")).default;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
         processedBuffer = await sharp(processedBuffer as any)
           .resize(768, 768, { fit: "inside", withoutEnlargement: true })

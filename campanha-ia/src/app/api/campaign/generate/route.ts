@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import sharp from "sharp";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
 // runMockPipeline is dynamically imported below ONLY in IS_DEMO_MODE so that
 // Next's tree-shaker (and any prod bundle audit) drops the mock fixtures from
@@ -335,7 +336,6 @@ export async function POST(request: NextRequest) {
 
     // Sharp downscale: max 1536px, WEBP 80% — Gemini só precisa de 1024-1536px
     try {
-      const sharp = (await import("sharp")).default;
       const originalSize = imageBuffer.length;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
       imageBuffer = await sharp(imageBuffer as any)
@@ -381,7 +381,6 @@ export async function POST(request: NextRequest) {
       let mime: "image/jpeg" | "image/png" | "image/webp" | "image/gif" =
         file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
       try {
-        const sharp = (await import("sharp")).default;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
         buf = await sharp(buf as any)
           .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
@@ -1001,7 +1000,6 @@ export async function POST(request: NextRequest) {
               });
             } else if (isTrialOnly) {
               try {
-                const sharp = (await import("sharp")).default;
                 const modelBuf = Buffer.from(modelImageBase64!, "base64");
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
                 const meta = await sharp(modelBuf as any).metadata();
