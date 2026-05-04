@@ -340,39 +340,6 @@ export async function incrementRegenCount(campaignId: string, storeId: string): 
   return data ?? 0;
 }
 
-/**
- * Verifica se a campanha pode regenerar.
- *
- * Gateada por `FEATURE_REGENERATE_CAMPAIGN=1`. Default = OFF (mantém comportamento
- * histórico onde a rota /api/campaign/[id]/regenerate sempre retornava 403).
- *
- * Pra reativar: setar env var → preencher `limitForPlan` abaixo com limites reais
- * por plano (gratis/basico/pro/ultra) → cobrir com testes de quota.
- */
-export async function canRegenerate(campaignId: string, _storeId: string): Promise<{ allowed: boolean; used: number; limit: number }> {
-  const supabase = createAdminClient();
-
-  const { data: campaign } = await supabase
-    .from("campaigns")
-    .select("regen_count")
-    .eq("id", campaignId)
-    .single();
-
-  const used = campaign?.regen_count || 0;
-
-  // Feature flag: default off. Quando for ligar, implementar `limitForPlan(storeId)`
-  // (lookup do plano da loja → limite mensal de regen) antes de remover esse early return.
-  const featureEnabled = process.env.FEATURE_REGENERATE_CAMPAIGN === "1";
-  if (!featureEnabled) {
-    return { allowed: false, used, limit: 0 };
-  }
-
-  // TODO(regenerate-launch): substituir por lookup real de plano antes de habilitar em prod.
-  // Limite placeholder de 3 regens/campanha enquanto a feature está em testes.
-  const limit = 3;
-  return { allowed: used < limit, used, limit };
-}
-
 /** Gera um token de prévia para uma campanha */
 export async function generatePreviewToken(campaignId: string): Promise<string> {
   const supabase = createAdminClient();

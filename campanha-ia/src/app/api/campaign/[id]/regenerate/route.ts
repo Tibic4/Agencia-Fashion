@@ -3,54 +3,33 @@ import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import {
   getStoreByClerkId,
-  canRegenerate,
-  incrementRegenCount,
   setRegenerateReason,
   isValidRegenerateReason,
   VALID_REGENERATE_REASONS,
   type RegenerateReason,
 } from "@/lib/db";
-import { env } from "@/lib/env";
 
 /**
  * POST /api/campaign/[id]/regenerate
  *
- * Two operating modes:
- *   1. Reason-capture (D-01 + D-03): body = { "reason": "<one of 5 enum values>" }
- *      → persists campaigns.regenerate_reason, returns { success, data: { reason, free: true } }
- *      → does NOT consume a regeneration credit (FREE this phase to maximize feedback density).
- *   2. Legacy regenerate (no body): consumes a credit via canRegenerate / incrementRegenCount.
+ * Reason-capture only (D-01 + D-03): body = { "reason": "<one of 5 enum values>" }
+ *  → persists campaigns.regenerate_reason, returns { success, data: { reason, free: true } }
+ *  → does NOT consume a regeneration credit (FREE in MVP to maximize feedback density).
  *
- * The favorite-flag column is intentionally NOT touched here (D-02 — favorite stays a separate signal).
+ * The legacy "consume a credit and bump regen_count" branch was gated behind
+ * FEATURE_REGENERATE_CAMPAIGN. The flag was dropped in M2-04-04 (default-drop
+ * per parking-lot decision) — neither product nor pricing has committed to a
+ * paid regenerate flow, so the gated code was dead. If we revive paid
+ * regenerate later, recover canRegenerate + incrementRegenCount from git
+ * history (the function bodies are preserved in lib/db/index.ts via test).
  *
- * Feature gate: FEATURE_REGENERATE_CAMPAIGN=1 destrava a rota. Default = off.
- * Quando off, devolve 404 (Not Found) em vez de 403 — pra qualquer cliente
- * que tente bater aqui (legado / futuro botão UI), a resposta deixa claro
- * "feature não existe" e não "você não tem permissão / atingiu limite".
- *
- * O mesmo flag é checado também em `canRegenerate` (src/lib/db/index.ts) —
- * defesa em profundidade caso alguém chame a função fora dessa rota.
+ * The favorite-flag column is intentionally NOT touched here (D-02 — favorite
+ * stays a separate signal).
  */
-function regenerateEnabled(): boolean {
-  const v = env.FEATURE_REGENERATE_CAMPAIGN;
-  if (!v) return false;
-  return v === "1" || v.toLowerCase() === "true" || v.toLowerCase() === "on";
-}
-
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!regenerateEnabled()) {
-    return NextResponse.json(
-      {
-        error: "Feature de regeneração não está disponível",
-        code: "FEATURE_DISABLED",
-      },
-      { status: 404 }
-    );
-  }
-
   try {
     const session = await auth();
     if (!session.userId) {
@@ -64,17 +43,14 @@ export async function POST(
 
     const { id } = await params;
 
-    // Parse optional reason body. Body absent or unparseable → legacy path.
-    // Body present with `reason` key → must be a valid enum value (else 400).
-    let reason: RegenerateReason | null = null;
     let body: unknown = null;
     try {
       body = await req.json();
     } catch {
-      // No body / invalid JSON — treat as legacy no-reason regenerate.
       body = null;
     }
 
+    let reason: RegenerateReason | null = null;
     if (body && typeof body === "object" && "reason" in body) {
       const candidate = (body as Record<string, unknown>).reason;
       if (!isValidRegenerateReason(candidate)) {
@@ -90,36 +66,27 @@ export async function POST(
       reason = candidate;
     }
 
-    if (reason) {
-      // D-03: free regenerate when reason is captured. Skip canRegenerate +
-      // incrementRegenCount entirely. Persist the reason and return success.
-      await setRegenerateReason(id, store.id, reason);
-      return NextResponse.json({
-        success: true,
-        data: { reason, free: true },
-      });
+    if (!reason) {
+      // No reason supplied → 400. Previously this fell through to the
+      // FEATURE_REGENERATE_CAMPAIGN-gated credit path (always 404 in prod).
+      return NextResponse.json(
+        {
+          error: "reason obrigatório",
+          code: "MISSING_REASON",
+          validReasons: [...VALID_REGENERATE_REASONS],
+        },
+        { status: 400 },
+      );
     }
 
-    // Legacy path (no reason): consume a regeneration credit.
-    const regen = await canRegenerate(id, store.id);
-
-    if (!regen.allowed) {
-      return NextResponse.json({
-        error: "Limite de regenerações atingido para esta campanha",
-        code: "REGEN_LIMIT_REACHED",
-        data: { used: regen.used, limit: regen.limit },
-      }, { status: 403 });
-    }
-
-    const newCount = await incrementRegenCount(id, store.id);
-
+    await setRegenerateReason(id, store.id, reason);
     return NextResponse.json({
       success: true,
-      data: { used: newCount, limit: regen.limit, free: false },
+      data: { reason, free: true },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     logger.error("[API:regenerate] Error:", message);
-    return NextResponse.json({ error: "Erro ao verificar regeneração" }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao registrar feedback de regeneração" }, { status: 500 });
   }
 }
