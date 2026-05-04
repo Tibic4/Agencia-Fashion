@@ -12,6 +12,12 @@
 
 **F-03 dependency.** Sentry DSN is currently absent from `eas.json` (F-03, fixed in Phase 5). Until that lands, the "App activity" category below is effectively NOT collected in the production AAB. Owner: re-validate this section before submission to match the AAB's actual behavior.
 
+**M3-01 status update (2026-05-03).** This doc was re-audited during M3-01 Play Launch Helpers. Findings:
+
+- Category 5 (Device or other IDs — push token) — `lib/legal/content.ts` privacy section does NOT yet have an explicit "Notificações" disclosure paragraph. **OWNER ACTION REMAINS**: add a paragraph to `content.ts` `privacidade` covering push token collection BEFORE submission. Suggested wording: *"Notificações: armazenamos um token de push enviado pelo Google Firebase para te avisar quando uma campanha terminar. Você pode desativar a qualquer momento nas configurações do Android."*
+- Category 3 (App activity / Sentry) — Sentry DSN handling is owner-discretion at submission time: if production AAB ships with the DSN populated (per `apply-clerk-keys` workflow + manual Sentry DSN edit), answer "Collected: Yes". If shipped with placeholder DSN (telemetry off), answer "Collected: No". The form can be amended post-submission.
+- Categories 1, 2, 4 — pre-filled below are accurate per current codebase; no owner discretion needed.
+
 ---
 
 ## Category 1: Photos and videos
@@ -108,7 +114,7 @@
   - In transit: TLS to Expo + Google FCM
   - At rest: token stored server-side; deleted on account deletion
 - **Source code ref:** `crialook-app/app.config.ts:189-195` (expo-notifications plugin block)
-- **In-app text reference:** `lib/legal/content.ts` → `privacidade` → notification disclosure (verify exists post-07-03 reconciliation; if absent, OWNER ACTION: add a "Notificações" disclosure paragraph to content.ts before submission)
+- **In-app text reference:** `lib/legal/content.ts` → `privacidade` → notification disclosure. **Audit 2026-05-03 (M3-01):** disclosure is ABSENT from content.ts; OWNER ACTION required before submission — add a "Notificações" paragraph (suggested wording in the "M3-01 status update" block at top of this doc)
 - [ ] Owner: tick when copied into Play Console
 
 ---
@@ -130,6 +136,7 @@ Before promoting an AAB from Internal Testing to Production track:
 | Date | Editor | Change |
 |------|--------|--------|
 | 2026-05-03 | Phase 7 plan 07-04 | Initial mapping for Play Store first submission; 5 categories enumerated |
+| 2026-05-03 | M3-01 (launch helpers) | Re-audit; confirmed Notificações disclosure ABSENT from content.ts (owner-action remains); pre-filled F-03/Sentry guidance for both AAB shapes |
 
 ## Why this doc exists
 

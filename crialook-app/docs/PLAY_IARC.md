@@ -131,6 +131,7 @@ When any of those land, the owner edits the answer in the relevant section above
 | Date | Editor | Change |
 |------|--------|--------|
 | 2026-05-03 | Phase 7 plan 07-05 | Initial bump from "Todos" → "Classificação 12" + apparel advisory; rationale per D-14; commit 258380b cited as prompt-hardening evidence |
+| 2026-05-03 | M3-01 (launch helpers) | Re-audit; questionnaire answers + advisory text remain accurate as-is. No content changes needed; doc fully owner-ready for Play Console paste |
 
 ## Cross-references
 

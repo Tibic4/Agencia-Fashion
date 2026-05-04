@@ -13,6 +13,44 @@
 
 ---
 
+## Automation Status
+
+> M3-01: classification of each step as AUTOMATED / PARTIALLY AUTOMATED / MANUAL /
+> MANUAL-IMPROVABLE, plus the helper script that covers it. ALL helpers are
+> owner-trigger only — they never call EAS/Clerk/Google Play APIs themselves.
+
+| #  | Step                                       | Status                | Helper command                                                  |
+|----|--------------------------------------------|-----------------------|-----------------------------------------------------------------|
+| —  | (boot) start the launch                    | —                     | `cd crialook-app && npm run play:secrets`                       |
+| 1  | Provision Sentry secrets in EAS            | MANUAL-IMPROVABLE     | `npm run play:secrets` (prints exact `eas secret:create` cmds)  |
+| 2  | Provision three Clerk applications         | MANUAL                | none (Clerk Dashboard click-ops)                                |
+| 3  | Replace `eas.json` placeholders            | MANUAL-IMPROVABLE     | edit `scripts/clerk-keys-mapping.md`, then `npm run play:apply-keys` |
+| 4  | Trigger first production build             | MANUAL                | `npm run play:preflight` (gate before `eas build`)              |
+| 5  | Extract App Signing key SHA-256            | MANUAL                | none (interactive `eas credentials` prompt)                     |
+| 6  | Update `assetlinks.json` and sync          | PARTIALLY AUTOMATED   | `npm run assetlinks:sync` + `npm run assetlinks:check` (M2 P5)  |
+| 7  | Deploy `campanha-ia` to production         | PARTIALLY AUTOMATED   | `cd ../campanha-ia && npm run deploy:check` then deploy script  |
+| 8  | Validate via Google digital-asset-links API| MANUAL-IMPROVABLE     | `npm run play:validate-deployed`                                |
+| 9  | Verify AAB manifest contains required perms| MANUAL-IMPROVABLE     | `npm run play:validate-aab -- ./path/to/app.aab`                |
+| 10 | Recovery branch (conditional)              | MANUAL                | none (executes only if step 9 fails)                            |
+| 11 | Submit to Play Internal Testing            | MANUAL-IMPROVABLE     | `npm run play:finalize` then owner runs printed `eas submit`    |
+
+**First command owner runs to begin the launch:**
+
+```bash
+cd crialook-app
+npm run play:secrets   # surfaces what to create in EAS for step 1
+```
+
+After step 1 + step 2 are done (out-of-band; Clerk Dashboard click-ops), owner
+populates `scripts/clerk-keys-mapping.md` and runs `npm run play:apply-keys`.
+After that, every subsequent step has a `play:*` helper that validates +
+prints the exact owner command.
+
+`npm run play:preflight` is the gate run RIGHT BEFORE `eas build` —
+it composes every check in one ordered run.
+
+---
+
 ## Pre-flight: confirm phase prep is in place
 
 ```bash
@@ -57,6 +95,9 @@ Without these, Sentry still REPORTS crashes (DSN-only path) — only stack
 de-minification fails. So this step is not strictly build-blocking, but the
 release is degraded without it.
 
+> **After this step, run `npm run play:secrets`** (from `crialook-app/`) to
+> verify the 3 secrets are present (helper probes `eas secret:list`).
+
 ---
 
 ## 2. Provision three Clerk applications (owner-action)
@@ -65,9 +106,21 @@ Follow `crialook-app/docs/CLERK_KEYS.md` §"Provisioning (Initial Setup)" — si
 sub-steps. Capture the three publishable keys (`pk_test_…`, `pk_test_…`,
 `pk_live_…`) for use in step 3.
 
+> **After this step, paste the 3 keys into `scripts/clerk-keys-mapping.md`** —
+> see step 3 below for the apply workflow.
+
 ---
 
 ## 3. Replace `eas.json` placeholders (owner-action)
+
+> **Recommended path (M3-01):** edit `scripts/clerk-keys-mapping.md` (paste
+> the 3 keys from step 2 into the table) and run `npm run play:apply-keys`
+> (from `crialook-app/`). The script validates 7 rules (prefix per profile,
+> distinctness, no placeholders) and atomically updates `eas.json`. Idempotent.
+>
+> The Sentry DSN values still need a manual edit of `eas.json` for now.
+>
+> The original full-manual workflow:
 
 Edit `crialook-app/eas.json`. Replace each placeholder string with the real
 value:
@@ -108,6 +161,10 @@ If the assertion fails, do NOT proceed.
 
 > R-C safeguard: this assertion is the gate. Don't `eas build` without it.
 
+> **After this step, run `npm run play:apply-keys -- --check`** (from
+> `crialook-app/`) to confirm `eas.json` is in sync with the mapping doc.
+> Then run `npm run play:preflight` (composes 4 checks) before step 4.
+
 ---
 
 ## 4. Trigger first production build (owner-action)
@@ -124,6 +181,10 @@ If the build fails:
 - Clerk init error -> step 3's pre-build assertion was bypassed.
 - Lockfile error -> ran `npm install` somewhere recently. Restore from git, run
   `npm run lock:fix`, retry.
+
+> **Before running `eas build` here, run `npm run play:preflight`** —
+> the master gate composes `play-release-prep.sh` + Clerk-keys check +
+> EAS-secrets probe + assetlinks endpoint reachable.
 
 ---
 
@@ -159,6 +220,9 @@ npm run assetlinks:sync   # copies authoritative -> campanha-ia/public/.well-kno
 npm run assetlinks:check  # confirm in sync (exits 0)
 ```
 
+> **After this step (after step 7's deploy), run `npm run play:validate-deployed`**
+> to confirm the live endpoint matches the local file byte-for-byte.
+
 Commit:
 
 ```bash
@@ -189,6 +253,9 @@ curl -s   https://crialook.com.br/.well-known/assetlinks.json | diff - crialook-
 
 The `diff` should produce no output.
 
+> **After this step, run `npm run play:validate-deployed`** — same diff but
+> with HTTP status, Content-Type, and Google API check rolled in.
+
 ---
 
 ## 8. Validate via Google digital-asset-links API (owner-action)
@@ -203,6 +270,9 @@ Expected: a `statements` array containing an entry with
 
 If empty or missing the package name, deep links will NOT auto-verify and the OS
 falls back to the "Open with…" picker. Re-check step 7.
+
+> **`npm run play:validate-deployed` already runs this check** — re-run it
+> if you ran it before step 7 propagated.
 
 ---
 
@@ -224,6 +294,12 @@ grep -E 'POST_NOTIFICATIONS|com\.android\.vending\.BILLING' ./manifest.xml
 
 Expected: at least 2 lines, one for each permission.
 
+> **Faster path:** `npm run play:validate-aab -- ./app.aab` runs `bundletool
+> dump manifest`, asserts both required perms, and prints the full
+> `uses-permission` list as a bonus. (Bundletool must be on `$PATH` or
+> `$BUNDLETOOL_JAR` env var must point to the .jar — script prints install
+> instructions if neither is found.)
+
 ---
 
 ## 10. If step 9 found anything missing (owner-action — conditional)
@@ -241,6 +317,10 @@ To recover (if needed):
 ---
 
 ## 11. Submit to Play Internal Testing (owner-action)
+
+> **Recommended path:** `npm run play:finalize` orchestrates: assetlinks
+> validation -> AAB manifest validation -> prints the exact `eas submit`
+> command for you to copy-paste. Does NOT auto-execute.
 
 ```bash
 cd crialook-app
@@ -317,9 +397,26 @@ If any step fails irrecoverably, here's the unwinding path.
 - `crialook-app/app.config.ts` — Android permissions, plugins.
 - `.planning/phases/05-play-prerelease-hygiene/05-CONTEXT.md` — D-12, D-13,
   D-14, D-15, D-16.
+- `.planning/phases/m3-01-play-launch-helpers/CONTEXT.md` — automation status
+  audit + helper coverage map.
 - `.planning/audits/CRIALOOK-PLAY-READINESS.md` §F-02, §F-03, §F-04, §F-07,
   §F-08 — original findings.
 - ROADMAP Phase 5 success criteria 1-5 — verified during step 11 post-submit
   smoke tests.
 - Project memories: `project_eas_npm_lock`, `project_clerk_client_trust`,
   `project_android_only`.
+
+### Helper scripts (M3-01)
+
+| Script (`crialook-app/` npm)     | Underlying file                              | Covers step(s) |
+|----------------------------------|----------------------------------------------|----------------|
+| `npm run play:secrets`           | `scripts/eas-secrets-prefill.sh`             | 1              |
+| `npm run play:apply-keys`        | `scripts/apply-clerk-keys.js`                | 3              |
+| `npm run play:apply-keys -- --check` | `scripts/apply-clerk-keys.js --check`    | 3 (verify)     |
+| `npm run play:preflight`         | `scripts/preflight-eas-build.sh`             | gate before 4  |
+| `npm run play:prep`              | `scripts/play-release-prep.sh` (M2 P6)       | gate before 4  |
+| `npm run assetlinks:sync`        | `crialook-app/scripts/sync-assetlinks.js` (M2 P5) | 6         |
+| `npm run assetlinks:check`       | `crialook-app/scripts/sync-assetlinks.js --check` (M2 P5) | 6 (verify) |
+| `npm run play:validate-deployed` | `scripts/validate-assetlinks-deployed.sh`    | 7, 8           |
+| `npm run play:validate-aab`      | `scripts/validate-aab-manifest.sh`           | 9              |
+| `npm run play:finalize`          | `scripts/play-store-finalize.sh`             | 8 + 9 + 11     |
