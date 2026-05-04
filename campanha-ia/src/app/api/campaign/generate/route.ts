@@ -13,7 +13,8 @@ import {
   consumeCredit,
   getStoreCredits,
 } from "@/lib/db";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/cf-ip";
+import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import { logger, captureError, hashStoreId } from "@/lib/observability";
 import * as Sentry from "@sentry/nextjs";
 
@@ -65,13 +66,23 @@ export async function POST(request: NextRequest) {
     const clerkUserId = session.userId;
     const targetLocale = parseTargetLocale(request);
 
-    // ── Rate limit por IP (anti-abuso) ──
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-      || request.headers.get("x-real-ip")
-      || "unknown";
-    const rateCheck = checkRateLimit(ip, { authenticated: !!clerkUserId });
-    if (!rateCheck.allowed) {
-      const retryMin = Math.ceil((rateCheck.retryAfterMs || 60000) / 60000);
+    // ── Auth gate (D-21): demo mode is dev-only; production requires userId ──
+    if (!IS_DEMO_MODE && !clerkUserId) {
+      return NextResponse.json({ error: "Não autenticado", code: "UNAUTHORIZED" }, { status: 401 });
+    }
+
+    // ── Rate limit (D-04 Postgres bucket; D-06 CF-aware; D-20 anon counter survives PM2 restart) ──
+    const clientIp = getClientIp(request);
+    const bucketKey = clerkUserId
+      ? `generate:user:${clerkUserId}`
+      : `generate:ip:${clientIp}`;
+    // Anon: 3 / hour. Auth: 15 / hour. Hourly window via 1 token per (3600/cap) seconds.
+    const isAuth = !!clerkUserId;
+    const capacity = isAuth ? 15 : 3;
+    const refillIntervalSec = Math.floor(3600 / capacity); // 1 token every (3600/cap) seconds
+    const bucket = await consumeTokenBucket(bucketKey, capacity, 1, refillIntervalSec);
+    if (!bucket.allowed) {
+      const retryMin = Math.ceil(bucket.retryAfterMs / 60000);
       return NextResponse.json({
         error: `Muitas gerações recentes. Tente novamente em ${retryMin} minuto${retryMin > 1 ? "s" : ""}.`,
         code: "RATE_LIMITED",
