@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "test:rn": "jest",
     "test:rn:watch": "jest --watch",
+    "check:legal-drift": "node scripts/check-legal-drift.js",
     "storybook:dev": "storybook dev -p 6006",
     "storybook:build": "storybook build -o storybook-static"
   },

@@ -87,3 +87,28 @@ jobs:
 
       - name: Run vitest (lib utils) with coverage
         run: npm test -- --coverage
+
+  legal-drift:
+    name: Legal content drift (crialook-app vs site)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crialook-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: crialook-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # Phase 7 D-06/D-07: fetches https://crialook.com.br/{privacidade,termos,dpo}
+      # and diffs against lib/legal/content.ts. Fail-soft on 5xx (site outage),
+      # hard-fail on 4xx (URL renamed) or content drift. See plan 07-03 for the
+      # day-zero baseline reconciliation and 07-07 for the script.
+      - name: Check legal content drift
+        run: npm run check:legal-drift
