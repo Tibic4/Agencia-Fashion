@@ -113,6 +113,13 @@ let cached: Env | null = null;
 /**
  * Faz parse e cacheia. Se falhar, joga erro com nomes das vars problemáticas.
  * Chamado de instrumentation.ts no boot — falha cedo.
+ *
+ * Em next build (sem env vars no shell), instrumentation.ts não roda — mas
+ * páginas que importam de @/lib/env ainda são prerendered e o Proxy trigga
+ * loadEnv. Pra não quebrar o build local, o Proxy abaixo cai em fallback
+ * pra process.env quando loadEnv falha. Em runtime real (com instrumentation
+ * disparada), loadEnv roda primeiro, popula o cache, e qualquer falha ali
+ * já abortou o boot.
  */
 export function loadEnv(): Env {
   if (cached) return cached;
@@ -157,8 +164,18 @@ export const env = new Proxy({} as Env, {
       // testando edge cases inválidos).
       return process.env[key];
     }
-    const e = loadEnv();
-    return e[key as keyof Env];
+    try {
+      const e = loadEnv();
+      return e[key as keyof Env];
+    } catch {
+      // Fallback: durante next build (sem env vars no shell), prerendering
+      // de páginas dispara o Proxy antes de instrumentation.ts. Em vez de
+      // travar o build inteiro, devolvemos o valor cru de process.env.
+      // Em runtime real, instrumentation.ts roda primeiro e qualquer
+      // ausência de var obrigatória já abortou o boot — então essa branch
+      // só é exercitada no build local sem .env completo.
+      return process.env[key];
+    }
   },
 });
 

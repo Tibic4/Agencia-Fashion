@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { runCampaignPipeline } from "@/lib/ai/pipeline";
-import { runMockPipeline } from "@/lib/ai/mock-data";
+// runMockPipeline is dynamically imported below ONLY in IS_DEMO_MODE so that
+// Next's tree-shaker (and any prod bundle audit) drops the mock fixtures from
+// the production build artifact.
 import {
   getStoreByClerkId,
   createCampaign,
@@ -445,6 +447,7 @@ export async function POST(request: NextRequest) {
     // ── DEMO MODE ──
     if (IS_DEMO_MODE) {
       logger.info("demo_mode_active", { skip_quota: true });
+      const { runMockPipeline } = await import("@/lib/ai/mock-data");
       const mockResult = await runMockPipeline(3000);
       // M-11 fix: demo mode never consumes quota or credits. Upstream gate
       // skipped reservation when !IS_DEMO_MODE; nothing to reconcile here.
