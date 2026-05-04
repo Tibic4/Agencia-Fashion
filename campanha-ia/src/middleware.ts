@@ -4,6 +4,14 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
+
+// Phase 4 D-12: hash userId for Sentry tags (PII reduction).
+function hashUserId(userId: string): string {
+  return createHash("sha256").update(userId).digest("hex").slice(0, 12);
+}
+
+const IS_PROD = process.env.NODE_ENV === "production";
 
 // Rotas que usam auth própria (não passam pelo Clerk)
 const isEditorRoute = createRouteMatcher([
@@ -130,22 +138,46 @@ export default clerkMiddleware(async (auth, request) => {
 
     if (!userId) {
       // redireciona para /sign-in (não /gerar, que pode loopar)
+      console.warn("admin.deny", {
+        route: new URL(request.url).pathname,
+        userId_hash: null,
+        reason: "no_session",
+      });
       return redirectTo("/sign-in", request);
     }
 
-    let isAdmin = ADMIN_USER_IDS.includes(userId);
-
-    if (!isAdmin) {
-      // Checar publicMetadata.role via session claims
-      const claims = session.sessionClaims as Record<string, unknown> | undefined;
-      const metadata = claims?.metadata as { role?: string } | undefined;
-      const publicMetadata = claims?.publicMetadata as { role?: string } | undefined;
-      const role = metadata?.role || publicMetadata?.role;
-      isAdmin = role === "admin" || role === "super_admin";
+    // Phase 4 D-09: precedence mirrors src/lib/admin/guard.ts.
+    //   1. publicMetadata.role (canonical)
+    //   2. metadata.role (back-compat)
+    //   3. ADMIN_USER_IDS (break-glass) — emit admin.breakglass_used in prod
+    let isAdmin = false;
+    const denyReason = "not_admin";
+    const claims = session.sessionClaims as Record<string, unknown> | undefined;
+    const publicMetadata = claims?.publicMetadata as { role?: string } | undefined;
+    const metadata = claims?.metadata as { role?: string } | undefined;
+    const publicRole = publicMetadata?.role;
+    const metaRole = metadata?.role;
+    if (publicRole === "admin" || publicRole === "super_admin") {
+      isAdmin = true;
+    } else if (metaRole === "admin" || metaRole === "super_admin") {
+      isAdmin = true;
+    } else if (ADMIN_USER_IDS.includes(userId)) {
+      isAdmin = true;
+      if (IS_PROD) {
+        console.warn("admin.breakglass_used", {
+          route: new URL(request.url).pathname,
+          userId_hash: hashUserId(userId),
+        });
+      }
     }
 
     if (!isAdmin) {
       // usuário logado mas sem permissão → home, não /gerar
+      console.warn("admin.deny", {
+        route: new URL(request.url).pathname,
+        userId_hash: hashUserId(userId),
+        reason: denyReason,
+      });
       return redirectTo("/", request);
     }
   } else if (isProtectedRoute(request)) {
