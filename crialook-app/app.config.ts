@@ -18,6 +18,13 @@
  * regenerar Info.plist determinístico.
  */
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+// SDK 55 transpila app.config.ts como ESM, então `require` e `__dirname`
+// não existem mais. Usamos `process.cwd()` como base — Expo CLI sempre
+// invoca a config a partir do root do projeto.
+const projectRoot = process.cwd();
 
 type Variant = 'development' | 'preview' | 'production';
 const variant = (process.env.APP_VARIANT as Variant) || 'production';
@@ -56,16 +63,13 @@ const scheme =
 // Workflow do asset: copia o PNG de prod, adiciona ribbon de canto
 // ("DEV"/"PREVIEW") em qualquer editor, salva com o suffix. Adaptive
 // foreground tem que ficar em fundo transparente com o mesmo safe-zone.
-const fs = require('node:fs') as typeof import('node:fs');
-const path = require('node:path') as typeof import('node:path');
-
 function pickAsset(filename: string, variantSuffix: string | null): string {
   if (!variantSuffix) return `./assets/images/${filename}.png`;
   const candidate = `./assets/images/${filename}-${variantSuffix}.png`;
   // __dirname aqui = root do projeto (onde app.config.ts mora), então dá
   // pra checar o filesystem na hora de avaliar a config e cair no
   // fallback silenciosamente.
-  const exists = fs.existsSync(path.join(__dirname, candidate));
+  const exists = fs.existsSync(path.join(projectRoot, candidate));
   return exists ? candidate : `./assets/images/${filename}.png`;
 }
 
