@@ -7,6 +7,7 @@
  *   logger.info("payment_received", { amount, plan });
  */
 import * as Sentry from "@sentry/nextjs";
+import { createHash } from "node:crypto";
 
 type Ctx = Record<string, unknown>;
 
@@ -110,4 +111,21 @@ export function captureSyntheticAlert(
     // Never let observability break the cron.
   }
   logger.warn(`[synthetic_alert] ${message}`, { fingerprint, ...breadcrumbs });
+}
+
+/**
+ * Phase 02 D-11/D-13: derive a non-PII identifier from a store UUID for
+ * Sentry tags. Raw UUIDs are PII-adjacent (correlate to Clerk user, payment
+ * records, etc.). The first 8 chars of sha256(uuid) preserve cardinality
+ * for grouping while not leaking the original ID.
+ *
+ * Use case: every captureError in /api/campaign/generate (and other AI
+ * pipeline sites) tags `store_id=<8-char hash>` so Sentry dashboards can
+ * group by store without storing raw UUIDs.
+ *
+ * Deterministic: same UUID always hashes to same 8-char prefix.
+ * Pure function: no I/O, no async.
+ */
+export function hashStoreId(storeId: string): string {
+  return createHash("sha256").update(storeId).digest("hex").slice(0, 8);
 }

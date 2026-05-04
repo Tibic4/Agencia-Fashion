@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { logger, captureSyntheticAlert } from "./observability";
+import { logger, captureSyntheticAlert, hashStoreId } from "./observability";
 import * as Sentry from "@sentry/nextjs";
 
 describe("logger", () => {
@@ -124,5 +124,30 @@ describe("captureSyntheticAlert", () => {
       captureSyntheticAlert("msg", "fp_20260504", { x: 1 });
     }).not.toThrow();
     consoleWarn.mockRestore();
+  });
+});
+
+// ─── Phase 02 D-11 — hashStoreId ────────────────────────────────────────────
+
+describe("hashStoreId", () => {
+  it("returns 8 hex chars", () => {
+    const result = hashStoreId("00000000-0000-0000-0000-000000000001");
+    expect(result).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("is deterministic for the same input", () => {
+    const id = "abc-def-123";
+    expect(hashStoreId(id)).toBe(hashStoreId(id));
+  });
+
+  it("differs for different inputs", () => {
+    const a = hashStoreId("store-a");
+    const b = hashStoreId("store-b");
+    expect(a).not.toBe(b);
+  });
+
+  it("handles empty string without throwing", () => {
+    expect(() => hashStoreId("")).not.toThrow();
+    expect(hashStoreId("")).toMatch(/^[0-9a-f]{8}$/);
   });
 });
