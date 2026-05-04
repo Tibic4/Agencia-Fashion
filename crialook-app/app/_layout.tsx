@@ -263,7 +263,37 @@ function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
-  /* `appReady` = fontes carregadas.
+
+  const [fontTimedOut, setFontTimedOut] = useState(false);
+
+  // F-09 (D-01..D-03): silent fallback to system font after 8s if useFonts
+  // hangs (CDN flake, slow EDGE network, regional fonts.gstatic.com edge
+  // issue). Race semantics emulated via parallel timer flag because
+  // useFonts itself isn't promise-shaped — we can't Promise.race the hook
+  // directly. The 12s SPLASH_SAFETY_TIMEOUT_MS at module scope is a
+  // separate, independent last-resort. Sentry breadcrumb + message tagged
+  // `font.load.timeout` so we can measure how often this fires in prod.
+  useEffect(() => {
+    if (loaded) return;
+    const t = setTimeout(() => {
+      setFontTimedOut(true);
+      try {
+        Sentry.addBreadcrumb({
+          category: 'font.load',
+          level: 'warning',
+          message: 'font.load.timeout',
+        });
+        Sentry.captureMessage('font.load.timeout', 'warning');
+      } catch {
+        /* never throw from observability path */
+      }
+    }, 8_000);
+    return () => clearTimeout(t);
+  }, [loaded]);
+
+  /* `appReady` = fontes carregadas OU timeout de 8s (F-09 fallback silencioso
+     pra fonte do sistema). Antes era só `loaded`; agora inclui o flag de
+     timeout pra evitar splash eterna se o CDN das fontes pifar.
      Antes era `loaded && authReady`, com authReady setado pelo callback do
      AuthGate. Mas o AuthGate ficava DENTRO do <AppFadeIn ready={appReady}>,
      que retornava null enquanto !ready — então o AuthGate nunca montava,
@@ -273,7 +303,7 @@ function RootLayout() {
      AuthGate controla seu próprio render do <Slot/> via routeReady, então
      mostrar a árvore com o fade-in assim que as fontes carregarem é
      seguro — o conteúdo da rota só pinta depois que routeReady confirmar. */
-  const appReady = loaded;
+  const appReady = loaded || fontTimedOut;
 
   useEffect(() => {
     if (error) throw error;
@@ -283,7 +313,7 @@ function RootLayout() {
   // the cross-fade — so the native splash disappears AT the same frame the
   // JS content begins to fade in (no gap, no double-cut). Don't double-call.
 
-  if (!loaded) return null;
+  if (!appReady) return null;
 
   return (
     <AppErrorBoundary>
