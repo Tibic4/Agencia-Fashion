@@ -8,7 +8,7 @@
  */
 import type { LegalBlock } from '@/components/LegalPage';
 
-const LAST_UPDATED = '27 de abril de 2026';
+const LAST_UPDATED = '3 de maio de 2026';
 
 // ---------- Termos de Uso ---------------------------------------------------
 export const termos = {
