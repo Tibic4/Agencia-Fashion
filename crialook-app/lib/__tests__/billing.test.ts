@@ -42,7 +42,7 @@ vi.mock('react-native-iap', () => ({
 }));
 
 // ── @/lib/auth — extend the global stub with getCurrentUserId ───────────
-const getCurrentUserIdMock = vi.fn<[], string | null>();
+const getCurrentUserIdMock: ReturnType<typeof vi.fn<() => string | null>> = vi.fn();
 vi.mock('@/lib/auth', () => ({
   getAuthToken: async () => 'test-token',
   getCurrentUserId: () => getCurrentUserIdMock(),
