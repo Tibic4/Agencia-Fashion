@@ -6,6 +6,10 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
+// D-24: Svix recommends ±5 minutes. We use 5min past + 30s future for clock drift.
+const CLERK_SVIX_MAX_PAST_MS = 5 * 60 * 1000;     // 300_000
+const CLERK_SVIX_MAX_FUTURE_MS = 30 * 1000;       // 30_000
+
 /**
  * Webhook Clerk para criar store placeholder em user.created.
  *
@@ -71,6 +75,24 @@ export async function POST(req: NextRequest) {
     }
     // svixId is non-null here because verifyClerkSignature would have rejected null.
     const eventId = svixId as string;
+
+    // D-24: timestamp-skew check (replay defense).
+    // svix-timestamp is unix seconds. Reject if too old or far in the future.
+    const tsSec = svixTimestamp ? Number.parseInt(svixTimestamp, 10) : NaN;
+    if (!Number.isFinite(tsSec)) {
+      logger.warn("clerk_webhook_invalid_timestamp", { svixId, svixTimestamp });
+      return NextResponse.json({ error: "Invalid timestamp" }, { status: 400 });
+    }
+    const tsMs = tsSec * 1000;
+    const nowMs = Date.now();
+    if (tsMs < nowMs - CLERK_SVIX_MAX_PAST_MS || tsMs > nowMs + CLERK_SVIX_MAX_FUTURE_MS) {
+      logger.warn("clerk_webhook_timestamp_skew", {
+        svixId,
+        svixTimestamp,
+        skew_ms: nowMs - tsMs,
+      });
+      return NextResponse.json({ error: "Timestamp out of range" }, { status: 401 });
+    }
 
     const event = JSON.parse(payload) as { type: string; data: Record<string, unknown> };
 
