@@ -44,12 +44,36 @@ export interface GeminiClassifiedError {
 }
 
 /**
+ * Concrete Error subclass that callers (route handlers, pipeline steps)
+ * can `instanceof`-check to recover the classification. Replaces the
+ * pre-existing pattern of `(new Error(msg) as any).code = ...` ad-hoc
+ * augmentation, which made the metadata invisible to the type checker.
+ */
+export class GeminiClassifiedFailure extends Error {
+  readonly code: GeminiErrorCode;
+  readonly httpStatus: number;
+  readonly retryable: boolean;
+  readonly technicalMessage: string;
+
+  constructor(classified: GeminiClassifiedError) {
+    super(classified.userMessage);
+    this.name = "GeminiClassifiedFailure";
+    this.code = classified.code;
+    this.httpStatus = classified.httpStatus;
+    this.retryable = classified.retryable;
+    this.technicalMessage = classified.technicalMessage;
+  }
+}
+
+/**
  * Classificar um erro da Gemini API em uma categoria conhecida.
  */
 export function classifyGeminiError(error: unknown): GeminiClassifiedError {
   const msg = error instanceof Error ? error.message : String(error);
-  const errObj = error as Record<string, unknown> | undefined;
-  const status = (errObj as any)?.status || (errObj as any)?.statusCode || (errObj as any)?.httpStatusCode;
+  const errObj = (error ?? {}) as { status?: unknown; statusCode?: unknown; httpStatusCode?: unknown };
+  const rawStatus = errObj.status ?? errObj.statusCode ?? errObj.httpStatusCode;
+  const status: number | undefined =
+    typeof rawStatus === "number" ? rawStatus : undefined;
 
   // ── 429 Rate Limit / Quota ──
   if (status === 429 || msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("rate limit")) {
@@ -224,12 +248,7 @@ export async function callGeminiSafe<T>(
 
       // Non-retryable → throw immediately with user-friendly message
       if (!classified.retryable || attempt >= maxRetries) {
-        const friendlyError = new Error(classified.userMessage);
-        (friendlyError as any).code = classified.code;
-        (friendlyError as any).httpStatus = classified.httpStatus;
-        (friendlyError as any).retryable = classified.retryable;
-        (friendlyError as any).technicalMessage = classified.technicalMessage;
-        throw friendlyError;
+        throw new GeminiClassifiedFailure(classified);
       }
 
       // Retryable → wait with exponential backoff
@@ -240,7 +259,14 @@ export async function callGeminiSafe<T>(
   }
 
   // Should never reach here, but TypeScript requires it
-  const fallbackError = new Error(lastError?.userMessage || "Erro inesperado na IA");
-  (fallbackError as any).code = lastError?.code || "UNKNOWN";
-  throw fallbackError;
+  throw new GeminiClassifiedFailure(
+    lastError ?? {
+      code: "UNKNOWN",
+      userMessage: "Erro inesperado na IA",
+      technicalMessage: "fallback path reached without lastError",
+      retryable: false,
+      httpStatus: 500,
+      originalError: undefined,
+    },
+  );
 }

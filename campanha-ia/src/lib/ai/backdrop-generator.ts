@@ -99,8 +99,8 @@ export async function generateBackdrop(
       config: {
         responseModalities: ["IMAGE", "TEXT"],
         imageConfig: {
-          aspectRatio: "9:16" as any,
-          imageSize: IMAGE_SIZE as any,
+          aspectRatio: "9:16",
+          imageSize: IMAGE_SIZE,
         },
       },
     }),
@@ -109,9 +109,9 @@ export async function generateBackdrop(
 
   // ── Extract image ──
   const parts = response.candidates?.[0]?.content?.parts || [];
-  const imagePart = parts.find((p: any) => p.inlineData);
+  const imagePart = parts.find((p) => p.inlineData);
 
-  if (!imagePart || !(imagePart as any).inlineData) {
+  if (!imagePart || !imagePart.inlineData) {
     const candidate = response.candidates?.[0];
     if (candidate?.finishReason === "SAFETY") {
       throw new Error("Backdrop bloqueado por segurança. Tente outra cor.");
@@ -119,7 +119,7 @@ export async function generateBackdrop(
     throw new Error("A IA não conseguiu gerar o estúdio. Tente novamente.");
   }
 
-  const inlineData = (imagePart as any).inlineData;
+  const inlineData = imagePart.inlineData;
   const imageBase64 = inlineData.data as string;
   const mimeType = (inlineData.mimeType || "image/png") as string;
 

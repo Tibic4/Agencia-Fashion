@@ -28,6 +28,8 @@ import { captureSyntheticAlert } from "@/lib/observability";
 // MODEL PREVIEW — Gemini 3.1 Flash Image (provider único)
 // ═══════════════════════════════════════════════════════════
 
+import type { Gender } from "@/lib/model-prompts";
+
 interface ModelPreviewEvent {
   modelId: string;
   storeId: string;
@@ -44,7 +46,7 @@ interface ModelPreviewEvent {
   ageRange: string;
   name: string;
   /** Gênero: feminino | masculino (default feminino) */
-  gender?: string;
+  gender?: Gender;
   /** URL do crop facial no Supabase Storage (leve — evita limite do Inngest) */
   faceRefUrl?: string | null;
 }
@@ -100,7 +102,7 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
         bodyType: data.bodyType,
         style: data.style,
         ageRange: data.ageRange,
-        gender: (data.gender as any) || "feminino",
+        gender: data.gender || "feminino",
       },
       faceBase64,
       faceMime,
@@ -118,23 +120,24 @@ async function generatePreviewWithGemini(data: ModelPreviewEvent): Promise<strin
           imageSize: "2K",
         },
         thinkingConfig: {
-          thinkingLevel: "minimal",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- thinkingLevel is a newer field not in the SDK's ThinkingConfig type yet
+          thinkingLevel: "minimal" as any,
           includeThoughts: false,
         },
-      } as any,
+      },
     });
 
     // Extrair imagem da resposta
     const responseParts = response.candidates?.[0]?.content?.parts || [];
-    const imagePart = responseParts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+    const imagePart = responseParts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
 
-    if (!imagePart || !(imagePart as any).inlineData?.data) {
+    if (!imagePart || !imagePart.inlineData?.data) {
       console.warn("[Gemini:Preview] ⚠️ Nenhuma imagem na resposta");
       return null;
     }
 
-    const imageData = (imagePart as any).inlineData.data;
-    const mimeType = (imagePart as any).inlineData.mimeType || "image/png";
+    const imageData = imagePart.inlineData.data;
+    const mimeType = imagePart.inlineData.mimeType || "image/png";
     const ext = mimeType.includes("jpeg") ? "jpg" : "png";
 
     // Upload para Supabase Storage
@@ -265,10 +268,12 @@ export const generateModelPreviewJob = inngest.createFunction(
 // BACKDROP GENERATOR — Estúdio vazio na cor da marca
 // ═══════════════════════════════════════════════════════════
 
+import type { BackdropSeason } from "@/lib/ai/backdrop-generator";
+
 interface BackdropGenerateEvent {
   storeId: string;
   brandColor: string;
-  season?: string;
+  season?: BackdropSeason;
 }
 
 /**
@@ -299,7 +304,7 @@ export const generateBackdropJob = inngest.createFunction(
     const result = await step.run("generate-backdrop-image", async () => {
       console.log(`[Inngest:Backdrop] 🎨 Gerando estúdio para store ${data.storeId} (${data.brandColor}) [${data.season || 'primavera'}]...`);
       const { generateBackdrop } = await import("@/lib/ai/backdrop-generator");
-      const season = (data.season as any) || "primavera";
+      const season = data.season || "primavera";
       return await generateBackdrop(data.storeId, data.brandColor, season);
     });
 

@@ -104,9 +104,11 @@ export async function POST(request: NextRequest) {
       // Sharp resize para reduzir tokens
       try {
         const sharp = (await import("sharp")).default;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
         processedBuffer = await sharp(processedBuffer as any)
           .resize(768, 768, { fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: 85 })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
           .toBuffer() as any;
         processedMime = "image/jpeg";
         logger.info(`[Model] ✂️ Imagem processada: ${(processedBuffer.length / 1024).toFixed(1)}KB`);

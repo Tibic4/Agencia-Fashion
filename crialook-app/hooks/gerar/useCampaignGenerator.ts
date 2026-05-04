@@ -140,11 +140,14 @@ export function useCampaignGenerator({
           const token = await getAuthToken();
 
           const formData = new FormData();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RN FormData accepts file-blob shapes typed only as Blob in lib.dom
           formData.append('image', buildFormDataFile(inputs.mainPhoto) as any);
           if (inputs.closeUpPhoto) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RN FormData accepts file-blob shapes typed only as Blob in lib.dom
             formData.append('closeUpImage', buildFormDataFile(inputs.closeUpPhoto) as any);
           }
           if (inputs.secondPhoto) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RN FormData accepts file-blob shapes typed only as Blob in lib.dom
             formData.append('secondImage', buildFormDataFile(inputs.secondPhoto) as any);
           }
 

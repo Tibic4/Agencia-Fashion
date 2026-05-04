@@ -135,6 +135,7 @@ export function GoogleSignInButton() {
           // Material 3 elevation 1: subtle shadow that lifts the surface
           // off the page without floating it.
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
         } as any,
       ]}
     >

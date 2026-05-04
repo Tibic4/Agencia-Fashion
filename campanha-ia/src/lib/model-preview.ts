@@ -12,7 +12,7 @@
  * Não bloqueia a resposta — o frontend faz polling.
  */
 
-import { buildGeminiParts } from "@/lib/model-prompts";
+import { buildGeminiParts, type Gender } from "@/lib/model-prompts";
 import { env } from "@/lib/env";
 
 export interface ModelPreviewParams {
@@ -29,7 +29,7 @@ export interface ModelPreviewParams {
   ageRange: string;
   name: string;
   /** Gênero: feminino | masculino (default feminino) */
-  gender?: string;
+  gender?: Gender;
   /** Base64 do crop facial de referência (opcional) */
   faceRefBase64?: string | null;
   /** MIME type do crop facial */
@@ -63,7 +63,7 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
         bodyType: data.bodyType,
         style: data.style,
         ageRange: data.ageRange,
-        gender: (data.gender as any) || "feminino",
+        gender: data.gender || "feminino",
       },
       data.faceRefBase64,
       data.faceRefMimeType,
@@ -79,22 +79,23 @@ async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
           imageSize: "2K",
         },
         thinkingConfig: {
-          thinkingLevel: "minimal",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- thinkingLevel is a newer field not in the SDK's ThinkingConfig type yet
+          thinkingLevel: "minimal" as any,
           includeThoughts: false,
         },
-      } as any,
+      },
     });
 
     const responseParts = response.candidates?.[0]?.content?.parts || [];
-    const imagePart = responseParts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+    const imagePart = responseParts.find((p) => p.inlineData?.mimeType?.startsWith("image/"));
 
-    if (!imagePart || !(imagePart as any).inlineData?.data) {
+    if (!imagePart || !imagePart.inlineData?.data) {
       console.warn("[Preview:Gemini] ⚠️ Sem imagem na resposta");
       return null;
     }
 
-    const imageData = (imagePart as any).inlineData.data;
-    const mimeType = (imagePart as any).inlineData.mimeType || "image/png";
+    const imageData = imagePart.inlineData.data;
+    const mimeType = imagePart.inlineData.mimeType || "image/png";
     const ext = mimeType.includes("jpeg") ? "jpg" : "png";
 
     // Upload para Supabase Storage

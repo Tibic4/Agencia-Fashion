@@ -88,6 +88,10 @@ interface ModelBankItem {
   pose: string;
   image_url: string;
   thumbnail_url: string | null;
+  // Custom-store models also surface these (joined from store_models). Optional
+  // because the bank-side rows from `models_bank` table don't carry them.
+  photo_url?: string | null;
+  _type?: "custom" | "bank";
 }
 
 export default function GerarCampanha() {
@@ -1042,16 +1046,16 @@ export default function GerarCampanha() {
                         <div key={`custom-${model.id}`} className="relative group">
                           <button
                             onClick={() => {
-                              const imgUrl = (model as any).photo_url;
+                              const imgUrl = model.photo_url;
                               if (imgUrl) setPreviewModel({ id: model.id, name: model.name, imageUrl: imgUrl, bodyType: model.body_type, isCustom: true });
                               else setSelectedModelId(model.id);
                             }}
                             className="w-full aspect-[3/4] rounded-lg overflow-hidden relative transition-all active:scale-[0.98]"
                             title={`⭐ ${model.name} (sua modelo)`}
                           >
-                            {(model as any).photo_url ? (
+                            {model.photo_url ? (
                               <img
-                                src={(model as any).photo_url}
+                                src={model.photo_url}
                                 alt={model.name}
                                 className="w-full h-full object-cover object-[center_15%]"
                                 loading="lazy"
@@ -1059,7 +1063,7 @@ export default function GerarCampanha() {
                               />
                             ) : (
                               <ModelPlaceholder
-                                skinTone={(model as any).skin_tone}
+                                skinTone={model.skin_tone}
                                 bodyType={model.body_type}
                                 name={model.name}
                                 isGenerating={true}
@@ -1140,7 +1144,7 @@ export default function GerarCampanha() {
                         <button
                           key={model.id}
                           onClick={() => {
-                            const imgUrl = (model as any).thumbnail_url || (model as any).image_url;
+                            const imgUrl = model.thumbnail_url || model.image_url;
                             if (imgUrl) setPreviewModel({ id: model.id, name: model.name, imageUrl: imgUrl, bodyType: model.body_type, isCustom: false });
                             else setSelectedModelId(model.id);
                           }}
@@ -1148,7 +1152,7 @@ export default function GerarCampanha() {
                           title={model.name}
                         >
                           <img
-                            src={(model as any).thumbnail_url || (model as any).image_url}
+                            src={model.thumbnail_url || model.image_url}
                             alt={model.name}
                             className="w-full h-full object-cover object-[center_15%]"
                             loading="lazy"

@@ -156,6 +156,7 @@ export function BiometricConsentMount() {
               haptic.tap();
               close(false);
               setTimeout(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- expo-router typed routes don't cover dynamic-params href
                 () => router.push('/(legal)/consentimento-biometrico' as any),
                 250,
               );

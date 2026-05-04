@@ -156,6 +156,7 @@ function ConfiguracoesScreenInner() {
     try {
       const compressed = await compressForUpload(result.assets[0], 'logo.jpg');
       const form = new FormData();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RN FormData accepts file-blob shapes typed only as Blob in lib.dom
       form.append('logo', buildFormDataFile(compressed) as any);
 
       const res = await api<{ url: string }>('/store/logo', {
@@ -519,6 +520,7 @@ function ConfiguracoesScreenInner() {
           ).map((item) => (
             <AnimatedPressable
               key={item.href}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- expo-router typed routes don't cover dynamic-params href
               onPress={() => router.push(item.href as any)}
               haptic="tap"
               accessibilityRole="link"
@@ -577,6 +579,7 @@ function ConfiguracoesScreenInner() {
           </Text>
           {__DEV__ && (
             <AnimatedPressable
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- expo-router typed routes don't cover dynamic-params href
               onPress={() => router.push('/__catalog' as any)}
               haptic="tap"
               hitSlop={12}

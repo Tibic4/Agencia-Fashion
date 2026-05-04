@@ -328,15 +328,20 @@ export async function POST(request: NextRequest) {
     // ── Converter imagem para base64 com downscale (evitar OOM na VPS) ──
     const arrayBuffer = await imageFile.arrayBuffer();
     let imageBuffer = Buffer.from(arrayBuffer);
-    let mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" = imageFile.type as any;
+    // imageFile.type was validated against `validTypes` above (line ~166), so
+    // the cast to the narrower union is safe.
+    let mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" =
+      imageFile.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
     // Sharp downscale: max 1536px, WEBP 80% — Gemini só precisa de 1024-1536px
     try {
       const sharp = (await import("sharp")).default;
       const originalSize = imageBuffer.length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
       imageBuffer = await sharp(imageBuffer as any)
         .resize(1536, 1536, { fit: "inside", withoutEnlargement: true })
         .webp({ quality: 80 })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
         .toBuffer() as any;
       mediaType = "image/webp";
       const savings = ((1 - imageBuffer.length / originalSize) * 100).toFixed(0);
@@ -373,12 +378,15 @@ export async function POST(request: NextRequest) {
 
     async function downscaleExtra(file: File): Promise<{ base64: string; mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif" }> {
       let buf = Buffer.from(await file.arrayBuffer());
-      let mime: "image/jpeg" | "image/png" | "image/webp" | "image/gif" = file.type as any;
+      let mime: "image/jpeg" | "image/png" | "image/webp" | "image/gif" =
+        file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
       try {
         const sharp = (await import("sharp")).default;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
         buf = await sharp(buf as any)
           .resize(1024, 1024, { fit: "inside", withoutEnlargement: true })
           .webp({ quality: 75 })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
           .toBuffer() as any;
         mime = "image/webp";
       } catch { /* fallback to original */ }
@@ -531,7 +539,7 @@ export async function POST(request: NextRequest) {
               hairLength: bankModel.hair_length || undefined,
               ageRange: bankModel.age_range || undefined,
               style: bankModel.style || undefined,
-              gender: (bankModel as any).gender || undefined,
+              gender: bankModel.gender || undefined,
             };
             logger.info("bank_model_selected", {
               model_id: modelBankId,
@@ -995,17 +1003,20 @@ export async function POST(request: NextRequest) {
               try {
                 const sharp = (await import("sharp")).default;
                 const modelBuf = Buffer.from(modelImageBase64!, "base64");
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
                 const meta = await sharp(modelBuf as any).metadata();
                 const w = meta.width ?? 1024;
                 const h = meta.height ?? 1536;
 
                 const [leftBlur, rightBlur] = await Promise.all([
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
                   sharp(modelBuf as any)
                     .extract({ left: 0, top: 0, width: w, height: Math.floor(h * 0.7) })
                     .resize(400, 600, { fit: "cover" })
                     .blur(45)
                     .webp({ quality: 60 })
                     .toBuffer(),
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- sharp() accepts Buffer but @types/sharp narrows to specific input shapes
                   sharp(modelBuf as any)
                     .extract({
                       left: 0,
@@ -1028,12 +1039,14 @@ export async function POST(request: NextRequest) {
                 const [{ error: e1 }, { error: e2 }] = await Promise.all([
                   sb.storage
                     .from("generated-images")
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sharp Input typing too narrow
                     .upload(teaserPaths[0], leftBlur as any, {
                       contentType: "image/webp",
                       upsert: true,
                     }),
                   sb.storage
                     .from("generated-images")
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Sharp Input typing too narrow
                     .upload(teaserPaths[1], rightBlur as any, {
                       contentType: "image/webp",
                       upsert: true,

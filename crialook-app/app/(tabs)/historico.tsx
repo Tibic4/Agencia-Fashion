@@ -595,9 +595,11 @@ function HistoricoScreenInner() {
                     animationDuration: '2800ms',
                     animationIterationCount: 'infinite',
                     animationTimingFunction: 'ease-in-out',
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
                   } as any),
                   c.is_favorited && reduceMotion && ({
                     boxShadow: '0 4px 12px rgba(236,72,153,0.22)',
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
                   } as any),
                 ]}
               >
@@ -914,6 +916,7 @@ function HistoricoScreenInner() {
                     transitionProperty: ['backgroundColor', 'borderColor', 'boxShadow'],
                     transitionDuration: '180ms',
                     transitionTimingFunction: 'ease-out',
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
                   } as any,
                 ]}
               >
@@ -924,6 +927,7 @@ function HistoricoScreenInner() {
                       color: selected ? '#fff' : colors.textSecondary,
                       transitionProperty: ['color'],
                       transitionDuration: '180ms',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
                     } as any,
                   ]}
                 >

@@ -401,6 +401,7 @@ function PlanoScreenInner() {
                               animationDuration: '1800ms',
                               animationIterationCount: 'infinite',
                               animationTimingFunction: 'ease-in-out',
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
                             } as any)
                           : {}),
                       },

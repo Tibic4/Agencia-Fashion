@@ -263,6 +263,7 @@ function GradientBlobs({ color1, color2 }: { color1: string; color2: string }) {
             animationIterationCount: 'infinite',
             animationDirection: 'alternate',
             animationTimingFunction: 'ease-in-out',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
           } as any,
         ]}
       />
@@ -286,6 +287,7 @@ function GradientBlobs({ color1, color2 }: { color1: string; color2: string }) {
             animationIterationCount: 'infinite',
             animationDirection: 'alternate',
             animationTimingFunction: 'ease-in-out',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
           } as any,
         ]}
       />
@@ -324,6 +326,7 @@ function Particle({ left, top, delay, size }: { left: string; top: string; delay
           animationDelay: `${delay}ms`,
           animationIterationCount: 'infinite',
           animationTimingFunction: 'ease-in-out',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
         } as any,
       ]}
     />
@@ -497,6 +500,7 @@ export function GenerationLoadingScreen({ isComplete, onViewResults, campaignId 
     animationDuration: '3000ms',
     animationIterationCount: 'infinite',
     animationTimingFunction: 'ease-in-out',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
   } as any;
 
   const togglePauseFacts = useCallback(() => {

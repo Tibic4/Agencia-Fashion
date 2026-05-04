@@ -505,21 +505,21 @@ async function generateSingleImage(
         // IMAGE 1: Model (person)
         {
           inlineData: {
-            mimeType: modelMime as any,
+            mimeType: modelMime,
             data: modelBase64,
           },
         },
         // IMAGE 2: Product (garment/outfit)
         {
           inlineData: {
-            mimeType: productMime as any,
+            mimeType: productMime,
             data: productBase64,
           },
         },
         // LAST IMAGE: Backdrop reference (if provided)
         ...(backdropBase64 ? [{
           inlineData: {
-            mimeType: (backdropMime || "image/png") as any,
+            mimeType: backdropMime || "image/png",
             data: backdropBase64,
           },
         }] : []),
@@ -527,8 +527,8 @@ async function generateSingleImage(
       config: {
         responseModalities: ["IMAGE", "TEXT"],
         imageConfig: {
-          aspectRatio: geminiAspect as any,
-          imageSize: IMAGE_SIZE as any,
+          aspectRatio: geminiAspect,
+          imageSize: IMAGE_SIZE,
         },
         // Pro model has thinking ALWAYS ON — no thinkingConfig needed
       },
@@ -538,29 +538,27 @@ async function generateSingleImage(
 
   // Extrair imagem do response
   const parts = response.candidates?.[0]?.content?.parts || [];
-  const imagePart = parts.find((p: any) => p.inlineData);
+  const imagePart = parts.find((p) => p.inlineData);
 
-  if (!imagePart || !(imagePart as any).inlineData) {
+  if (!imagePart || !imagePart.inlineData) {
     // Verificar se foi bloqueado por segurança
     const candidate = response.candidates?.[0];
     if (candidate?.finishReason === "SAFETY") {
       throw new Error(`Conteúdo bloqueado pela IA. Envie apenas fotos de peças de roupa.`);
     }
-    const textPart = parts.find((p: any) => p.text);
-    const reason = (textPart as any)?.text || "sem imagem no response";
     throw new Error(`A IA não conseguiu gerar a foto "${conceptName}". Tente novamente.`);
   }
 
-  const inlineData = (imagePart as any).inlineData;
+  const inlineData = imagePart.inlineData;
   const imageBase64 = inlineData.data as string;
   const mimeType = inlineData.mimeType || "image/png";
 
   // Extrair token usage real do response
   const usage = response.usageMetadata;
   const tokenUsage = usage ? {
-    promptTokenCount: (usage as any).promptTokenCount || 0,
-    candidatesTokenCount: (usage as any).candidatesTokenCount || 0,
-    totalTokenCount: (usage as any).totalTokenCount || 0,
+    promptTokenCount: usage.promptTokenCount || 0,
+    candidatesTokenCount: usage.candidatesTokenCount || 0,
+    totalTokenCount: usage.totalTokenCount || 0,
   } : undefined;
 
   const durationMs = Date.now() - start;

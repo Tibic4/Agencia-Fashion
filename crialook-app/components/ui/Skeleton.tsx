@@ -81,6 +81,7 @@ export function Skeleton({
               animationDuration: `${SHIMMER_DURATION_MS}ms`,
               animationIterationCount: 'infinite',
               animationTimingFunction: 'linear',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
             } as any,
           ]}
         >

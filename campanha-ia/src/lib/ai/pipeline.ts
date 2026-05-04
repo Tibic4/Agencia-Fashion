@@ -173,10 +173,16 @@ export async function runCampaignPipeline(
   const blockedPoseIndex = getStreakBlockedPose(recentPoseHistory);
 
   const analyzerStart = Date.now();
+  // analyzer doesn't support image/gif (we never accept gif on the input side
+  // anyway — route gates to jpeg/png/webp). Coerce gif→jpeg defensively.
+  const analyzerMediaType: "image/jpeg" | "image/png" | "image/webp" =
+    input.mediaType === "image/png" || input.mediaType === "image/webp"
+      ? input.mediaType
+      : "image/jpeg";
   const analyzerResult = await analyzeWithGemini({
     productImageBase64: input.imageBase64,
-    productMediaType: input.mediaType as any,
-    extraImages: input.extraImages as any,
+    productMediaType: analyzerMediaType,
+    extraImages: input.extraImages,
     price: input.price,
     storeName: input.storeName,
     bodyType: (input.bodyType === "plus" ? "plus" : "normal"),

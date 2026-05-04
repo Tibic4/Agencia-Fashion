@@ -212,6 +212,7 @@ function BackgroundCard({
             transitionProperty: ['borderColor', 'borderWidth', 'transform'],
             transitionDuration: '200ms',
             transitionTimingFunction: 'ease-out',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
           } as any,
           glowStyle,
         ]}
@@ -891,6 +892,7 @@ function GerarScreenInner() {
                 animationDuration: '2400ms',
                 animationIterationCount: 'infinite',
                 animationTimingFunction: 'ease-in-out',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 3rd-party untyped boundary
               } as any),
             ]}
           >

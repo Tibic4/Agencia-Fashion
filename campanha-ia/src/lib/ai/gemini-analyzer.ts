@@ -303,7 +303,7 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
       config: {
         systemInstruction: buildSystemPrompt(input),
         responseMimeType: "application/json",
-        responseJsonSchema: RESPONSE_SCHEMA as any,
+        responseJsonSchema: RESPONSE_SCHEMA,
         thinkingConfig: {
           thinkingBudget: 2048,
         },
@@ -358,9 +358,9 @@ export async function analyzeWithGemini(input: AnalyzerInput): Promise<GeminiAna
 
   // Attach real token usage para o pipeline usar no cost logger
   result._usageMetadata = usage ? {
-    promptTokenCount: (usage as any).promptTokenCount || 0,
-    candidatesTokenCount: (usage as any).candidatesTokenCount || 0,
-    totalTokenCount: (usage as any).totalTokenCount || 0,
+    promptTokenCount: usage.promptTokenCount || 0,
+    candidatesTokenCount: usage.candidatesTokenCount || 0,
+    totalTokenCount: usage.totalTokenCount || 0,
   } : undefined;
 
   return result;

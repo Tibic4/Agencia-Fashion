@@ -191,6 +191,7 @@ export default async function AdminLogs() {
       )}
 
       {/* ⚠️ Stuck campaigns — processing > 5min */}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- narrowing wider type to component prop shape */}
       <StuckCampaignsSection campaigns={stuckCampaigns as any} />
 
       {/* Failed campaigns */}
