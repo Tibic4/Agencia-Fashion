@@ -92,14 +92,17 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
   return store;
 }
 
-/** Busca a loja pelo clerk_user_id */
+/** Busca a loja pelo clerk_user_id (returns null when not found) */
 export async function getStoreByClerkId(clerkUserId: string): Promise<StoreRecord | null> {
   const supabase = createAdminClient();
+  // .maybeSingle() returns { data: null, error: null } cleanly when no row exists
+  // (vs .single() which sets a PGRST116 "no rows" error). The Phase 1 / 01-04
+  // Clerk webhook + restore/rtdn callers explicitly need null-on-missing.
   const { data } = await supabase
     .from("stores")
     .select("*")
     .eq("clerk_user_id", clerkUserId)
-    .single();
+    .maybeSingle();
   return data;
 }
 

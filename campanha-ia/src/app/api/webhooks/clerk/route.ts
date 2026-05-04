@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createStore, getStoreByClerkId } from "@/lib/db";
 import { captureError, logger } from "@/lib/observability";
+import { dedupWebhook, markWebhookProcessed } from "@/lib/webhooks/dedup";
 import { createHmac, timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,17 @@ export const dynamic = "force-dynamic";
  * Evita o gap: usuário completa sign-up → é redirecionado para /gerar →
  * middleware vê sem loja → redireciona /onboarding. Com esse webhook,
  * a loja placeholder já existe no banco e a UI pode tratar o estado pré-onboarding.
+ *
+ * Phase 1 / C-3: routes through createStore() so the row lands with
+ * non-null plan_id (free plan) AND a matching store_usage row in one
+ * logical operation. Previously the bare insert here created an orphan
+ * stores row with plan_id=null and no store_usage — incrementCampaignsUsed
+ * silently no-op'd because getOrCreateCurrentUsage's self-heal didn't trigger
+ * on the first generation attempt for these accounts.
+ *
+ * Phase 1 / D-06: dedupWebhook(provider='clerk', svix-id) short-circuits
+ * replays before business logic. Complementary to the per-user `existing`
+ * check below (which catches re-signups by the same user).
  *
  * Valida assinatura Svix HMAC-SHA256 (padrão Clerk).
  * https://clerk.com/docs/integrations/webhooks/verify
@@ -57,11 +69,28 @@ export async function POST(req: NextRequest) {
       logger.warn("clerk_webhook_invalid_signature", { svixId });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
+    // svixId is non-null here because verifyClerkSignature would have rejected null.
+    const eventId = svixId as string;
 
     const event = JSON.parse(payload) as { type: string; data: Record<string, unknown> };
 
+    // D-06: dedup BEFORE business logic.
+    let dedup;
+    try {
+      dedup = await dedupWebhook("clerk", eventId, event);
+    } catch (e) {
+      captureError(e, { route: "/api/webhooks/clerk", phase: "dedup" });
+      // Cannot dedup — return 200 to avoid Clerk retry storm but capture for ops.
+      return NextResponse.json({ received: true, error: "dedup_failed" }, { status: 200 });
+    }
+    if (dedup.duplicate) {
+      logger.info("clerk_webhook_duplicate_short_circuit", { svixId });
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
     // Só processa user.created — outros eventos ignorados (200 OK para não retry).
     if (event.type !== "user.created") {
+      await markWebhookProcessed("clerk", eventId);
       return NextResponse.json({ received: true, ignored: true });
     }
 
@@ -70,33 +99,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing user id" }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
-
-    // Checa se já existe (idempotência)
-    const { data: existing } = await supabase
-      .from("stores")
-      .select("id")
-      .eq("clerk_user_id", userId)
-      .maybeSingle();
-
+    // Per-user idempotency (complementary to per-event dedup above).
+    const existing = await getStoreByClerkId(userId);
     if (existing) {
       logger.info("clerk_user_created_store_exists", { user_id: userId });
+      await markWebhookProcessed("clerk", eventId);
       return NextResponse.json({ received: true, existed: true });
     }
 
-    // Cria store placeholder (onboarding_completed = false)
     const emailAddresses = (event.data?.email_addresses as Array<{ email_address: string }>) || [];
     const primaryEmail = emailAddresses[0]?.email_address || null;
     const placeholderName = primaryEmail ? primaryEmail.split("@")[0] : "Minha Loja";
 
-    await supabase.from("stores").insert({
-      clerk_user_id: userId,
+    // C-3 fix: route through createStore so plan_id (free) and store_usage
+    // are populated atomically. Placeholder mode = onboarding not yet completed.
+    const store = await createStore({
+      clerkUserId: userId,
       name: placeholderName,
-      segment_primary: "outro",
-      onboarding_completed: false,
+      segmentPrimary: "outro",
+      onboardingCompleted: false,
     });
 
-    logger.info("clerk_user_created_store_created", { user_id: userId });
+    logger.info("clerk_user_created_store_created", { user_id: userId, store_id: store.id });
+    await markWebhookProcessed("clerk", eventId);
     return NextResponse.json({ received: true, created: true });
   } catch (e) {
     captureError(e, { route: "/api/webhooks/clerk" });
