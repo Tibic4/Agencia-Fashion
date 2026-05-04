@@ -53,6 +53,21 @@ const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")
 const STORE_COOKIE_PREFIX = "cl_hs_";
 const STORE_COOKIE_TTL = 60 * 60; // 1h em segundos
 
+/**
+ * Phase 4 D-17: middleware service-role audit — keep as-is (justified).
+ *
+ * Why this is NOT moved to createAdminClient():
+ *  - middleware runs BEFORE any route handler, on EVERY request to a protected route
+ *  - auth.protect() already gates the userId we look up here
+ *  - moving to RLS would require an authenticated Supabase client per-request,
+ *    significantly more expensive in middleware (multiplies by every protected hit)
+ *  - the lookup is a single boolean (has_store), not user data — leak surface is
+ *    minimal even if the service-role key were exposed (which it isn't; this is
+ *    server-only middleware bundle)
+ *
+ * The service-role client lives at module scope, but the function body re-checks
+ * env on every call so test harnesses can stub the env without re-importing.
+ */
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

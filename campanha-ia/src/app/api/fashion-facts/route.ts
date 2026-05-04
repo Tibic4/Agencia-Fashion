@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * GET /api/fashion-facts
  * Returns active fashion facts from the database.
  * Used by the FashionFactsCarousel to supplement static facts.
  * Cache: 1 hour (ISR-style)
+ *
+ * Phase 4 D-17: this endpoint is a public read; uses the admin (service-role)
+ * client because RLS on `fashion_facts` blocks anon reads even for is_active=true.
+ * A future improvement is to add a permissive RLS policy and switch to anon —
+ * outside Phase 4 scope. The previous implementation instantiated the
+ * service-role client at MODULE SCOPE, which means the SUPABASE_SERVICE_ROLE_KEY
+ * was being read at import-time and lived in module-state forever. Moving the
+ * client into the handler keeps the key inside the request lifetime only and
+ * matches every other admin path in this codebase.
  */
 export async function GET() {
   try {
+    const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("fashion_facts")
       .select("emoji, category, text, source")
