@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "com.crialook.app",
       "sha256_cert_fingerprints": [
-        "0F:D9:FA:96:C0:A0:2E:CE:2A:C0:7F:CD:7A:92:E0:9C:A1:9B:B3:3D:DC:59:60:75:20:3F:E8:74:56:4F:66:67"
+        "0F:D9:FA:96:C0:A0:2E:CE:2A:C0:7F:CD:7A:92:E0:9C:A1:9B:B3:3D:DC:59:60:75:20:3F:E8:74:56:4F:66:67",
+        "69:BC:FB:5F:EE:96:9D:F3:E0:16:06:61:CE:0A:2B:9F:70:18:1D:7D:F8:E8:64:02:47:E3:7C:18:41:49:18:6D"
       ]
     }
   }
