@@ -113,10 +113,24 @@ Plans:
   2. `npm run check:legal-drift` exits 0 against current site content; CI runs it
   3. Play Console "Data safety" form section-by-section matches the in-app `lib/legal/content.ts` and the §1 categories list
   4. IARC questionnaire answers are recorded in the planning doc with rationale; rating decision (Todos vs 12) is explicit
-**Plans**: TBD
+**Plans**: 7
 
 Plans:
-- [ ] 07-01: TBD (refined during planning)
+
+**Wave 1** *(parallel — independent)*
+- [ ] 07-01: Trash icon + danger ConfirmSheet in ModelBottomSheet wired to existing handleDelete (F-11)
+- [ ] 07-03: Manual one-time legal-content drift reconciliation; bump LAST_UPDATED (D-08)
+- [ ] 07-04: Author crialook-app/docs/PLAY_DATA_SAFETY.md owner-action mapping doc (D-09..D-12)
+- [ ] 07-05: Author crialook-app/docs/PLAY_IARC.md (Classificação 12 + AI-apparel advisory) (D-13..D-16)
+- [ ] 07-06: Polish PLAY_STORE_LISTING.md — title ≤30, sync rating, screenshot inventory + checklist (D-17, D-18)
+
+**Wave 2** *(blocked on Wave 1: 07-01 + 07-03)*
+- [ ] 07-02: Vitest jsdom contract test for ModelBottomSheet trash affordance (depends on 07-01)
+- [ ] 07-07: scripts/check-legal-drift.js + CI wire (depends on 07-03 baseline)
+
+Cross-cutting constraints:
+- Owner-action plans (07-04, 07-05): the executor writes the markdown; the owner copies into Play Console manually. F-03 (Sentry DSN) status affects PLAY_DATA_SAFETY Category 3 — owner re-validates after Phase 5.
+- 07-07 fail-soft on site 5xx outage; hard-fail on 4xx or content drift. CI job runs on push + pull_request.
 
 ### Phase 8: Ops & Deploy Hardening
 **Goal**: Make the deploy script + nginx + PM2 surface fail-loud, rollback-able, and observability-correct so a bad deploy can be reverted in <5 min and a degraded-but-up app actually pages someone.
