@@ -40,4 +40,13 @@ describe('Pulse', () => {
     expect(screen.getByText('Ativo')).toBeOnTheScreen();
     expect(screen.getByLabelText('Ativo')).toBeOnTheScreen();
   });
+
+  it('canary: jest.setup.ts mocks are loaded (Phase 3 F-01)', () => {
+    // Proves setupFilesAfterEnv is wired correctly.
+    // The Clerk mock from jest.setup.ts:44-50 returns user.id = 'test-user'.
+    // If this assertion turns red, someone reverted the typo fix or broke
+    // the Clerk mock — cheapest possible regression detector.
+    const { useUser } = require('@clerk/clerk-expo');
+    expect(useUser().user.id).toBe('test-user');
+  });
 });
