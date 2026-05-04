@@ -45,9 +45,11 @@ export const metadata: Metadata = {
   description:
     "Só com uma foto, a IA gera textos, criativos com modelo virtual e estratégias de marketing prontas para postar. Feito para lojistas de moda brasileiros.",
   // keywords removido (Google ignora desde 2009)
+  // M2-04-08: dropped `apple` icon — Android-only product (no iOS target).
+  // Apple-touch-icon meta is dead weight that costs 1 extra request from
+  // any iOS user who happens to bookmark the marketing site.
   icons: {
     icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
-    apple: "/icon-192.png",
   },
   // canonical default para home
   alternates: {
