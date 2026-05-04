@@ -11,17 +11,15 @@ export const maxDuration = 10;
  * Será chamada automaticamente pelo Inngest ou Vercel Cron 1x/dia.
  * Também pode ser chamada manualmente pelo admin.
  *
- * Proteção: verifica CRON_SECRET header ou query param para evitar abuso.
+ * Proteção: verifica CRON_SECRET via Authorization: Bearer (D-23).
  */
 export async function GET(request: Request) {
-  // Proteção simples: o Vercel Cron envia Authorization com CRON_SECRET
+  // D-23: ?secret= query-string path removed (leaks via referrer / proxy logs).
+  // Authorization header only.
   const authHeader = request.headers.get("authorization");
-  const url = new URL(request.url);
-  const secret = url.searchParams.get("secret");
   const cronSecret = process.env.CRON_SECRET;
 
-  // Em produção, exigir secret. Em dev, permitir sem.
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && secret !== cronSecret) {
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
