@@ -4,11 +4,19 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { createHash } from "crypto";
 
 // Phase 4 D-12: hash userId for Sentry tags (PII reduction).
-function hashUserId(userId: string): string {
-  return createHash("sha256").update(userId).digest("hex").slice(0, 12);
+// Edge Runtime: Node `crypto` is unavailable, so we use Web Crypto (`crypto.subtle`).
+// SHA-256 → 12-hex-char prefix (collision domain still vast for tag uniqueness).
+async function hashUserId(userId: string): Promise<string> {
+  const data = new TextEncoder().encode(userId);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  const bytes = new Uint8Array(digest);
+  let hex = "";
+  for (let i = 0; i < 6; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex; // 12 hex chars = 6 bytes
 }
 
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -164,18 +172,20 @@ export default clerkMiddleware(async (auth, request) => {
     } else if (ADMIN_USER_IDS.includes(userId)) {
       isAdmin = true;
       if (IS_PROD) {
+        const userId_hash = await hashUserId(userId);
         console.warn("admin.breakglass_used", {
           route: new URL(request.url).pathname,
-          userId_hash: hashUserId(userId),
+          userId_hash,
         });
       }
     }
 
     if (!isAdmin) {
       // usuário logado mas sem permissão → home, não /gerar
+      const userId_hash = await hashUserId(userId);
       console.warn("admin.deny", {
         route: new URL(request.url).pathname,
-        userId_hash: hashUserId(userId),
+        userId_hash,
         reason: denyReason,
       });
       return redirectTo("/", request);
