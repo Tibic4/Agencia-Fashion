@@ -148,12 +148,18 @@ beforeEach(() => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe("MP webhook route — Phase 1 regressions", () => {
-  it("H-14: empty x-request-id → 400, signature validator NOT called", async () => {
+  // Phase 4 D-03 reaffirms H-14: empty x-request-id MUST be rejected with 400
+  // BEFORE signature validation. This test below already encodes the contract;
+  // do not remove it without re-reading 04-CONTEXT.md (D-03) and confirming the
+  // route handler still rejects empty x-request-id at line ~58 of route.ts.
+  it("H-14 / Phase 4 D-03: empty x-request-id → 400, signature validator NOT called", async () => {
     const req = makeRequest({ body: { type: "payment", data: { id: "p1" } }, xRequestId: "" });
     const res = await POST(req);
     expect(res.status).toBe(400);
     expect(m.mockValidateSig).not.toHaveBeenCalled();
     expect(m.mockDedupWebhook).not.toHaveBeenCalled();
+    const json = await res.json();
+    expect(json.error).toMatch(/missing x-request-id/i);
   });
 
   it("C-2: renewal payment does NOT pass mpSubscriptionId to updateStorePlan", async () => {
