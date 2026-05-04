@@ -9,9 +9,15 @@ export const maxDuration = 60;
 /**
  * Cron diário para detectar lojas que deveriam ter sido rebaixadas
  * para "gratis" porque:
- *  - mercadopago_subscription_id é NULL (assinatura cancelada)
+ *  - subscription_status = 'cancelled' (assinatura cancelada — Phase 1 / 01-03 C-4)
  *  - AND plan_id != plano 'gratis'
  *  - AND store_usage do mês atual tem period_end < hoje
+ *
+ * Phase 1 / D-09: optimistic lock via stores.updated_at — re-reads the value
+ * captured during the candidate fetch and uses it as a WHERE predicate on
+ * the UPDATE. If a renewal webhook bumped updated_at mid-cron, the WHERE
+ * matches 0 rows and we skip (info-log per D-11). The trigger from 01-01
+ * (stores_set_updated_at) ensures every writer bumps the timestamp.
  *
  * Protegido por Bearer token (`CRON_SECRET`). Rode via Inngest cron, Vercel Cron,
  * ou qualquer scheduler externo.
@@ -52,12 +58,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Lojas candidatas a downgrade:
-    // - subscription_id NULL (cancelada)
-    // - plan_id != grátis
+    //    - subscription_status='cancelled' (NEW: replaces "subscription_id IS NULL"
+    //      since the C-4 fix in 01-03 stops nulling sub_id on cancel)
+    //    - plan_id != grátis
+    // We capture updated_at here for the optimistic lock per-row check.
     const { data: candidates, error: candErr } = await supabase
       .from("stores")
-      .select("id, plan_id, name")
-      .is("mercadopago_subscription_id", null)
+      .select("id, plan_id, name, updated_at")
+      .eq("subscription_status", "cancelled")
       .neq("plan_id", freePlan.id);
 
     if (candErr) throw candErr;
@@ -67,6 +75,7 @@ export async function POST(req: NextRequest) {
 
     const today = new Date().toISOString().split("T")[0];
     let downgraded = 0;
+    let skippedRace = 0;
     const errors: Array<{ storeId: string; error: string }> = [];
 
     for (const store of candidates) {
@@ -82,15 +91,34 @@ export async function POST(req: NextRequest) {
       if (!usage?.period_end || usage.period_end >= today) continue;
 
       try {
-        await supabase
+        // D-09: Optimistic lock — UPDATE only if updated_at hasn't changed since
+        // we read the candidate. If a renewal webhook bumped updated_at mid-cron,
+        // the WHERE matches 0 rows and we skip (info-log per D-11). The trigger
+        // from 01-01 (stores_set_updated_at) ensures every UPDATE bumps the
+        // timestamp, so this check is robust without auditing every writer.
+        const { data: updated, error: updErr } = await supabase
           .from("stores")
           .update({
             plan_id: freePlan.id,
-            updated_at: new Date().toISOString(),
+            subscription_status: "expired",
           })
-          .eq("id", store.id);
-        logger.info("store_downgraded_to_free", { store_id: store.id, name: store.name });
-        downgraded++;
+          .eq("id", store.id)
+          .eq("updated_at", store.updated_at)
+          .select("id");
+
+        if (updErr) throw updErr;
+
+        if (!updated || updated.length === 0) {
+          // D-11: log skip with positive reason
+          skippedRace++;
+          logger.info("cron_downgrade_skipped_race", {
+            store_id: store.id,
+            reason: "updated_at changed mid-cron",
+          });
+        } else {
+          logger.info("store_downgraded_to_free", { store_id: store.id, name: store.name });
+          downgraded++;
+        }
       } catch (e) {
         errors.push({
           storeId: store.id,
@@ -99,7 +127,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, downgraded, errors: errors.length, candidates: candidates.length });
+    return NextResponse.json({
+      ok: true,
+      downgraded,
+      skippedRace,
+      errors: errors.length,
+      candidates: candidates.length,
+    });
   } catch (e) {
     captureError(e, { route: "/api/cron/downgrade-expired" });
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
