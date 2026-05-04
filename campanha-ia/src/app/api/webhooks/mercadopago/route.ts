@@ -296,7 +296,7 @@ async function handleSubscriptionEvent(subscriptionId: string) {
   try {
     const subscription = await getSubscriptionStatus(subscriptionId);
 
-    console.log("[Webhook:MercadoPago] Assinatura:", {
+    logger.info("mp_subscription_event", {
       id: subscription.id,
       status: subscription.status,
       ref: subscription.externalReference,
@@ -306,7 +306,22 @@ async function handleSubscriptionEvent(subscriptionId: string) {
     const [storeId, planId] = ref.split("|");
 
     if (!storeId || !planId) {
-      console.warn("[Webhook:MercadoPago] ⚠️ external_reference da assinatura inválido:", ref);
+      logger.warn("mp_subscription_invalid_ref", {
+        subscription_id: subscriptionId,
+        ref,
+      });
+      return;
+    }
+
+    // M-18: defense-in-depth — confirm the subscription returned by MP matches the
+    // subscriptionId we asked about. Signature already covers data.id; this guards
+    // against a tampered external_reference resource being followed across stores.
+    if (subscription.id !== subscriptionId) {
+      logger.warn("mp_subscription_id_mismatch", {
+        requested: subscriptionId,
+        returned: subscription.id,
+        storeId,
+      });
       return;
     }
 
@@ -314,37 +329,38 @@ async function handleSubscriptionEvent(subscriptionId: string) {
 
     switch (subscription.status) {
       case "authorized":
-        // Assinatura ativada com sucesso — plano será ativado pelo webhook de payment
-        console.log(`[Webhook:MercadoPago] ✅ Assinatura autorizada! Store: ${storeId}, Plano: ${planId}`);
-
-        // Salvar subscription ID na loja para gerenciamento futuro
+        // Assinatura ativada — salvar subscription_id e marcar status active.
+        logger.info("mp_subscription_authorized", { storeId, planId, subscriptionId });
         await supabase.from("stores").update({
           mercadopago_subscription_id: subscriptionId,
-          updated_at: new Date().toISOString(),
+          subscription_status: "active",
         }).eq("id", storeId);
         break;
 
       case "paused":
-        console.log(`[Webhook:MercadoPago] ⏸️ Assinatura pausada. Store: ${storeId}`);
+        // Pause é informacional — não muda plano ativo, não muda sub_id.
+        logger.info("mp_subscription_paused", { storeId, planId, subscriptionId });
         break;
 
       case "cancelled":
-        console.log(`[Webhook:MercadoPago] ❌ Assinatura cancelada. Store: ${storeId}`);
-
-        // Marcar que a assinatura foi cancelada, mas MANTER o plano ativo
-        // até o fim do período já pago (period_end do store_usage atual).
-        // O downgrade para grátis acontece naturalmente quando o período expira
-        // e nenhum novo pagamento chega (updateStorePlan não é chamado).
+        // C-4 fix: NÃO nullar mercadopago_subscription_id. Marcar subscription_status='cancelled'.
+        // Plano permanece ativo até o fim do period_end (cron/downgrade-expired faz o flip).
+        // Mantendo o sub_id permite reconciliação se o usuário re-assina, e elimina o
+        // race condition entre cancel + cron + resubscribe descrito em H-7.
+        logger.info("mp_subscription_cancelled_pending_period_end", { storeId, planId, subscriptionId });
         await supabase.from("stores").update({
-          mercadopago_subscription_id: null,
-          updated_at: new Date().toISOString(),
+          subscription_status: "cancelled",
         }).eq("id", storeId);
-
-        console.log(`[Webhook:MercadoPago] ✅ Store ${storeId}: assinatura removida, plano mantido até fim do período`);
         break;
 
       default:
-        console.log(`[Webhook:MercadoPago] 📋 Status assinatura: ${subscription.status}. Store: ${storeId}`);
+        // L-11: pending, expired, failed, etc. — surface at warn so ops sees them.
+        logger.warn("mp_subscription_status_unhandled", {
+          storeId,
+          planId,
+          subscriptionId,
+          status: subscription.status,
+        });
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
