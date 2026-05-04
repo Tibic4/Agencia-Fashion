@@ -18,11 +18,12 @@
  *   { kicker: string }                  → uppercase 10-px label above heading
  *   { spacer: number }                  → vertical gap (px)
  */
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { SITE_BASE } from '@/lib/legal/content';
 
 export type LegalBlock =
   | { type: 'kicker'; text: string }
@@ -39,14 +40,26 @@ interface Props {
   subtitle?: string;
   /** Last-updated date — shown as a kicker below the title. */
   lastUpdated?: string;
+  /**
+   * Site slug for the canonical version of this legal text. Render a
+   * prominent "Versão completa" CTA at the top that opens
+   * `${SITE_BASE}/${siteSlug}` in the system browser.
+   *
+   * Required by the M2-02 Option B drift policy: the in-app text is a
+   * SUMMARY; the canonical version lives on the marketing site, and
+   * the user must always be able to reach it in one tap.
+   */
+  siteSlug?: string;
   /** Body content (in order). */
   blocks: LegalBlock[];
 }
 
-export function LegalPage({ title, subtitle, lastUpdated, blocks }: Props) {
+export function LegalPage({ title, subtitle, lastUpdated, siteSlug, blocks }: Props) {
   const scheme = useColorScheme();
   const colors = Colors[scheme];
   const insets = useSafeAreaInsets();
+
+  const fullUrl = siteSlug ? `${SITE_BASE}/${siteSlug}` : null;
 
   return (
     <ScrollView
@@ -79,6 +92,33 @@ export function LegalPage({ title, subtitle, lastUpdated, blocks }: Props) {
         >
           {subtitle}
         </Animated.Text>
+      )}
+
+      {fullUrl && (
+        <Animated.View
+          entering={FadeInDown.duration(360).delay(120)}
+          style={[
+            styles.fullVersionCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.fullVersionLabel, { color: colors.textSecondary }]}>
+            Esta é uma versão resumida.
+          </Text>
+          <Pressable
+            onPress={() => {
+              Linking.openURL(fullUrl).catch(() => {});
+            }}
+            accessibilityRole="link"
+            accessibilityLabel={`Abrir versão completa em ${fullUrl}`}
+            accessibilityHint="Abre a versão canônica desta política no navegador"
+            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Text style={[styles.fullVersionLink, { color: Colors.brand.primary }]}>
+              Ver versão completa em {fullUrl}
+            </Text>
+          </Pressable>
+        </Animated.View>
       )}
 
       <View style={{ height: 24 }} />
@@ -229,5 +269,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     textDecorationLine: 'underline',
     marginBottom: 12,
+  },
+  fullVersionCard: {
+    marginTop: 20,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  fullVersionLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: 4,
+  },
+  fullVersionLink: {
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
+    textDecorationLine: 'underline',
+    lineHeight: 20,
   },
 });

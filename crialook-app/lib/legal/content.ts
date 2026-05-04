@@ -1,14 +1,36 @@
 /**
- * Legal content — single source of truth for the in-app legal screens.
+ * Legal content — in-app SUMMARY of the canonical site policies.
  *
- * Mirrors the marketing site (crialook.com.br/{termos,privacidade,dpo,
- * subprocessadores,consentimento-biometrico}). Keep these blocks in sync
- * when the site updates — schedule a quarterly review or hook a CI check
- * that flags drift.
+ * RELATIONSHIP TO SITE (Option B per LEGAL_DRIFT_RECONCILIATION.md):
+ *   Esta é uma versão resumida das políticas. A versão completa e canônica
+ *   está em crialook.com.br/{termos,privacidade,dpo,subprocessadores,
+ *   consentimento-biometrico} — esta in-app é cópia simplificada para
+ *   conveniência do usuário. Cada tela legal renderiza um link prominente
+ *   "Versão completa" no topo apontando pra URL canônica do site.
+ *
+ * DRIFT POLICY: this summary may legitimately differ from the site in
+ * VERBOSITY, ORDERING, and TONE. It must NOT mention entities, contacts,
+ * or commitments that the site does not also cover. The CI check
+ * `npm run check:legal-drift` enforces essence-equivalence (key entities
+ * present in BOTH), not byte-for-byte equality.
+ *
+ * When site updates: bump LAST_UPDATED here and re-run the drift script.
  */
 import type { LegalBlock } from '@/components/LegalPage';
 
-const LAST_UPDATED = '3 de maio de 2026';
+/**
+ * LAST_UPDATED — display string AND CI freshness anchor.
+ * The drift script parses this to enforce that in-app is no more than
+ * 30 days behind the site's "vigente desde" date.
+ */
+const LAST_UPDATED = '4 de maio de 2026';
+
+/**
+ * SITE_BASE — canonical legal content origin. Each screen passes
+ * `siteBase + slug` to LegalPage so the "Versão completa" affordance
+ * is consistent and easy to repoint if the marketing domain ever moves.
+ */
+export const SITE_BASE = 'https://crialook.com.br';
 
 // ---------- Termos de Uso ---------------------------------------------------
 export const termos = {
@@ -16,6 +38,7 @@ export const termos = {
   subtitle:
     'Estes termos regulam o uso do CriaLook por lojistas e usuários autorizados. Ao usar o app, você concorda com tudo abaixo.',
   lastUpdated: LAST_UPDATED,
+  siteSlug: 'termos',
   blocks: [
     { type: 'heading', text: '1. Sobre o CriaLook' },
     {
@@ -81,6 +104,7 @@ export const privacidade = {
   subtitle:
     'Como o CriaLook coleta, usa e protege seus dados — em conformidade com a LGPD (Lei 13.709/2018).',
   lastUpdated: LAST_UPDATED,
+  siteSlug: 'privacidade',
   blocks: [
     { type: 'heading', text: '1. Dados que coletamos' },
     {
@@ -150,6 +174,7 @@ export const dpo = {
   subtitle:
     'Canal oficial para exercer seus direitos sob a LGPD.',
   lastUpdated: LAST_UPDATED,
+  siteSlug: 'dpo',
   blocks: [
     { type: 'heading', text: 'Quem é o Encarregado' },
     {
@@ -189,6 +214,7 @@ export const subprocessadores = {
   subtitle:
     'Fornecedores que tratam dados dos usuários do CriaLook em nosso nome. Atualizamos esta lista com 15 dias de antecedência.',
   lastUpdated: LAST_UPDATED,
+  siteSlug: 'subprocessadores',
   blocks: [
     { type: 'heading', text: 'Clerk' },
     { type: 'kicker', text: 'EUA · Autenticação' },
@@ -239,6 +265,7 @@ export const consentimentoBiometrico = {
   subtitle:
     'Quando você envia fotos com pessoas, características biométricas (rosto, corpo) podem ser processadas pela IA. Aqui está exatamente o que acontece.',
   lastUpdated: LAST_UPDATED,
+  siteSlug: 'consentimento-biometrico',
   blocks: [
     { type: 'heading', text: 'O que coletamos' },
     {
