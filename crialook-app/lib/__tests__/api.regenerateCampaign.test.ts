@@ -6,17 +6,23 @@
  * `globalThis.fetch`. We assert call shape (POST + body present/absent),
  * the typed RegenerateReason union, and the BAD_REQUEST classification path.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.unmock('@/lib/api');
 
 // Stub EXPO_PUBLIC_API_URL so BASE_URL resolves to a deterministic origin.
 process.env.EXPO_PUBLIC_API_URL = 'https://api.test';
 
-// Async dynamic import AFTER unmock so the real module loads.
-async function loadApi() {
-  return await import('@/lib/api');
-}
+// Phase 3 D-04: hoist dynamic import to beforeAll. The unmock above MUST
+// run first (vitest evaluates vi.unmock at module-eval time, before any
+// beforeAll), so by the time beforeAll runs we get the real api module —
+// same behavior as the previous loadApi() helper, but the jsdom +
+// module-resolve cost is paid once outside any per-test 5000ms timeout.
+let apiModule: typeof import('@/lib/api');
+
+beforeAll(async () => {
+  apiModule = await import('@/lib/api');
+});
 
 interface RecordedCall {
   url: string;
@@ -55,7 +61,7 @@ afterEach(() => {
 
 describe('regenerateCampaign', () => {
   it('Test 1 — no reason → POSTs without body, resolves to legacy paid payload', async () => {
-    const { regenerateCampaign } = await loadApi();
+    const { regenerateCampaign } = apiModule;
     stubFetchOk({
       success: true,
       data: { used: 1, limit: 3, free: false },
@@ -75,7 +81,7 @@ describe('regenerateCampaign', () => {
   });
 
   it('Test 2 — reason supplied → POSTs JSON body, resolves to free payload', async () => {
-    const { regenerateCampaign } = await loadApi();
+    const { regenerateCampaign } = apiModule;
     stubFetchOk({
       success: true,
       data: { reason: 'face_wrong', free: true },
@@ -94,7 +100,7 @@ describe('regenerateCampaign', () => {
   });
 
   it('Test 3 — unknown reason string fails to compile (TS-level guard)', async () => {
-    const { regenerateCampaign } = await loadApi();
+    const { regenerateCampaign } = apiModule;
     stubFetchOk({ success: true, data: { reason: 'face_wrong', free: true } });
 
     // The TypeScript union should reject any string outside the 5 enum values.
@@ -108,7 +114,7 @@ describe('regenerateCampaign', () => {
   });
 
   it('Test 4 — backend 400 INVALID_REASON → ApiError with code BAD_REQUEST', async () => {
-    const { regenerateCampaign, ApiError } = await loadApi();
+    const { regenerateCampaign, ApiError } = apiModule;
     stubFetchError(400, {
       error: 'Invalid reason',
       code: 'INVALID_REASON',

@@ -23,7 +23,7 @@
  *   6. judgeCampaignJob is included in inngestFunctions array.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ── Mocks: stub the three downstream collaborators ─────────────────────
 
@@ -50,6 +50,16 @@ vi.mock("./storage-gc", () => ({
   storageGarbageCollectorCron: { id: "stub-gc-cron" },
   storageGarbageCollectorManual: { id: "stub-gc-manual" },
 }));
+
+// Phase 3 D-03: hoist dynamic import to beforeAll so the first-load cost
+// of the entire Inngest + Supabase + AI graph is paid ONCE, outside any
+// per-test 5000ms timeout. The 2 timeouts QUALITY.md flagged were both
+// the first describe block to hit `await import("./functions")`.
+let functionsModule: typeof import("./functions");
+
+beforeAll(async () => {
+  functionsModule = await import("./functions");
+});
 
 // ── Stub fixtures ───────────────────────────────────────────────────────
 
@@ -127,7 +137,7 @@ afterEach(() => {
 describe("judgeCampaignJob — happy path (D-01..D-06)", () => {
   it("calls scoreCampaignQuality → setCampaignScores → logModelCost in order", async () => {
     const stepNames: string[] = [];
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
 
     const result = await (judgeCampaignJob as unknown as { fn: (ctx: unknown) => Promise<unknown> }).fn({
       event: makeEvent(),
@@ -187,7 +197,7 @@ describe("judgeCampaignJob — happy path (D-01..D-06)", () => {
 
 describe("judgeCampaignJob — onFailure handler writes falha_judge sentinel (D-02)", () => {
   it("calls setCampaignScores with nivel_risco='falha_judge' + numerics=1", async () => {
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const onFailure = (judgeCampaignJob as unknown as { opts: { onFailure?: (ctx: unknown) => Promise<void> } })
       .opts.onFailure!;
 
@@ -220,7 +230,7 @@ describe("judgeCampaignJob — onFailure handler writes falha_judge sentinel (D-
   it("handles the wrapped Inngest event shape (event.data.event.data)", async () => {
     // Inngest's onFailure handler can receive either the original event or
     // a wrapped form. The handler tries the wrapped shape first.
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const onFailure = (judgeCampaignJob as unknown as { opts: { onFailure?: (ctx: unknown) => Promise<void> } })
       .opts.onFailure!;
 
@@ -236,7 +246,7 @@ describe("judgeCampaignJob — onFailure handler writes falha_judge sentinel (D-
   });
 
   it("does NOT throw when campaignId is missing — logs and exits", async () => {
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const onFailure = (judgeCampaignJob as unknown as { opts: { onFailure?: (ctx: unknown) => Promise<void> } })
       .opts.onFailure!;
 
@@ -253,7 +263,7 @@ describe("judgeCampaignJob — onFailure handler writes falha_judge sentinel (D-
 
 describe("judgeCampaignJob — idempotency proxy (C-02)", () => {
   it("re-emit for same campaignId → setCampaignScores called twice with same campaignId (DB UPSERT collapses)", async () => {
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const fn = (judgeCampaignJob as unknown as { fn: (ctx: unknown) => Promise<unknown> }).fn;
 
     await fn({ event: makeEvent({ campaignId: "X" }), step: makeStep([]) });
@@ -276,19 +286,19 @@ describe("judgeCampaignJob — idempotency proxy (C-02)", () => {
 
 describe("judgeCampaignJob — Inngest createFunction config", () => {
   it("event name is LOCKED to 'campaign/judge.requested'", async () => {
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const opts = (judgeCampaignJob as unknown as { opts: { triggers: Array<{ event?: string }> } }).opts;
     expect(opts.triggers).toEqual([{ event: "campaign/judge.requested" }]);
   });
 
   it("retries: 2 (matches generateModelPreviewJob convention)", async () => {
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const opts = (judgeCampaignJob as unknown as { opts: { retries?: number } }).opts;
     expect(opts.retries).toBe(2);
   });
 
   it("function id is 'judge-campaign'", async () => {
-    const { judgeCampaignJob } = await import("./functions");
+    const { judgeCampaignJob } = functionsModule;
     const opts = (judgeCampaignJob as unknown as { opts: { id: string } }).opts;
     expect(opts.id).toBe("judge-campaign");
   });
@@ -300,7 +310,7 @@ describe("judgeCampaignJob — Inngest createFunction config", () => {
 
 describe("judgeCampaignJob — registered in inngestFunctions export", () => {
   it("is included in the inngestFunctions array exported from functions.ts", async () => {
-    const { judgeCampaignJob, inngestFunctions } = await import("./functions");
+    const { judgeCampaignJob, inngestFunctions } = functionsModule;
     expect(inngestFunctions).toContain(judgeCampaignJob);
   });
 });
