@@ -36,6 +36,15 @@ Sentry.init({
   ignoreErrors: [
     "AbortError",
     "The user aborted a request",
+    // D-29 / Phase 8 verification (2026-05-04): "Pipeline:Scorer" matches the
+    // LangChain LLM-scorer trace string used by the analyzer/copy steps when
+    // they short-circuit. Verified (grep) that judge dispatch errors (P2's
+    // judge_pending tracking) do NOT serialize as "Pipeline:Scorer" — judge
+    // errors flow through Inngest with their own error names. So this filter
+    // does NOT mask the judge_pending signals added in Phase 2.
+    // If a future judge change starts emitting errors that match this pattern,
+    // NARROW the filter to e.g. /Pipeline:Scorer:[a-z]+_abort/ instead of
+    // removing it (the LLM scorer noise is real and high-volume).
     "Pipeline:Scorer",
     "Failed to fetch",
   ],

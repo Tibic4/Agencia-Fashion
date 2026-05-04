@@ -458,12 +458,22 @@ export async function failCampaign(campaignId: string, errorMessage: string) {
 // STORE USAGE (Quota)
 // ═══════════════════════════════════════════════════════════
 
-/** Busca o uso atual do período da loja (sem auto-criar) */
+/**
+ * Busca o uso atual do período da loja (sem auto-criar).
+ *
+ * D-25 / M-10: usa .maybeSingle() (não .single()) pra evitar PGRST116 throw
+ * em corner case multi-row. UNIQUE constraint store_usage_store_id_period_start_key
+ * (baseline.sql:283) garante (store_id, period_start) único, mas a query usa
+ * lte/gte em period_start/period_end — em teoria poderia matchear múltiplos
+ * períodos sobrepostos. .order + .limit(1) garante AT MOST 1 row; .maybeSingle()
+ * retorna null se vazio em vez de throw. Caller (getOrCreateCurrentUsage L-489)
+ * já null-checa.
+ */
 export async function getCurrentUsage(storeId: string) {
   const supabase = createAdminClient();
   const today = new Date().toISOString().split("T")[0];
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("store_usage")
     .select("*")
     .eq("store_id", storeId)
@@ -471,7 +481,14 @@ export async function getCurrentUsage(storeId: string) {
     .gte("period_end", today)
     .order("period_start", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
+
+  if (error) {
+    // Real error (not "no row" — that's data=null). Log + return null so caller
+    // self-heals via getOrCreateCurrentUsage upsert path instead of crashing.
+    console.warn(`[DB] getCurrentUsage error for store ${storeId}: ${error.message}`);
+    return null;
+  }
 
   return data;
 }

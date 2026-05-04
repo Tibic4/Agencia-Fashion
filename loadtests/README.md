@@ -78,6 +78,12 @@ k6 run loadtests/scenarios/04-load-authenticated.js
 
 ## Resultados — antes / depois
 
+> **Last measured: 2026-05-04 (Phase 8 readiness check)**
+> Capacity numbers below reflect a single point-in-time measurement. Re-measure
+> after major infra changes (nginx config, PM2 settings, Supabase plan tier).
+> Future runs: append a new dated section below ("### 2026-XX-XX run") rather
+> than overwriting these numbers — preserves trend visibility.
+
 ### Baseline (antes da otimização)
 
 Smoke 1 VU × 30s, landing:

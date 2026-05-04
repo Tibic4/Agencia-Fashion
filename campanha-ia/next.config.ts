@@ -49,6 +49,22 @@ const nextConfig: NextConfig = {
   },
 };
 
+// ── D-27 / M-14: Sentry source-map upload gate ──
+// Source maps upload ONLY when SENTRY_AUTH_TOKEN is set in env. Verified
+// (.github/workflows/ci.yml — no SENTRY_AUTH_TOKEN secret) that CI does NOT
+// pass this token to PR builds today, so PR builds DON'T upload — saving Sentry
+// quota.
+//
+// To enable upload on main-branch deploys (when ready):
+//   1. Add SENTRY_AUTH_TOKEN as a GitHub Actions secret
+//   2. Gate it in ci.yml's build step:
+//        env:
+//          SENTRY_AUTH_TOKEN: ${{ github.ref == 'refs/heads/main' && secrets.SENTRY_AUTH_TOKEN || '' }}
+//   3. Verify by checking Sentry "Releases" page after a main merge — should see new release
+//
+// widenClientFileUpload: true means MORE chunks (vendor, framework) get uploaded
+// when uploads ARE enabled. That's bandwidth + storage cost; revisit if the
+// monthly Sentry quota becomes a constraint.
 export default withSentryConfig(nextConfig, {
   // Upload de source maps desabilitado se não houver AUTH_TOKEN
   // (evita quebrar build em ambientes sem credencial Sentry)
