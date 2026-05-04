@@ -17,6 +17,11 @@ export default defineConfig({
       // co-location stays even though we only ship Vitest for one folder
       // today; expand here when more components/* dirs grow tests.
       'components/historico/__tests__/**/*.{test,spec}.{ts,tsx}',
+      // Phase 07 D-01..D-05: components/__tests__/ holds the ModelBottomSheet
+      // delete-affordance contract test (F-11). Same Gorhom + DOM-stub pattern
+      // as RegenerateReasonPicker; kept generic so future component tests at
+      // components/__tests__/*.test.tsx are auto-picked-up.
+      'components/__tests__/**/*.{test,spec}.{ts,tsx}',
     ],
     exclude: ['**/node_modules/**'],
     environment: 'jsdom',
