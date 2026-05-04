@@ -382,6 +382,14 @@ function ModeloScreenInner() {
     if (ok) deleteMut.mutate(id);
   };
 
+  /* Variante usada pelo ModelBottomSheet (Phase 7 D-02 / F-11): a sheet já
+     mostrou o ConfirmSheet antes de chamar onDelete, então pulamos o
+     askDeleteModel e vamos direto pra mutation. handleDelete original fica
+     intacto pra outros call-sites (ex: ModelsListBody, M2 card menu). */
+  const handleDeleteFromSheet = (id: string) => {
+    deleteMut.mutate(id);
+  };
+
   const setActiveMut = useMutation({
     mutationFn: (id: string) => apiPost(`/model/${id}/activate`),
     onMutate: async (id) => {
@@ -475,8 +483,9 @@ function ModeloScreenInner() {
       onSubmit={handleCreate}
       onDismissed={resetForm}
     />
-    {/* Pinch-to-zoom sheet — quando o user confirma na CTA, ativa esse modelo. */}
-    <ModelBottomSheet ref={peekSheetRef} onSelect={handleSetActive} />
+    {/* Pinch-to-zoom sheet — quando o user confirma na CTA, ativa esse modelo.
+        onDelete (Phase 7 F-11): trash icon dentro da sheet → handleDeleteFromSheet. */}
+    <ModelBottomSheet ref={peekSheetRef} onSelect={handleSetActive} onDelete={handleDeleteFromSheet} />
     {ConfirmDeleteEl}
     </View>
     </ModelPeekProvider>

@@ -46,6 +46,7 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 import Colors from '@/constants/Colors';
 import { tokens } from '@/lib/theme/tokens';
@@ -53,6 +54,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { useT } from '@/lib/i18n';
 import type { ModelItem } from '@/types';
 import { AuraGlow } from '@/components/skia';
+import { useConfirmSheet } from '@/components/ConfirmSheet';
+import { toast } from '@/lib/toast';
 
 // ─── Public API ───────────────────────────────────────────────────────────
 export interface ModelBottomSheetRef {
@@ -65,6 +68,13 @@ export interface ModelBottomSheetRef {
 interface Props {
   /** Called with the model id when the user taps "Selecionar modelo". */
   onSelect: (modelId: string) => void;
+  /**
+   * Optional. Called with the model id when the user confirms delete via the
+   * trash icon. Only invoked AFTER the danger ConfirmSheet returns true. The
+   * caller should NOT show its own confirm — this sheet already does.
+   * (Phase 7 D-02 / F-11: model-delete affordance.)
+   */
+  onDelete?: (modelId: string) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -105,11 +115,12 @@ function readField(model: ModelItem, key: string): string | undefined {
 
 // ─── Component ────────────────────────────────────────────────────────────
 export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
-  function ModelBottomSheet({ onSelect }, ref) {
+  function ModelBottomSheet({ onSelect, onDelete }, ref) {
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const insets = useSafeAreaInsets();
     const { t } = useT();
+    const { ConfirmEl, ask } = useConfirmSheet();
 
     const sheetRef = useRef<BottomSheetModal>(null);
     const [model, setModel] = React.useState<ModelItem | null>(null);
@@ -244,6 +255,26 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
       sheetRef.current?.dismiss();
     }, [model, onSelect]);
 
+    // ─── Delete action (danger confirm + toast) ───────────────────────
+    /* Phase 7 D-01..D-05 / F-11: trash icon affordance for custom models.
+       O ConfirmSheet aqui já cobre o confirm — o caller (modelo.tsx) usa
+       handleDeleteFromSheet que pula o askDeleteModel e vai direto pra
+       mutate, evitando double-confirm. Order: dismiss ANTES do toast pra
+       o toast não renderizar atrás do backdrop do sheet. */
+    const handleDeletePress = useCallback(async () => {
+      if (!model || !onDelete) return;
+      const ok = await ask({
+        title: t('model.deleteTitle'),
+        message: t('model.deleteMessage'),
+        variant: 'danger',
+        confirmLabel: t('common.delete'),
+      });
+      if (!ok) return;
+      onDelete(model.id);
+      sheetRef.current?.dismiss();
+      toast.success(t('model.deletedToast'));
+    }, [model, onDelete, ask, t]);
+
     // ─── Auto-clear local state on full dismiss ───────────────────────
     const handleChange = useCallback((index: number) => {
       if (index === -1) {
@@ -274,6 +305,7 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
     const photoUri = model?.image_url || model?.photo_url || '';
 
     return (
+      <>
       <BottomSheetModal
         ref={sheetRef}
         snapPoints={SNAP_POINTS as unknown as string[]}
@@ -400,10 +432,30 @@ export const ModelBottomSheet = forwardRef<ModelBottomSheetRef, Props>(
                   <Text style={styles.ctaText}>{t('model.selectCta')}</Text>
                 </LinearGradient>
               </Pressable>
+
+              {/* Trash icon — Phase 7 D-01..D-05 / F-11.
+                  Visível só quando is_custom (modelos de catálogo são
+                  imutáveis pelo user; backend já bloqueia, UI esconde a
+                  affordance pra evitar botão sem ação). Confirma via
+                  danger ConfirmSheet (haptic Heavy + CTA vermelho). */}
+              {isCustom && onDelete ? (
+                <Pressable
+                  onPress={handleDeletePress}
+                  accessibilityRole="button"
+                  accessibilityLabel="Deletar modelo"
+                  hitSlop={14}
+                  style={styles.deleteBtn}
+                >
+                  <FontAwesome name="trash" size={18} color={Colors.brand.error} />
+                  <Text style={styles.deleteBtnText}>{t('common.delete')}</Text>
+                </Pressable>
+              ) : null}
             </View>
           </BottomSheetScrollView>
         ) : null}
       </BottomSheetModal>
+      {ConfirmEl}
+      </>
     );
   },
 );
@@ -512,5 +564,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter_700Bold',
     letterSpacing: -0.3,
+  },
+  /* Phase 7 F-11 / D-01: trash affordance abaixo do CTA, centralizada,
+     usando Colors.brand.error (#EF4444). Tap-target 44+ via hitSlop=14. */
+  deleteBtn: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+  },
+  deleteBtnText: {
+    color: Colors.brand.error,
+    fontSize: 14,
+    fontFamily: 'Inter_600SemiBold',
   },
 });
