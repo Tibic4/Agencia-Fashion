@@ -5,7 +5,9 @@
  *  1. Unauthenticated → 401
  *  2. Per-user rate limit triggered → 429 + Retry-After (M2 control 2)
  *  3. Happy path: 1 valid purchase restored → 200 { restored: 1 }
- *  4. Empty / non-array purchases body → 400 / { restored: 0 }
+ *  4. Plan-preservation regression test (M2-04-09): all 3 valid SKUs
+ *     restore to their canonical slug, never to "gratis"
+ *  5. Empty / non-array purchases body → 400 / { restored: 0 }
  *
  * Note: control 3 (obfuscatedExternalAccountId) is NOT enforced on /restore
  * by design. Restore replays purchases the user already owns from Google's
@@ -137,7 +139,7 @@ describe("/api/billing/restore (M2 Phase 1)", () => {
     expect(m.mockVerifySubscription).not.toHaveBeenCalled();
   });
 
-  it("happy path: valid purchase → 200 { restored: 1 } + updateStorePlan", async () => {
+  it("happy path: valid purchase → 200 { restored: 1 } + updateStorePlan with the right slug", async () => {
     m.mockVerifySubscription.mockResolvedValueOnce({
       expiryTimeMillis: String(Date.now() + 86_400_000),
       paymentState: 1,
@@ -151,16 +153,48 @@ describe("/api/billing/restore (M2 Phase 1)", () => {
     const body = await res.json();
     expect(body).toEqual({ restored: 1 });
     expect(m.mockUpdateStorePlan).toHaveBeenCalledTimes(1);
-    // NOTE: route passes `lastValidPlan` (already a slug from planFromSku — "pro")
-    // through `skuToPlanSlug`, which only accepts SKU strings ("pro_mensal") and
-    // defensively returns FREE_PLAN_SLUG ("gratis") for anything else. This is a
-    // pre-existing pre-M2 bug in /billing/restore (would silently free-plan a
-    // legitimate restore). Test pins current behavior; fix is out of M2-01 scope
-    // and tracked separately. Verify route does NOT have this bug.
-    expect(m.mockUpdateStorePlan).toHaveBeenCalledWith("store-restore-1", "gratis", null);
+    // M2-04-09 fix: route passes `lastValidPlan` (canonical slug "pro" from
+    // planFromSku) DIRECTLY to updateStorePlan. Previously it ran the slug
+    // through skuToPlanSlug() — which expects an SKU like "pro_mensal" and
+    // defensively coerced unknown strings to FREE_PLAN_SLUG ("gratis"),
+    // silently downgrading every successful restore to free.
+    expect(m.mockUpdateStorePlan).toHaveBeenCalledWith("store-restore-1", "pro", null);
     const subUpsert = m.upsertCalls.find((c) => c.table === "subscriptions");
     expect(subUpsert).toBeDefined();
     expect(subUpsert!.payload.clerk_user_id).toBe(USER_ID);
+  });
+
+  it("regression (M2-04-09): restore preserves the plan, never downgrades to gratis", async () => {
+    // For each of the 3 valid SKUs, restore must call updateStorePlan with the
+    // canonical slug — never the FREE_PLAN_SLUG fallback.
+    const cases: Array<{ sku: string; expectedSlug: "essencial" | "pro" | "business" }> = [
+      { sku: "essencial_mensal", expectedSlug: "essencial" },
+      { sku: "pro_mensal", expectedSlug: "pro" },
+      { sku: "business_mensal", expectedSlug: "business" },
+    ];
+
+    for (const { sku, expectedSlug } of cases) {
+      vi.clearAllMocks();
+      m.upsertCalls.length = 0;
+      m.mockAuth.mockReturnValue({ userId: USER_ID });
+      m.mockGetStoreByClerkId.mockResolvedValue({ id: "store-restore-1", clerk_user_id: USER_ID });
+      m.mockConsumeTokenBucket.mockResolvedValue({ allowed: true, remaining: 29, retryAfterMs: 0 });
+      m.mockVerifySubscription.mockResolvedValueOnce({
+        expiryTimeMillis: String(Date.now() + 86_400_000),
+        paymentState: 1,
+        acknowledgementState: 1,
+        autoRenewing: true,
+      });
+
+      const res = await POST(
+        makeRequest({ purchases: [{ sku, token: "tok_aaaaaaaaaa" }] }),
+      );
+      expect(res.status).toBe(200);
+      expect(m.mockUpdateStorePlan).toHaveBeenCalledWith("store-restore-1", expectedSlug, null);
+      // Anti-regression: the previous bug would have called with "gratis" — this
+      // assertion makes sure we never silently fall back.
+      expect(m.mockUpdateStorePlan).not.toHaveBeenCalledWith("store-restore-1", "gratis", null);
+    }
   });
 
   it("rejects with 400 when purchases is not an array", async () => {

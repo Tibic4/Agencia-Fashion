@@ -12,7 +12,6 @@ import {
   verifySubscription,
   type ValidSku,
 } from "@/lib/payments/google-play";
-import { skuToPlanSlug } from "@/lib/payments/sku-plan-mapping";
 import { updateStorePlan, getStoreByClerkId } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -157,8 +156,14 @@ export async function POST(req: NextRequest) {
           user_id: userId,
         });
       } else {
-        const slug = skuToPlanSlug(lastValidPlan);
-        await updateStorePlan(store.id, slug, null);
+        // M2-04-09 fix: lastValidPlan is already a canonical plan slug
+        // ("essencial" | "pro" | "business") because planFromSku() returns the
+        // slug, not the SKU. The previous code wrapped it in skuToPlanSlug(),
+        // which only recognises SKUs ("pro_mensal" etc) and silently fell back
+        // to FREE_PLAN_SLUG for anything else — meaning every successful
+        // restore was downgrading the user to "gratis" the moment the
+        // upsert succeeded. Pass the slug directly to updateStorePlan.
+        await updateStorePlan(store.id, lastValidPlan, null);
       }
     }
 
