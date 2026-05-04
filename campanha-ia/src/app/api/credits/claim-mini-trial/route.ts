@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStoreByClerkId } from "@/lib/db";
+import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import { captureError, logger } from "@/lib/observability";
 
 export const dynamic = "force-dynamic";
@@ -11,21 +12,50 @@ export const dynamic = "force-dynamic";
  *
  * Reivindica 1 campanha completa grátis (Beta de 50 vagas).
  * Regras:
- *  - Apenas usuário autenticado (Clerk)
+ *  - Apenas usuário autenticado (Clerk) com email_verified === true (D-22)
  *  - 1 trial por clerk_user_id (não por store)
+ *  - Throttle Postgres bucket: 3 attempts / hora por user (D-22)
  *  - Limite global de MINI_TRIAL_TOTAL_SLOTS (default 50)
  *  - Killswitch via env (MINI_TRIAL_KILLSWITCH=true rejeita imediatamente)
  *
  * Retorna:
  *  - 200 { granted: true, remaining: N }
- *  - 200 { granted: false, reason: "already_used" | "slots_full" | "killswitch" }
+ *  - 200 { granted: false, reason: "already_used" | "slots_full" | "killswitch" | "email_not_verified" }
+ *  - 429 { granted: false, reason: "throttled" }
  *  - 401 não autenticado
  */
 export async function POST() {
   try {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session.userId;
     if (!userId) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    // D-22: require email_verified === true. Read from sessionClaims (JWT). Some
+    // Clerk JWT templates put it at the root, others under publicMetadata. Check both.
+    const claims = session.sessionClaims as Record<string, unknown> | null | undefined;
+    const publicMetadata = claims?.publicMetadata as { email_verified?: unknown } | undefined;
+    const rootVerified = claims?.email_verified;
+    const metaVerified = publicMetadata?.email_verified;
+    const emailVerified = rootVerified === true || metaVerified === true;
+    if (!emailVerified) {
+      logger.info("mini_trial_email_unverified", { user_id: userId });
+      return NextResponse.json({ granted: false, reason: "email_not_verified" });
+    }
+
+    // D-22: throttle via Postgres bucket (per-user; trials are 1 per clerk_user_id anyway).
+    // 3 attempts / hour: capacity=3, refill 1 token / 3600s.
+    const bucket = await consumeTokenBucket(`mini-trial:user:${userId}`, 3, 1, 3600);
+    if (!bucket.allowed) {
+      const retryAfterSec = Math.ceil(bucket.retryAfterMs / 1000);
+      return NextResponse.json(
+        { granted: false, reason: "throttled" },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfterSec) },
+        },
+      );
     }
 
     if (process.env.MINI_TRIAL_KILLSWITCH === "true") {
