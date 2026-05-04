@@ -445,17 +445,32 @@ export async function createCampaign(input: CreateCampaignInput) {
   return data;
 }
 
-/** Marca campanha como falha */
+/** Marca campanha como falha (single-shot — first caller wins) */
 export async function failCampaign(campaignId: string, errorMessage: string) {
   const supabase = createAdminClient();
-  await supabase
+  const { data, error } = await supabase
     .from("campaigns")
     .update({
       status: "failed",
       error_message: errorMessage,
       pipeline_completed_at: new Date().toISOString(),
     })
-    .eq("id", campaignId);
+    .eq("id", campaignId)
+    .eq("status", "processing") // H-10: single-shot — first caller wins, subsequent no-op
+    .select("id");
+
+  if (error) {
+    captureError(error, { function: "failCampaign", campaignId, errorMessage });
+    throw error;
+  }
+
+  if (!data || data.length === 0) {
+    // Another path already terminated the campaign — that's OK and expected.
+    logger.info("fail_campaign_noop", {
+      campaign_id: campaignId,
+      reason: "status not processing (already terminated)",
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
