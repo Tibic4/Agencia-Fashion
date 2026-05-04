@@ -4,6 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 import { createStore, createStoreModel, getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
+import {
+  AuthError,
+  ValidationError,
+  CrialookError,
+  respondToError,
+} from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session.userId) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      throw new AuthError();
     }
 
     const body = await request.json();
@@ -45,10 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!storeName || !segment) {
-      return NextResponse.json(
-        { error: "Nome da loja e segmento são obrigatórios" },
-        { status: 400 }
-      );
+      throw new ValidationError("Nome da loja e segmento são obrigatórios", "MISSING_REQUIRED");
     }
 
     let store;
@@ -70,7 +73,12 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
       if (updateErr || !updated) {
-        throw new Error(`Erro ao atualizar loja placeholder: ${updateErr?.message ?? "sem dados retornados"}`);
+        throw new CrialookError(
+          "STORE_UPDATE_FAILED",
+          "Erro ao atualizar loja",
+          500,
+          updateErr ?? undefined,
+        );
       }
       store = updated;
     } else {
@@ -153,6 +161,7 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error: unknown) {
+    if (error instanceof CrialookError) return respondToError(error);
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     logger.error("[API:store/onboarding] Error:", message);
     return NextResponse.json(

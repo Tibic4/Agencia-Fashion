@@ -23,6 +23,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import sharp from "sharp";
 import { isAllowedImageUrl } from "@/lib/security/image-host-allowlist";
+import { ValidationError } from "@/lib/errors";
 import { verifyImageMime } from "@/lib/security/verify-image-mime";
 
 export const dynamic = "force-dynamic";
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     }
     try {
       const res = await fetch(body.imageUrl);
-      if (!res.ok) throw new Error(`fetch failed ${res.status}`);
+      if (!res.ok) throw new ValidationError(`fetch falhou (${res.status})`, "FETCH_FAILED");
       inputBuffer = Buffer.from(await res.arrayBuffer());
       sourceMime = res.headers.get("content-type") || "";
     } catch (e) {

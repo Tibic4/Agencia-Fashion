@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
+import { CrialookError, respondToError } from "@/lib/errors";
 import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
       .from("showcase")
       .upload(beforePath, beforeProcessed, { contentType: "image/jpeg", upsert: true });
 
-    if (beforeErr) throw new Error(`Upload ANTES falhou: ${beforeErr.message}`);
+    if (beforeErr) throw new CrialookError("UPLOAD_FAILED", `Upload ANTES falhou: ${beforeErr.message}`, 502, beforeErr);
 
     // Processar + Upload DEPOIS
     const afterRaw = Buffer.from(await afterFile.arrayBuffer());
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
       .from("showcase")
       .upload(afterPath, afterProcessed, { contentType: "image/jpeg", upsert: true });
 
-    if (afterErr) throw new Error(`Upload DEPOIS falhou: ${afterErr.message}`);
+    if (afterErr) throw new CrialookError("UPLOAD_FAILED", `Upload DEPOIS falhou: ${afterErr.message}`, 502, afterErr);
 
     logger.info(`[API:admin/showcase] ✅ Fotos processadas — antes: ${(beforeRaw.length / 1024).toFixed(0)}KB→${(beforeProcessed.length / 1024).toFixed(0)}KB, depois: ${(afterRaw.length / 1024).toFixed(0)}KB→${(afterProcessed.length / 1024).toFixed(0)}KB`);
 
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     logger.error("[API:admin/showcase] Error:", message);
+    if (error instanceof CrialookError) return respondToError(error);
     return NextResponse.json({ error: "Erro ao criar item da vitrine" }, { status: 500 });
   }
 }

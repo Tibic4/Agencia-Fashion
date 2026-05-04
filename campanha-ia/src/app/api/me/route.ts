@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError, logger } from "@/lib/observability";
+import { AuthError, CrialookError, respondToError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function DELETE() {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      throw new AuthError();
     }
 
     const supabase = createAdminClient();
@@ -77,6 +78,7 @@ export async function DELETE() {
 
     return NextResponse.json({ ok: true, message: "Conta apagada" });
   } catch (e) {
+    if (e instanceof CrialookError) return respondToError(e);
     captureError(e, { route: "DELETE /api/me" });
     return NextResponse.json({ error: "Erro ao deletar" }, { status: 500 });
   }

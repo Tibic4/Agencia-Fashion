@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError } from "@/lib/observability";
+import { AuthError, CrialookError, respondToError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      throw new AuthError();
     }
 
     const supabase = createAdminClient();
@@ -78,6 +79,7 @@ export async function GET() {
       },
     });
   } catch (e) {
+    if (e instanceof CrialookError) return respondToError(e);
     captureError(e, { route: "GET /api/me/export" });
     return NextResponse.json({ error: "Erro ao exportar" }, { status: 500 });
   }

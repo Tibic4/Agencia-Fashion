@@ -4,6 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
+import {
+  AuthError,
+  NotFoundError,
+  CrialookError,
+  respondToError,
+} from "@/lib/errors";
 
 const StorePatchSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -25,16 +31,17 @@ export async function GET() {
   try {
     const session = await auth();
     if (!session.userId) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      throw new AuthError();
     }
 
     const store = await getStoreByClerkId(session.userId);
     if (!store) {
-      return NextResponse.json({ error: "Loja não encontrada", code: "NO_STORE" }, { status: 404 });
+      throw new NotFoundError("Loja não encontrada", "NO_STORE");
     }
 
     return NextResponse.json({ success: true, data: store });
   } catch (error: unknown) {
+    if (error instanceof CrialookError) return respondToError(error);
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     logger.error("[API:store] Error:", message);
     return NextResponse.json({ error: "Erro ao buscar loja" }, { status: 500 });
@@ -50,12 +57,12 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await auth();
     if (!session.userId) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      throw new AuthError();
     }
 
     const store = await getStoreByClerkId(session.userId);
     if (!store) {
-      return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
+      throw new NotFoundError("Loja não encontrada", "NO_STORE");
     }
 
     const rawBody = await req.json();
@@ -88,6 +95,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
+    if (error instanceof CrialookError) return respondToError(error);
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     logger.error("[API:store:PATCH] Error:", message);
     return NextResponse.json({ error: "Erro ao atualizar loja" }, { status: 500 });
