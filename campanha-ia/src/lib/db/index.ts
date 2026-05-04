@@ -23,6 +23,10 @@ export interface CreateStoreInput {
   state?: string;
   instagramHandle?: string;
   brandColor?: string;
+  /** Phase 1 / C-3: when called from the Clerk user.created webhook, the user
+   * has not completed the onboarding form yet. Default true preserves
+   * backward-compat for the onboarding-completion call site. */
+  onboardingCompleted?: boolean;
 }
 
 export interface StoreRecord {
@@ -65,7 +69,7 @@ export async function createStore(input: CreateStoreInput): Promise<StoreRecord>
       instagram_handle: input.instagramHandle || null,
       brand_colors: input.brandColor ? { primary: input.brandColor } : null,
       plan_id: freePlan?.id || null,
-      onboarding_completed: true,
+      onboarding_completed: input.onboardingCompleted ?? true,
     })
     .select()
     .single();
