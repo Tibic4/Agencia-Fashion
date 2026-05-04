@@ -22,6 +22,12 @@
     "test:rn:watch": "jest --watch",
     "check:legal-drift": "node scripts/check-legal-drift.js",
     "play:prep": "bash ../scripts/play-release-prep.sh",
+    "play:secrets": "bash ../scripts/eas-secrets-prefill.sh",
+    "play:apply-keys": "node ../scripts/apply-clerk-keys.js",
+    "play:validate-deployed": "bash ../scripts/validate-assetlinks-deployed.sh",
+    "play:validate-aab": "bash ../scripts/validate-aab-manifest.sh",
+    "play:finalize": "bash ../scripts/play-store-finalize.sh",
+    "play:preflight": "bash ../scripts/preflight-eas-build.sh",
     "storybook:dev": "storybook dev -p 6006",
     "storybook:build": "storybook build -o storybook-static"
   },
