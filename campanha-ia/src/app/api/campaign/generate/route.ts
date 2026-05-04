@@ -24,6 +24,16 @@ export const dynamic = "force-dynamic";
 const IS_DEMO_MODE = !process.env.GEMINI_API_KEY && !process.env.GOOGLE_AI_API_KEY;
 
 /**
+ * Phase 02 D-13: truncate user-supplied strings before logging so a 5KB
+ * "loja name" or product description doesn't pollute the log line. 50-char
+ * cap matches the audit guidance; ellipsis suffix marks truncation.
+ */
+function truncForLog(s: unknown, max = 50): string {
+  if (typeof s !== "string") return String(s);
+  return s.length > max ? s.slice(0, max) + "..." : s;
+}
+
+/**
  * Lê o header X-App-Locale enviado pelo app (PT-BR/EN). Default PT-BR
  * mantém compatibilidade com chamadas antigas (dashboard web, curl etc).
  */
@@ -181,7 +191,11 @@ export async function POST(request: NextRequest) {
         if (consumed) {
           needsAvulsoCredit = true;
           creditReserved = true;
-          console.log(`[Generate] 💳 Crédito avulso RESERVADO upfront (plano esgotado: ${quota.used}/${quota.limit})`);
+          logger.info("avulso_credit_reserved_upfront", {
+            store_id: store ? hashStoreId(store.id) : "anon",
+            quota_used: quota.used,
+            quota_limit: quota.limit,
+          });
         } else {
           // Race condition: crédito consumido entre check e consume
           const credits = await getStoreCredits(store.id);
@@ -198,7 +212,11 @@ export async function POST(request: NextRequest) {
         // Plano tem quota — reservar slot atomicamente agora (evita race condition)
         await incrementCampaignsUsed(store.id);
         planSlotReserved = true;
-        console.log(`[Generate] 📋 Slot de plano RESERVADO upfront (${quota.used + 1}/${quota.limit})`);
+        logger.info("plan_slot_reserved_upfront", {
+          store_id: store ? hashStoreId(store.id) : "anon",
+          quota_used: quota.used + 1,
+          quota_limit: quota.limit,
+        });
       }
 
       // ── Trial-only detection ──
@@ -227,7 +245,9 @@ export async function POST(request: NextRequest) {
           ]);
           isTrialOnly = (trialCount ?? 0) > 0 && (purchaseCount ?? 0) === 0;
           if (isTrialOnly) {
-            console.log(`[Generate] 🎁 Trial-only user → 1 foto (corte de custo)`);
+            logger.info("trial_only_user_detected", {
+              store_id: store ? hashStoreId(store.id) : "anon",
+            });
           }
         } catch (trialErr) {
           // D-04 (Phase 02 H-3): fail-secure. Detection failure → assume trial
@@ -272,9 +292,20 @@ export async function POST(request: NextRequest) {
         .toBuffer() as any;
       mediaType = "image/webp";
       const savings = ((1 - imageBuffer.length / originalSize) * 100).toFixed(0);
-      console.log(`[Generate] 📐 Imagem principal: ${(originalSize / 1024).toFixed(0)}KB → ${(imageBuffer.length / 1024).toFixed(0)}KB (-${savings}%)`);
+      logger.debug("image_downscaled", {
+        original_kb: Math.round(originalSize / 1024),
+        new_kb: Math.round(imageBuffer.length / 1024),
+        savings_pct: savings,
+      });
     } catch (sharpErr) {
-      console.warn("[Generate] ⚠️ Sharp indisponível, usando imagem original:", sharpErr);
+      logger.warn("sharp_unavailable_using_original", {
+        error: sharpErr instanceof Error ? sharpErr.message : String(sharpErr),
+      });
+      captureError(sharpErr, {
+        route: "campaign.generate",
+        step: "image_downscale",
+        store_id: store ? hashStoreId(store.id) : "anon",
+      });
     }
     // se Sharp falhou E buffer ainda é grande, rejeita em vez de mandar
     // 50MB pro Gemini (que retorna erro confuso ou estoura rate-limit).
@@ -308,11 +339,15 @@ export async function POST(request: NextRequest) {
 
     if (closeUpImage && closeUpImage.size > 0) {
       extraImages.push(await downscaleExtra(closeUpImage));
-      console.log(`[Generate] 📷 Close-up processado (${(closeUpImage.size / 1024).toFixed(0)}KB → downscaled)`);
+      logger.debug("closeup_processed", {
+        original_kb: Math.round(closeUpImage.size / 1024),
+      });
     }
     if (secondImage && secondImage.size > 0) {
       extraImages.push(await downscaleExtra(secondImage));
-      console.log(`[Generate] 📷 Segunda peça processada (${(secondImage.size / 1024).toFixed(0)}KB → downscaled)`);
+      logger.debug("second_piece_processed", {
+        original_kb: Math.round(secondImage.size / 1024),
+      });
     }
 
     // ── Criar campanha no banco (se tem loja) ──
@@ -334,7 +369,9 @@ export async function POST(request: NextRequest) {
           });
 
         if (uploadError) {
-          console.warn("[API:campaign/generate] Storage upload failed:", uploadError.message);
+          logger.warn("storage_upload_failed_pre_pipeline", {
+            error: uploadError.message,
+          });
           productPhotoUrl = `upload-failed://${storagePath}`;
         } else {
           const { data: urlData } = supabase.storage
@@ -343,7 +380,7 @@ export async function POST(request: NextRequest) {
           productPhotoUrl = urlData.publicUrl;
         }
       } catch {
-        console.warn("[API:campaign/generate] Storage unavailable, saving path reference");
+        logger.warn("storage_unavailable_saving_path_reference");
         productPhotoUrl = `pending-upload://${storagePath}`;
       }
 
@@ -361,7 +398,7 @@ export async function POST(request: NextRequest) {
 
     // ── DEMO MODE ──
     if (IS_DEMO_MODE) {
-      console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock (M-11: skip quota)");
+      logger.info("demo_mode_active", { skip_quota: true });
       const mockResult = await runMockPipeline(3000);
       // M-11 fix: demo mode never consumes quota or credits. Upstream gate
       // skipped reservation when !IS_DEMO_MODE; nothing to reconcile here.
@@ -416,7 +453,11 @@ export async function POST(request: NextRequest) {
                 style: customModel.style || undefined,
                 gender: customModel.gender || undefined,
               };
-              console.log(`[Generate] ⭐ Modelo customizada selecionada: ${customModelId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
+              logger.info("custom_model_selected", {
+                model_id: customModelId,
+                skin_tone: modelInfo.skinTone || "?",
+                body_type: modelInfo.bodyType || "?",
+              });
             }
           }
         }
@@ -443,7 +484,12 @@ export async function POST(request: NextRequest) {
               style: bankModel.style || undefined,
               gender: (bankModel as any).gender || undefined,
             };
-            console.log(`[Generate] 🏦 Modelo do banco: ${modelBankId} (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'}, ${modelInfo.hairColor || '?'})`);
+            logger.info("bank_model_selected", {
+              model_id: modelBankId,
+              skin_tone: modelInfo.skinTone || "?",
+              body_type: modelInfo.bodyType || "?",
+              hair_color: modelInfo.hairColor || "?",
+            });
           }
         }
 
@@ -464,7 +510,10 @@ export async function POST(request: NextRequest) {
               style: (am.style as string) || undefined,
               gender: (am.gender as string) || undefined,
             };
-            console.log(`[Generate] 👤 Modelo ativa da loja (${modelInfo.skinTone || '?'}, ${modelInfo.bodyType || '?'})`);
+            logger.info("active_store_model_selected", {
+              skin_tone: modelInfo.skinTone || "?",
+              body_type: modelInfo.bodyType || "?",
+            });
           }
         }
 
@@ -474,12 +523,19 @@ export async function POST(request: NextRequest) {
           modelImageBase64 = modelBuf.toString("base64");
           const ct = modelRes.headers.get("content-type");
           if (ct?.startsWith("image/")) modelMediaType = ct;
-          console.log(`[Generate] ✅ Modelo carregada (${(modelBuf.length / 1024).toFixed(0)}KB)`);
+          logger.debug("model_image_loaded", { kb: Math.round(modelBuf.length / 1024) });
         } else {
-          console.warn("[Generate] ⚠️ Nenhuma modelo disponível — pipeline continuará sem modelo");
+          logger.warn("no_model_available_continuing");
         }
       } catch (e) {
-        console.warn("[Generate] ⚠️ Erro ao carregar modelo (não fatal):", e instanceof Error ? e.message : e);
+        logger.warn("model_load_failed_non_fatal", {
+          error: e instanceof Error ? e.message : String(e),
+        });
+        captureError(e, {
+          route: "campaign.generate",
+          step: "model_load",
+          store_id: store ? hashStoreId(store.id) : "anon",
+        });
       }
     }
 
@@ -492,7 +548,12 @@ export async function POST(request: NextRequest) {
 
     try {
       // 🚀 SSE STREAMING — pipeline v5
-      console.log("[Generate] 🚀 Iniciando pipeline v6 (Gemini Analyzer + 3x Gemini VTO)...");
+      logger.info("campaign_generate_pipeline_start", {
+        store_id: store ? hashStoreId(store.id) : "anon",
+        campaign_id: campaignRecord?.id ?? null,
+        is_trial: isTrialOnly,
+        store_name: truncForLog(store?.name || storeName),
+      });
 
       const encoder = new TextEncoder();
       const stream = new TransformStream();
@@ -581,7 +642,7 @@ export async function POST(request: NextRequest) {
               photoCount: isTrialOnly ? 1 : 3,
             },
             async (step, label, progress) => {
-              console.log(`[Pipeline] ${step} (${progress}%) — ${label}`);
+              logger.debug("pipeline_step", { step, progress, label: truncForLog(label, 80) });
               await sendSSE("progress", { step, label, progress });
             }
           );
@@ -609,9 +670,18 @@ export async function POST(request: NextRequest) {
                   p_column: "credit_campaigns",
                   p_quantity: 1,
                 });
-                console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (0 imagens geradas)`);
+                logger.info("avulso_credit_refunded_zero_images", {
+                  store_id: hashStoreId(store.id),
+                });
               } catch (refundErr) {
-                console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
+                logger.error("refund_failed_zero_images", {
+                  error: refundErr instanceof Error ? refundErr.message : String(refundErr),
+                });
+                captureError(refundErr, {
+                  route: "campaign.generate",
+                  step: "refund",
+                  store_id: hashStoreId(store.id),
+                });
               }
             }
             // Devolver slot de plano se reservado upfront
@@ -624,10 +694,19 @@ export async function POST(request: NextRequest) {
                 if (usage) {
                   // RPC atômica (evita race condition em read-modify-write)
                   await sb.rpc("decrement_campaigns_used", { p_usage_id: usage.id });
-                  console.log(`[Generate] 📋 Slot de plano DEVOLVIDO (0 imagens geradas)`);
+                  logger.info("plan_slot_refunded_zero_images", {
+                    store_id: hashStoreId(store.id),
+                  });
                 }
               } catch (refundErr) {
-                console.error(`[Generate] ❌ Falha ao devolver slot de plano:`, refundErr);
+                logger.error("plan_slot_refund_failed_zero_images", {
+                  error: refundErr instanceof Error ? refundErr.message : String(refundErr),
+                });
+                captureError(refundErr, {
+                  route: "campaign.generate",
+                  step: "refund",
+                  store_id: hashStoreId(store.id),
+                });
               }
             }
             await sendSSE("error", {
@@ -675,34 +754,64 @@ export async function POST(request: NextRequest) {
                         .getPublicUrl(path);
                       imageUrls.push(urlData.publicUrl);
                       img.imageUrl = urlData.publicUrl;
-                      console.log(`[Generate] ✅ Imagem ${i + 1} salva (tentativa ${attempt}): ${path}`);
+                      logger.info("image_uploaded", {
+                        idx: i + 1,
+                        attempt,
+                        path,
+                      });
                       uploaded = true;
                       break;
                     }
                     lastError = upErr.message;
-                    console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} tentativa ${attempt} falhou:`, upErr.message);
+                    logger.warn("image_upload_attempt_failed", {
+                      idx: i + 1,
+                      attempt,
+                      error: upErr.message,
+                    });
                   } catch (uploadErr) {
                     lastError = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
-                    console.warn(`[Generate] ⚠️ Upload imagem ${i + 1} tentativa ${attempt} exception:`, lastError);
+                    logger.warn("image_upload_attempt_exception", {
+                      idx: i + 1,
+                      attempt,
+                      error: lastError,
+                    });
                   }
                   if (attempt < 3) {
                     await new Promise(r => setTimeout(r, 400 * attempt));
                   }
                 }
                 if (!uploaded) {
-                  console.error(`[Generate] 🚨 Imagem ${i + 1} desistiu após 3 tentativas. Último erro: ${lastError}`);
+                  logger.error("image_upload_exhausted_retries", {
+                    idx: i + 1,
+                    last_error: lastError,
+                  });
+                  captureError(new Error(`Image upload exhausted retries: ${lastError}`), {
+                    route: "campaign.generate",
+                    step: "upload",
+                    store_id: store ? hashStoreId(store.id) : "anon",
+                    image_idx: i + 1,
+                  });
                   imageUrls.push(null);
                 }
               }
             } catch (e) {
-              console.warn("[Generate] Upload parcial falhou:", e);
+              logger.warn("upload_partial_failure", {
+                error: e instanceof Error ? e.message : String(e),
+              });
+              captureError(e, {
+                route: "campaign.generate",
+                step: "upload",
+                store_id: store ? hashStoreId(store.id) : "anon",
+              });
               images.forEach(() => imageUrls.push(null));
             }
 
             // ── FIX P0: Se TODOS uploads falharam, refundar crédito/slot e abortar ──
             const allUploadsFailed = imageUrls.length > 0 && imageUrls.every((u) => !u);
             if (allUploadsFailed) {
-              console.error("[Generate] 🚨 Todos os uploads falharam — refundando e abortando");
+              logger.error("all_uploads_failed_refunding", {
+                store_id: store ? hashStoreId(store.id) : "anon",
+              });
               if (campaignRecord) await failCampaign(campaignRecord.id, "All uploads failed");
               if (creditReserved && store) {
                 try {
@@ -713,9 +822,18 @@ export async function POST(request: NextRequest) {
                     p_column: "credit_campaigns",
                     p_quantity: 1,
                   });
-                  console.log("[Generate] 💳 Crédito avulso DEVOLVIDO (todos uploads falharam)");
+                  logger.info("avulso_credit_refunded_uploads_failed", {
+                    store_id: hashStoreId(store.id),
+                  });
                 } catch (refundErr) {
-                  console.error("[Generate] ❌ Falha ao devolver crédito:", refundErr);
+                  logger.error("refund_failed_uploads", {
+                    error: refundErr instanceof Error ? refundErr.message : String(refundErr),
+                  });
+                  captureError(refundErr, {
+                    route: "campaign.generate",
+                    step: "refund",
+                    store_id: hashStoreId(store.id),
+                  });
                 }
               }
               if (planSlotReserved && store) {
@@ -729,10 +847,19 @@ export async function POST(request: NextRequest) {
                       .from("store_usage")
                       .update({ campaigns_generated: Math.max(0, (usage.campaigns_generated || 0) - 1) })
                       .eq("id", usage.id);
-                    console.log("[Generate] 📋 Slot de plano DEVOLVIDO (todos uploads falharam)");
+                    logger.info("plan_slot_refunded_uploads_failed", {
+                      store_id: hashStoreId(store.id),
+                    });
                   }
                 } catch (refundErr) {
-                  console.error("[Generate] ❌ Falha ao devolver slot:", refundErr);
+                  logger.error("plan_slot_refund_failed_uploads", {
+                    error: refundErr instanceof Error ? refundErr.message : String(refundErr),
+                  });
+                  captureError(refundErr, {
+                    route: "campaign.generate",
+                    step: "refund",
+                    store_id: hashStoreId(store.id),
+                  });
                 }
               }
               // H-4 (Phase 02): cost log with upload_failed=true for the
@@ -858,12 +985,24 @@ export async function POST(request: NextRequest) {
                   const left = sb.storage.from("generated-images").getPublicUrl(teaserPaths[0]).data.publicUrl;
                   const right = sb.storage.from("generated-images").getPublicUrl(teaserPaths[1]).data.publicUrl;
                   lockedTeaserUrls = [left, right];
-                  console.log(`[Generate] 🔒 Trial teasers gerados: ${teaserPaths[0]}, ${teaserPaths[1]}`);
+                  logger.info("trial_teasers_generated", {
+                    paths: teaserPaths,
+                  });
                 } else {
-                  console.warn("[Generate] ⚠️ Trial teasers upload falhou:", e1?.message, e2?.message);
+                  logger.warn("trial_teasers_upload_failed", {
+                    e1: e1?.message,
+                    e2: e2?.message,
+                  });
                 }
               } catch (teaserErr) {
-                console.warn("[Generate] ⚠️ Trial teasers skipped:", teaserErr);
+                logger.warn("trial_teasers_skipped", {
+                  error: teaserErr instanceof Error ? teaserErr.message : String(teaserErr),
+                });
+                captureError(teaserErr, {
+                  route: "campaign.generate",
+                  step: "teaser",
+                  store_id: store ? hashStoreId(store.id) : "anon",
+                });
               }
             }
 
@@ -880,10 +1019,16 @@ export async function POST(request: NextRequest) {
 
             if (needsAvulsoCredit) {
               // Crédito avulso já consumido upfront
-              console.log(`[Generate] 💳 Crédito avulso já reservado upfront (${successCount}/${photoCount} imagens geradas)`);
+              logger.info("avulso_credit_already_reserved", {
+                success_count: successCount,
+                photo_count: photoCount,
+              });
             } else if (planSlotReserved) {
               // Slot de plano já reservado upfront (evita double-count)
-              console.log(`[Generate] 📋 Slot de plano já reservado upfront (${successCount}/${photoCount} imagens geradas)`);
+              logger.info("plan_slot_already_reserved", {
+                success_count: successCount,
+                photo_count: photoCount,
+              });
             } else {
               await incrementCampaignsUsed(store!.id);
             }
@@ -1079,7 +1224,15 @@ export async function POST(request: NextRequest) {
       });
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
-      console.error("[API:campaign/generate] Error:", errorObj);
+      logger.error("api_campaign_generate_outer_error", {
+        message: errorObj.message ? truncForLog(String(errorObj.message), 200) : null,
+        status: errorObj.status,
+      });
+      captureError(error, {
+        route: "campaign.generate",
+        step: "outer",
+        store_id: "n/a",
+      });
 
       if (String(errorObj.message || "").includes("API_KEY")) {
         return NextResponse.json({ error: "Chave da API não configurada", code: "API_KEY_MISSING" }, { status: 500 });
@@ -1099,7 +1252,13 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: unknown) {
     const errorObj = error as Record<string, unknown>;
-    console.error("[API:campaign/generate] Top-level error:", errorObj);
+    logger.error("api_campaign_generate_toplevel_error", {
+      message: errorObj.message ? truncForLog(String(errorObj.message), 200) : null,
+    });
+    captureError(error, {
+      route: "campaign.generate",
+      step: "toplevel",
+    });
 
     if (String(errorObj.message || "").includes("API_KEY")) {
       return NextResponse.json({ error: "Chave da API não configurada", code: "API_KEY_MISSING" }, { status: 500 });
