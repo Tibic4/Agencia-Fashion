@@ -94,6 +94,18 @@ export interface PlaySubscriptionStatus {
   linkedPurchaseToken?: string;
   /** 0 = ACK pending, 1 = acknowledged */
   acknowledgementState: number;
+  /**
+   * Obfuscated external account id passed by the client at purchase time
+   * (`obfuscatedAccountIdAndroid` in react-native-iap's
+   * `requestPurchase.google` payload). Backend must verify this matches
+   * SHA256(currentClerkUserId).slice(0,64) so that a captured purchaseToken
+   * cannot be replayed by a different user. See `crialook-app/lib/billing.ts`
+   * `hashUserIdForBilling` for the mobile producer.
+   *
+   * In Play Developer API v3 this is exposed as
+   * `obfuscatedExternalAccountId` on the SubscriptionPurchase response.
+   */
+  obfuscatedExternalAccountId?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -220,6 +232,10 @@ export async function verifySubscription(
       typeof raw.linkedPurchaseToken === "string" ? raw.linkedPurchaseToken : undefined,
     acknowledgementState:
       typeof raw.acknowledgementState === "number" ? raw.acknowledgementState : 0,
+    obfuscatedExternalAccountId:
+      typeof raw.obfuscatedExternalAccountId === "string"
+        ? raw.obfuscatedExternalAccountId
+        : undefined,
   };
 }
 
