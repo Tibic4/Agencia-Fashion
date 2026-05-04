@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:ci": "vitest run",
+    "deploy:check": "bash ../scripts/check-deploy-readiness.sh",
+    "clerk:revoke-loadtest": "bash ../scripts/clerk-revoke-loadtest-sessions.sh",
     "prepare": "cd .. && husky campanha-ia/.husky"
   },
   "lint-staged": {
