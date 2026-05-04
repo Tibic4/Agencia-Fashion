@@ -14,7 +14,8 @@ import {
   getStoreCredits,
 } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { logger } from "@/lib/observability";
+import { logger, captureError, hashStoreId } from "@/lib/observability";
+import * as Sentry from "@sentry/nextjs";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -229,9 +230,20 @@ export async function POST(request: NextRequest) {
             console.log(`[Generate] 🎁 Trial-only user → 1 foto (corte de custo)`);
           }
         } catch (trialErr) {
-          // Detection failure não bloqueia geração — fail-safe pro usuário
-          // recebe a foto mesmo se a detecção do trial falhar (só não vê teaser).
-          console.warn("[Generate] trial detection failed, treating as paid:", trialErr);
+          // D-04 (Phase 02 H-3): fail-secure. Detection failure → assume trial
+          // (1 photo, not 3). Prevents abuse where DB outage could be triggered
+          // to get 3 photos on a single trial credit.
+          isTrialOnly = true;
+          captureError(trialErr, {
+            route: "campaign.generate",
+            step: "trial_check",
+            store_id: store ? hashStoreId(store.id) : "anon",
+            severity: "warn",
+            fail_secure_applied: true,
+          });
+          logger.warn("trial_check_fail_secure", {
+            reason: trialErr instanceof Error ? trialErr.message : String(trialErr),
+          });
         }
       }
     }
@@ -492,8 +504,59 @@ export async function POST(request: NextRequest) {
         } catch { /* stream fechado */ }
       };
 
+      // D-09 (Phase 02 H-2): write a single client_disconnected row to
+      // api_cost_logs and emit a Sentry event. NO refund — cost was real.
+      // Idempotent: only fires once per IIFE via the disconnectLogged flag.
+      let disconnectLogged = false;
+      const logDisconnectAndExit = async (currentStep: string) => {
+        if (disconnectLogged) return;
+        disconnectLogged = true;
+        if (!store) return; // anonymous demo path — nothing to log
+        try {
+          const { createAdminClient: createAdminDc } = await import("@/lib/supabase/admin");
+          const sbDc = createAdminDc();
+          await sbDc.from("api_cost_logs").insert({
+            store_id: store.id,
+            campaign_id: campaignRecord?.id ?? null,
+            provider: "system",
+            model_used: "client_disconnect",
+            action: "client_disconnected",
+            cost_usd: 0,
+            cost_brl: 0,
+            input_tokens: 0,
+            output_tokens: 0,
+            tokens_used: 0,
+            metadata: {
+              client_disconnected: true,
+              last_step: currentStep,
+            },
+          });
+          // D-14 custom Sentry event
+          Sentry.captureMessage("campaign.client_disconnected", {
+            level: "info",
+            tags: {
+              route: "campaign.generate",
+              step: currentStep,
+              store_id: hashStoreId(store.id),
+            },
+          });
+          logger.info("client_disconnected", { last_step: currentStep, store_id: hashStoreId(store.id) });
+        } catch (e) {
+          captureError(e, {
+            route: "campaign.generate",
+            step: "log_disconnect",
+            store_id: hashStoreId(store.id),
+          });
+        }
+      };
+
       (async () => {
         try {
+          // D-07/D-10 (Phase 02): pre-pipeline abort check
+          if (request.signal.aborted) {
+            await logDisconnectAndExit("before_pipeline");
+            return;
+          }
           const pipelineResult = await runCampaignPipeline(
             {
               imageBase64,
@@ -523,6 +586,12 @@ export async function POST(request: NextRequest) {
             }
           );
 
+          // D-07/D-10 (Phase 02): post-pipeline abort check before any
+          // upload, DB write, or SSE delivery emit fires.
+          if (request.signal.aborted) {
+            await logDisconnectAndExit("after_pipeline");
+            return;
+          }
           const { successCount, images, analise, vto_hints, dicas_postagem, durationMs } = pipelineResult;
           const photoCount = isTrialOnly ? 1 : 3;
 
@@ -591,6 +660,11 @@ export async function POST(request: NextRequest) {
                 let uploaded = false;
                 let lastError: string | null = null;
                 for (let attempt = 1; attempt <= 3; attempt++) {
+                  // D-07/D-10 (Phase 02): abort upload retry loop on disconnect.
+                  if (request.signal.aborted) {
+                    await logDisconnectAndExit("upload_retry");
+                    return;
+                  }
                   try {
                     const { error: upErr } = await supabase.storage
                       .from("generated-images")
@@ -661,6 +735,47 @@ export async function POST(request: NextRequest) {
                   console.error("[Generate] ❌ Falha ao devolver slot:", refundErr);
                 }
               }
+              // H-4 (Phase 02): cost log with upload_failed=true for the
+              // per-campaign reconciliation metric. The user got nothing AND
+              // we burned Gemini cost -- the cost log row records that.
+              if (store?.id) {
+                try {
+                  const { createAdminClient: createAdminLog } = await import("@/lib/supabase/admin");
+                  const sbLog = createAdminLog();
+                  await sbLog.from("api_cost_logs").insert({
+                    store_id: store.id,
+                    campaign_id: campaignRecord?.id || null,
+                    provider: "system",
+                    model_used: "pipeline_v6",
+                    action: "upload_failure",
+                    cost_usd: 0,
+                    cost_brl: 0,
+                    input_tokens: 0,
+                    output_tokens: 0,
+                    tokens_used: 0,
+                    metadata: {
+                      error_code: "ALL_UPLOADS_FAILED",
+                      upload_failed: true,
+                    },
+                  });
+                } catch (logErr) {
+                  captureError(logErr, {
+                    route: "campaign.generate",
+                    step: "cost_log",
+                    store_id: store?.id ? hashStoreId(store.id) : "anon",
+                  });
+                }
+              }
+              // D-14: failed event
+              Sentry.captureMessage("campaign.generated.failed", {
+                level: "error",
+                tags: {
+                  route: "campaign.generate",
+                  store_id: store ? hashStoreId(store.id) : "anon",
+                  error_code: "ALL_UPLOADS_FAILED",
+                  refund_applied: String(creditReserved),
+                },
+              });
               await sendSSE("error", {
                 error: "Falha ao salvar as imagens geradas. Tente novamente.",
                 retry: true,
@@ -677,6 +792,11 @@ export async function POST(request: NextRequest) {
             // ângulos" sem precisar de chamada extra ao Gemini.
             // Custo: ~120ms CPU + ~100KB storage. Skip silencioso em erro —
             // o resultado funciona normalmente sem os teasers.
+            // D-07/D-10 (Phase 02): abort before the teaser branch.
+            if (request.signal.aborted) {
+              await logDisconnectAndExit("before_teaser");
+              return;
+            }
             let lockedTeaserUrls: [string, string] | undefined;
             // H-12: skip teaser entirely if the model image is the 1×1 fallback.
             // Sharp would error on the 70%-tall × 400×600 resize, the catch
@@ -769,6 +889,39 @@ export async function POST(request: NextRequest) {
             }
           }
 
+          // D-07/D-10 (Phase 02): final abort check before delivery emit.
+          if (request.signal.aborted) {
+            await logDisconnectAndExit("before_done_emit");
+            return;
+          }
+          // D-14 (Phase 02): success / partial event for dashboards.
+          // partial_delivery comes from pipeline.ts when image arm has fewer
+          // photos than requested; today single-image flow rarely sets it.
+          const partialDelivery = !!(pipelineResult as { partial_delivery?: boolean }).partial_delivery;
+          if (store) {
+            if (partialDelivery) {
+              Sentry.captureMessage("campaign.generated.partial", {
+                level: "warning",
+                tags: {
+                  route: "campaign.generate",
+                  store_id: hashStoreId(store.id),
+                  photos_delivered: String(successCount),
+                  photos_requested: String(photoCount),
+                },
+              });
+            } else {
+              Sentry.captureMessage("campaign.generated.success", {
+                level: "info",
+                tags: {
+                  route: "campaign.generate",
+                  store_id: hashStoreId(store.id),
+                  photos_delivered: String(successCount),
+                  partial_delivery: "false",
+                },
+              });
+            }
+          }
+
           // Enviar resultado final via SSE
           // Gemini VTO — imagens já estão no Supabase, enviar URLs
           await sendSSE("done", {
@@ -777,6 +930,7 @@ export async function POST(request: NextRequest) {
             objective: objective || null,
             targetAudience: targetAudience || null,
             toneOverride: toneOverride || null,
+            partial_delivery: partialDelivery, // D-01: UI badge hint
             data: {
               analise,
               images: images.map(img => img ? {
@@ -792,6 +946,16 @@ export async function POST(request: NextRequest) {
             },
           });
         } catch (pipelineError: unknown) {
+          // D-10 (Phase 02): if pipeline threw CLIENT_DISCONNECTED (or signal
+          // is aborted), this is a client disconnect — NOT a failure. Skip
+          // failCampaign + refund + cost log (the disconnect helper handles
+          // the cost log + Sentry event itself).
+          const earlyErrObj = pipelineError as Record<string, unknown>;
+          if (earlyErrObj?.code === "CLIENT_DISCONNECTED" || request.signal.aborted) {
+            await logDisconnectAndExit("pipeline_threw_disconnect");
+            return;
+          }
+
           if (campaignRecord) {
             const msg = pipelineError instanceof Error ? pipelineError.message : "Pipeline v6 error";
             await failCampaign(campaignRecord.id, msg);
@@ -809,18 +973,47 @@ export async function POST(request: NextRequest) {
           // - SAFETY_BLOCKED / IMAGE_GENERATION_BLOCKED — a IA recusou, não é culpa do user
           const shouldRefund = isRetryable || errCode === "SAFETY_BLOCKED" || errCode === "IMAGE_GENERATION_BLOCKED";
           if (creditReserved && shouldRefund && store) {
+            // CONTEXT scope-in (Phase 02): convert refund race to add_credits_atomic.
+            // Closes the H-11-cousin window in the LAST manual read-modify-write
+            // site in this route.
             try {
               const { createAdminClient: createAdmin } = await import("@/lib/supabase/admin");
               const sb = createAdmin();
-              const { data: curr } = await sb.from("stores").select("credit_campaigns").eq("id", store.id).single();
-              await sb.from("stores").update({ credit_campaigns: (curr?.credit_campaigns || 0) + 1 }).eq("id", store.id);
-              console.log(`[Generate] 💳 Crédito avulso DEVOLVIDO (${errCode})`);
+              const { error: refundErr } = await sb.rpc("add_credits_atomic", {
+                p_store_id: store.id,
+                p_column: "credit_campaigns",
+                p_quantity: 1,
+              });
+              if (refundErr) {
+                captureError(new Error(`Refund failed: ${refundErr.message}`), {
+                  route: "campaign.generate",
+                  step: "refund",
+                  store_id: hashStoreId(store.id),
+                  error_code: errCode,
+                });
+                // Do NOT throw -- refund failure shouldn't block the SSE error response.
+                // Sentry alert is the recovery channel.
+              } else {
+                logger.info("refund_credit_returned", {
+                  store_id: hashStoreId(store.id),
+                  error_code: errCode,
+                });
+              }
             } catch (refundErr) {
-              console.error(`[Generate] ❌ Falha ao devolver crédito:`, refundErr);
+              captureError(refundErr, {
+                route: "campaign.generate",
+                step: "refund",
+                store_id: hashStoreId(store.id),
+                error_code: errCode,
+              });
             }
           }
 
-          // Logar erro no api_cost_logs para visibilidade no admin dashboard
+          // H-4 / D-09 (Phase 02): cost log for visibility. Adds upload_failed
+          // flag (true when ALL_UPLOADS_FAILED triggered the error path) to
+          // metadata so per-campaign cost reconciliation can attribute to
+          // upload failures vs pipeline failures.
+          const isUploadFailure = errCode === "ALL_UPLOADS_FAILED";
           if (store?.id) {
             try {
               const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -838,10 +1031,32 @@ export async function POST(request: NextRequest) {
                 output_tokens: 0,
                 tokens_used: 0,
                 response_time_ms: Date.now() - Date.parse(campaignRecord?.created_at || new Date().toISOString()),
-                metadata: { error_code: errCode, message: technicalMsg.slice(0, 500), retryable: isRetryable },
+                metadata: {
+                  error_code: errCode,
+                  message: technicalMsg.slice(0, 500),
+                  retryable: isRetryable,
+                  upload_failed: isUploadFailure,
+                },
               });
-            } catch { /* non-critical — don't block error response */ }
+            } catch (logErr) {
+              captureError(logErr, {
+                route: "campaign.generate",
+                step: "cost_log",
+                store_id: store?.id ? hashStoreId(store.id) : "anon",
+              });
+            }
           }
+
+          // D-14 (Phase 02): failed event for dashboards
+          Sentry.captureMessage("campaign.generated.failed", {
+            level: "error",
+            tags: {
+              route: "campaign.generate",
+              store_id: store ? hashStoreId(store.id) : "anon",
+              error_code: errCode,
+              refund_applied: String(creditReserved && shouldRefund),
+            },
+          });
 
           await sendSSE("error", {
             error: errMsg,
