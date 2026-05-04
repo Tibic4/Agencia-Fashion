@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, getStoreCredits } from "@/lib/db";
 
@@ -29,7 +30,7 @@ export async function GET() {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store/credits] Error:", message);
+    logger.error("[API:store/credits] Error:", message);
     return NextResponse.json({ error: "Erro ao buscar créditos" }, { status: 500 });
   }
 }

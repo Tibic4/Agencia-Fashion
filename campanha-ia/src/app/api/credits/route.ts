@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { MercadoPagoConfig, Preference } from "mercadopago";
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[API:credits] Error:", error);
+    logger.error("[API:credits] Error:", error);
     return NextResponse.json({ error: "Erro ao criar checkout de créditos" }, { status: 500 });
   }
 }

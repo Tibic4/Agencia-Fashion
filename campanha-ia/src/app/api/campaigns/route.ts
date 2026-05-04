@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, listCampaigns, getStorePlanName, getHistoryDaysForPlan } from "@/lib/db";
 
@@ -38,7 +39,7 @@ export async function GET() {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:campaigns] Error:", message);
+    logger.error("[API:campaigns] Error:", message);
     return NextResponse.json({ error: "Erro ao listar campanhas" }, { status: 500 });
   }
 }

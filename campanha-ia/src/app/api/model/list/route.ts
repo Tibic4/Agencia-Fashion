@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, listStoreModels, getStorePlanName, getModelLimitForPlan, getStoreCredits } from "@/lib/db";
 
@@ -53,7 +54,7 @@ export async function GET() {
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/list] Error:", msg);
+    logger.error("[API:model/list] Error:", msg);
     return NextResponse.json({ error: "Erro ao listar modelos" }, { status: 500 });
   }
 }

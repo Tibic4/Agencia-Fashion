@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createSubscription, cancelSubscription, type PlanId } from "@/lib/payments/mercadopago";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { captureError } from "@/lib/observability";
+import { logger, captureError } from "@/lib/observability";
 import { checkLoginRateLimit } from "@/lib/rate-limit";
 import { env } from "@/lib/env";
 
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       p_ttl_seconds: 60,
     });
     if (lockErr) {
-      console.error("[API:checkout] Erro ao adquirir lock:", lockErr.message);
+      logger.error("[API:checkout] Erro ao adquirir lock:", lockErr.message);
       return NextResponse.json(
         { error: "Erro interno. Tente novamente.", code: "LOCK_ERROR" },
         { status: 500 },
@@ -114,10 +114,10 @@ export async function POST(request: NextRequest) {
             mercadopago_subscription_id: null,
             updated_at: new Date().toISOString(),
           }).eq("id", store.id);
-          console.log(`[API:checkout] 🔄 Assinatura anterior cancelada: ${storeData.mercadopago_subscription_id}`);
+          logger.info(`[API:checkout] 🔄 Assinatura anterior cancelada: ${storeData.mercadopago_subscription_id}`);
         } catch (cancelErr) {
           // se não consegue cancelar, ABORTA (não cria nova sobre a antiga).
-          console.error(`[API:checkout] ❌ Falha ao cancelar assinatura anterior — ABORTANDO:`, cancelErr);
+          logger.error(`[API:checkout] ❌ Falha ao cancelar assinatura anterior — ABORTANDO:`, cancelErr);
           await supabase.rpc("release_checkout_lock", { p_store_id: store.id, p_plan_id: planId });
           return NextResponse.json(
             {
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
         userEmail,
       });
 
-      console.log(`[API:checkout] ✅ Assinatura criada: ${result.subscriptionId} — Plano: ${planId}`);
+      logger.info(`[API:checkout] ✅ Assinatura criada: ${result.subscriptionId} — Plano: ${planId}`);
 
       return NextResponse.json({
         success: true,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
       });
 
     if (uploadError) {
-      console.error("[API:store/logo] Upload error:", uploadError);
+      logger.error("[API:store/logo] Upload error:", uploadError);
       throw uploadError;
     }
 
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, url: logoUrl, logo_url: logoUrl });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store/logo] Error:", message);
+    logger.error("[API:store/logo] Error:", message);
     return NextResponse.json({ error: "Erro ao enviar logo" }, { status: 500 });
   }
 }

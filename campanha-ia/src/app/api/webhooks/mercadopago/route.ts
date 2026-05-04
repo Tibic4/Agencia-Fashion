@@ -30,7 +30,7 @@ function validateWebhookSignature(
 ): boolean {
   const secret = env.MERCADOPAGO_WEBHOOK_SECRET;
   if (!secret) {
-    console.error("[Webhook:MercadoPago] ❌ MERCADOPAGO_WEBHOOK_SECRET não configurado — rejeitando webhook");
+    logger.error("[Webhook:MercadoPago] ❌ MERCADOPAGO_WEBHOOK_SECRET não configurado — rejeitando webhook");
     return false;
   }
   return validateMpSignature({
@@ -138,11 +138,11 @@ async function handlePaymentEvent(paymentId: string) {
     payment = await getPaymentStatus(paymentId);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
-    console.error(`[Webhook:MercadoPago] ❌ Falha ao consultar pagamento ${paymentId}:`, msg);
+    logger.error(`[Webhook:MercadoPago] ❌ Falha ao consultar pagamento ${paymentId}:`, msg);
     throw err; // re-throw para o outer catch retornar 200 (evitar retry infinito)
   }
 
-  console.log("[Webhook:MercadoPago] Pagamento:", {
+  logger.info("[Webhook:MercadoPago] Pagamento:", {
     status: payment.status,
     amount: payment.transactionAmount,
     ref: payment.externalReference,
@@ -165,14 +165,14 @@ async function handlePaymentEvent(paymentId: string) {
             (p) => p.type === creditType && p.quantity === quantity,
           );
           if (!matchingPkg) {
-            console.error(
+            logger.error(
               `[Webhook:MercadoPago] 🚨 Rejeitado: nenhum pacote conhecido com type=${creditType} qty=${quantity} — possível forja de external_reference (paymentId=${paymentId})`,
             );
             return;
           }
           const paidAmount = payment.transactionAmount;
           if (!amountMatches(paidAmount, matchingPkg.price)) {
-            console.error(
+            logger.error(
               `[Webhook:MercadoPago] 🚨 Fraude detectada: pacote ${creditType}/${quantity} custa R$${matchingPkg.price} mas foi pago R$${paidAmount} (paymentId=${paymentId}) — REJEITADO`,
             );
             return;
@@ -185,11 +185,11 @@ async function handlePaymentEvent(paymentId: string) {
             .eq("mercadopago_payment_id", paymentId);
 
           if ((existingCount ?? 0) > 0) {
-            console.log(`[Webhook:MercadoPago] ⚠️ Pagamento ${paymentId} já processado — ignorando duplicata`);
+            logger.info(`[Webhook:MercadoPago] ⚠️ Pagamento ${paymentId} já processado — ignorando duplicata`);
             return;
           }
 
-          console.log(`[Webhook:MercadoPago] ✅ Crédito aprovado! Store: ${storeId}, Tipo: ${creditType}, Qtd: ${quantity}`);
+          logger.info(`[Webhook:MercadoPago] ✅ Crédito aprovado! Store: ${storeId}, Tipo: ${creditType}, Qtd: ${quantity}`);
 
           await addCreditsToStore(
             storeId,
@@ -210,13 +210,13 @@ async function handlePaymentEvent(paymentId: string) {
             const bonusQty = Math.min(Math.max(0, Number.isFinite(rawBonus) ? rawBonus : 0), MAX_BONUS_MODELS);
             if (bonusQty > 0) {
               await addCreditsToStore(storeId, "models", bonusQty, 0, paymentId);
-              console.log(`[Webhook:MercadoPago] 🎁 Bônus trial: +${bonusQty} modelo(s) para store ${storeId}`);
+              logger.info(`[Webhook:MercadoPago] 🎁 Bônus trial: +${bonusQty} modelo(s) para store ${storeId}`);
             }
           }
 
-          console.log(`[Webhook:MercadoPago] ✅ Créditos adicionados com sucesso`);
+          logger.info(`[Webhook:MercadoPago] ✅ Créditos adicionados com sucesso`);
         } else {
-          console.error(`[Webhook:MercadoPago] ❌ Tipo de crédito inválido: ${creditType}`);
+          logger.error(`[Webhook:MercadoPago] ❌ Tipo de crédito inválido: ${creditType}`);
         }
       }
     }
@@ -228,14 +228,14 @@ async function handlePaymentEvent(paymentId: string) {
         // ── FRAUD GATE: planId deve existir em PLANS e valor pago deve bater ──
         const planDef = PLANS[planId as PlanId];
         if (!planDef) {
-          console.error(
+          logger.error(
             `[Webhook:MercadoPago] 🚨 Rejeitado: planId desconhecido "${planId}" (paymentId=${paymentId})`,
           );
           return;
         }
         const paidAmount = payment.transactionAmount;
         if (!amountMatches(paidAmount, planDef.price)) {
-          console.error(
+          logger.error(
             `[Webhook:MercadoPago] 🚨 Fraude detectada: plano ${planId} custa R$${planDef.price} mas foi pago R$${paidAmount} (paymentId=${paymentId}) — REJEITADO`,
           );
           return;
@@ -248,11 +248,11 @@ async function handlePaymentEvent(paymentId: string) {
           .select("payment_id", { count: "exact", head: true })
           .eq("payment_id", paymentId);
         if ((planAppliedCount ?? 0) > 0) {
-          console.log(`[Webhook:MercadoPago] ⚠️ Pagamento de plano ${paymentId} já aplicado — ignorando duplicata`);
+          logger.info(`[Webhook:MercadoPago] ⚠️ Pagamento de plano ${paymentId} já aplicado — ignorando duplicata`);
           return;
         }
 
-        console.log(`[Webhook:MercadoPago] ✅ Pagamento recorrente aprovado! Store: ${storeId}, Plano: ${planId}`);
+        logger.info(`[Webhook:MercadoPago] ✅ Pagamento recorrente aprovado! Store: ${storeId}, Plano: ${planId}`);
 
         // Atualizar plano + resetar quotas do mês.
         // Não passar paymentId como 3º argumento — esse campo é mpSubscriptionId,
@@ -274,18 +274,18 @@ async function handlePaymentEvent(paymentId: string) {
           updated_at: new Date().toISOString(),
         }).eq("id", storeId);
 
-        console.log(`[Webhook:MercadoPago] ✅ Plano renovado para "${planId}"`);
+        logger.info(`[Webhook:MercadoPago] ✅ Plano renovado para "${planId}"`);
       }
     }
   }
 
   if (payment.status === "rejected") {
-    console.log(`[Webhook:MercadoPago] ❌ Pagamento rejeitado. Ref: ${ref}`);
+    logger.info(`[Webhook:MercadoPago] ❌ Pagamento rejeitado. Ref: ${ref}`);
     // O MP retenta automaticamente até 4x — não precisa downgrade aqui
   }
 
   if (payment.status === "pending") {
-    console.log(`[Webhook:MercadoPago] ⏳ Pagamento pendente (PIX/boleto). Ref: ${ref}`);
+    logger.info(`[Webhook:MercadoPago] ⏳ Pagamento pendente (PIX/boleto). Ref: ${ref}`);
   }
 }
 
@@ -365,6 +365,6 @@ async function handleSubscriptionEvent(subscriptionId: string) {
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro desconhecido";
-    console.error(`[Webhook:MercadoPago] Erro ao processar assinatura ${subscriptionId}:`, msg);
+    logger.error(`[Webhook:MercadoPago] Erro ao processar assinatura ${subscriptionId}:`, msg);
   }
 }

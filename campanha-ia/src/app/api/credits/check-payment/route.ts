@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, getStoreCredits } from "@/lib/db";
 import { getPaymentStatus } from "@/lib/payments/mercadopago";
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:credits/check-payment] Error:", msg);
+    logger.error("[API:credits/check-payment] Error:", msg);
     return NextResponse.json({ error: "Erro ao verificar pagamento" }, { status: 500 });
   }
 }

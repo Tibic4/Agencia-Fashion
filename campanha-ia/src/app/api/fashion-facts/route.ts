@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -39,7 +40,7 @@ export async function GET() {
       },
     });
   } catch (err: any) {
-    console.error("[fashion-facts] Error:", err.message);
+    logger.error("[fashion-facts] Error:", err.message);
     // Return empty — the component has static fallbacks
     return NextResponse.json({ facts: [], count: 0 });
   }

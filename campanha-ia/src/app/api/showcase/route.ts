@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function GET() {
     return NextResponse.json({ success: true, data: data || [] });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:showcase] Error:", message);
+    logger.error("[API:showcase] Error:", message);
     return NextResponse.json({ error: "Erro ao buscar vitrine" }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, deleteStoreModel, setActiveModel } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -30,7 +31,7 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/delete] Error:", msg);
+    logger.error("[API:model/delete] Error:", msg);
     return NextResponse.json(
       { error: "Erro ao excluir modelo", details: env.NODE_ENV === "development" ? msg : undefined },
       { status: 500 }
@@ -63,7 +64,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/activate] Error:", msg);
+    logger.error("[API:model/activate] Error:", msg);
     return NextResponse.json(
       { error: "Erro ao ativar modelo", details: env.NODE_ENV === "development" ? msg : undefined },
       { status: 500 }

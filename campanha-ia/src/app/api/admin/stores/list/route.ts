@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { requireAdmin } from "@/lib/admin/guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -21,7 +22,7 @@ export async function GET() {
     .limit(200);
 
   if (error) {
-    console.error("Error fetching stores:", error);
+    logger.error("Error fetching stores:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

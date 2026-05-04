@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { createStore, createStoreModel, getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
         if (env.GOOGLE_AI_API_KEY) {
           try {
             const { generatePreviewDirect } = await import("@/lib/model-preview");
-            console.log(`[Onboarding] 🎨 Gerando preview para modelo...`);
+            logger.info(`[Onboarding] 🎨 Gerando preview para modelo...`);
             generatePreviewDirect({
               modelId: storeModel.id,
               storeId: store.id,
@@ -121,14 +122,14 @@ export async function POST(request: NextRequest) {
               ageRange: model.age || "adulta_26_35",
               name: model.name || "Modelo",
             }).catch((err) => {
-              console.warn("[Onboarding] Preview generation falhou (não fatal):", err);
+              logger.warn("[Onboarding] Preview generation falhou (não fatal):", err);
             });
           } catch (previewErr) {
-            console.warn("[Onboarding] Preview generation falhou (não fatal):", previewErr);
+            logger.warn("[Onboarding] Preview generation falhou (não fatal):", previewErr);
           }
         }
       } else {
-        console.log(`[Onboarding] ⚠️ Modelo não criado: plano "${planName}" permite ${modelLimit} modelos (tem ${existingModels.length})`);
+        logger.info(`[Onboarding] ⚠️ Modelo não criado: plano "${planName}" permite ${modelLimit} modelos (tem ${existingModels.length})`);
       }
     }
 
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store/onboarding] Error:", message);
+    logger.error("[API:store/onboarding] Error:", message);
     return NextResponse.json(
       { error: "Erro ao configurar loja", details: env.NODE_ENV === "development" ? message : undefined },
       { status: 500 }

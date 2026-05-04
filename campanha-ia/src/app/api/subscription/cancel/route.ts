@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { cancelSubscription } from "@/lib/payments/mercadopago";
 import { getStoreByClerkId } from "@/lib/db";
@@ -53,7 +54,7 @@ export async function POST() {
     // Cancelar no Mercado Pago
     const result = await cancelSubscription(subscriptionId);
 
-    console.log(`[API:subscription/cancel] ✅ Assinatura ${subscriptionId} cancelada. Status: ${result.status}`);
+    logger.info(`[API:subscription/cancel] ✅ Assinatura ${subscriptionId} cancelada. Status: ${result.status}`);
 
     // Limpar subscription ID localmente (webhook também fará isso)
     await supabase.from("stores").update({
@@ -67,7 +68,7 @@ export async function POST() {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:subscription/cancel] Error:", message);
+    logger.error("[API:subscription/cancel] Error:", message);
     return NextResponse.json(
       { error: "Erro ao cancelar assinatura", details: env.NODE_ENV === "development" ? message : undefined },
       { status: 500 }

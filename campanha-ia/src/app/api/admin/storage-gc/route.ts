@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { inngest } from "@/lib/inngest/client";
 import { requireAdmin } from "@/lib/admin/guard";
 
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
       data: { dryRun },
     });
 
-    console.log(`[Admin:GC] 🚀 Storage GC disparado por ${admin.userId} (dryRun=${dryRun})`);
+    logger.info(`[Admin:GC] 🚀 Storage GC disparado por ${admin.userId} (dryRun=${dryRun})`);
 
     return NextResponse.json({
       success: true,
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       dryRun,
     });
   } catch (error: unknown) {
-    console.error("[Admin:GC] Erro:", error);
+    logger.error("[Admin:GC] Erro:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
@@ -68,7 +69,7 @@ export async function GET() {
       lastRunAt: data?.updated_at || null,
     });
   } catch (error: unknown) {
-    console.error("[Admin:GC] Erro GET:", error);
+    logger.error("[Admin:GC] Erro GET:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

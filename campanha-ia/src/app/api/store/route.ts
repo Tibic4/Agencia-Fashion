@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -35,7 +36,7 @@ export async function GET() {
     return NextResponse.json({ success: true, data: store });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store] Error:", message);
+    logger.error("[API:store] Error:", message);
     return NextResponse.json({ error: "Erro ao buscar loja" }, { status: 500 });
   }
 }
@@ -88,7 +89,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store:PATCH] Error:", message);
+    logger.error("[API:store:PATCH] Error:", message);
     return NextResponse.json({ error: "Erro ao atualizar loja" }, { status: 500 });
   }
 }

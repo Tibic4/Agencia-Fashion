@@ -1,3 +1,4 @@
+import { logger } from "@/lib/observability";
 /**
  * @deprecated — Esta rota NÃO é mais chamada pelo frontend.
  * O copy de Instagram agora é gerado diretamente pelo Analyzer (gemini-analyzer.ts)
@@ -177,9 +178,9 @@ async function logTipsCost(
       response_time_ms: durationMs,
     });
 
-    console.log(`[Tips Pro] 💰 Custo: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens, ${durationMs}ms)`);
+    logger.info(`[Tips Pro] 💰 Custo: R$ ${costBrl.toFixed(4)} (${inputTokens}+${outputTokens} tokens, ${durationMs}ms)`);
   } catch (e) {
-    console.warn("[Tips Pro] ⚠️ Erro ao logar custo:", e);
+    logger.warn("[Tips Pro] ⚠️ Erro ao logar custo:", e);
   }
 }
 
@@ -243,11 +244,11 @@ export async function POST(
 
     campaignOutput = campaign.output as { smart_tips?: unknown } | null;
     if (campaignOutput?.smart_tips) {
-      console.log(`[Tips Pro] ✅ Cache hit for campaign ${id} — zero cost`);
+      logger.info(`[Tips Pro] ✅ Cache hit for campaign ${id} — zero cost`);
       return NextResponse.json({ data: campaignOutput.smart_tips, cached: true });
     }
   } catch (e) {
-    console.error("[Tips Pro] Erro no ownership/cache check:", e);
+    logger.error("[Tips Pro] Erro no ownership/cache check:", e);
     return NextResponse.json({ error: "Erro ao validar campanha" }, { status: 500 });
   }
 
@@ -273,7 +274,7 @@ export async function POST(
 
     // SSRF fix: só aceitar URLs de hosts permitidos
     if (!isAllowedImageUrl(imageUrl)) {
-      console.warn(`[Tips Pro] 🚨 imageUrl rejeitada (SSRF guard): ${imageUrl}`);
+      logger.warn(`[Tips Pro] 🚨 imageUrl rejeitada (SSRF guard): ${imageUrl}`);
       return NextResponse.json({ error: "imageUrl não permitida" }, { status: 400 });
     }
 
@@ -343,7 +344,7 @@ export async function POST(
       tips = JSON.parse(cleaned);
     } catch {
       // Tentar reparar JSON truncado (raro com structured output)
-      console.warn("[Tips Pro] ⚠️ JSON inválido, tentando reparar...");
+      logger.warn("[Tips Pro] ⚠️ JSON inválido, tentando reparar...");
       try {
         let repaired = cleaned;
         const first = repaired.indexOf("{");
@@ -369,7 +370,7 @@ export async function POST(
     const forbidden = /calça|blusa|vestido|saia|conjunto|macacão|camisa|short|bermuda|regata|peça|roupa|look|outfit|produção/i;
     const allText = `${tips.caption} ${tips.caption_alternativa} ${tips.poste_as} ${tips.tom_da_voz} ${tips.cta} ${tips.dica_extra} ${tips.story_idea} ${tips.hashtags.join(" ")}`;
     if (forbidden.test(allText)) {
-      console.warn("[Tips Pro] ⚠️ Clothing reference leaked, sanitizing...");
+      logger.warn("[Tips Pro] ⚠️ Clothing reference leaked, sanitizing...");
       // Could implement auto-sanitization here in the future
     }
 
@@ -396,16 +397,16 @@ export async function POST(
         .update({ output: updatedOutput })
         .eq("id", id);
       
-      console.log(`[Tips Pro] 💾 Cached tips for campaign ${id}`);
+      logger.info(`[Tips Pro] 💾 Cached tips for campaign ${id}`);
     } catch (e) {
-      console.warn("[Tips Pro] ⚠️ Failed to cache tips:", e);
+      logger.warn("[Tips Pro] ⚠️ Failed to cache tips:", e);
     }
 
     return NextResponse.json({ data: tips });
   } catch (err) {
     const durationMs = Date.now() - startMs;
     logTipsCost(durationMs, id, storeId).catch(() => {});
-    console.error("[Tips Pro] ❌", err instanceof Error ? err.message : err);
+    logger.error("[Tips Pro] ❌", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: "Erro ao gerar dicas" },
       { status: 500 }

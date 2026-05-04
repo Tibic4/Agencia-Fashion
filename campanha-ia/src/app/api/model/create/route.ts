@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, createStoreModel, listStoreModels, getStorePlanName, getModelLimitForPlan, consumeCredit, getStoreCredits } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       // Plano esgotou — tentar crédito avulso de modelos
       const creditUsed = await consumeCredit(store.id, "models");
       if (creditUsed) {
-        console.log(`[Model] 💳 Crédito avulso de modelo consumido (plano: ${existingModels.length}/${modelLimit})`);
+        logger.info(`[Model] 💳 Crédito avulso de modelo consumido (plano: ${existingModels.length}/${modelLimit})`);
       } else {
         const credits = await getStoreCredits(store.id);
         return NextResponse.json(
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
     const facePhoto = formData.get("facePhoto") as File | null;
 
     if (facePhoto && facePhoto.size > 0) {
-      console.log(`[Model] 📷 Foto de referência recebida: ${facePhoto.name} (${(facePhoto.size / 1024).toFixed(1)}KB)`);
+      logger.info(`[Model] 📷 Foto de referência recebida: ${facePhoto.name} (${(facePhoto.size / 1024).toFixed(1)}KB)`);
 
       // Validar tipo e tamanho
       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -108,9 +109,9 @@ export async function POST(request: NextRequest) {
           .jpeg({ quality: 85 })
           .toBuffer() as any;
         processedMime = "image/jpeg";
-        console.log(`[Model] ✂️ Imagem processada: ${(processedBuffer.length / 1024).toFixed(1)}KB`);
+        logger.info(`[Model] ✂️ Imagem processada: ${(processedBuffer.length / 1024).toFixed(1)}KB`);
       } catch {
-        console.warn("[Model] ⚠️ Sharp não disponível, usando imagem original");
+        logger.warn("[Model] ⚠️ Sharp não disponível, usando imagem original");
       }
 
       // Upload para Supabase Storage
@@ -127,10 +128,10 @@ export async function POST(request: NextRequest) {
         if (!uploadError) {
           const { data: pub } = supabase.storage.from("assets").getPublicUrl(filePath);
           faceRefUrl = pub.publicUrl;
-          console.log(`[Model] 💾 Face ref salva: ${faceRefUrl?.slice(0, 60)}...`);
+          logger.info(`[Model] 💾 Face ref salva: ${faceRefUrl?.slice(0, 60)}...`);
         }
       } catch (uploadErr) {
-        console.warn("[Model] ⚠️ Upload da face ref falhou:", uploadErr);
+        logger.warn("[Model] ⚠️ Upload da face ref falhou:", uploadErr);
       }
     }
 
@@ -189,9 +190,9 @@ export async function POST(request: NextRequest) {
         },
       });
       const mode = faceRefUrl ? "multimodal 📷" : "text-only";
-      console.log(`[Model] 🚀 Preview disparado via Inngest (${mode}) para "${name}" (model: ${model.id})`);
+      logger.info(`[Model] 🚀 Preview disparado via Inngest (${mode}) para "${name}" (model: ${model.id})`);
     } catch (inngestErr: unknown) {
-      console.warn("[Model] ⚠️ Inngest dispatch falhou:", inngestErr instanceof Error ? inngestErr.message : inngestErr);
+      logger.warn("[Model] ⚠️ Inngest dispatch falhou:", inngestErr instanceof Error ? inngestErr.message : inngestErr);
     }
 
     return NextResponse.json({
@@ -206,7 +207,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/create] Error:", msg);
+    logger.error("[API:model/create] Error:", msg);
     return NextResponse.json(
       { error: "Erro ao criar modelo", details: env.NODE_ENV === "development" ? msg : undefined },
       { status: 500 }

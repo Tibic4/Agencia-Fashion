@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { refreshExchangeRate } from "@/lib/pricing";
 import { env } from "@/lib/env";
 
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[Cron:ExchangeRate] ❌ Falha:", message);
+    logger.error("[Cron:ExchangeRate] ❌ Falha:", message);
     return NextResponse.json(
       { error: "Falha ao atualizar câmbio", details: message },
       { status: 500 }

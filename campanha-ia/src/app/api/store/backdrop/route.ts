@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { canRegenerateBackdrop } from "@/lib/ai/backdrop-generator";
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(`[API:store/backdrop] 🚀 Backdrop disparado via Inngest para store ${store.id} (${brandColor}) [${season}]`);
+    logger.info(`[API:store/backdrop] 🚀 Backdrop disparado via Inngest para store ${store.id} (${brandColor}) [${season}]`);
 
     return NextResponse.json({
       success: true,
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store/backdrop] Error:", message);
+    logger.error("[API:store/backdrop] Error:", message);
     return NextResponse.json(
       { error: message || "Erro ao gerar estúdio" },
       { status: 500 }
@@ -144,7 +145,7 @@ export async function GET() {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store/backdrop] GET Error:", message);
+    logger.error("[API:store/backdrop] GET Error:", message);
     return NextResponse.json(
       { error: "Erro ao buscar estúdio" },
       { status: 500 }

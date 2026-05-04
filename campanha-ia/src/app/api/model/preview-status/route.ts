@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
       .in("id", modelIds);
 
     if (error) {
-      console.error("[API:model/preview-status] Supabase error:", error.message, error.code);
+      logger.error("[API:model/preview-status] Supabase error", { message: error.message, code: error.code });
       return NextResponse.json({ error: "Erro ao consultar modelos" }, { status: 500 });
     }
 
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ statuses });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/preview-status] Error:", msg);
+    logger.error("[API:model/preview-status] Error:", msg);
     return NextResponse.json({ error: "Erro ao consultar status" }, { status: 500 });
   }
 }

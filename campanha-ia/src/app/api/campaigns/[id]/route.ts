@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, getCampaignById } from "@/lib/db";
 
@@ -166,7 +167,7 @@ export async function GET(
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:campaigns/id] Error:", message);
+    logger.error("[API:campaigns/id] Error:", message);
     return NextResponse.json({ error: "Erro ao buscar campanha" }, { status: 500 });
   }
 }

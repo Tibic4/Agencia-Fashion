@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import {
   getStoreByClerkId,
@@ -118,7 +119,7 @@ export async function POST(
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:regenerate] Error:", message);
+    logger.error("[API:regenerate] Error:", message);
     return NextResponse.json({ error: "Erro ao verificar regeneração" }, { status: 500 });
   }
 }

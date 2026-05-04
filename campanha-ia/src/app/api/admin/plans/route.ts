@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
 
@@ -24,7 +25,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: data ?? [] });
   } catch (error) {
-    console.error("[API:admin/plans] GET error:", error);
+    logger.error("[API:admin/plans] GET error:", error);
     return NextResponse.json({ error: "Erro ao buscar planos" }, { status: 500 });
   }
 }

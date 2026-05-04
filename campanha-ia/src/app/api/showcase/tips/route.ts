@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export async function GET() {
       data: fallback || null,
     });
   } catch (error) {
-    console.error("[API:showcase/tips] Error:", error);
+    logger.error("[API:showcase/tips] Error:", error);
     return NextResponse.json({ success: true, data: null });
   }
 }

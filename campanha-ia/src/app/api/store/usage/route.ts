@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, getCurrentUsage, getOrCreateCurrentUsage, getStorePlanName, getModelLimitForPlan, getHistoryDaysForPlan, getStoreCredits } from "@/lib/db";
 
@@ -49,7 +50,7 @@ export async function GET() {
         // Recarregar dados após downgrade
         usage = await getCurrentUsage(store.id);
         planName = "gratis";
-        console.log(`[API:store/usage] 🔻 Auto-downgrade: store ${store.id} → grátis (período expirou, sem assinatura)`);
+        logger.info(`[API:store/usage] 🔻 Auto-downgrade: store ${store.id} → grátis (período expirou, sem assinatura)`);
       }
     }
 
@@ -86,7 +87,7 @@ export async function GET() {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:store/usage] Error:", message);
+    logger.error("[API:store/usage] Error:", message);
     return NextResponse.json({ error: "Erro ao buscar uso" }, { status: 500 });
   }
 }

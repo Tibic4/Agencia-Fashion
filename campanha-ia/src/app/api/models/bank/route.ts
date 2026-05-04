@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
     const { data, error } = await query;
 
     if (error) {
-      console.error("[API:model-bank] Erro:", error);
+      logger.error("[API:model-bank] Erro:", error);
       return NextResponse.json({ error: "Erro ao buscar modelos" }, { status: 500 });
     }
 
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
       total: data?.length || 0,
     });
   } catch (err) {
-    console.error("[API:model-bank] Erro inesperado:", err);
+    logger.error("[API:model-bank] Erro inesperado:", err);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

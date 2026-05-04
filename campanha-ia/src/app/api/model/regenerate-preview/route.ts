@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -55,10 +56,10 @@ export async function POST(request: NextRequest) {
           const arrayBuffer = await res.arrayBuffer();
           faceRefBase64 = Buffer.from(arrayBuffer).toString("base64");
           faceRefMimeType = res.headers.get("content-type") || "image/jpeg";
-          console.log(`[Regen] 📷 Face ref carregada para modelo ${modelId}`);
+          logger.info(`[Regen] 📷 Face ref carregada para modelo ${modelId}`);
         }
       } catch (fetchErr) {
-        console.warn("[Regen] ⚠️ Falha ao carregar face_ref_url:", fetchErr);
+        logger.warn("[Regen] ⚠️ Falha ao carregar face_ref_url:", fetchErr);
       }
     }
 
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       faceRefBase64,
       faceRefMimeType,
     }).catch((err) => {
-      console.error("[API:model/regenerate-preview] Preview generation failed:", err);
+      logger.error("[API:model/regenerate-preview] Preview generation failed:", err);
     });
 
     return NextResponse.json({
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/regenerate-preview] Error:", msg);
+    logger.error("[API:model/regenerate-preview] Error:", msg);
     return NextResponse.json({ error: "Erro ao regenerar preview" }, { status: 500 });
   }
 }

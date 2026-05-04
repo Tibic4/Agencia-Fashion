@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
 import sharp from "sharp";
@@ -92,7 +93,7 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("[API:admin/showcase] GET error:", error.message);
+    logger.error("[API:admin/showcase] GET error:", error.message);
     return NextResponse.json({ error: "Erro ao listar vitrine" }, { status: 500 });
   }
   return NextResponse.json({ success: true, data });
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     if (afterErr) throw new Error(`Upload DEPOIS falhou: ${afterErr.message}`);
 
-    console.log(`[API:admin/showcase] ✅ Fotos processadas — antes: ${(beforeRaw.length / 1024).toFixed(0)}KB→${(beforeProcessed.length / 1024).toFixed(0)}KB, depois: ${(afterRaw.length / 1024).toFixed(0)}KB→${(afterProcessed.length / 1024).toFixed(0)}KB`);
+    logger.info(`[API:admin/showcase] ✅ Fotos processadas — antes: ${(beforeRaw.length / 1024).toFixed(0)}KB→${(beforeProcessed.length / 1024).toFixed(0)}KB, depois: ${(afterRaw.length / 1024).toFixed(0)}KB→${(afterProcessed.length / 1024).toFixed(0)}KB`);
 
     // Get public URLs
     const { data: beforeUrl } = supabase.storage.from("showcase").getPublicUrl(beforePath);
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:admin/showcase] Error:", message);
+    logger.error("[API:admin/showcase] Error:", message);
     return NextResponse.json({ error: "Erro ao criar item da vitrine" }, { status: 500 });
   }
 }
@@ -227,7 +228,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:admin/showcase] PATCH error:", message);
+    logger.error("[API:admin/showcase] PATCH error:", message);
     return NextResponse.json({ error: "Erro ao atualizar item" }, { status: 500 });
   }
 }
@@ -256,7 +257,7 @@ export async function DELETE(request: NextRequest) {
   // 2. Deletar do banco
   const { error } = await supabase.from("showcase_items").delete().eq("id", id);
   if (error) {
-    console.error("[API:admin/showcase] DELETE error:", error.message);
+    logger.error("[API:admin/showcase] DELETE error:", error.message);
     return NextResponse.json({ error: "Erro ao deletar item" }, { status: 500 });
   }
 
@@ -270,9 +271,9 @@ export async function DELETE(request: NextRequest) {
     if (paths.length > 0) {
       const { error: storageErr } = await supabase.storage.from("showcase").remove(paths);
       if (storageErr) {
-        console.warn("[API:admin/showcase] Storage cleanup error:", storageErr.message);
+        logger.warn("[API:admin/showcase] Storage cleanup error:", storageErr.message);
       } else {
-        console.log(`[API:admin/showcase] ✅ Storage limpo: ${paths.join(", ")}`);
+        logger.info(`[API:admin/showcase] ✅ Storage limpo: ${paths.join(", ")}`);
       }
     }
   }

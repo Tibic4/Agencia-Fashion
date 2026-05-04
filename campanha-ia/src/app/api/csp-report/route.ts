@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,7 @@ function reportLegacyToSentry(report: LegacyCspReport["csp-report"]): void {
   const directive = report["effective-directive"] || report["violated-directive"] || "unknown";
   const blocked = hostOf(report["blocked-uri"]);
   const document = hostOf(report["document-uri"]);
-  console.info(
+  logger.info(
     `[csp-report] violation: directive=${directive} blocked=${blocked} document=${document}`,
   );
   Sentry.captureMessage(`CSP violation: ${directive}`, {
@@ -94,7 +95,7 @@ function reportModernToSentry(report: ModernCspReport): void {
   const directive = body.effectiveDirective || "unknown";
   const blocked = hostOf(body.blockedURL);
   const document = hostOf(body.documentURL);
-  console.info(
+  logger.info(
     `[csp-report] violation (modern): directive=${directive} blocked=${blocked} document=${document} disposition=${body.disposition ?? "report"}`,
   );
   Sentry.captureMessage(`CSP violation: ${directive}`, {
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
     // Defensive: malformed body, JSON parse error, Sentry call failure.
     // Log warn + return 204 anyway — never 4xx/5xx to a browser-driven report POST.
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`[csp-report] parse error (swallowed): ${msg}`);
+    logger.warn(`[csp-report] parse error (swallowed): ${msg}`);
   }
 
   return new NextResponse(null, { status: 204 });

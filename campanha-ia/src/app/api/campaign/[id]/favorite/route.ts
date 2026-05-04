@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStoreByClerkId } from "@/lib/db";
@@ -54,7 +55,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Erro ao atualizar favorito" }, { status: 500 });
     }
 
-    console.log(`[Favorite] ${favorited ? "⭐" : "☆"} Campanha ${campaignId} — favorited=${favorited}`);
+    logger.info(`[Favorite] ${favorited ? "⭐" : "☆"} Campanha ${campaignId} — favorited=${favorited}`);
 
     return NextResponse.json({
       success: true,
@@ -62,7 +63,7 @@ export async function PATCH(
       is_favorited: favorited,
     });
   } catch (error: unknown) {
-    console.error("[Favorite] Erro:", error);
+    logger.error("[Favorite] Erro:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

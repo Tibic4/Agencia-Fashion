@@ -11,11 +11,43 @@ import { createHash } from "node:crypto";
 
 type Ctx = Record<string, unknown>;
 
-function log(level: "debug" | "info" | "warn" | "error", msg: string, ctx?: Ctx) {
+/**
+ * Coerce extras (which may be Error, PostgrestError, plain string, or
+ * structured object) into a serializable shape for the log line. Keeps the
+ * logger forgiving so call-sites that previously passed `console.error(msg, e)`
+ * don't have to introduce wrapper objects everywhere.
+ */
+function normalizeExtra(extra: unknown): Ctx | string | undefined {
+  if (extra == null) return undefined;
+  if (typeof extra === "string") return extra;
+  if (extra instanceof Error) {
+    return { name: extra.name, message: extra.message, stack: extra.stack };
+  }
+  if (typeof extra === "object") {
+    // PostgrestError / StorageError / arbitrary object — serialize via JSON.stringify
+    // tolerate getter-only props by spreading + falling back to JSON.parse(JSON.stringify)
+    try {
+      return JSON.parse(JSON.stringify(extra)) as Ctx;
+    } catch {
+      return { error: String(extra) };
+    }
+  }
+  return { value: String(extra) };
+}
+
+function log(level: "debug" | "info" | "warn" | "error", msg: string, ctx?: unknown) {
   // Em produção, reduz verbosidade de debug
   if (level === "debug" && process.env.NODE_ENV === "production") return;
   const timestamp = new Date().toISOString();
-  const line = ctx ? `${timestamp} [${level}] ${msg}  ${JSON.stringify(ctx)}` : `${timestamp} [${level}] ${msg}`;
+  const normalized = normalizeExtra(ctx);
+  let line: string;
+  if (normalized == null) {
+    line = `${timestamp} [${level}] ${msg}`;
+  } else if (typeof normalized === "string") {
+    line = `${timestamp} [${level}] ${msg} ${normalized}`;
+  } else {
+    line = `${timestamp} [${level}] ${msg}  ${JSON.stringify(normalized)}`;
+  }
   switch (level) {
     case "error":
       console.error(line);
@@ -29,10 +61,10 @@ function log(level: "debug" | "info" | "warn" | "error", msg: string, ctx?: Ctx)
 }
 
 export const logger = {
-  debug: (msg: string, ctx?: Ctx) => log("debug", msg, ctx),
-  info: (msg: string, ctx?: Ctx) => log("info", msg, ctx),
-  warn: (msg: string, ctx?: Ctx) => log("warn", msg, ctx),
-  error: (msg: string, ctx?: Ctx) => log("error", msg, ctx),
+  debug: (msg: string, ctx?: unknown) => log("debug", msg, ctx),
+  info: (msg: string, ctx?: unknown) => log("info", msg, ctx),
+  warn: (msg: string, ctx?: unknown) => log("warn", msg, ctx),
+  error: (msg: string, ctx?: unknown) => log("error", msg, ctx),
 };
 
 /**

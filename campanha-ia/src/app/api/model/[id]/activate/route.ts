@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, setActiveModel } from "@/lib/db";
 
@@ -29,7 +30,7 @@ export async function POST(
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error("[API:model/activate] Error:", msg);
+    logger.error("[API:model/activate] Error:", msg);
     return NextResponse.json({ error: "Erro ao ativar modelo" }, { status: 500 });
   }
 }

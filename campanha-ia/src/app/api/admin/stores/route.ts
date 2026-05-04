@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { requireAdmin } from "@/lib/admin/guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -46,14 +47,14 @@ export async function PATCH(req: NextRequest) {
 
   if (error) {
     // não vaza error.message (pode conter nome de coluna/constraint)
-    console.error("[Admin:Stores] Update error:", error);
+    logger.error("[Admin:Stores] Update error:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar loja", code: "UPDATE_FAILED" },
       { status: 500 },
     );
   }
 
-  console.log(`[Admin:Stores] ✅ Store ${storeId} updated:`, updates);
+  logger.info(`[Admin:Stores] ✅ Store ${storeId} updated:`, updates);
   return NextResponse.json({ success: true, updates });
 }
 
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
     .single();
 
   if (detailError) {
-    console.warn("[Admin:Stores] Detail query failed, trying fallback:", detailError.message);
+    logger.warn("[Admin:Stores] Detail query failed, trying fallback:", detailError.message);
     // Fallback: select all (sem joins explícitos que podem quebrar)
     const { data: fallbackData, error: fallbackError } = await supabase
       .from("stores")
@@ -100,7 +101,7 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (fallbackError || !fallbackData) {
-      console.error("[Admin:Stores] Fallback also failed:", fallbackError?.message);
+      logger.error("[Admin:Stores] Fallback also failed:", fallbackError?.message);
       return NextResponse.json(
         { error: `Loja não encontrada: ${detailError.message}` },
         { status: 404 }
@@ -162,7 +163,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Loja não encontrada" }, { status: 404 });
   }
 
-  console.log(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId}) via RPC cascade...`);
+  logger.info(`[Admin:Stores] 🗑️ Deletando loja "${store.name}" (${storeId}) via RPC cascade...`);
 
   // RPC atômica (SECURITY DEFINER, transacional) em vez do loop legado.
   const { data: deleted, error: rpcError } = await supabase.rpc("delete_store_cascade", {
@@ -170,7 +171,7 @@ export async function DELETE(req: NextRequest) {
   });
 
   if (rpcError) {
-    console.error("[Admin:Stores] ❌ delete_store_cascade falhou:", rpcError);
+    logger.error("[Admin:Stores] ❌ delete_store_cascade falhou:", rpcError);
     return NextResponse.json(
       { error: "Erro ao deletar loja", code: "DELETE_FAILED" },
       { status: 500 },
@@ -181,9 +182,9 @@ export async function DELETE(req: NextRequest) {
   try {
     await supabase.storage.from("assets").remove([`backdrops/${storeId}.png`, `backdrops/${storeId}.jpg`]);
   } catch {
-    console.warn("[Admin:Stores] ⚠️ Erro ao limpar storage (não-crítico)");
+    logger.warn("[Admin:Stores] ⚠️ Erro ao limpar storage (não-crítico)");
   }
 
-  console.log(`[Admin:Stores] ✅ Loja "${store.name}" deletada — rows:`, deleted);
+  logger.info(`[Admin:Stores] ✅ Loja "${store.name}" deletada — rows:`, deleted);
   return NextResponse.json({ success: true, deleted: store.name, rows: deleted });
 }

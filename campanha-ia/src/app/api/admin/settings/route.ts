@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/guard";
 import { z } from "zod";
@@ -47,7 +48,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: normalized });
   } catch (error) {
-    console.error("[API:admin/settings] GET error:", error);
+    logger.error("[API:admin/settings] GET error:", error);
     return NextResponse.json({ error: "Erro ao buscar configurações" }, { status: 500 });
   }
 }
@@ -86,7 +87,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: `${key} atualizado para ${value}` });
   } catch (error) {
-    console.error("[API:admin/settings] PUT error:", error);
+    logger.error("[API:admin/settings] PUT error:", error);
     return NextResponse.json({ error: "Erro ao atualizar configuração" }, { status: 500 });
   }
 }
