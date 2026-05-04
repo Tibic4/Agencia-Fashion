@@ -18,7 +18,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const getTokenMock = vi.fn<[], Promise<string | null>>();
+const getTokenMock: ReturnType<typeof vi.fn<() => Promise<string | null>>> = vi.fn();
 const userIdRef: { value: string | null } = { value: 'user_test_id' };
 
 vi.mock('@clerk/clerk-expo', () => ({
