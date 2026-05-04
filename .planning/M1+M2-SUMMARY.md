@@ -12,7 +12,7 @@ Two consecutive milestones consolidated the `crialook` monorepo (Next.js web app
 
 **Current repo state:** 597 tests pass (web 428 / mobile 169), `tsc --noEmit` clean both sides, `npm run lint` 0 errors both sides (warnings remain, acceptable), `npm audit --audit-level=high` returns 0 high+ both sides, `npm run build` (web) succeeds, `expo-doctor` 18/18, vitest coverage thresholds ratcheted to measured floor (no aspirational lies). Husky `pre-commit` is ACTIVE and gates every commit on `tsc + lint-staged`. Expo SDK is at 55 (upgraded from 54 in M2 P5 with no rollback needed).
 
-**What the owner needs to do next:** (a) push 39 commits to `origin/main`, (b) apply 1 deferred SQL migration via MCP after deploy (`DROP increment_regen_count(uuid)`), (c) revoke 2 leaked Clerk loadtest sessions via Dashboard, (d) walk the 11-step Play release checklist when ready to ship the AAB, (e) run the Clerk Client Trust re-enable runbook *post-Play approval* (now unblocked because backend controls 2+3 are LIVE). Full enumerated backlog in `.planning/STATE.md`.
+**What the owner needs to do next:** (a) push 191 commits to `origin/main` (use `npm run deploy:check` for pre-flight), (b) revoke 2 leaked Clerk loadtest sessions via Dashboard (helper: `npm run clerk:revoke-loadtest`), (c) walk the 11-step Play release checklist when ready to ship the AAB (helper: `npm run play:prep`), (d) run the Clerk Client Trust re-enable runbook *post-Play approval* (now unblocked because backend controls 2+3 are LIVE). All 11 SQL migrations were applied via MCP during M1+M2 — zero migration work pending. Full enumerated backlog in `.planning/STATE.md`.
 
 ---
 
@@ -81,7 +81,7 @@ Two consecutive milestones consolidated the `crialook` monorepo (Next.js web app
 
 ## M2 highlights — "Consertar tudo"
 
-8 phases, 39 atomic commits, all under husky `pre-commit` gate. Three irreducible decisions taken inline by owner: 1=B (legal link), 2=C→A success (SDK 55 try-and-rollback worked), 3=B (defer DROP migration).
+8 phases, 39 atomic commits, all under husky `pre-commit` gate. Three irreducible decisions taken inline by owner: **1=B** (legal: in-app summary + "Versão completa" link), **2=A** (Expo SDK 55 full upgrade with breaking changes accepted — landed in 35min, no rollback needed), **3=A** (apply DROP `increment_regen_count(uuid)` migration immediately via MCP — no DB issues observed).
 
 ### Phase 1 — Backend security gaps (Clerk Trust unblockers)
 - Control 3: `/api/billing/verify` now extracts `obfuscatedExternalAccountId` from Google Play API response and rejects 403 if `!= SHA256(getCurrentUserId).slice(0,64)` — kills subscription substitution attacks
@@ -156,8 +156,8 @@ Two consecutive milestones consolidated the `crialook` monorepo (Next.js web app
 ## Owner action backlog (prioritized)
 
 ### P0 — must do before next deploy
-- 🚨 `git push origin main` — 39 commits ahead of remote (use `npm run deploy:check` first)
-- 🚨 Apply final SQL migration after deploy: `DROP increment_regen_count(uuid)` 1-arg overload (deferred per Decision 3-B; safe to apply once new code is live)
+- 🚨 `git push origin main` — 191 commits ahead of remote (use `npm run deploy:check` first)
+- ✅ ~~Apply final SQL migration~~ — DONE at M2 open per Decision 3-A. All 11 migrations live in `varejo-flow`. Zero migration backlog.
 - 🚨 Revoke 2 Clerk loadtest sessions via Dashboard (`scripts/clerk-revoke-loadtest-sessions.sh` prints exact URLs)
 
 ### P1 — must do before Play release
@@ -203,7 +203,7 @@ Items intentionally out of M1+M2 scope, kept blessed but deferred:
 | M2 commits | 39 |
 | Total commits since session start | **191** |
 | Distinct files touched | **371** |
-| Schema migrations applied via MCP | **12** (4 P1 + 3 P2 + 4 P4 + 1 deferred DROP at M2 start) |
+| Schema migrations applied via MCP | **11 unique** (4 P1 + 3 P2 + 3 P4 initial + 1 P4 deferred-then-applied at M2 open per Decision 3-A) |
 | Tests added M1+M2 | ~333 (264 → 597) |
 | Husky pre-commit | ACTIVE since M1 P3 |
 | Expo SDK | 54 → **55** (M2 P5) |

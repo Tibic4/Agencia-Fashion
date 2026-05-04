@@ -31,8 +31,8 @@ Progress M2: [██████████] 100% executed (8/8 phases done)
 **OWNER ACTION ITEMS (cumulative across M1 + M2):**
 
 Production deploy & infra:
-- ⚠️ Apply final migration via `supabase db push` (or MCP): **DROP `increment_regen_count(uuid)` 1-arg overload** — DEFERRED at M2 start per Decision 3-B (apply only after `git push` + prod deploy). All other 11 migrations APPLIED.
-- ⚠️ `git push origin main` — 39 commits ahead. Use new `npm run deploy:check` (M2 P6) for pre-flight: tests, no uncommitted, migrations applied, env present.
+- ✅ ~~Apply DROP `increment_regen_count(uuid)` 1-arg overload migration~~ — **APPLIED via MCP at M2 start per Decision 3-A**. All 11 unique migrations now live in `varejo-flow` Supabase. No outstanding migration work.
+- ⚠️ `git push origin main` — 191 commits ahead since 2026-05-03. Use new `npm run deploy:check` (M2 P6) for pre-flight: tests, no uncommitted, migrations applied, env present.
 - Run `bash deploy-crialook.sh` post-push (rollback path safe per 08-01; Discord notify wired)
 - Provision `DISCORD_WEBHOOK_URL` at `/etc/crialook/webhook.env` (still pending)
 
@@ -61,11 +61,12 @@ Ops (low-traffic window):
 - Run nginx zones split per `ops/deploy.md` first-time setup
 - After 14 days zero CSP violations: flip Report-Only → enforced per `ops/csp-rollout.md`
 
-Migrations applied via MCP (M1 + M2 = 12 cumulative):
-  - 4 P1: subscription_status ENUM + backfill + stores_updated_at_trigger + webhook_events
-  - 3 P2: judge_pending columns + judge_payload column + judge_dead_letter table
-  - 4 P4: rate_limit_buckets + consume_rate_limit_token RPC + harden_rpc_grants + DROP increment_regen_count(uuid) [the deferred one]
-  - DEFERRED at M2 start (decision 3-B): drop_legacy_increment_regen_count → owner applies post-deploy
+Migrations applied via MCP (M1 + M2 = 11 unique cumulative):
+  - 4 P1 (M1): subscription_status ENUM + backfill + stores_updated_at_trigger + webhook_events
+  - 3 P2 (M1): judge_pending columns + judge_payload column + judge_dead_letter table
+  - 3 P4 initial (M1): rate_limit_buckets + consume_rate_limit_token RPC + harden_rpc_grants
+  - 1 P4 deferred → applied at M2 start per Decision 3-A: drop_legacy_increment_regen_count(uuid)
+  - **Status: ZERO migrations pending.** Owner does NOT need to run `supabase db push` for any M1/M2 schema work.
 
 ## Optional next step
 
@@ -77,7 +78,7 @@ A formal milestone audit is available via `Skill(gsd-audit-milestone)` if owner 
 - Total milestones completed: 2 (M1 + M2)
 - Session commits: 39 (M2 only) / 191 cumulative since 2026-05-03 (M1+M2)
 - Distinct files touched M1+M2: 371
-- Schema migrations applied: 12 via MCP
+- Schema migrations applied: 11 unique via MCP (zero pending)
 
 **By Milestone:**
 
@@ -95,8 +96,8 @@ Decisions are logged in PROJECT.md, ROADMAP.md, M2-NOTES.md "Decisões do owner"
 Recent decisions affecting current work:
 - 2026-05-03: Milestone M1 (Hardening + Play Readiness) opened with two parallel trilhas
 - 2026-05-03: Old `.planning/` archived to `.planning-old/` — fresh start authorized
-- 2026-05-04: M2 opened with 3 decisions (1=B legal link, 2=A→C SDK 55 try-and-rollback, 3=B defer DROP)
-- 2026-05-04: SDK 55 upgrade SUCCESS (no rollback needed)
+- 2026-05-04: M2 opened with 3 owner decisions: 1=B (legal link), 2=A (Expo SDK 55 full upgrade, breaking changes accepted), 3=A (apply DROP migration now via MCP)
+- 2026-05-04: All 3 M2 decisions executed clean: legal Option B landed CI-green; SDK 55 upgrade succeeded in 35min with no rollback; DROP migration applied via MCP at M2 open (no DB issues)
 - 2026-05-04: M2 closed cleanly via P8 verification
 
 ### Pending Todos
