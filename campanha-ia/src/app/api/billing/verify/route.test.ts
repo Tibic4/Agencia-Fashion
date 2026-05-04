@@ -11,10 +11,19 @@
  *   7. Pending payment (paymentState !== 1) → 402
  *   8. Valid IAB purchase → updateStorePlan called with mapped slug + 200
  *   9. Acknowledgement skipped when state already acked
+ *
+ * M2 Phase 1 (compensating controls 2 + 3) extends with:
+ *  10. Mismatched obfuscatedExternalAccountId → 403 OBFUSCATED_ID_MISMATCH
+ *  11. Missing obfuscatedExternalAccountId → 403 OBFUSCATED_ID_MISMATCH
+ *  12. Per-user rate limit triggered (31st req in 5min) → 429 + Retry-After
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
+
+const USER_ID = "user_v_1";
+const EXPECTED_OBFUSCATED = createHash("sha256").update(USER_ID).digest("hex").slice(0, 64);
 
 const m = vi.hoisted(() => ({
   mockAuth: vi.fn(),
@@ -25,6 +34,7 @@ const m = vi.hoisted(() => ({
   mockIsGooglePlayConfigured: vi.fn(() => true),
   mockCaptureError: vi.fn(),
   mockLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  mockConsumeTokenBucket: vi.fn(async () => ({ allowed: true, remaining: 29, retryAfterMs: 0 })),
   upsertCalls: [] as Array<{ table: string; payload: Record<string, unknown> }>,
 }));
 
@@ -61,6 +71,11 @@ vi.mock("@/lib/observability", () => ({
   captureError: (...args: unknown[]) => m.mockCaptureError(...args),
 }));
 
+vi.mock("@/lib/rate-limit-pg", () => ({
+  consumeTokenBucket: (...args: unknown[]) =>
+    (m.mockConsumeTokenBucket as (...a: unknown[]) => Promise<unknown>)(...args),
+}));
+
 vi.mock("@/lib/payments/google-play", async () => {
   const actual = await vi.importActual<typeof import("@/lib/payments/google-play")>(
     "@/lib/payments/google-play",
@@ -86,9 +101,10 @@ function makeRequest(body: unknown): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks();
   m.upsertCalls.length = 0;
-  m.mockAuth.mockReturnValue({ userId: "user_v_1" });
+  m.mockAuth.mockReturnValue({ userId: USER_ID });
   m.mockIsGooglePlayConfigured.mockReturnValue(true);
-  m.mockGetStoreByClerkId.mockResolvedValue({ id: "store-verify-1", clerk_user_id: "user_v_1" });
+  m.mockGetStoreByClerkId.mockResolvedValue({ id: "store-verify-1", clerk_user_id: USER_ID });
+  m.mockConsumeTokenBucket.mockResolvedValue({ allowed: true, remaining: 29, retryAfterMs: 0 });
 });
 
 describe("/api/billing/verify (Plan 02-05 / QUALITY #3)", () => {
@@ -124,6 +140,7 @@ describe("/api/billing/verify (Plan 02-05 / QUALITY #3)", () => {
       paymentState: 1,
       acknowledgementState: 1,
       autoRenewing: true,
+      obfuscatedExternalAccountId: EXPECTED_OBFUSCATED,
     });
     const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
     expect(res.status).toBe(502);
@@ -135,6 +152,7 @@ describe("/api/billing/verify (Plan 02-05 / QUALITY #3)", () => {
       paymentState: 1,
       acknowledgementState: 1,
       autoRenewing: false,
+      obfuscatedExternalAccountId: EXPECTED_OBFUSCATED,
     });
     const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
     expect(res.status).toBe(410);
@@ -146,6 +164,7 @@ describe("/api/billing/verify (Plan 02-05 / QUALITY #3)", () => {
       paymentState: 0,
       acknowledgementState: 1,
       autoRenewing: true,
+      obfuscatedExternalAccountId: EXPECTED_OBFUSCATED,
     });
     const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
     expect(res.status).toBe(402);
@@ -157,6 +176,7 @@ describe("/api/billing/verify (Plan 02-05 / QUALITY #3)", () => {
       paymentState: 1,
       acknowledgementState: 1, // already acked
       autoRenewing: true,
+      obfuscatedExternalAccountId: EXPECTED_OBFUSCATED,
     });
     const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
     expect(res.status).toBe(200);
@@ -179,9 +199,77 @@ describe("/api/billing/verify (Plan 02-05 / QUALITY #3)", () => {
       paymentState: 1,
       acknowledgementState: 0, // not acked
       autoRenewing: true,
+      obfuscatedExternalAccountId: EXPECTED_OBFUSCATED,
     });
     const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
     expect(res.status).toBe(200);
     expect(m.mockAcknowledgeSubscription).toHaveBeenCalledWith("pro_mensal", "tok_aaaaaaaaaa");
+  });
+});
+
+describe("/api/billing/verify — M2 Phase 1: obfuscated hash (control 3)", () => {
+  it("rejects with 403 OBFUSCATED_ID_MISMATCH when hash does not match userId", async () => {
+    m.mockVerifySubscription.mockResolvedValueOnce({
+      expiryTimeMillis: String(Date.now() + 86_400_000),
+      paymentState: 1,
+      acknowledgementState: 1,
+      autoRenewing: true,
+      // Hash for some OTHER user — replay attack scenario
+      obfuscatedExternalAccountId: createHash("sha256")
+        .update("user_attacker")
+        .digest("hex")
+        .slice(0, 64),
+    });
+    const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.code).toBe("OBFUSCATED_ID_MISMATCH");
+    // No persistence happened
+    expect(m.upsertCalls.length).toBe(0);
+    expect(m.mockUpdateStorePlan).not.toHaveBeenCalled();
+    // Sentry breadcrumb fired
+    expect(m.mockCaptureError).toHaveBeenCalledTimes(1);
+    const ctx = m.mockCaptureError.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(ctx?.["billing.obfuscated_mismatch"]).toBe(true);
+  });
+
+  it("rejects with 403 OBFUSCATED_ID_MISMATCH when field is missing from Play response", async () => {
+    m.mockVerifySubscription.mockResolvedValueOnce({
+      expiryTimeMillis: String(Date.now() + 86_400_000),
+      paymentState: 1,
+      acknowledgementState: 1,
+      autoRenewing: true,
+      // No obfuscatedExternalAccountId — pre-control mobile or stripped at network
+      obfuscatedExternalAccountId: undefined,
+    });
+    const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.code).toBe("OBFUSCATED_ID_MISMATCH");
+    expect(m.upsertCalls.length).toBe(0);
+  });
+});
+
+describe("/api/billing/verify — M2 Phase 1: rate limit (control 2)", () => {
+  it("returns 429 + Retry-After header when token bucket is exhausted", async () => {
+    m.mockConsumeTokenBucket.mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterMs: 12_345,
+    });
+    const res = await POST(makeRequest({ sku: "pro_mensal", purchaseToken: "tok_aaaaaaaaaa" }));
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.code).toBe("RATE_LIMITED");
+    expect(res.headers.get("Retry-After")).toBe("13");
+    // Bucket key is namespaced + per-user
+    expect(m.mockConsumeTokenBucket).toHaveBeenCalledWith(
+      `billing.verify:${USER_ID}`,
+      30,
+      30,
+      300,
+    );
+    // No verifySubscription call when rate-limited
+    expect(m.mockVerifySubscription).not.toHaveBeenCalled();
   });
 });
