@@ -2,7 +2,7 @@
   "name": "crialook-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "_lock_warning": "EAS build espera lockfile no formato npm@10. NUNCA rode `npm install` puro neste app — sempre `npm run lock:fix` (ou `npm ci --legacy-peer-deps` em CI). npm 11+ regenera lockfile com sintaxe nova que quebra o EAS build.",
+  "_lock_warning": "EAS build espera lockfile no formato npm@10. NUNCA rode `npm install` puro neste app — sempre `npm run lock:fix` (ou `npm ci --legacy-peer-deps` em CI). npm 11+ regenera lockfile com sintaxe nova que quebra o EAS build. Nota M2 P7: Storybook 8.6.x×Vite 6.4.x peer-deps agora resolvem clean (vite@6.4.2 deduped na árvore inteira) — o `--legacy-peer-deps` continua necessário só pra contornar a peer mismatch transitiva do `@solana-mobile/mobile-wallet-adapter-protocol` (excluído via expo.autolinking) que arrasta `@solana/web3.js` com noble/hashes range incompatível.",
   "scripts": {
     "preinstall": "node scripts/preinstall-guard.js",
     "start": "expo start",
