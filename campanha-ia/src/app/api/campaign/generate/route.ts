@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     // 1 foto em vez de 3 — corte de ~66% do custo de imagem na geração trial,
     // que é o caminho de aquisição (deve ser barato pra escalar).
     let isTrialOnly = false;
-    if (store) {
+    if (store && !IS_DEMO_MODE) {
       const quota = await canGenerateCampaign(store.id);
       if (!quota.allowed) {
         // Sem quota de plano e sem créditos avulsos
@@ -348,16 +348,10 @@ export async function POST(request: NextRequest) {
 
     // ── DEMO MODE ──
     if (IS_DEMO_MODE) {
-      console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock");
+      console.log("[API:campaign/generate] 🎭 Demo mode — usando dados mock (M-11: skip quota)");
       const mockResult = await runMockPipeline(3000);
-
-      if (campaignRecord) {
-        if (needsAvulsoCredit) {
-          // Crédito avulso já consumido upfront
-        } else if (!planSlotReserved) {
-          await incrementCampaignsUsed(store!.id);
-        }
-      }
+      // M-11 fix: demo mode never consumes quota or credits. Upstream gate
+      // skipped reservation when !IS_DEMO_MODE; nothing to reconcile here.
 
       return NextResponse.json({
         success: true,
