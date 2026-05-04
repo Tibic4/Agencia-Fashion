@@ -45,17 +45,25 @@ export async function GET(req: NextRequest) {
   // ── Deep check (autorizado): testa DB, storage e presença de chaves ──
   const checks: Record<string, { status: "ok" | "error" | "warning"; ms?: number; detail?: string }> = {};
 
+  // D-21 / M-7: dbStart is captured IMMEDIATELY before the Supabase call so
+  // checks.database.ms reflects pure DB latency, not route-handler overhead
+  // (auth check, JSON parsing, admin client construction). The outer `start`
+  // is preserved for responseMs (line ~96) which intentionally reports
+  // total-handler time.
   let dbAlive = false;
+  let dbMs = 0;
   try {
     const supabase = createAdminClient();
+    const dbStart = Date.now();
     const { error } = await supabase.from("plans").select("id").limit(1);
+    dbMs = Date.now() - dbStart;
     dbAlive = !error;
   } catch {
     dbAlive = false;
   }
 
   checks.database = dbAlive
-    ? { status: "ok", ms: Date.now() - start }
+    ? { status: "ok", ms: dbMs }
     : { status: "error", detail: "db_unreachable" };
 
   checks.gemini = (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY)
@@ -74,10 +82,15 @@ export async function GET(req: NextRequest) {
     ? { status: "ok" }
     : { status: "warning", detail: "not_configured" };
 
+  // D-21: symmetric latency timer for storage check (matches DB pattern above).
+  // ops dashboards can graph DB ms vs storage ms to spot regressions independently.
+  let storageMs = 0;
   try {
     const supabase = createAdminClient();
+    const storageStart = Date.now();
     const { error } = await supabase.storage.from("product-photos").list("", { limit: 1 });
-    checks.storage = error ? { status: "warning", detail: "storage_error" } : { status: "ok" };
+    storageMs = Date.now() - storageStart;
+    checks.storage = error ? { status: "warning", detail: "storage_error" } : { status: "ok", ms: storageMs };
   } catch {
     checks.storage = { status: "warning", detail: "storage_error" };
   }
