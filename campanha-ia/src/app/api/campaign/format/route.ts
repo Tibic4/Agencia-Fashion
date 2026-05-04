@@ -22,6 +22,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import sharp from "sharp";
+import { isAllowedImageUrl } from "@/lib/security/image-host-allowlist";
+import { verifyImageMime } from "@/lib/security/verify-image-mime";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -116,19 +118,28 @@ export async function POST(req: NextRequest) {
 
   // Carrega a imagem fonte
   let inputBuffer: Buffer;
+  let sourceMime: string | null = null;
   if (body.imageUrl) {
-    if (!/^https?:\/\//.test(body.imageUrl)) {
-      return NextResponse.json({ error: "imageUrl must be http(s)" }, { status: 400 });
+    // D-15: SSRF allowlist (replaces the old /^https?:\/\// weak check).
+    const allow = isAllowedImageUrl(body.imageUrl);
+    if (!allow.allowed) {
+      return NextResponse.json(
+        { error: "imageUrl host not allowed", reason: allow.reason },
+        { status: 400 },
+      );
     }
     try {
       const res = await fetch(body.imageUrl);
       if (!res.ok) throw new Error(`fetch failed ${res.status}`);
       inputBuffer = Buffer.from(await res.arrayBuffer());
+      sourceMime = res.headers.get("content-type") || "";
     } catch (e) {
       return NextResponse.json({ error: "Failed to fetch imageUrl" }, { status: 400 });
     }
   } else if (body.imageBase64) {
     try {
+      const dataUriMatch = body.imageBase64.match(/^data:(image\/\w+);base64,/);
+      if (dataUriMatch) sourceMime = dataUriMatch[1];
       const stripped = body.imageBase64.replace(/^data:image\/\w+;base64,/, "");
       inputBuffer = Buffer.from(stripped, "base64");
     } catch {
@@ -136,6 +147,18 @@ export async function POST(req: NextRequest) {
     }
   } else {
     return NextResponse.json({ error: "Provide imageUrl or imageBase64" }, { status: 400 });
+  }
+
+  // D-16: magic-byte MIME verification BEFORE any processing.
+  // Default to image/jpeg if no claim available — sharp.metadata() will
+  // reject any non-image buffer regardless.
+  const claimedMime = sourceMime || "image/jpeg";
+  const mimeCheck = await verifyImageMime(inputBuffer, claimedMime);
+  if (!mimeCheck.ok) {
+    return NextResponse.json(
+      { error: "image MIME mismatch", reason: mimeCheck.reason },
+      { status: 400 },
+    );
   }
 
   try {
