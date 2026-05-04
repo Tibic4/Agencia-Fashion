@@ -14,6 +14,7 @@ import {
   getStoreCredits,
 } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/observability";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
@@ -369,6 +370,9 @@ export async function POST(request: NextRequest) {
     // ── PRODUCTION: buscar modelo para o pipeline v5 ──
     let modelImageBase64: string | null = null;
     let modelMediaType = "image/png";
+    // H-12: track if the 1×1 fallback PNG was assigned. Used to skip the
+    // trial teaser branch (Sharp errors swallowed today on the 1×1 input).
+    let usingFallbackModel = false;
     // Metadados da modelo para o Gemini Analyzer (prompts contextuais)
     let modelInfo: { skinTone?: string; bodyType?: string; pose?: string; hairColor?: string; hairTexture?: string; hairLength?: string; ageRange?: string; style?: string; gender?: string } = {};
 
@@ -471,6 +475,7 @@ export async function POST(request: NextRequest) {
       // Fallback: pixel transparente 1x1 PNG — o Gemini ainda pode gerar sem modelo de referência
       modelImageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
       modelMediaType = "image/png";
+      usingFallbackModel = true; // H-12: signal teaser skip
     }
 
     try {
@@ -673,7 +678,15 @@ export async function POST(request: NextRequest) {
             // Custo: ~120ms CPU + ~100KB storage. Skip silencioso em erro —
             // o resultado funciona normalmente sem os teasers.
             let lockedTeaserUrls: [string, string] | undefined;
-            if (isTrialOnly) {
+            // H-12: skip teaser entirely if the model image is the 1×1 fallback.
+            // Sharp would error on the 70%-tall × 400×600 resize, the catch
+            // swallows it, and ops sees a confusing log line every trial run
+            // with no model.
+            if (isTrialOnly && usingFallbackModel) {
+              logger.info("teaser_skipped_fallback_model", {
+                reason: "1x1_fallback_no_model_available",
+              });
+            } else if (isTrialOnly) {
               try {
                 const sharp = (await import("sharp")).default;
                 const modelBuf = Buffer.from(modelImageBase64!, "base64");
