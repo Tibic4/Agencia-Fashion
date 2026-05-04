@@ -22,6 +22,10 @@ export default defineConfig({
       // as RegenerateReasonPicker; kept generic so future component tests at
       // components/__tests__/*.test.tsx are auto-picked-up.
       'components/__tests__/**/*.{test,spec}.{ts,tsx}',
+      // M2 Phase 02 D-03: scripts/__tests__/ holds tests for build/CI helpers
+      // like check-legal-drift.js. Plain JS allowed because the scripts are
+      // CommonJS Node entrypoints, not TypeScript modules.
+      'scripts/__tests__/**/*.{test,spec}.{js,ts}',
     ],
     exclude: ['**/node_modules/**'],
     environment: 'jsdom',
