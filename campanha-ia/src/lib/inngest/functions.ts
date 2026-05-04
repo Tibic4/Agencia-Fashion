@@ -375,6 +375,26 @@ export const judgeCampaignJob = inngest.createFunction(
           console.error(
             `[Inngest:Judge] ❌ Falhou p/ campaign ${data.campaignId} — sentinel falha_judge gravado`,
           );
+
+          // D-18 (Phase 02): sentinel was written → cron should stop re-emitting.
+          // Clears judge_pending so the D-16 reconcile cron skips this row.
+          // The campaign retains the nivel_risco='falha_judge' marker, which is
+          // the desired terminal state.
+          // FORWARD-COMPAT: migration may not be applied yet; failure is logged
+          // and ignored (judge succeeded its terminal-failure write — pending-clear
+          // is observability-only, not user-blocking).
+          try {
+            const { createAdminClient: createAdminClear } = await import("@/lib/supabase/admin");
+            const sbClear = createAdminClear();
+            await sbClear
+              .from("campaigns")
+              .update({ judge_pending: false, judge_payload: null })
+              .eq("id", data.campaignId);
+          } catch (clearErr) {
+            console.warn(
+              `[Inngest:Judge] judge_pending clear (sentinel path) failed: ${clearErr instanceof Error ? clearErr.message : clearErr}`,
+            );
+          }
         } else {
           console.error("[Inngest:Judge] onFailure: campaignId ausente no evento");
         }
@@ -438,6 +458,32 @@ export const judgeCampaignJob = inngest.createFunction(
         durationMs: judgeResult.durationMs,
         promptVersion: JUDGE_PROMPT_VERSION,
       });
+    });
+
+    // Step 4 (Phase 02 D-17): clear judge_pending on success — cron stops
+    // re-emitting for this row. Forward-compat: migration may not be applied
+    // yet OR Supabase env vars may not be set (test runners); failure is
+    // logged and continues (judge succeeded; pending-clear is
+    // observability-only, not user-blocking).
+    await step.run("clear-judge-pending", async () => {
+      try {
+        const { createAdminClient: createAdminCJP } = await import("@/lib/supabase/admin");
+        const sbCJP = createAdminCJP();
+        const { error } = await sbCJP
+          .from("campaigns")
+          .update({
+            judge_pending: false,
+            judge_payload: null,
+          })
+          .eq("id", data.campaignId);
+        if (error) {
+          console.warn(`[Inngest:Judge] judge_pending clear failed: ${error.message}`);
+        }
+      } catch (clearErr) {
+        console.warn(
+          `[Inngest:Judge] judge_pending clear exception: ${clearErr instanceof Error ? clearErr.message : clearErr}`,
+        );
+      }
     });
 
     return {

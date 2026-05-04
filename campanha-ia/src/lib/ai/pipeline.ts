@@ -464,18 +464,60 @@ export async function runCampaignPipeline(
     const generatedImageUrl = imageResult.images[0]?.imageUrl;
     if (generatedImageUrl) {
       const sonnetVersion = sonnetPromptVersionFor(input.targetLocale ?? "pt-BR");
+      const judgeEventData = {
+        campaignId: input.campaignId,
+        storeId: input.storeId,
+        copyText: copyResult.dicas_postagem.caption_sugerida,
+        productImageUrl: "",
+        modelImageUrl: "",
+        generatedImageUrl,
+        prompt_version: sonnetVersion,
+      };
+
+      // H-13 / D-15 (Phase 02): producer-side judge_pending tracking.
+      // Set judge_pending=true and persist judge_payload BEFORE the Inngest
+      // dispatch so the D-16 reconcile cron can re-emit if Inngest is down
+      // or the function fails terminally.
+      //
+      // FORWARD-COMPAT: if migration 20260503_190000_*.sql isn't applied yet,
+      // this UPDATE fails. Catch + log + continue — observability infra
+      // shouldn't block the user's response.
+      try {
+        const { createAdminClient: createAdminPending } = await import("@/lib/supabase/admin");
+        const sbPending = createAdminPending();
+        const { error: pendingErr } = await sbPending
+          .from("campaigns")
+          .update({
+            judge_pending: true,
+            judge_payload: judgeEventData,
+            judge_retry_count: 0,
+            judge_last_attempt: null,
+          })
+          .eq("id", input.campaignId);
+        if (pendingErr) {
+          // Migration probably not applied yet — log and continue.
+          const { captureError: captureErrPending } = await import("@/lib/observability");
+          captureErrPending(pendingErr, {
+            route: "pipeline",
+            step: "judge_pending_write",
+            campaign_id: input.campaignId,
+            forward_compat: true,
+          });
+        }
+      } catch (pendingExc) {
+        const { captureError: captureErrExc } = await import("@/lib/observability");
+        captureErrExc(pendingExc, {
+          route: "pipeline",
+          step: "judge_pending_write",
+          campaign_id: input.campaignId,
+          forward_compat: true,
+        });
+      }
+
       void inngest
         .send({
           name: "campaign/judge.requested",
-          data: {
-            campaignId: input.campaignId,
-            storeId: input.storeId,
-            copyText: copyResult.dicas_postagem.caption_sugerida,
-            productImageUrl: "",
-            modelImageUrl: "",
-            generatedImageUrl,
-            prompt_version: sonnetVersion,
-          },
+          data: judgeEventData,
         })
         .catch((e) =>
           console.warn(

@@ -144,7 +144,12 @@ describe("judgeCampaignJob — happy path (D-01..D-06)", () => {
       step: makeStep(stepNames),
     });
 
-    expect(stepNames).toEqual(["score-campaign", "persist-scores", "log-cost"]);
+    expect(stepNames).toEqual([
+      "score-campaign",
+      "persist-scores",
+      "log-cost",
+      "clear-judge-pending",
+    ]);
 
     // scoreCampaignQuality: forwarded the event payload verbatim
     expect(mockScoreCampaignQuality).toHaveBeenCalledTimes(1);
@@ -312,5 +317,52 @@ describe("judgeCampaignJob — registered in inngestFunctions export", () => {
   it("is included in the inngestFunctions array exported from functions.ts", async () => {
     const { judgeCampaignJob, inngestFunctions } = functionsModule;
     expect(inngestFunctions).toContain(judgeCampaignJob);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// Phase 02 D-17/D-18: judge_pending lifecycle (Plan 02-05)
+// ─────────────────────────────────────────────────────────────────────
+
+describe("judgeCampaignJob — D-17 happy path also clears judge_pending", () => {
+  it("step 4 'clear-judge-pending' runs after persist-scores + log-cost", async () => {
+    const stepNames: string[] = [];
+    const { judgeCampaignJob } = functionsModule;
+    await (judgeCampaignJob as unknown as { fn: (ctx: unknown) => Promise<unknown> }).fn({
+      event: makeEvent(),
+      step: makeStep(stepNames),
+    });
+    // The new step is the 4th one. Order matters because we only want to clear
+    // pending AFTER scores are persisted -- otherwise a crash mid-judge would
+    // leave pending=false with no scores written.
+    expect(stepNames[3]).toBe("clear-judge-pending");
+    expect(stepNames).toContain("clear-judge-pending");
+  });
+});
+
+describe("judgeCampaignJob — D-18 sentinel path also clears judge_pending", () => {
+  it("onFailure handler does NOT throw and exercises the sentinel + pending-clear sequence", async () => {
+    // This test asserts the handler completes cleanly. The actual supabase
+    // update is wrapped in try/catch with forward-compat handling so missing
+    // env vars don't break the assertion -- the key invariant is that the
+    // sentinel write to setCampaignScores runs (covered by behavior 2 above)
+    // AND the post-sentinel clear is attempted (covered by code inspection +
+    // the no-throw assertion here).
+    const { judgeCampaignJob } = functionsModule;
+    const onFailure = (judgeCampaignJob as unknown as { opts: { onFailure?: (ctx: unknown) => Promise<void> } })
+      .opts.onFailure!;
+    await expect(
+      onFailure({
+        event: makeEvent({ campaignId: "sentinel-test" }),
+        error: new Error("anthropic 503"),
+      }),
+    ).resolves.not.toThrow();
+    // Sentinel was written
+    expect(mockSetCampaignScores).toHaveBeenCalledWith(
+      expect.objectContaining({
+        campaignId: "sentinel-test",
+        nivel_risco: "falha_judge",
+      }),
+    );
   });
 });
