@@ -15,6 +15,8 @@ import {
 } from "@/lib/db";
 import { getClientIp } from "@/lib/cf-ip";
 import { consumeTokenBucket } from "@/lib/rate-limit-pg";
+import { isAllowedImageUrl } from "@/lib/security/image-host-allowlist";
+import { verifyImageMime } from "@/lib/security/verify-image-mime";
 import { logger, captureError, hashStoreId } from "@/lib/observability";
 import * as Sentry from "@sentry/nextjs";
 
@@ -166,6 +168,38 @@ export async function POST(request: NextRequest) {
     }
     if (imageFile.size > 10 * 1024 * 1024) {
       return NextResponse.json({ error: "Imagem muito grande. Máximo 10MB", code: "IMAGE_TOO_LARGE" }, { status: 400 });
+    }
+
+    // ── D-16: magic-byte MIME check at route boundary (rejects evil.exe-renamed-as-png) ──
+    {
+      const buf = Buffer.from(await imageFile.arrayBuffer());
+      const mc = await verifyImageMime(buf, imageFile.type);
+      if (!mc.ok) {
+        return NextResponse.json(
+          { error: "Imagem inválida (MIME mismatch)", code: "INVALID_IMAGE_MAGIC", reason: mc.reason },
+          { status: 400 },
+        );
+      }
+    }
+    if (closeUpImage && closeUpImage.size > 0) {
+      const buf = Buffer.from(await closeUpImage.arrayBuffer());
+      const mc = await verifyImageMime(buf, closeUpImage.type);
+      if (!mc.ok) {
+        return NextResponse.json(
+          { error: "Closeup inválido (MIME mismatch)", code: "INVALID_IMAGE_MAGIC", reason: mc.reason },
+          { status: 400 },
+        );
+      }
+    }
+    if (secondImage && secondImage.size > 0) {
+      const buf = Buffer.from(await secondImage.arrayBuffer());
+      const mc = await verifyImageMime(buf, secondImage.type);
+      if (!mc.ok) {
+        return NextResponse.json(
+          { error: "Segunda imagem inválida (MIME mismatch)", code: "INVALID_IMAGE_MAGIC", reason: mc.reason },
+          { status: 400 },
+        );
+      }
     }
 
     // ── Buscar loja do usuário (se autenticado) ──
@@ -529,12 +563,21 @@ export async function POST(request: NextRequest) {
         }
 
         if (modelImageUrl) {
-          const modelRes = await fetch(modelImageUrl, { signal: AbortSignal.timeout(8000) });
-          const modelBuf = Buffer.from(await modelRes.arrayBuffer());
-          modelImageBase64 = modelBuf.toString("base64");
-          const ct = modelRes.headers.get("content-type");
-          if (ct?.startsWith("image/")) modelMediaType = ct;
-          logger.debug("model_image_loaded", { kb: Math.round(modelBuf.length / 1024) });
+          // D-15: defense-in-depth — modelImageUrl came from internal Supabase
+          // tables, but allowlist-verify before fetch in case a future writer
+          // path gets compromised.
+          const modelAllow = isAllowedImageUrl(modelImageUrl);
+          if (!modelAllow.allowed) {
+            logger.warn("model_image_url_blocked_by_allowlist", { reason: modelAllow.reason });
+            modelImageUrl = null;
+          } else {
+            const modelRes = await fetch(modelImageUrl, { signal: AbortSignal.timeout(8000) });
+            const modelBuf = Buffer.from(await modelRes.arrayBuffer());
+            modelImageBase64 = modelBuf.toString("base64");
+            const ct = modelRes.headers.get("content-type");
+            if (ct?.startsWith("image/")) modelMediaType = ct;
+            logger.debug("model_image_loaded", { kb: Math.round(modelBuf.length / 1024) });
+          }
         } else {
           logger.warn("no_model_available_continuing");
         }
