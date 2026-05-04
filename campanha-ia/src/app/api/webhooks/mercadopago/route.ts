@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PLANS, type PlanId, ALL_CREDIT_PACKAGES } from "@/lib/plans";
 import { captureError, logger } from "@/lib/observability";
 import { validateMpSignature } from "@/lib/mp-signature";
+import { dedupWebhook, markWebhookProcessed } from "@/lib/webhooks/dedup";
 
 // Tolerância de 1 centavo para diferenças de arredondamento do MP
 const PRICE_TOLERANCE_BRL = 0.01;
@@ -24,6 +25,7 @@ export const dynamic = "force-dynamic";
 function validateWebhookSignature(
   request: NextRequest,
   dataId: string,
+  xRequestId: string,
 ): boolean {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
   if (!secret) {
@@ -33,62 +35,95 @@ function validateWebhookSignature(
   return validateMpSignature({
     secret,
     xSignatureHeader: request.headers.get("x-signature") || "",
-    xRequestId: request.headers.get("x-request-id") || "",
+    xRequestId,
     dataId,
   });
 }
 
 /**
  * POST /api/webhooks/mercadopago
- * 
+ *
  * Recebe notificações do Mercado Pago sobre:
  * 1. Pagamentos (type: "payment") — créditos avulsos + cobranças recorrentes
  * 2. Assinaturas (type: "subscription_preapproval") — status da assinatura
- * 
+ *
  * Formatos de external_reference:
  * - Plano:    "storeId|planId"
  * - Crédito:  "credit|storeId|type|quantity"
  */
 export async function POST(request: NextRequest) {
+  // H-14: defense-in-depth — empty x-request-id is invalid per MP docs and
+  // would also break dedup contract (provider+event_id PK). Reject 400
+  // BEFORE signature validation or dedup so MP doesn't perpetually retry.
+  const xRequestId = request.headers.get("x-request-id")?.trim() || "";
+  if (!xRequestId) {
+    logger.warn("mp_webhook_missing_request_id");
+    return NextResponse.json({ error: "missing x-request-id" }, { status: 400 });
+  }
+
+  let body: Record<string, unknown>;
   try {
-    const body = await request.json();
+    body = await request.json();
+  } catch {
+    logger.warn("mp_webhook_invalid_json", { xRequestId });
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
+  }
 
-    // não loga body inteiro (PII: payer.email, cpf, cnpj).
-    // Apenas metadados seguros.
-    logger.info("mp_webhook_received", {
-      type: body?.type,
-      action: body?.action,
-      dataId: body?.data?.id,
-      liveMode: body?.live_mode,
-    });
+  // não loga body inteiro (PII: payer.email, cpf, cnpj).
+  // Apenas metadados seguros.
+  logger.info("mp_webhook_received", {
+    type: body?.type,
+    action: body?.action,
+    dataId: (body?.data as Record<string, unknown>)?.id,
+    liveMode: body?.live_mode,
+    xRequestId,
+  });
 
-    // ── Validar assinatura HMAC ──
-    const dataId = body.data?.id ? String(body.data.id) : "";
-    if (!validateWebhookSignature(request, dataId)) {
-      console.error("[Webhook:MercadoPago] ❌ Assinatura inválida — rejeitando");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
+  // ── Validar assinatura HMAC ──
+  const dataId = (body?.data as Record<string, unknown>)?.id
+    ? String((body.data as Record<string, unknown>).id)
+    : "";
+  if (!validateWebhookSignature(request, dataId, xRequestId)) {
+    logger.warn("mp_webhook_invalid_signature", { xRequestId });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
 
+  // D-06: dedup BEFORE business logic. webhook_events PK (provider, event_id) is the truth.
+  let dedup;
+  try {
+    dedup = await dedupWebhook("mp", xRequestId, body);
+  } catch (e) {
+    captureError(e, { route: "/api/webhooks/mercadopago", phase: "dedup" });
+    // Cannot dedup — fail closed by returning 200 (avoid MP retry loop) but capture for ops.
+    return NextResponse.json({ received: true, error: "dedup_failed" }, { status: 200 });
+  }
+  if (dedup.duplicate) {
+    logger.info("mp_webhook_duplicate_short_circuit", { xRequestId });
+    return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
+  }
+
+  try {
     // ═══════════════════════════════════════
     // EVENTO: PAGAMENTO (pontual ou recorrente)
     // ═══════════════════════════════════════
-    if (body.type === "payment" && body.data?.id) {
-      await handlePaymentEvent(String(body.data.id));
+    if (body.type === "payment" && (body.data as Record<string, unknown>)?.id) {
+      await handlePaymentEvent(String((body.data as Record<string, unknown>).id));
     }
 
     // ═══════════════════════════════════════
     // EVENTO: ASSINATURA (PreApproval)
     // ═══════════════════════════════════════
-    if (body.type === "subscription_preapproval" && body.data?.id) {
-      await handleSubscriptionEvent(String(body.data.id));
+    if (body.type === "subscription_preapproval" && (body.data as Record<string, unknown>)?.id) {
+      await handleSubscriptionEvent(String((body.data as Record<string, unknown>).id));
     }
 
+    await markWebhookProcessed("mp", xRequestId);
     // Mercado Pago espera 200 OK
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error: unknown) {
-    captureError(error, { route: "/api/webhooks/mercadopago" });
-    // Retorna 200 para erros de PROCESSAMENTO conhecidos (evitar retries infinitos do MP).
-    // Bugs inesperados vão para o Sentry via captureError acima.
+    captureError(error, { route: "/api/webhooks/mercadopago", xRequestId });
+    // Do NOT markWebhookProcessed — the row stays unprocessed for ops reconcile.
+    // Retorna 200 para erros de PROCESSAMENTO (evitar retries infinitos do MP).
     return NextResponse.json({ received: true, error: true }, { status: 200 });
   }
 }
