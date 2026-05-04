@@ -285,6 +285,26 @@ npm run storybook:dev
 
 ---
 
+## 🛠️ Owner workflows
+
+Scripts e runbooks self-service para tarefas que só o owner consegue executar (deploys de produção, builds EAS, revogação de sessões Clerk). Cada script é um pre-flight que NÃO executa a operação destrutiva — ele valida, reporta, e printa o próximo comando para o owner rodar manualmente.
+
+| Comando | Onde rodar | O que faz | Runbook |
+|---------|------------|-----------|---------|
+| `npm run play:prep` | `crialook-app/` | Pre-flight antes de `eas build`: valida placeholders em `eas.json`, SHA-256 em `assetlinks.json`, vitest, tsc, expo-doctor, `expo prebuild` + grep das permissions Android obrigatórias. | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run deploy:check` | `campanha-ia/` | Pre-flight antes de `git push` + `bash deploy-crialook.sh`: git status clean, commits ahead, vitest, tsc, lint, `next build`, paridade de migrations Supabase. | [`ops/deploy.md`](./ops/deploy.md) |
+| `npm run clerk:revoke-loadtest` | `campanha-ia/` | Helper informativo para revogar as 2 sessões Clerk capturadas em `loadtests/.env.loadtest` durante M1 P4 (printa URLs do Dashboard + `curl` templates do Admin API; não executa nenhuma chamada remota). | [`crialook-app/docs/CLERK_KEYS.md`](./crialook-app/docs/CLERK_KEYS.md) |
+
+Outros runbooks owner-action que ainda não têm script wrapper (quando o ganho de automação seria mínimo):
+
+- [`ops/DEPLOY_USER_MIGRATION.md`](./ops/DEPLOY_USER_MIGRATION.md) — cutover SSH `root → crialook` (D-12/D-14/D-15).
+- [`ops/csp-rollout.md`](./ops/csp-rollout.md) — janela 14 dias `Report-Only → enforced` (P8 D-16).
+- [`crialook-app/docs/CLERK_KEYS.md`](./crialook-app/docs/CLERK_KEYS.md) §Rotation — política anual + emergência.
+
+Hard rule pra todos: nenhum desses scripts faz `git push`, `eas build`, deploy, nem chama Clerk Admin API automaticamente. Eles preparam o terreno; o owner aperta o gatilho.
+
+---
+
 ## 📊 Auditoria & qualidade
 
 Em abril/2026 fiz uma rodada de **hardening de segurança e código** cobrindo 270 pontos de atenção em:
