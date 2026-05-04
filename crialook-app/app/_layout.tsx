@@ -31,6 +31,7 @@ import { initBilling, shutdownBilling } from '@/lib/billing';
 // replaysSessionSampleRate: 0. Confirmado via logcat.
 import { initSentry, Sentry } from '@/lib/sentry';
 import { initLocale } from '@/lib/i18n';
+import { isValidCampaignId } from '@/lib/_layout-deep-link';
 import {
   getQueryClient,
   wireQueryClientLifecycle,
@@ -71,12 +72,6 @@ const SPLASH_SAFETY_TIMEOUT_MS = 12_000;
 setTimeout(() => {
   SplashScreen.hideAsync().catch(() => {});
 }, SPLASH_SAFETY_TIMEOUT_MS);
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function isValidCampaignId(value: unknown): value is string {
-  return typeof value === 'string' && UUID_REGEX.test(value);
-}
 
 /* `routeReady` semaphore — `true` quando a rota mostrada já é a "certa"
    pra esse estado de auth. Render do `<Slot />` é gateado por isso pra
