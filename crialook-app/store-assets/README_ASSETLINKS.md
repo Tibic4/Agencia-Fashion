@@ -38,3 +38,20 @@ https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=http
 
 Sem isso, `autoVerify: true` em `app.json:33` fica em estado "verification failed"
 e o sistema só usa o fallback de scheme `crialook://`.
+
+## Sync (source-of-truth)
+
+Authoritative copy: `crialook-app/store-assets/assetlinks.json` (this directory).
+Deploy copy:        `campanha-ia/public/.well-known/assetlinks.json` (served by Next.js).
+
+Workflow after replacing `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`:
+
+```bash
+cd crialook-app
+npm run assetlinks:sync   # copy authoritative -> deploy target
+npm run assetlinks:check  # CI-friendly drift check, exits 1 on diff
+```
+
+Then deploy `campanha-ia/` so the file is served at
+`https://crialook.com.br/.well-known/assetlinks.json` and validate with the
+Google API URL above.
