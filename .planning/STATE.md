@@ -37,10 +37,7 @@ Production deploy & infra:
 - Provision `DISCORD_WEBHOOK_URL` at `/etc/crialook/webhook.env` (still pending)
 
 Security (P0 / P1):
-- 🚨 **Revoke 2 Clerk sessions** in Clerk Dashboard via new `scripts/clerk-revoke-loadtest-sessions.sh` helper (prints exact URLs):
-  - Prod (clerk.crialook.com.br): `user_3Bxfdbw0jmhHyE7Xc2bIgVkH6i3`
-  - Dev (casual-vervet-96.clerk.accounts.dev): `user_3BuUmVnqcFeMEV72k5Hkqw4kzP1`
-  - File `loadtests/.env.loadtest` was NEVER committed (gitignored), so no git-history rewrite needed
+- ✅ ~~Revoke 2 Clerk sessions in Clerk Dashboard~~ — **DONE 2026-05-04 by owner**. Both `user_3Bxfdbw0jmhHyE7Xc2bIgVkH6i3` (prod) + `user_3BuUmVnqcFeMEV72k5Hkqw4kzP1` (dev) sessions terminated. `loadtests/.env.loadtest` JWTs are now inert (gitignored AND server-side revoked).
 - ✅ ~~Backend control 3 obfuscatedAccountIdAndroid validation~~ — **CLOSED in M2 P1-01** (`/api/billing/verify` rejects 403 on hash mismatch). Was a Clerk Trust re-enable blocker.
 - ✅ ~~Backend control 2 rate-limit on /billing/verify + /restore~~ — **CLOSED in M2 P1-02** (consume_rate_limit_token wired, 429 on overage).
 - ✅ ~~Legal drift P0~~ — **CLOSED in M2 P2** (Option B picked: in-app summary + "Versão completa" link). CI green.
