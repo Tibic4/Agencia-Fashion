@@ -14,10 +14,10 @@ import React from 'react';
 import { Text } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
-const mockCaptureException = jest.fn(() => 'evt_12345');
+const mockCaptureException: jest.Mock = jest.fn(() => 'evt_12345');
 jest.mock('@/lib/sentry', () => ({
   Sentry: {
-    captureException: (...args: unknown[]) => mockCaptureException(...args),
+    captureException: (error: Error, options?: unknown) => mockCaptureException(error, options),
     addBreadcrumb: jest.fn(),
     captureMessage: jest.fn(),
     wrap: (c: unknown) => c,
@@ -39,7 +39,7 @@ jest.mock('expo-linear-gradient', () => {
 import { AppErrorBoundary } from '@/components/ErrorBoundary';
 
 // Component that throws on first render — drives the boundary.
-function Bomb({ message = 'kaboom' }: { message?: string }): JSX.Element {
+function Bomb({ message = 'kaboom' }: { message?: string }): React.ReactElement {
   throw new Error(message);
 }
 
@@ -83,7 +83,8 @@ describe('AppErrorBoundary', () => {
       </AppErrorBoundary>,
     );
     expect(mockCaptureException).toHaveBeenCalledTimes(1);
-    const [errorArg, optionsArg] = mockCaptureException.mock.calls[0] as [Error, { contexts?: { react?: { componentStack?: string } } }];
+    const callArgs = mockCaptureException.mock.calls[0] as unknown as [Error, { contexts?: { react?: { componentStack?: string } } }];
+    const [errorArg, optionsArg] = callArgs;
     expect(errorArg).toBeInstanceOf(Error);
     expect(errorArg.message).toBe('specific kaboom');
     // The boundary attaches the React component stack to the Sentry context.

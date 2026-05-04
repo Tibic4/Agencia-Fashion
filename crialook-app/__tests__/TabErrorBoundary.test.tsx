@@ -16,10 +16,10 @@ import React from 'react';
 import { Text } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
-const mockCaptureException = jest.fn();
+const mockCaptureException: jest.Mock = jest.fn();
 jest.mock('@/lib/sentry', () => ({
   Sentry: {
-    captureException: (...args: unknown[]) => mockCaptureException(...args),
+    captureException: (error: Error, options?: unknown) => mockCaptureException(error, options),
     addBreadcrumb: jest.fn(),
     captureMessage: jest.fn(),
     wrap: (c: unknown) => c,
@@ -30,7 +30,7 @@ jest.mock('@/lib/sentry', () => ({
 
 import { TabErrorBoundary } from '@/components/TabErrorBoundary';
 
-function Bomb({ message = 'tab kaboom' }: { message?: string }): JSX.Element {
+function Bomb({ message = 'tab kaboom' }: { message?: string }): React.ReactElement {
   throw new Error(message);
 }
 
@@ -71,10 +71,11 @@ describe('TabErrorBoundary', () => {
       </TabErrorBoundary>,
     );
     expect(mockCaptureException).toHaveBeenCalledTimes(1);
-    const [errorArg, optionsArg] = mockCaptureException.mock.calls[0] as [
+    const callArgs = mockCaptureException.mock.calls[0] as unknown as [
       Error,
       { tags?: Record<string, string>; contexts?: { react?: { componentStack?: string } } },
     ];
+    const [errorArg, optionsArg] = callArgs;
     expect(errorArg).toBeInstanceOf(Error);
     expect(errorArg.message).toBe('specific tab kaboom');
     expect(optionsArg?.tags).toMatchObject({
