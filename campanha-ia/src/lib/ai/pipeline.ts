@@ -106,6 +106,19 @@ export interface PipelineResult {
   images: (GeneratedImage | null)[];
   successCount: number;
   durationMs: number;
+  /**
+   * D-01 (Phase 02): true when image arm succeeded but with fewer photos
+   * than requested (partial). UI may render an "Algumas variações não ficaram
+   * prontas" badge. With single-image flow today this is rarely true; reserved
+   * for the 3-photo restoration in M2.
+   */
+  partial_delivery?: boolean;
+  /**
+   * D-02 (Phase 02): true when copy arm rejected and we returned the
+   * fallback dicas_postagem instead. Caller may surface a Sentry warn or a
+   * "copy gerada com modelo de fallback" UI hint.
+   */
+  copy_fallback_used?: boolean;
 }
 
 export type OnProgress = (
@@ -123,6 +136,15 @@ export async function runCampaignPipeline(
   onProgress?: OnProgress
 ): Promise<PipelineResult> {
   const startTime = Date.now();
+
+  // D-07/D-08 (Phase 02 H-2): aggressive cancel — bail before any work if
+  // the client already disconnected. The route.ts IIFE owns the
+  // logDisconnectAndExit; pipeline only signals via thrown CLIENT_DISCONNECTED.
+  if (input.signal?.aborted) {
+    const ab: Error & { code?: string } = new Error("client_disconnected");
+    ab.code = "CLIENT_DISCONNECTED";
+    throw ab;
+  }
 
   // — Etapa 1: Gemini 3.1 Pro analisa o produto (visão + VTO prompts) ————
   // NOTA: step name "sonnet" mantido para compatibilidade com o frontend
@@ -206,6 +228,15 @@ export async function runCampaignPipeline(
 
   // NOTA: step name "sonnet_done" mantido para compatibilidade com o frontend
   await onProgress?.("sonnet_done", "Análise completa! Criando looks + copy...", 30);
+
+  // D-07 (Phase 02): second checkpoint — between analyzer and VTO/Sonnet.
+  // Gemini SDK has no native cancel (D-08), so we sink-cost the analyzer call
+  // that just completed but skip the more expensive VTO + Sonnet round.
+  if (input.signal?.aborted) {
+    const ab: Error & { code?: string } = new Error("client_disconnected");
+    ab.code = "CLIENT_DISCONNECTED";
+    throw ab;
+  }
 
   // — Etapa 2: Em PARALELO: VTO (Gemini) + Copy (Sonnet) ————
   await onProgress?.("prompts_ready", "Montando editorial + escrevendo copy...", 40);
@@ -304,8 +335,90 @@ export async function runCampaignPipeline(
     },
   });
 
-  // Esperar ambos terminarem
-  const [copyResult, imageResult] = await Promise.all([copyPromise, imagePromise]);
+  // D-01..D-03 (Phase 02 H-1): Promise.allSettled with explicit per-arm fallback.
+  //
+  // Contracts:
+  //   D-01 image partial (some VTO ok, Sonnet ok) → return ≥1 photo + copy + UX flag partial_delivery. Charge proportional (route owns charge).
+  //   D-02 sonnet fail (image ok)                  → return photos + minimal fallback caption + copy_fallback_used=true.
+  //                                                  (The .catch() inside copyPromise already returns a fallback object — allSettled just lets us flag it explicitly.)
+  //   D-03 all-image fail / image arm rejects      → throw with code='ALL_VTO_FAILED' so route.ts refund branch fires.
+  //
+  // Aggressive cancel (D-07): if request.signal already aborted by the time
+  // both arms resolve, surface a synthetic AbortError so the route.ts
+  // disconnect handler short-circuits the post-pipeline writes.
+  if (input.signal?.aborted) {
+    const ab: Error & { code?: string } = new Error("client_disconnected");
+    ab.code = "CLIENT_DISCONNECTED";
+    throw ab;
+  }
+
+  const [copyOutcome, imageOutcome] = await Promise.allSettled([copyPromise, imagePromise]);
+
+  // Image arm — primary value
+  let imageResult: Awaited<ReturnType<typeof generateWithGeminiVTO>>;
+  const partialDelivery = false;
+  if (imageOutcome.status === "fulfilled") {
+    imageResult = imageOutcome.value;
+    if (imageResult.successCount === 0) {
+      // D-03: every VTO call failed — escalate so route.ts refund fires.
+      // (route.ts also checks successCount === 0 below; this throw is the
+      // belt-and-braces path for callers that don't read successCount.)
+      const err: Error & { code?: string } = new Error("All VTO calls failed");
+      err.code = "ALL_VTO_FAILED";
+      throw err;
+    }
+    // Single-image flow today — partial_delivery only relevant for future 3-photo restoration.
+  } else {
+    // imageOutcome.status === "rejected" — same as all-fail
+    const reason = imageOutcome.reason;
+    const err: Error & { code?: string } = new Error(
+      `Image generation failed: ${reason instanceof Error ? reason.message : String(reason)}`,
+    );
+    err.code = "ALL_VTO_FAILED";
+    throw err;
+  }
+
+  // Copy arm — fallback to minimal copy on fail (D-02). The .catch() inside
+  // copyPromise already absorbs failures and returns a fallback object, so
+  // copyOutcome.status === "rejected" should be unreachable in practice. We
+  // keep the branch for defense-in-depth in case the .catch is removed later.
+  let copyResult;
+  let copyFallbackUsed = false;
+  if (copyOutcome.status === "fulfilled") {
+    copyResult = copyOutcome.value;
+    // Heuristic: the existing .catch returns an object whose
+    // dicas_postagem.caption_sugerida starts with "✨ Novidade que vai te
+    // surpreender!" — flag it so the route can emit a warn-level Sentry event.
+    if (
+      copyResult.dicas_postagem.caption_sugerida ===
+      "✨ Novidade que vai te surpreender! Confira e me conta o que achou 💕"
+    ) {
+      copyFallbackUsed = true;
+    }
+  } else {
+    // Belt-and-braces — should not be reached because copyPromise has its own .catch.
+    copyFallbackUsed = true;
+    copyResult = {
+      dicas_postagem: {
+        melhor_dia: "Terça",
+        melhor_horario: "21h",
+        sequencia_sugerida: "Feed → Story",
+        caption_sugerida: "Sua campanha está pronta!",
+        caption_alternativa: "Confira agora",
+        tom_legenda: "Neutro",
+        cta: "Confira agora",
+        dica_extra: "",
+        story_idea: "",
+        hashtags: ["novacolecao", "moda", "estilo"],
+        legendas: [
+          { foto: 1, plataforma: "Instagram Feed", legenda: "Sua campanha está pronta!" },
+          { foto: 2, plataforma: "WhatsApp", legenda: "Confira agora!" },
+          { foto: 3, plataforma: "Stories", legenda: "Novidade!" },
+        ],
+      } as SonnetDicasPostagem,
+      _usageMetadata: undefined,
+    };
+  }
 
   // Atualiza histórico de poses se VTO produziu a imagem com sucesso.
   // Fire-and-forget — falhar aqui não derruba a campanha (na próxima geração
@@ -388,6 +501,8 @@ export async function runCampaignPipeline(
     images: imageResult.images,
     successCount: imageResult.successCount,
     durationMs,
+    partial_delivery: partialDelivery,
+    copy_fallback_used: copyFallbackUsed,
   };
 }
 

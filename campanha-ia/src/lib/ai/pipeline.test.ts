@@ -269,14 +269,19 @@ describe("runCampaignPipeline — campaign/judge.requested Inngest emit (D-01)",
     });
   });
 
-  it("does NOT emit when successCount=0 (judge has nothing to score)", async () => {
+  it("does NOT emit when successCount=0 — D-03 throws ALL_VTO_FAILED before dispatch", async () => {
+    // Phase 02 D-03 (Plan 02-03): when every VTO call fails, the pipeline
+    // throws with code='ALL_VTO_FAILED' so the route.ts refund branch fires
+    // via add_credits_atomic. Inngest dispatch is short-circuited.
     mockGenerateWithGeminiVTO.mockResolvedValueOnce({
       images: [null],
       successCount: 0,
       totalDurationMs: 4200,
     });
     const { runCampaignPipeline } = await import("./pipeline");
-    await runCampaignPipeline({ ...validInput, dryRun: false });
+    await expect(
+      runCampaignPipeline({ ...validInput, dryRun: false }),
+    ).rejects.toMatchObject({ code: "ALL_VTO_FAILED" });
     await flushMicrotasks();
     expect(mockInngestSend).not.toHaveBeenCalled();
   });
@@ -287,5 +292,49 @@ describe("runCampaignPipeline — campaign/judge.requested Inngest emit (D-01)",
     await runCampaignPipeline({ ...noStore, dryRun: false });
     await flushMicrotasks();
     expect(mockInngestSend).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// Phase 02 D-01..D-03/D-07 — Promise.allSettled + abort semantics
+// ─────────────────────────────────────────────────────────────────────
+
+describe("runCampaignPipeline — D-03 image arm rejects", () => {
+  it("throws with code=ALL_VTO_FAILED when generateWithGeminiVTO rejects", async () => {
+    mockGenerateWithGeminiVTO.mockRejectedValueOnce(new Error("Gemini 503"));
+    const { runCampaignPipeline } = await import("./pipeline");
+    await expect(
+      runCampaignPipeline({ ...validInput, dryRun: false }),
+    ).rejects.toMatchObject({ code: "ALL_VTO_FAILED" });
+  });
+});
+
+describe("runCampaignPipeline — D-02 copy arm rejects", () => {
+  it("returns photos + fallback caption when Sonnet rejects (existing .catch path)", async () => {
+    // The existing copyPromise.catch returns the canonical fallback caption
+    // "✨ Novidade que vai te surpreender!..." — the new partial_delivery /
+    // copy_fallback_used flags must catch that.
+    mockGenerateCopyWithSonnet.mockRejectedValueOnce(new Error("Anthropic 5xx"));
+    const { runCampaignPipeline } = await import("./pipeline");
+    const result = await runCampaignPipeline({ ...validInput, dryRun: false });
+    expect(result.successCount).toBe(1);
+    expect(result.images).toHaveLength(1);
+    expect(result.copy_fallback_used).toBe(true);
+    expect(result.dicas_postagem.caption_sugerida).toBe(
+      "✨ Novidade que vai te surpreender! Confira e me conta o que achou 💕",
+    );
+  });
+});
+
+describe("runCampaignPipeline — D-07 abort semantics", () => {
+  it("throws CLIENT_DISCONNECTED when signal.aborted before pipeline starts", async () => {
+    const ac = new AbortController();
+    ac.abort();
+    const { runCampaignPipeline } = await import("./pipeline");
+    await expect(
+      runCampaignPipeline({ ...validInput, signal: ac.signal, dryRun: false }),
+    ).rejects.toMatchObject({ code: "CLIENT_DISCONNECTED" });
+    // Analyzer was not called -- early return before any Gemini work.
+    expect(mockAnalyzeWithGemini).not.toHaveBeenCalled();
   });
 });
