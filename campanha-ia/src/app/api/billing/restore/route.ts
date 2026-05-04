@@ -11,6 +11,8 @@ import {
   verifySubscription,
   type ValidSku,
 } from "@/lib/payments/google-play";
+import { skuToPlanSlug } from "@/lib/payments/sku-plan-mapping";
+import { updateStorePlan, getStoreByClerkId } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -125,10 +127,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (lastValidPlan) {
-      await supabase
-        .from("stores")
-        .update({ plan: lastValidPlan })
-        .eq("clerk_user_id", userId);
+      // C-1 fix: route through updateStorePlan so plan_id (FK) is updated, not
+      // the non-existent "plan" text column. Pass null for mpSubscriptionId
+      // since restore is a Play-side recovery, not an MP subscription rebind.
+      const store = await getStoreByClerkId(userId);
+      if (!store) {
+        captureError(new Error("restore: store not found for clerk user"), {
+          route: "POST /api/billing/restore",
+          user_id: userId,
+        });
+      } else {
+        const slug = skuToPlanSlug(lastValidPlan);
+        await updateStorePlan(store.id, slug, null);
+      }
     }
 
     logger.info("subscription_restored", {
