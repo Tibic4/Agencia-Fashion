@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, deleteStoreModel, setActiveModel } from "@/lib/db";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export async function DELETE(
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/delete] Error:", msg);
     return NextResponse.json(
-      { error: "Erro ao excluir modelo", details: process.env.NODE_ENV === "development" ? msg : undefined },
+      { error: "Erro ao excluir modelo", details: env.NODE_ENV === "development" ? msg : undefined },
       { status: 500 }
     );
   }
@@ -64,7 +65,7 @@ export async function POST(
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/activate] Error:", msg);
     return NextResponse.json(
-      { error: "Erro ao ativar modelo", details: process.env.NODE_ENV === "development" ? msg : undefined },
+      { error: "Erro ao ativar modelo", details: env.NODE_ENV === "development" ? msg : undefined },
       { status: 500 }
     );
   }

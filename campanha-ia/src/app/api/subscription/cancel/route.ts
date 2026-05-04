@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { cancelSubscription } from "@/lib/payments/mercadopago";
 import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function POST() {
       );
     }
 
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    if (!env.MERCADOPAGO_ACCESS_TOKEN) {
       return NextResponse.json({
         success: true,
         demo: true,
@@ -68,7 +69,7 @@ export async function POST() {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:subscription/cancel] Error:", message);
     return NextResponse.json(
-      { error: "Erro ao cancelar assinatura", details: process.env.NODE_ENV === "development" ? message : undefined },
+      { error: "Erro ao cancelar assinatura", details: env.NODE_ENV === "development" ? message : undefined },
       { status: 500 }
     );
   }

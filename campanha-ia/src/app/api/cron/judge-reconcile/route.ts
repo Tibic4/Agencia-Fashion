@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { inngest } from "@/lib/inngest/client";
 import { logger, captureError, hashStoreId } from "@/lib/observability";
+import { env } from "@/lib/env";
 import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ const MAX_RETRIES = 3;
 const STALE_THRESHOLD_MINUTES = 5;
 
 function isAuthorized(req: NextRequest): boolean {
-  const expected = process.env.CRON_SECRET;
+  const expected = env.CRON_SECRET;
   if (!expected) return false;
   const header = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!header) return false;

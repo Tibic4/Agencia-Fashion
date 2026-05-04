@@ -6,6 +6,7 @@ import { PLANS, type PlanId, ALL_CREDIT_PACKAGES } from "@/lib/plans";
 import { captureError, logger } from "@/lib/observability";
 import { validateMpSignature } from "@/lib/mp-signature";
 import { dedupWebhook, markWebhookProcessed } from "@/lib/webhooks/dedup";
+import { env } from "@/lib/env";
 
 // Tolerância de 1 centavo para diferenças de arredondamento do MP
 const PRICE_TOLERANCE_BRL = 0.01;
@@ -27,7 +28,7 @@ function validateWebhookSignature(
   dataId: string,
   xRequestId: string,
 ): boolean {
-  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  const secret = env.MERCADOPAGO_WEBHOOK_SECRET;
   if (!secret) {
     console.error("[Webhook:MercadoPago] ❌ MERCADOPAGO_WEBHOOK_SECRET não configurado — rejeitando webhook");
     return false;

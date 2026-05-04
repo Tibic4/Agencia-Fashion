@@ -13,6 +13,7 @@
  */
 
 import { buildGeminiParts } from "@/lib/model-prompts";
+import { env } from "@/lib/env";
 
 export interface ModelPreviewParams {
   modelId: string;
@@ -41,7 +42,7 @@ export interface ModelPreviewParams {
  * Retorna URL pública ou null.
  */
 async function tryGemini(data: ModelPreviewParams): Promise<string | null> {
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = env.GOOGLE_AI_API_KEY;
   if (!apiKey) return null;
 
   try {

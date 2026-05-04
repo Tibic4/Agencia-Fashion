@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { env } from "@/lib/env";
 import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function isDeepCheckAuthorized(req: NextRequest): boolean {
-  const expected = process.env.HEALTH_CHECK_SECRET;
+  const expected = env.HEALTH_CHECK_SECRET;
   if (!expected) return false;
   const provided = req.headers.get("x-health-secret");
   if (!provided) return false;
@@ -66,19 +67,19 @@ export async function GET(req: NextRequest) {
     ? { status: "ok", ms: dbMs }
     : { status: "error", detail: "db_unreachable" };
 
-  checks.gemini = (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY)
+  checks.gemini = (env.GEMINI_API_KEY || env.GOOGLE_AI_API_KEY)
     ? { status: "ok" }
     : { status: "warning", detail: "not_configured" };
 
-  checks.clerk = process.env.CLERK_SECRET_KEY
+  checks.clerk = env.CLERK_SECRET_KEY
     ? { status: "ok" }
     : { status: "error", detail: "not_configured" };
 
-  checks.mercadopago = process.env.MERCADOPAGO_ACCESS_TOKEN
+  checks.mercadopago = env.MERCADOPAGO_ACCESS_TOKEN
     ? { status: "ok" }
     : { status: "warning", detail: "not_configured" };
 
-  checks.googleAi = process.env.GOOGLE_AI_API_KEY
+  checks.googleAi = env.GOOGLE_AI_API_KEY
     ? { status: "ok" }
     : { status: "warning", detail: "not_configured" };
 
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
     {
       status: overall,
       version: process.env.npm_package_version || "1.0.0",
-      environment: process.env.NODE_ENV,
+      environment: env.NODE_ENV,
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       responseMs: Date.now() - start,

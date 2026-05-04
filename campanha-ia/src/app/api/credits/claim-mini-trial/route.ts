@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getStoreByClerkId } from "@/lib/db";
 import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import { captureError, logger } from "@/lib/observability";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -58,11 +59,11 @@ export async function POST() {
       );
     }
 
-    if (process.env.MINI_TRIAL_KILLSWITCH === "true") {
+    if (env.MINI_TRIAL_KILLSWITCH === "true") {
       return NextResponse.json({ granted: false, reason: "killswitch" });
     }
 
-    const totalSlots = parseInt(process.env.MINI_TRIAL_TOTAL_SLOTS ?? "50", 10);
+    const totalSlots = env.MINI_TRIAL_TOTAL_SLOTS ?? 50;
     if (!Number.isFinite(totalSlots) || totalSlots <= 0) {
       return NextResponse.json({ granted: false, reason: "killswitch" });
     }

@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, Payment, PreApproval } from "mercadopago";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { env } from "@/lib/env";
 
 // Re-export for consumers that imported PlanId from here
 export { PLANS, type PlanId };
@@ -7,9 +8,9 @@ export { PLANS, type PlanId };
 // não aceita string vazia. Se MP_ACCESS_TOKEN faltar, cliente é null
 // e quem tentar usar recebe erro claro em vez de falhar silenciosamente no MP.
 function createMpClient(): MercadoPagoConfig | null {
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  const token = env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token || token.length < 20) {
-    if (process.env.NODE_ENV === "production") {
+    if (env.NODE_ENV === "production") {
       // Em prod, logamos um warn inicial (não falha o boot)
       console.warn("[MP] ⚠️ MERCADOPAGO_ACCESS_TOKEN ausente ou inválido — pagamentos desabilitados");
     }
@@ -50,7 +51,7 @@ export async function createSubscription(params: {
   const plan = PLANS[params.planId];
   if (!plan) throw new Error(`Plano inválido: ${params.planId}`);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   const subscription = await getPreApprovalClient().create({
     body: {

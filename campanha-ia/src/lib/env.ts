@@ -99,6 +99,17 @@ const EnvSchema = z.object({
   // lookup real de plano em canRegenerate (src/lib/db/index.ts).
   FEATURE_REGENERATE_CAMPAIGN: z.string().optional(),
 
+  // ── Google Play (RTDN / Pub-Sub auth + service-account creds) ──
+  // Used by /api/billing/rtdn + lib/payments/google-play.ts.
+  GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH: z.string().optional(),
+  GOOGLE_PUBSUB_AUDIENCE: z.string().optional(),
+  GOOGLE_PUBSUB_ALLOWED_SERVICE_ACCOUNT: z.string().optional(),
+
+  // ── Image proxy hardening ──
+  // Comma-separated list of allowed image hosts (used by lib/security/image-host-allowlist).
+  IMAGE_HOST_ALLOWLIST: z.string().optional(),
+
   // ── Misc ──
   USD_BRL_EXCHANGE_RATE: z.coerce.number().positive().optional(),
   API_BUDGET_MONTHLY_BRL: z.coerce.number().positive().optional(),
@@ -137,10 +148,35 @@ export function loadEnv(): Env {
  *
  * Em prod, instrumentation.ts força parse no boot, então qualquer acesso
  * a `env.X` aqui já encontra o cache populado.
+ *
+ * Em testes que usam `vi.stubEnv` / mutam `process.env` por `it`, o cache
+ * persistido entre cases pode vazar valores do primeiro parse. Ao invés
+ * disso, no ambiente de teste o Proxy re-parseia em toda leitura — custo
+ * desprezível em vitest e elimina toda uma classe de bugs flakey.
  */
+const IS_TEST_ENV = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+
 export const env = new Proxy({} as Env, {
   get(_, key: string) {
+    if (IS_TEST_ENV) {
+      // Re-parseia toda chamada — vi.stubEnv / process.env mutations
+      // entre `it` viram visíveis. Bypass cache só em test.
+      const result = EnvSchema.safeParse(process.env);
+      if (result.success) return result.data[key as keyof Env];
+      // Em test, se schema falha, devolve o valor cru (test pode estar
+      // testando edge cases inválidos).
+      return process.env[key];
+    }
     const e = loadEnv();
     return e[key as keyof Env];
   },
 });
+
+/**
+ * Test-only escape hatch: limpa o cache do parse. Útil quando o test code
+ * faz `vi.resetModules()` mas quer ter certeza que o próximo loadEnv lê
+ * process.env atual.
+ */
+export function __resetEnvCacheForTests(): void {
+  cached = null;
+}

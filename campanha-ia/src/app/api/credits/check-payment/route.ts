@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, getStoreCredits } from "@/lib/db";
 import { getPaymentStatus } from "@/lib/payments/mercadopago";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verificar status no Mercado Pago
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    if (!env.MERCADOPAGO_ACCESS_TOKEN) {
       return NextResponse.json({ status: "demo", credits: { campaigns: 0, models: 0 } });
     }
 

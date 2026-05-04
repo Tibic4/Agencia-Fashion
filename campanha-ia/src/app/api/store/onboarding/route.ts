@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createStore, createStoreModel, getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
         });
 
         // 2b. Gerar preview corpo inteiro via Gemini (fire-and-forget)
-        if (process.env.GOOGLE_AI_API_KEY) {
+        if (env.GOOGLE_AI_API_KEY) {
           try {
             const { generatePreviewDirect } = await import("@/lib/model-preview");
             console.log(`[Onboarding] 🎨 Gerando preview para modelo...`);
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:store/onboarding] Error:", message);
     return NextResponse.json(
-      { error: "Erro ao configurar loja", details: process.env.NODE_ENV === "development" ? message : undefined },
+      { error: "Erro ao configurar loja", details: env.NODE_ENV === "development" ? message : undefined },
       { status: 500 }
     );
   }

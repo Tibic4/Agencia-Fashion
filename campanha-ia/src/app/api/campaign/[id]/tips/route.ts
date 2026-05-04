@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenAI } from "@google/genai";
+import { env } from "@/lib/env";
 
 // Gemini 3.1 Pro — melhor raciocínio criativo, ideal para copywriting
 const TIPS_MODEL = "gemini-3.1-pro-preview";
@@ -250,7 +251,7 @@ export async function POST(
     return NextResponse.json({ error: "Erro ao validar campanha" }, { status: 500 });
   }
 
-  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const apiKey = env.GOOGLE_AI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "GOOGLE_AI_API_KEY não configurada" }, { status: 500 });
   }
@@ -378,8 +379,8 @@ export async function POST(
     // ── Save tips to campaign output for server-side cache (fire-and-forget) ──
     try {
       const { createClient } = await import("@supabase/supabase-js");
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+      const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = env.SUPABASE_SERVICE_ROLE_KEY!;
       const saveClient = createClient(supabaseUrl, supabaseKey);
       
       // Read current output and merge smart_tips into it

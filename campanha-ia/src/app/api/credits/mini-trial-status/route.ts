@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60; // cache 60s no Next/edge
@@ -20,7 +21,7 @@ export const revalidate = 60; // cache 60s no Next/edge
  *  }
  */
 export async function GET() {
-  if (process.env.MINI_TRIAL_KILLSWITCH === "true") {
+  if (env.MINI_TRIAL_KILLSWITCH === "true") {
     return NextResponse.json({
       enabled: false,
       total_slots: 0,
@@ -31,7 +32,7 @@ export async function GET() {
     });
   }
 
-  const totalSlots = parseInt(process.env.MINI_TRIAL_TOTAL_SLOTS ?? "50", 10);
+  const totalSlots = env.MINI_TRIAL_TOTAL_SLOTS ?? 50;
 
   const supabase = createAdminClient();
   const { count: totalUsed } = await supabase

@@ -4,6 +4,7 @@ import { getStoreByClerkId } from "@/lib/db";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { ALL_CREDIT_PACKAGES, type CreditPackageId } from "@/lib/plans";
 import { checkLoginRateLimit } from "@/lib/rate-limit";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -81,9 +82,9 @@ export async function POST(request: NextRequest) {
     // a key foi removida de ALL_CREDIT_PACKAGES.
 
     const userEmail = (session.sessionClaims as Record<string, unknown>)?.email as string || `${session.userId}@crialook.app`;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    if (!env.MERCADOPAGO_ACCESS_TOKEN) {
       return NextResponse.json({
         success: true,
         demo: true,
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const client = new MercadoPagoConfig({
-      accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+      accessToken: env.MERCADOPAGO_ACCESS_TOKEN,
     });
 
     const preferenceClient = new Preference(client);

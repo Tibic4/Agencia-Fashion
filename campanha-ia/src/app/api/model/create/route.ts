@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, createStoreModel, listStoreModels, getStorePlanName, getModelLimitForPlan, consumeCredit, getStoreCredits } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { env } from "@/lib/env";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest) {
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:model/create] Error:", msg);
     return NextResponse.json(
-      { error: "Erro ao criar modelo", details: process.env.NODE_ENV === "development" ? msg : undefined },
+      { error: "Erro ao criar modelo", details: env.NODE_ENV === "development" ? msg : undefined },
       { status: 500 }
     );
   }

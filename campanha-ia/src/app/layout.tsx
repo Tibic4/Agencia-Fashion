@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations";
 import ClientProviders from "@/components/ClientProviders";
 import CookieBanner from "@/components/CookieBanner";
+import { env } from "@/lib/env";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,7 +36,7 @@ export const viewport: Viewport = {
 // metadataBase resolve URLs relativas de OG/Twitter corretamente
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://crialook.com.br",
+    env.NEXT_PUBLIC_APP_URL || "https://crialook.com.br",
   ),
   title: {
     default: "CriaLook — Transforme fotos de roupa em campanhas prontas",

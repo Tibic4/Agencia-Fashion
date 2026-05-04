@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError, logger } from "@/lib/observability";
+import { env } from "@/lib/env";
 import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export const maxDuration = 60;
  */
 
 function isAuthorized(req: NextRequest): boolean {
-  const expected = process.env.CRON_SECRET;
+  const expected = env.CRON_SECRET;
   if (!expected) return false;
   const header = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!header) return false;

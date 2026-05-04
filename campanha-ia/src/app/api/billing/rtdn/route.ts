@@ -10,6 +10,7 @@ import { verifyPubSubJwt } from "@/lib/payments/google-pubsub-auth";
 import { skuToPlanSlug, FREE_PLAN_SLUG } from "@/lib/payments/sku-plan-mapping";
 import { updateStorePlan, getStoreByClerkId } from "@/lib/db";
 import { dedupWebhook, markWebhookProcessed } from "@/lib/webhooks/dedup";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -176,7 +177,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Valida package name (anti-forge)
-    const expectedPackage = process.env.GOOGLE_PLAY_PACKAGE_NAME ?? "com.crialook.app";
+    const expectedPackage = env.GOOGLE_PLAY_PACKAGE_NAME ?? "com.crialook.app";
     if (payload.packageName !== expectedPackage) {
       logger.warn("billing_rtdn_wrong_package", {
         got: payload.packageName,

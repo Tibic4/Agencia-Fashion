@@ -18,13 +18,14 @@ import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import { isAllowedImageUrl } from "@/lib/security/image-host-allowlist";
 import { verifyImageMime } from "@/lib/security/verify-image-mime";
 import { logger, captureError, hashStoreId } from "@/lib/observability";
+import { env } from "@/lib/env";
 import * as Sentry from "@sentry/nextjs";
 
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 // v6: Pipeline Gemini Analyzer + Gemini VTO. Demo mode se nenhuma key existe.
-const IS_DEMO_MODE = !process.env.GEMINI_API_KEY && !process.env.GOOGLE_AI_API_KEY;
+const IS_DEMO_MODE = !env.GEMINI_API_KEY && !env.GOOGLE_AI_API_KEY;
 
 /**
  * Phase 02 D-13: truncate user-supplied strings before logging so a 5KB
@@ -1299,7 +1300,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Erro ao gerar campanha. Tente novamente.",
           code: "PIPELINE_ERROR",
-          details: process.env.NODE_ENV === "development" ? String(errorObj.message || "") : undefined,
+          details: env.NODE_ENV === "development" ? String(errorObj.message || "") : undefined,
         },
         { status: 500 }
       );
@@ -1325,7 +1326,7 @@ export async function POST(request: NextRequest) {
       {
         error: "Erro ao gerar campanha. Tente novamente.",
         code: "PIPELINE_ERROR",
-        details: process.env.NODE_ENV === "development" ? String(errorObj.message || "") : undefined,
+        details: env.NODE_ENV === "development" ? String(errorObj.message || "") : undefined,
       },
       { status: 500 }
     );

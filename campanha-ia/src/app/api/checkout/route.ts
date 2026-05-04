@@ -5,6 +5,7 @@ import { getStoreByClerkId } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError } from "@/lib/observability";
 import { checkLoginRateLimit } from "@/lib/rate-limit";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Buscar email do Clerk (via sessionClaims)
     const userEmail = (session.sessionClaims as Record<string, unknown>)?.email as string || `${session.userId}@crialook.app`;
 
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    if (!env.MERCADOPAGO_ACCESS_TOKEN) {
       // Demo mode — retorna URL fake
       return NextResponse.json({
         success: true,
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
       {
         error: "Erro ao criar checkout",
         code: "CHECKOUT_ERROR",
-        details: process.env.NODE_ENV === "development" ? message : undefined,
+        details: env.NODE_ENV === "development" ? message : undefined,
       },
       { status: 500 }
     );

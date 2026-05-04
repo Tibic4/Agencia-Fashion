@@ -3,9 +3,10 @@
  * Substitui o antigo cookie `editor_session=authenticated` (sem entropia/assinatura).
  */
 import { createHmac, timingSafeEqual, randomBytes } from "crypto";
+import { env } from "@/lib/env";
 
 function getSecret(): string {
-  return process.env.EDITOR_SESSION_SECRET || process.env.EDITOR_PASSWORD || "";
+  return env.EDITOR_SESSION_SECRET || env.EDITOR_PASSWORD || "";
 }
 
 /** Gera um token session: `issuedAt.nonce.hmac` (base64url) */

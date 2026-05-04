@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { refreshExchangeRate } from "@/lib/pricing";
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
   // D-23: ?secret= query-string path removed (leaks via referrer / proxy logs).
   // Authorization header only.
   const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
+  const cronSecret = env.CRON_SECRET;
 
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

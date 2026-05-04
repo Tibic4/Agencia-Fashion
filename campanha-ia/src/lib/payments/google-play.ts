@@ -27,16 +27,20 @@
  *   compras fake no MVP. É mais seguro retornar 503 explicitamente.
  */
 
-export const PACKAGE_NAME = process.env.GOOGLE_PLAY_PACKAGE_NAME ?? "com.crialook.app";
+// Module-level export uses a getter so test setup that mutates process.env
+// after module load still resolves. (Required for google-play.test.ts.)
+import { env } from "@/lib/env";
+
+export const PACKAGE_NAME = env.GOOGLE_PLAY_PACKAGE_NAME ?? "com.crialook.app";
 
 /**
  * Detecta se o ambiente está pronto para validar compras.
  * Quando false, os endpoints /billing/* retornam 503 com mensagem clara.
  */
 export function isGooglePlayConfigured(): boolean {
-  const hasInline = Boolean(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON);
-  const hasFile = Boolean(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH);
-  return Boolean(process.env.GOOGLE_PLAY_PACKAGE_NAME) && (hasInline || hasFile);
+  const hasInline = Boolean(env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON);
+  const hasFile = Boolean(env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH);
+  return Boolean(env.GOOGLE_PLAY_PACKAGE_NAME) && (hasInline || hasFile);
 }
 
 /**

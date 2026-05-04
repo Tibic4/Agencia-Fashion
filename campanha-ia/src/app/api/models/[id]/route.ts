@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getStoreByClerkId, deleteStoreModel } from "@/lib/db";
+import { env } from "@/lib/env";
 
 /**
  * DELETE /api/models/[id]
@@ -33,7 +34,7 @@ export async function DELETE(
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("[API:models/delete]", message);
     return NextResponse.json(
-      { error: "Erro ao excluir modelo", details: process.env.NODE_ENV === "development" ? message : undefined },
+      { error: "Erro ao excluir modelo", details: env.NODE_ENV === "development" ? message : undefined },
       { status: 500 }
     );
   }

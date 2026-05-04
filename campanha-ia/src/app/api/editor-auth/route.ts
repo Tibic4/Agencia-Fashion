@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { checkLoginRateLimit, resetLoginRateLimit } from "@/lib/rate-limit";
 import { signEditorSession, timingSafeStringEqual } from "@/lib/editor-session";
+import { env } from "@/lib/env";
 
 /**
  * POST /api/editor-auth
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  const correctPassword = process.env.EDITOR_PASSWORD;
+  const correctPassword = env.EDITOR_PASSWORD;
   if (!correctPassword) {
     return NextResponse.json(
       { error: "Editor password não configurado no servidor." },
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   cookieStore.set("editor_session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30,
     path: "/",

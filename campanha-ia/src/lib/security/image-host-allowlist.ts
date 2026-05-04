@@ -14,8 +14,10 @@
  * internal services becomes impossible.
  */
 
+import { env } from "@/lib/env";
+
 function getDefaultAllowlist(): string[] {
-  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supaUrl = env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supaUrl) return [];
   try {
     const u = new URL(supaUrl);
@@ -26,7 +28,7 @@ function getDefaultAllowlist(): string[] {
 }
 
 function getAllowlist(): string[] {
-  const fromEnv = (process.env.IMAGE_HOST_ALLOWLIST || "")
+  const fromEnv = (env.IMAGE_HOST_ALLOWLIST || "")
     .split(",")
     .map(s => s.trim())
     .filter(Boolean);

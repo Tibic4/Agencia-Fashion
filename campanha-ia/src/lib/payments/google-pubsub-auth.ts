@@ -16,6 +16,7 @@
  *  - https://cloud.google.com/pubsub/docs/authenticate-push-subscriptions
  */
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { env } from "@/lib/env";
 
 // JWKS do Google é fetched lazily na primeira chamada e cacheado pelo
 // próprio jose. URL fixa, nunca muda.
@@ -51,8 +52,8 @@ export async function verifyPubSubJwt(
   const token = authHeader.slice("Bearer ".length).trim();
   if (!token) return { ok: false, reason: "empty_token" };
 
-  const audience = process.env.GOOGLE_PUBSUB_AUDIENCE;
-  const allowedSa = process.env.GOOGLE_PUBSUB_ALLOWED_SERVICE_ACCOUNT;
+  const audience = env.GOOGLE_PUBSUB_AUDIENCE;
+  const allowedSa = env.GOOGLE_PUBSUB_ALLOWED_SERVICE_ACCOUNT;
   if (!audience || !allowedSa) {
     // Misconfig: caller deve checar isGooglePlayConfigured antes, mas
     // se chegou aqui sem env, falha fechado em vez de aberto.

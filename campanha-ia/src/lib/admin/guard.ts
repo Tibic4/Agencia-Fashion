@@ -16,13 +16,14 @@
 import { auth } from "@clerk/nextjs/server";
 import { createHash } from "crypto";
 import { logger } from "@/lib/observability";
+import { env } from "@/lib/env";
 
-const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "")
+const ADMIN_USER_IDS = (env.ADMIN_USER_IDS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
-const IS_PROD = process.env.NODE_ENV === "production";
+const IS_PROD = env.NODE_ENV === "production";
 
 function hashUserId(userId: string): string {
   return createHash("sha256").update(userId).digest("hex").slice(0, 12);

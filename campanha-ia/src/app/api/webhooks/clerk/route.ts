@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createStore, getStoreByClerkId } from "@/lib/db";
 import { captureError, logger } from "@/lib/observability";
 import { dedupWebhook, markWebhookProcessed } from "@/lib/webhooks/dedup";
+import { env } from "@/lib/env";
 import { createHmac, timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ function verifyClerkSignature(
   svixTimestamp: string | null,
   svixSignature: string | null,
 ): boolean {
-  const secret = process.env.CLERK_WEBHOOK_SECRET;
+  const secret = env.CLERK_WEBHOOK_SECRET;
   if (!secret || !svixId || !svixTimestamp || !svixSignature) return false;
 
   // Secret vem como "whsec_..."; tira o prefixo e faz base64-decode
