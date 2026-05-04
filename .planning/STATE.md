@@ -9,12 +9,19 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 1 of 8 (Payments Webhook Integrity)
-Plan: 0 of 21 in current phase
-Status: Planned (5 PLAN.md, 21 tasks, 3 waves) — ready to execute
-Last activity: 2026-05-03 — Phase 1 plan-phase complete. Plan-checker PASSED. R-01 resolved: fail-closed guard goes in `canGenerateCampaign()`. R-02 surfaced + handled: `update_updated_at_column()` trigger missing on `stores`, added as Task 01-01-3.
+Phase: 2 of 8 (Pipeline Resilience & Observability) — plan dispatched
+Plan: P1 done (21/21), P2 plan in flight, P3 execute in flight, P4 context written
+Status: P1 complete + verified (184/184 tests). P2/P3/P4 in parallel pipeline.
+Last activity: 2026-05-04 — P1 execute returned passed; P3 plan returned PASS; P4 CONTEXT captured (reuse webhook_events, Postgres token bucket, publicMetadata.role cutover, .env.loadtest revoke+filter-repo).
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 12%
+
+**OWNER ACTION ITEMS (blocking nothing in M1 but blocking actual prod uptake):**
+- Apply 4 P1 migrations via `supabase db push` after review:
+  - `20260503_180000_add_subscription_status_enum.sql`
+  - `20260503_180100_backfill_subscription_status.sql`
+  - `20260503_180200_add_stores_updated_at_trigger.sql`
+  - `20260503_180300_create_webhook_events.sql`
 
 ## Performance Metrics
 
