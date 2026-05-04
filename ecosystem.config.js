@@ -25,6 +25,19 @@ module.exports = {
     {
       name: "crialook",
       cwd: APP_DIR,
+
+      // ── User contract (D-12, D-13, plan 08-07 + 08-08) ──
+      // Today (pre-08-08): no explicit `user` field. PM2 inherits from the
+      // invoking shell, which is root via deploy-crialook.sh's default
+      // (DEPLOY_USER=root). scripts/check-deploy-user.sh emits WARN on this
+      // state (non-blocking).
+      //
+      // After plan 08-08 owner-action (SSH user creation + sudoers config),
+      // OWNER UNCOMMENTS the line below to make the user explicit. Then
+      // scripts/check-deploy-user.sh emits OK (green), and CI can be tightened
+      // to --strict mode in a follow-up phase.
+      //
+      // user: "crialook",
       // Roda npm start (que executa "next start" via package.json).
       // É mais robusto que apontar pro binário direto porque respeita
       // qualquer wrapper futuro do package.json.

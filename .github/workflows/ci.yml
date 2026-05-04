@@ -112,3 +112,21 @@ jobs:
       # day-zero baseline reconciliation and 07-07 for the script.
       - name: Check legal content drift
         run: npm run check:legal-drift
+
+  deploy-user-lint:
+    name: Deploy user lint (production must not run as root)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Phase 8 D-13: bash + node-e parser for ecosystem.config.js.
+      # Today: WARN on absent user field (file has none); FAIL on user: 'root'.
+      # After plan 08-08 owner-action, ecosystem.config.js gets user: 'crialook'
+      # explicitly and this job becomes a green OK. A follow-up CI tightening
+      # can add --strict to enforce-on-absent.
+      - name: Check ecosystem.config.js user field
+        run: bash scripts/check-deploy-user.sh
