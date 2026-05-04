@@ -49,18 +49,21 @@ export default defineConfig({
         // Phase 6 (2026-05-04): testes novos (billing, auth, deep-link UUID
         // via vitest; ErrorBoundary + TabErrorBoundary via jest — não contam
         // pra esse pool) subiram cobertura. Medidas reais pós-Phase 6:
-        // Stmts 27.67 / Branches 23.46 / Funcs 18.56 / Lines 29.18. Pisos
-        // elevados pro floor das medidas (round-down) — bloqueia regressão
-        // dos novos testes sem ficar acima da cobertura real (que quebraria
-        // o CI no commit que sobe os pisos). D-10 spec target era 30/35
-        // (lines/funcs); lines está perto (29 vs 30) mas funcs ainda longe
-        // (18 vs 35) — manter o ratchet honesto agora, subir mais quando
-        // hooks de tela (camera, biometric, push) ganharem cobertura.
-        // Valores anteriores: 22 / 13 / 17 / 21 (lines/funcs/branches/stmts).
-        lines: 29,
-        functions: 18,
-        branches: 23,
-        statements: 27,
+        // Stmts 27.67 / Branches 23.46 / Funcs 18.56 / Lines 29.18.
+        //
+        // M2 Phase 03 (2026-05-04): +68 testes (169/169 pass) elevaram pra
+        // 37.51% lines / 32.31% branches / 27.27% functions / 35.89% statements.
+        // D-10 spec ATINGIDO em lines (35). FUNCTIONS gap honesto: D-10 alvo
+        // era 35, atual 27 — RN screen hooks (camera/biometric/push/navigation/
+        // notifications side-effects) precisam de Maestro/Detox pra cobrir
+        // (vitest jsdom não consegue executar a stack RN nativa real). Esses
+        // hooks são onde a maioria das funções não testadas vivem. Defer pra
+        // ROADMAP parking-lot e2e: "Maestro/Detox e2e: explicit defer, blocks
+        // Phase 3 D-10 spec to honest max" (.planning/M2-NOTES.md §What's NOT).
+        lines: 37,
+        functions: 27,
+        branches: 32,
+        statements: 35,
       },
     },
   },

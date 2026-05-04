@@ -39,10 +39,18 @@ export default defineConfig({
         // Phase 04 (Plans 04-01..04-05): +35 testes (259/259 pass) elevaram pra
         // ~22.7% lines, ~15.7% branches, ~29.5% functions, ~22.5% statements.
         // Pisos atualizados pra current-2pp.
-        lines: 20,
-        functions: 27,
-        branches: 13,
-        statements: 20,
+        //
+        // M2 Phase 03 (2026-05-04): +95 testes (366/366 pass) elevaram pra
+        // 30.24% lines / 24.14% branches / 42.49% functions / 30.16% statements.
+        // D-10 spec ATINGIDO em lines (30) e functions (30). Pisos elevados
+        // ao floor real (round-down) — bloqueia regressão sem ficar acima da
+        // cobertura medida (que quebraria CI no commit que sobe os pisos).
+        // Branches ainda 6pp abaixo do ideal — gap honesto: muitas rotas API
+        // têm error paths não testados (ver QUALITY.md §Coverage Gaps).
+        lines: 30,
+        functions: 42,
+        branches: 24,
+        statements: 30,
       },
     },
   },
