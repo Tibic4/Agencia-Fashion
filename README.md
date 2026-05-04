@@ -289,11 +289,17 @@ npm run storybook:dev
 
 Scripts e runbooks self-service para tarefas que só o owner consegue executar (deploys de produção, builds EAS, revogação de sessões Clerk). Cada script é um pre-flight que NÃO executa a operação destrutiva — ele valida, reporta, e printa o próximo comando para o owner rodar manualmente.
 
-| Comando | Onde rodar | O que faz | Runbook |
-|---------|------------|-----------|---------|
-| `npm run play:prep` | `crialook-app/` | Pre-flight antes de `eas build`: valida placeholders em `eas.json`, SHA-256 em `assetlinks.json`, vitest, tsc, expo-doctor, `expo prebuild` + grep das permissions Android obrigatórias. | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
-| `npm run deploy:check` | `campanha-ia/` | Pre-flight antes de `git push` + `bash deploy-crialook.sh`: git status clean, commits ahead, vitest, tsc, lint, `next build`, paridade de migrations Supabase. | [`ops/deploy.md`](./ops/deploy.md) |
-| `npm run clerk:revoke-loadtest` | `campanha-ia/` | Helper informativo para revogar as 2 sessões Clerk capturadas em `loadtests/.env.loadtest` durante M1 P4 (printa URLs do Dashboard + `curl` templates do Admin API; não executa nenhuma chamada remota). | [`crialook-app/docs/CLERK_KEYS.md`](./crialook-app/docs/CLERK_KEYS.md) |
+| Comando | Onde rodar | O que faz | Step in PLAY_RELEASE_CHECKLIST | Runbook |
+|---------|------------|-----------|------|---------|
+| `npm run play:secrets` | `crialook-app/` | Printa os comandos exatos `eas secret:create` para os 3 segredos do Sentry (AUTH_TOKEN, ORG, PROJECT). Probas `eas secret:list` se o EAS CLI estiver logado. NÃO executa nenhuma chamada. | 1 | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run play:apply-keys` | `crialook-app/` | Lê `scripts/clerk-keys-mapping.md`, valida 7 regras (prefixos `pk_test_`/`pk_live_`, distinct, sem placeholders), grava em `eas.json`. Idempotente. `--check` flag valida sem escrever. | 3 | [`crialook-app/docs/CLERK_KEYS.md`](./crialook-app/docs/CLERK_KEYS.md) |
+| `npm run play:preflight` | `crialook-app/` | Master gate antes de `eas build`: compõe `play:prep` + `apply-keys --check` + probe de EAS secrets + assetlinks endpoint reachable. Sai 1 com remediation message específica em qualquer falha. | gate antes de 4 | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run play:prep` | `crialook-app/` | Pre-flight antes de `eas build`: valida placeholders em `eas.json`, SHA-256 em `assetlinks.json`, vitest, tsc, expo-doctor, `expo prebuild` + grep das permissions Android obrigatórias. | gate antes de 4 (composto pelo `preflight`) | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run play:validate-deployed` | `crialook-app/` | Curla `https://crialook.com.br/.well-known/assetlinks.json`, valida HTTP 200 + Content-Type JSON + parse + diff byte-for-byte com o local + Google Digital Asset Links API confirma o package. | 7, 8 | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run play:validate-aab -- ./app.aab` | `crialook-app/` | Localiza `bundletool` (PATH ou `$BUNDLETOOL_JAR`), roda `dump manifest`, asserta POST_NOTIFICATIONS + `com.android.vending.BILLING`. Bonus: imprime lista completa de `uses-permission`. | 9 | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run play:finalize` | `crialook-app/` | Orquestrador para steps 8→11: `validate-deployed` → prompt do AAB path → `validate-aab` → printa o comando exato `eas submit` (NÃO executa). | 8 + 9 + 11 | [`crialook-app/docs/PLAY_RELEASE_CHECKLIST.md`](./crialook-app/docs/PLAY_RELEASE_CHECKLIST.md) |
+| `npm run deploy:check` | `campanha-ia/` | Pre-flight antes de `git push` + `bash deploy-crialook.sh`: git status clean, commits ahead, vitest, tsc, lint, `next build`, paridade de migrations Supabase. | 7 | [`ops/deploy.md`](./ops/deploy.md) |
+| `npm run clerk:revoke-loadtest` | `campanha-ia/` | Helper informativo para revogar as 2 sessões Clerk capturadas em `loadtests/.env.loadtest` durante M1 P4 (printa URLs do Dashboard + `curl` templates do Admin API; não executa nenhuma chamada remota). | (out-of-band, M1) | [`crialook-app/docs/CLERK_KEYS.md`](./crialook-app/docs/CLERK_KEYS.md) |
 
 Outros runbooks owner-action que ainda não têm script wrapper (quando o ganho de automação seria mínimo):
 
