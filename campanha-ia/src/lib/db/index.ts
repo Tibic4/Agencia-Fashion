@@ -7,6 +7,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getModelLimitForPlan, getHistoryDaysForPlan } from "@/lib/plans";
+import { captureError, logger } from "@/lib/observability";
 
 // Re-export for consumers
 export { getModelLimitForPlan, getHistoryDaysForPlan };
@@ -586,12 +587,41 @@ export async function incrementCampaignsUsed(storeId: string) {
 
 /** Verifica se a loja pode gerar mais campanhas neste período */
 export async function canGenerateCampaign(storeId: string): Promise<{ allowed: boolean; used: number; limit: number; hasAvulso: boolean }> {
+  const supabase = createAdminClient();
+
+  // R-01 fail-closed guard: even if cron is broken, never serve premium quota
+  // to a store whose subscription is cancelled AND past period_end. Avulso
+  // credits remain valid (lojista paid for them, separate from sub).
+  const { data: store } = await supabase
+    .from("stores")
+    .select("subscription_status, plan_id")
+    .eq("id", storeId)
+    .single();
+
   const usage = await getOrCreateCurrentUsage(storeId);
   const credits = await getStoreCredits(storeId);
   const avulso = credits.campaigns || 0;
 
+  const today = new Date().toISOString().split("T")[0];
+  const periodExpired = !usage?.period_end || usage.period_end < today;
+  const subCancelled =
+    store?.subscription_status === "cancelled" || store?.subscription_status === "expired";
+
   const used = usage?.campaigns_generated ?? 0;
-  const planLimit = usage?.campaigns_limit ?? 0;
+  let planLimit = usage?.campaigns_limit ?? 0;
+
+  if (subCancelled && periodExpired) {
+    // Demote to free-plan limit. Look up "gratis" once to avoid trusting a
+    // potentially-stale store_usage.campaigns_limit (which may still reflect
+    // the premium plan if cron didn't run yet).
+    const { data: freePlan } = await supabase
+      .from("plans")
+      .select("campaigns_per_month")
+      .eq("name", "gratis")
+      .single();
+    planLimit = freePlan?.campaigns_per_month ?? 0;
+    logger.info("can_generate_fail_closed_demote", { storeId, reason: "cancelled_and_expired" });
+  }
 
   // Plano ainda tem quota? Usar slot do plano.
   // Senão, verificar se tem crédito avulso (consumido separadamente no generate).
