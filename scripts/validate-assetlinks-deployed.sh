@@ -112,13 +112,25 @@ fi
 
 # ─────────────────────────────────────────────────────────────
 # Step 3: Body parses as JSON
+# (We pipe the body via stdin to node — avoids cross-shell tmpfile path
+# issues on Git-bash on Windows where /tmp/xxx becomes D:\tmp\xxx in node.)
 # ─────────────────────────────────────────────────────────────
 step_header "Body parses as JSON"
-if [ "$HTTP_STATUS" = "200" ] && node -e "JSON.parse(require('fs').readFileSync('$HTTP_RESP_FILE','utf8'))" 2>/tmp/json-err.log; then
-  step_pass "valid JSON"
+if [ "$HTTP_STATUS" = "200" ]; then
+  JSON_PARSE_ERR=""
+  if JSON_PARSE_ERR=$(node -e "
+    let buf=''; process.stdin.on('data',c=>buf+=c); process.stdin.on('end',()=>{
+      try { JSON.parse(buf); console.log('OK'); }
+      catch(e){ console.error(e.message); process.exit(1); }
+    });
+  " <"$HTTP_RESP_FILE" 2>&1); then
+    step_pass "valid JSON"
+  else
+    step_fail "invalid JSON body: $JSON_PARSE_ERR"
+    head -5 "$HTTP_RESP_FILE" 2>/dev/null | sed 's/^/    /'
+  fi
 else
-  step_fail "invalid JSON body — see /tmp/json-err.log"
-  head -5 "$HTTP_RESP_FILE" 2>/dev/null | sed 's/^/    /'
+  echo "${YELLOW}SKIP${RESET}: cannot parse (HTTP not 200)"
 fi
 
 # ─────────────────────────────────────────────────────────────
