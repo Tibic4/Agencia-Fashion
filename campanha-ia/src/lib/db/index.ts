@@ -576,12 +576,16 @@ export async function incrementCampaignsUsed(storeId: string) {
   });
 
   if (error) {
-    console.warn(`[DB] ⚠️ increment_campaigns_used RPC falhou, usando fallback: ${error.message}`);
-    // Fallback para read-modify-write
-    await supabase
-      .from("store_usage")
-      .update({ campaigns_generated: (usage.campaigns_generated || 0) + 1 })
-      .eq("id", usage.id);
+    // H-11 fix: no more read-modify-write fallback (race-condition source).
+    // RPC failure is a real ops issue — surface it. The /api/campaign/generate
+    // outer try/catch returns 5xx + Sentry-captures, so the user gets a clean
+    // failure instead of a slot-not-consumed-but-pipeline-runs ghost.
+    captureError(new Error(`increment_campaigns_used RPC failed: ${error.message}`), {
+      function: "incrementCampaignsUsed",
+      storeId,
+      usageId: usage.id,
+    });
+    throw new Error(`increment_campaigns_used failed: ${error.message}`);
   }
 }
 
@@ -831,16 +835,22 @@ export async function addCreditsToStore(
 ) {
   const supabase = createAdminClient();
 
+  // M-12 / D-12: rolling 30 days from payment date (matches MP charge anniversary).
+  // OLD: calendar-month math (period_start = first of current month) — caused
+  // reconcile join mismatches with store_usage.period_start (rolling-30).
+  const paymentDate = new Date();
+  const periodStart = paymentDate.toISOString().split("T")[0];
+  const periodEnd = new Date(paymentDate.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
   // 1. Registrar a compra
-  const now = new Date();
   await supabase.from("credit_purchases").insert({
     store_id: storeId,
     type,
     quantity,
     price_brl: priceBrl,
     mercadopago_payment_id: mpPaymentId,
-    period_start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0],
-    period_end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
+    period_start: periodStart,
+    period_end: periodEnd,
     consumed: 0,
   });
 
@@ -860,18 +870,18 @@ export async function addCreditsToStore(
   });
 
   if (rpcError) {
-    console.warn(`[Credits] ⚠️ add_credits_atomic RPC falhou, usando fallback: ${rpcError.message}`);
-    // Fallback: read-modify-write (melhor que falhar)
-    const { data: store } = await supabase
-      .from("stores")
-      .select(column)
-      .eq("id", storeId)
-      .single();
-    const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
-    await supabase
-      .from("stores")
-      .update({ [column]: currentValue + quantity })
-      .eq("id", storeId);
+    // H-6/H-11 fix: no more read-modify-write fallback. RPC errors are ops-visible.
+    // Note: the credit_purchases row is already inserted at this point — that's the
+    // historical "purchase log without credits granted" failure mode. Reconcile
+    // cron is parking-lot per CONTEXT.md (parking-lot, not blocking M1).
+    captureError(new Error(`add_credits_atomic RPC failed: ${rpcError.message}`), {
+      function: "addCreditsToStore",
+      storeId,
+      type,
+      quantity,
+      mpPaymentId,
+    });
+    throw new Error(`add_credits_atomic failed: ${rpcError.message}`);
   }
 
   console.log(`[Credits] ✅ +${quantity} ${type} adicionados à loja ${storeId}`);
@@ -901,18 +911,16 @@ export async function consumeCredit(
   });
 
   if (error) {
-    console.warn(`[Credits] ⚠️ consume_credit_atomic RPC falhou, usando fallback: ${error.message}`);
-    // Fallback para read-modify-write
-    const { data: store } = await supabase
-      .from("stores")
-      .select(column)
-      .eq("id", storeId)
-      .single();
-    const currentValue = (store as unknown as Record<string, number>)?.[column] || 0;
-    if (currentValue <= 0) return false;
-    await supabase.from("stores").update({ [column]: currentValue - 1 }).eq("id", storeId);
-    console.log(`[Credits] 🔻 -1 ${type} consumido da loja ${storeId} (fallback, restam: ${currentValue - 1})`);
-    return true;
+    // H-11 fix: no more read-modify-write fallback. RPC errors are ops-visible.
+    // The /api/campaign/generate outer try/catch returns 5xx + refunds via the
+    // existing path; consumers in refund branches surface the throw as a
+    // refund-failed signal that ops needs to see.
+    captureError(new Error(`consume_credit_atomic RPC failed: ${error.message}`), {
+      function: "consumeCredit",
+      storeId,
+      type,
+    });
+    throw new Error(`consume_credit_atomic failed: ${error.message}`);
   }
 
   const newVal = data as number;
