@@ -4,10 +4,12 @@ import { captureError, logger } from "@/lib/observability";
 import {
   isGooglePlayConfigured,
   isValidSku,
-  planFromSku,
   type ValidSku,
 } from "@/lib/payments/google-play";
 import { verifyPubSubJwt } from "@/lib/payments/google-pubsub-auth";
+import { skuToPlanSlug, FREE_PLAN_SLUG } from "@/lib/payments/sku-plan-mapping";
+import { updateStorePlan, getStoreByClerkId } from "@/lib/db";
+import { dedupWebhook, markWebhookProcessed } from "@/lib/webhooks/dedup";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +145,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid envelope" }, { status: 400 });
     }
 
+    // D-06: dedup BEFORE business logic, using Pub/Sub messageId as the
+    // event_id namespace. Pub/Sub guarantees per-subscription messageId
+    // uniqueness, so this catches at-least-once redelivery cleanly.
+    const messageId = envelope.message?.messageId?.trim();
+    if (!messageId) {
+      logger.warn("rtdn_webhook_missing_message_id");
+      return NextResponse.json({ error: "missing messageId" }, { status: 400 });
+    }
+    let dedup;
+    try {
+      dedup = await dedupWebhook("rtdn", messageId, envelope as unknown);
+    } catch (e) {
+      captureError(e, { route: "POST /api/billing/rtdn", phase: "dedup" });
+      // Fail by 5xx so Pub/Sub retries (consistent with existing transient-error policy).
+      return NextResponse.json({ error: "dedup_failed" }, { status: 500 });
+    }
+    if (dedup.duplicate) {
+      logger.info("rtdn_webhook_duplicate_short_circuit", { messageId });
+      return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
+    }
+
     let payload: RtdnPayload;
     try {
       const decoded = Buffer.from(envelope.message.data, "base64").toString("utf-8");
@@ -225,18 +248,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "DB error" }, { status: 500 });
     }
 
-    // Rollback do plano em caso de revogação/expiração
+    // C-1 fix: rollback / sync do plano via updateStorePlan (que escreve
+    // plan_id FK), em vez de .update({ plan: ... }) num campo inexistente.
+    // Resolve o store row do usuário antes; se não existe, captura no Sentry
+    // e responde 404 — sem store, não há plan_id pra atualizar.
+    const store = await getStoreByClerkId(userId);
+    if (!store) {
+      captureError(new Error("rtdn: store not found for clerk user"), {
+        route: "POST /api/billing/rtdn",
+        user_id: userId,
+        notification_type: sn.notificationType,
+      });
+      return NextResponse.json({ error: "store_not_found" }, { status: 404 });
+    }
+
     if (REVOKING_NOTIFICATIONS.has(sn.notificationType)) {
-      await supabase
-        .from("stores")
-        .update({ plan: "free" })
-        .eq("clerk_user_id", userId);
+      await updateStorePlan(store.id, FREE_PLAN_SLUG, null);
     } else if ([1, 2, 4, 7].includes(sn.notificationType)) {
-      // Recovered/Renewed/Purchased/Restarted: garantir plano correto
-      await supabase
-        .from("stores")
-        .update({ plan: planFromSku(sku) })
-        .eq("clerk_user_id", userId);
+      // Recovered/Renewed/Purchased/Restarted: ensure plan_id matches SKU
+      await updateStorePlan(store.id, skuToPlanSlug(sku), null);
     }
 
     logger.info("billing_rtdn_processed", {
@@ -246,6 +276,7 @@ export async function POST(req: NextRequest) {
       state,
     });
 
+    await markWebhookProcessed("rtdn", messageId);
     return NextResponse.json({ ok: true, state });
   } catch (e) {
     captureError(e, { route: "POST /api/billing/rtdn" });
