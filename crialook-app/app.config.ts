@@ -133,9 +133,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     edgeToEdgeEnabled: true,
     package: bundleId,
     allowBackup: false,
+    // Phase 5 / 05-01 — F-07 + F-08 + D-15: explicit permissions BEFORE first build.
+    //   POST_NOTIFICATIONS — Android 13+ runtime perm for expo-notifications.
+    //     Without this, the OS silently drops every push notification on devices
+    //     running Android 13+ and pushOptInGate.ts no-ops (lib/pushOptInGate.ts).
+    //   com.android.vending.BILLING — required for react-native-iap autolinking
+    //     to register, and Play Console rejects the AAB upload otherwise.
+    //   Defense-in-depth: D-16's bundletool dump manifest step verifies that the
+    //   built AAB actually contains both. If the verify finds either missing,
+    //   the answer is to inspect Expo prebuild output, not to revert this list.
     permissions: [
-      'android.permission.VIBRATE',
       'android.permission.CAMERA',
+      'android.permission.POST_NOTIFICATIONS',
+      'android.permission.VIBRATE',
+      'com.android.vending.BILLING',
     ],
     blockedPermissions: [
       'RECEIVE_BOOT_COMPLETED',
