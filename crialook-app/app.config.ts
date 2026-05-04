@@ -91,7 +91,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // RN window background = branco default, e o usuário via 200-800ms de
   // tela em branco no cold start.
   backgroundColor: '#D946EF',
-  newArchEnabled: true,
+  // SDK 55: newArchEnabled removido do schema. New Architecture é
+  // obrigatória — Expo ativa por default e dropou a flag.
   splash: {
     image: './assets/images/splash-icon.png',
     resizeMode: 'contain',
@@ -134,7 +135,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       // EAS prebuild quebra ao processar o ícone. Por ora ficamos com o
       // adaptive padrão (sem tema dinâmico do wallpaper).
     },
-    edgeToEdgeEnabled: true,
+    // SDK 55: edge-to-edge é mandatório (removido do schema). Android 16+
+    // exige edge-to-edge — Expo agora ativa por default e dropou a flag.
     package: bundleId,
     allowBackup: false,
     // Phase 5 / 05-01 — F-07 + F-08 + D-15: explicit permissions BEFORE first build.
