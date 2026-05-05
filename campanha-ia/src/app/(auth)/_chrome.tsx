@@ -123,14 +123,6 @@ function MobileTabBar({ navItems, pathname }: { navItems: NavItem[]; pathname: s
             >
               {item.shortLabel}
             </motion.span>
-            {isActive && (
-              <motion.div
-                layoutId="tab-dot"
-                className="absolute -top-0.5 w-1 h-1 rounded-full"
-                style={{ background: "var(--brand-500)" }}
-                transition={{ type: "spring", stiffness: 400, damping: 28 }}
-              />
-            )}
           </Link>
         );
       })}
