@@ -23,6 +23,29 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // Defense-in-depth: nginx-crialook.conf injeta esses headers em prod, mas
+  // preview deploys, dev tunneling e qualquer ambiente fora do nginx canônico
+  // ficavam nus. Manter espelhado com o nginx evita drift em rotas dinâmicas.
+  // CSP fica só no nginx (Report-Only mode, ver ops/csp-rollout.md).
+  async headers() {
+    const securityHeaders = [
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      },
+    ];
+    if (process.env.NODE_ENV === "production") {
+      securityHeaders.push({
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      });
+    }
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   // Prevent native 'canvas' / 'sharp' modules from breaking the build on Linux VPS
   serverExternalPackages: ["canvas", "sharp"],
 

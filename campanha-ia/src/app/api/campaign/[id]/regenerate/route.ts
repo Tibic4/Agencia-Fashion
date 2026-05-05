@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/observability";
 import { auth } from "@clerk/nextjs/server";
+import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import {
   getStoreByClerkId,
   setRegenerateReason,
@@ -34,6 +35,19 @@ export async function POST(
     const session = await auth();
     if (!session.userId) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    }
+
+    // Rate-limit anti-spam: rota é "free" (não consome crédito), então
+    // tecnicamente daria pra logar 1k feedbacks/min sem custo de IA mas
+    // poluindo `regenerate_reason`. 30 / hora cobre uso legítimo (UX
+    // raramente passa de algumas regeneradas por sessão).
+    const bucket = await consumeTokenBucket(`regenerate:user:${session.userId}`, 30, 1, 120);
+    if (!bucket.allowed) {
+      const retryAfterSec = Math.ceil(bucket.retryAfterMs / 1000);
+      return NextResponse.json(
+        { error: "Muitos pedidos em curto intervalo." },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+      );
     }
 
     const store = await getStoreByClerkId(session.userId);

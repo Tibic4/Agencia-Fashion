@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { logger } from "@/lib/observability";
 import { refreshExchangeRate } from "@/lib/pricing";
 import { env } from "@/lib/env";
+import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -15,13 +16,25 @@ export const maxDuration = 10;
  *
  * Proteção: verifica CRON_SECRET via Authorization: Bearer (D-23).
  */
+function isAuthorized(request: Request): boolean {
+  const expected = env.CRON_SECRET;
+  if (!expected) return false;
+  const header = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!header) return false;
+  try {
+    const a = Buffer.from(expected);
+    const b = Buffer.from(header);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: Request) {
   // D-23: ?secret= query-string path removed (leaks via referrer / proxy logs).
-  // Authorization header only.
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Authorization header only, timing-safe (paridade com downgrade-expired/judge-reconcile).
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

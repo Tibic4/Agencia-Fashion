@@ -36,6 +36,16 @@ const eslintConfig = defineConfig([
       "@next/next/no-html-link-for-pages": "warn",
       "prefer-const": "warn",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      // Migração gradual pra logger estruturado (src/lib/observability.ts).
+      // Warn (não error) pra não quebrar CI durante o rollout.
+      "no-console": "warn",
+    },
+  },
+  // error boundaries e o próprio logger legitimamente usam console.
+  {
+    files: ["**/error.tsx", "**/global-error.tsx", "src/lib/observability.ts"],
+    rules: {
+      "no-console": "off",
     },
   },
 ]);

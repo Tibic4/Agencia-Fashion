@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { captureError } from "@/lib/observability";
+import { consumeTokenBucket } from "@/lib/rate-limit-pg";
 import { AuthError, CrialookError, respondToError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
@@ -12,12 +13,25 @@ export const dynamic = "force-dynamic";
  * GET /api/me/export
  * Retorna JSON com TODOS os dados do usuário autenticado para download.
  * Content-Disposition attachment para force-download.
+ *
+ * Rate-limit: export é caro (6 queries paralelas + serialização full-table).
+ * 5 exports / hora por user é folgado pra uso legítimo (LGPD raramente é
+ * spam) e protege contra loop acidental no client.
  */
 export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
       throw new AuthError();
+    }
+
+    const bucket = await consumeTokenBucket(`me-export:user:${userId}`, 5, 1, 3600);
+    if (!bucket.allowed) {
+      const retryAfterSec = Math.ceil(bucket.retryAfterMs / 1000);
+      return NextResponse.json(
+        { error: "Muitas exportações em curto intervalo. Tente novamente mais tarde." },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+      );
     }
 
     const supabase = createAdminClient();
