@@ -73,6 +73,25 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         PORT: 3000,
+        // ── IPv6/IPv4 fix (2026-05-05) ──
+        // VPS Locaweb tem IPv6 stack habilitado mas SEM rota IPv6 outbound
+        // (api.anthropic.com resolve pra 2607:6bc0::10 mas Network is
+        // unreachable). Node 24 happy-eyeballs (undici fetch) tenta IPv6
+        // first, trava em ETIMEDOUT, NÃO faz fallback rápido pra IPv4
+        // mesmo com --dns-result-order=ipv4first sozinho.
+        //
+        // Sintoma em prod: pipeline.ts:288 catch fire 100% pra Sonnet
+        // (Anthropic SDK API call timeout) → fallback hardcoded copy
+        // entregue pra todo usuário (byte-identical).
+        //
+        // Fix: as 2 flags juntas:
+        //   --dns-result-order=ipv4first → DNS lookup retorna IPv4 primeiro
+        //   --network-family-autoselection=false → desabilita happy-eyeballs
+        //                                          dual-stack que ignorava
+        //                                          a ordem DNS
+        // Validado via teste isolado em 2026-05-05: undici fetch retorna
+        // status 200 do Anthropic com ambas flags. Sem elas: ETIMEDOUT.
+        NODE_OPTIONS: "--dns-result-order=ipv4first --network-family-autoselection=false",
         // Demais envs (CLERK_SECRET_KEY, SUPABASE_*, etc) vêm do .env.local da app.
         // NUNCA commitar secrets aqui.
       },
