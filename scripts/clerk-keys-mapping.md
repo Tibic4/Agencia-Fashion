@@ -37,11 +37,11 @@
 
 # Clerk publishable keys — per-profile mapping
 
-| Profile        | Bundle ID                    | Expected prefix | Value (paste here)                              |
-| -------------- | ---------------------------- | --------------- | ----------------------------------------------- |
-| `development`  | `com.crialook.app.dev`       | `pk_test_`      | <paste-dev-clerk-publishable-key>               |
-| `preview`      | `com.crialook.app.preview`   | `pk_test_`      | <paste-preview-clerk-publishable-key>           |
-| `production`   | `com.crialook.app`           | `pk_live_`      | <paste-prod-clerk-publishable-key>              |
+| Profile        | Bundle ID                    | Expected prefix | Value (paste here)                                                    |
+| -------------- | ---------------------------- | --------------- | --------------------------------------------------------------------- |
+| `development`  | `com.crialook.app.dev`       | `pk_test_`      | <paste-dev-clerk-publishable-key>              |
+| `preview`      | `com.crialook.app.preview`   | `pk_test_`      | <paste-preview-clerk-publishable-key>               |
+| `production`   | `com.crialook.app`           | `pk_live_`      | <paste-prod-clerk-publishable-key>                                |
 
 ## Validation rules (enforced by `apply-clerk-keys.js`)
 
