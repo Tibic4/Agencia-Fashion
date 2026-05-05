@@ -15,7 +15,7 @@
         "APP_VARIANT": "development",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api",
         "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_Y2FzdWFsLXZlcnZldC05Ni5jbGVyay5hY2NvdW50cy5kZXYk",
-        "EXPO_PUBLIC_SENTRY_DSN": "PLACEHOLDER_DSN_REPLACE_BEFORE_BUILD",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://c22a6862d94052bfbcec1bafb1b9d913@o4511163650670592.ingest.us.sentry.io/4511291775188992",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -29,7 +29,7 @@
         "APP_VARIANT": "preview",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api",
         "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_ZGVhci1jcmF3ZGFkLTQwLmNsZXJrLmFjY291bnRzLmRldiQ",
-        "EXPO_PUBLIC_SENTRY_DSN": "PLACEHOLDER_DSN_REPLACE_BEFORE_BUILD",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://c22a6862d94052bfbcec1bafb1b9d913@o4511163650670592.ingest.us.sentry.io/4511291775188992",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -43,7 +43,7 @@
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_API_URL": "https://crialook.com.br/api",
         "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuY3JpYWxvb2suY29tLmJyJA",
-        "EXPO_PUBLIC_SENTRY_DSN": "PLACEHOLDER_DSN_REPLACE_BEFORE_BUILD",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://c22a6862d94052bfbcec1bafb1b9d913@o4511163650670592.ingest.us.sentry.io/4511291775188992",
         "SENTRY_DISABLE_AUTO_UPLOAD": "false"
       }
     }
